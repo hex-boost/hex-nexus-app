@@ -4,12 +4,15 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
+	"embed"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io"
 	"mime/multipart"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -18,6 +21,9 @@ import (
 
 	"github.com/pkg/browser"
 )
+
+//go:embed templates/*.html
+var templatesFS embed.FS
 
 // App struct
 type App struct {
@@ -32,6 +38,16 @@ func NewApp() *App {
 		oauthState: "",
 		stateMutex: sync.Mutex{},
 	}
+}
+
+func renderTemplate(w http.ResponseWriter, tmplName string) error {
+	// monta o caminho relativo, ex.: "templates/success.html"
+	tmplPath := filepath.Join("templates", tmplName)
+	tmpl, err := template.ParseFS(templatesFS, tmplPath)
+	if err != nil {
+		return err
+	}
+	return tmpl.Execute(w, nil)
 }
 
 // startup is called at application startup
@@ -80,7 +96,12 @@ func (a *App) StartDiscordOAuth() (map[string]interface{}, error) {
 		if code == "" {
 			errChan <- fmt.Errorf("código de autorização não recebido")
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Falha na autenticação: código não recebido"))
+			w.Header().Set("Content-Type", "text/html")
+			if err := renderTemplate(w, "discord_auth_error.html"); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte("Erro ao renderizar página de sucesso"))
+				return
+			}
 			return
 		}
 
@@ -89,79 +110,21 @@ func (a *App) StartDiscordOAuth() (map[string]interface{}, error) {
 		if err != nil {
 			errChan <- fmt.Errorf("erro na autenticação com Strapi: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Falha na autenticação com o servidor"))
+			if err := renderTemplate(w, "discord_auth_error.html"); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte("Erro ao renderizar página de sucesso"))
+				return
+			}
 			return
 		}
 
 		// Exibir página de sucesso
 		w.Header().Set("Content-Type", "text/html")
-		html := fmt.Sprintf(`
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Autenticação Concluída</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            color: white;
-            text-align: center;
-        }
-
-        .container {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            padding: 3rem;
-            border-radius: 1rem;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            max-width: 90%%;
-        }
-
-        h1 {
-            font-size: 2rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .close-btn {
-            background: white;
-            color: #6366f1;
-            border: none;
-            padding: 1rem 2rem;
-            border-radius: 0.5rem;
-            font-size: 1.1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 600;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .close-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
-        }
-
-        .close-btn:active {
-            transform: translateY(0);
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>🎉 Autenticação Concluída!</h1>
-        <p>Sua conexão foi estabelecida com sucesso.</p>
-        <p style="margin-top: 1.5rem; opacity: 0.8; font-size: 0.9rem;">Você já pode fechar esta janela</p>
-    </div>
-</body>
-</html>
-`)
-		w.Write([]byte(html))
+		if err := renderTemplate(w, "discord_auth_success.html"); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Erro ao renderizar página de sucesso"))
+			return
+		}
 
 		// Enviar resultado para o channel
 		resultChan <- map[string]interface{}{
@@ -273,77 +236,11 @@ func (a *App) HandleDiscordCallback(callback func(token string, err error)) {
 		token, _, err := a.authenticateWithStrapi(code)
 
 		w.Header().Set("Content-Type", "text/html")
-		html := fmt.Sprintf(`
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Autenticação Concluída</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #6366f1 0%%, #a855f7 100%%);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            color: white;
-            text-align: center;
-        }
-
-        .container {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            padding: 3rem;
-            border-radius: 1rem;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            max-width: 90%%;
-        }
-
-        h1 {
-            font-size: 2rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .close-btn {
-            background: white;
-            color: #6366f1;
-            border: none;
-            padding: 1rem 2rem;
-            border-radius: 0.5rem;
-            font-size: 1.1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 600;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .close-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
-        }
-
-        .close-btn:active {
-            transform: translateY(0);
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>🎉 Autenticação Concluída!</h1>
-        <p>Sua conexão foi estabelecida com sucesso.</p>
-        <button class="close-btn" onclick="window.close()">Fechar Janela</button>
-        <p style="margin-top: 1.5rem; opacity: 0.8; font-size: 0.9rem;">Esta janela fechará automaticamente em alguns segundos...</p>
-    </div>
-</body>
-</html>
-`)
-
-		w.Write([]byte(html))
-
+		if err := renderTemplate(w, "discord_auth_success.html"); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Erro ao renderizar página de sucesso"))
+			return
+		}
 		go func() {
 			time.Sleep(2 * time.Second)
 			srv.Shutdown(context.Background())
