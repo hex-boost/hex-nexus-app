@@ -13,6 +13,8 @@ export const useUserStore = create<AuthState>((set, get) => ({
   jwt: localStorage.getItem('jwt') || '',
   login: (user, jwt: string) => {
     localStorage.setItem('user', JSON.stringify(user))
+    localStorage.setItem('authToken', jwt)
+
     set({ user, jwt })
   },
 
