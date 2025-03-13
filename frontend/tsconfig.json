@@ -21,6 +21,7 @@
     /* Linting */
     "strict": false,
     "noUnusedLocals": true,
+    "strictNullChecks": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     /* Path */
@@ -38,6 +39,7 @@
   },
   "include": [
     "src",
+    "index.tsx",
   ],
   "types": [
     "node"
