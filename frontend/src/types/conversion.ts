@@ -1,4 +1,4 @@
-import type {Public, Schema, Struct } from '@strapi/types';
+import type { Public, Schema, Struct } from '@strapi/types';
 import type { ApiResponse } from 'strapi-ts-sdk';
 import type {
 

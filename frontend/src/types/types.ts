@@ -1,4 +1,4 @@
-import type { Entity } from './conversor';
+import type { Entity } from './conversion';
 import type { AdminApiToken, AdminApiTokenPermission, AdminPermission, AdminRole, AdminTransferToken, AdminTransferTokenPermission, AdminUser, ApiActionAction, ApiPremiumPremium, ApiPricePrice, ApiRankingRanking, ApiTransactionTransaction, PluginContentReleasesRelease, PluginContentReleasesReleaseAction, PluginI18NLocale, PluginReviewWorkflowsWorkflow, PluginReviewWorkflowsWorkflowStage, PluginUploadFile, PluginUploadFolder, PluginUsersPermissionsPermission, PluginUsersPermissionsRole, PluginUsersPermissionsUser } from './generated/contentTypes';
 
 export type UserType = Entity<PluginUsersPermissionsUser>;
