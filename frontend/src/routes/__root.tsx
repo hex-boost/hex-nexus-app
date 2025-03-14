@@ -19,7 +19,9 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         <TanStackRouterDevtools />
         {isAuthenticated() ? (
           <AdminPanelLayout>
-            <Outlet />
+            <div className="p-6 ">
+              <Outlet />
+            </div>
           </AdminPanelLayout>
         ) : (
 

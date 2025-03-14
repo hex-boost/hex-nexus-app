@@ -1,3 +1,5 @@
+import Dashboard from "./kokonutui/dashboard";
+
 export function HomeDashboard() {
-  return <div>HomeDashboard</div>;
+  return <Dashboard />
 }
