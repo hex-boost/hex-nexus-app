@@ -1,5 +1,6 @@
 export type Account = {
   id: string;
+  game: 'lol' | 'valorant';
   tier: string;
   rank: string;
   region: string;
@@ -7,13 +8,31 @@ export type Account = {
   skins: number;
   price: number;
   company: 'Boost Royal' | 'EBNET' | 'Public';
-  status: 'Verified' | 'Restricted';
+  status: 'Available' | 'Rented' | 'Reserved' | 'Maintenance';
+  isRentedByUser?: boolean;
+  refundableAmount?: number;
+  expiresAt?: string;
+  soloQueueRank?: {
+    tier: string;
+    rank: string;
+    lp: number;
+  };
+  flexQueueRank?: {
+    tier: string;
+    rank: string;
+    lp: number;
+  };
+  valorantRank?: {
+    tier: string;
+    rank: string;
+  };
 };
 
 // Sample data
 export const ACCOUNTS: Account[] = [
   {
     id: 'A7F9P2',
+    game: 'lol',
     tier: 'Diamond',
     rank: 'II',
     region: 'EUW',
@@ -21,10 +40,21 @@ export const ACCOUNTS: Account[] = [
     skins: 78,
     price: 3200,
     company: 'Boost Royal',
-    status: 'Verified',
+    status: 'Available',
+    soloQueueRank: {
+      tier: 'Diamond',
+      rank: 'II',
+      lp: 75,
+    },
+    flexQueueRank: {
+      tier: 'Platinum',
+      rank: 'III',
+      lp: 42,
+    },
   },
   {
     id: 'B5M3K8',
+    game: 'lol',
     tier: 'Platinum',
     rank: 'I',
     region: 'NA',
@@ -32,10 +62,16 @@ export const ACCOUNTS: Account[] = [
     skins: 65,
     price: 2400,
     company: 'EBNET',
-    status: 'Verified',
+    status: 'Available',
+    soloQueueRank: {
+      tier: 'Platinum',
+      rank: 'I',
+      lp: 89,
+    },
   },
   {
     id: 'C2G7T4',
+    game: 'lol',
     tier: 'Master',
     rank: '',
     region: 'KR',
@@ -43,10 +79,16 @@ export const ACCOUNTS: Account[] = [
     skins: 112,
     price: 5000,
     company: 'Boost Royal',
-    status: 'Verified',
+    status: 'Available',
+    soloQueueRank: {
+      tier: 'Master',
+      rank: '',
+      lp: 125,
+    },
   },
   {
     id: 'D9R4Z1',
+    game: 'lol',
     tier: 'Gold',
     rank: 'IV',
     region: 'EUNE',
@@ -54,10 +96,16 @@ export const ACCOUNTS: Account[] = [
     skins: 42,
     price: 1800,
     company: 'Public',
-    status: 'Restricted',
+    status: 'Rented',
+    soloQueueRank: {
+      tier: 'Gold',
+      rank: 'IV',
+      lp: 32,
+    },
   },
   {
     id: 'E3X8V6',
+    game: 'lol',
     tier: 'Challenger',
     rank: '',
     region: 'NA',
@@ -65,10 +113,16 @@ export const ACCOUNTS: Account[] = [
     skins: 130,
     price: 7500,
     company: 'Boost Royal',
-    status: 'Verified',
+    status: 'Available',
+    soloQueueRank: {
+      tier: 'Challenger',
+      rank: '',
+      lp: 756,
+    },
   },
   {
     id: 'F1Y5W9',
+    game: 'lol',
     tier: 'Silver',
     rank: 'II',
     region: 'BR',
@@ -76,10 +130,16 @@ export const ACCOUNTS: Account[] = [
     skins: 30,
     price: 1200,
     company: 'EBNET',
-    status: 'Restricted',
+    status: 'Reserved',
+    soloQueueRank: {
+      tier: 'Silver',
+      rank: 'II',
+      lp: 45,
+    },
   },
   {
     id: 'G6U2Q7',
+    game: 'lol',
     tier: 'Diamond',
     rank: 'IV',
     region: 'LAN',
@@ -87,71 +147,123 @@ export const ACCOUNTS: Account[] = [
     skins: 60,
     price: 2800,
     company: 'Public',
-    status: 'Verified',
+    status: 'Available',
+    soloQueueRank: {
+      tier: 'Diamond',
+      rank: 'IV',
+      lp: 12,
+    },
   },
   {
     id: 'H4S9N3',
-    tier: 'Grandmaster',
-    rank: '',
+    game: 'valorant',
+    tier: 'Immortal',
+    rank: '3',
     region: 'JP',
-    champions: 155,
+    champions: 0,
     skins: 95,
     price: 6200,
     company: 'Boost Royal',
-    status: 'Verified',
+    status: 'Available',
+    valorantRank: {
+      tier: 'Immortal',
+      rank: '3',
+    },
   },
   {
     id: 'I8P5M1',
+    game: 'valorant',
     tier: 'Bronze',
-    rank: 'I',
+    rank: '1',
     region: 'OCE',
-    champions: 70,
+    champions: 0,
     skins: 25,
     price: 900,
     company: 'Public',
-    status: 'Restricted',
+    status: 'Reserved',
+    valorantRank: {
+      tier: 'Bronze',
+      rank: '1',
+    },
   },
   {
     id: 'J2L7K9',
+    game: 'valorant',
     tier: 'Iron',
-    rank: 'III',
+    rank: '3',
     region: 'TR',
-    champions: 60,
+    champions: 0,
     skins: 15,
     price: 700,
     company: 'EBNET',
-    status: 'Verified',
+    status: 'Available',
+    valorantRank: {
+      tier: 'Iron',
+      rank: '3',
+    },
   },
   {
     id: 'K5H3G1',
+    game: 'valorant',
     tier: 'Platinum',
-    rank: 'III',
+    rank: '3',
     region: 'RU',
-    champions: 110,
+    champions: 0,
     skins: 55,
     price: 2200,
     company: 'Public',
-    status: 'Verified',
+    status: 'Available',
+    valorantRank: {
+      tier: 'Platinum',
+      rank: '3',
+    },
   },
   {
     id: 'L9F2D7',
-    tier: 'Diamond',
-    rank: 'I',
+    game: 'valorant',
+    tier: 'Radiant',
+    rank: '',
     region: 'EUW',
-    champions: 140,
+    champions: 0,
     skins: 85,
     price: 3500,
     company: 'Boost Royal',
-    status: 'Verified',
+    status: 'Available',
+    valorantRank: {
+      tier: 'Radiant',
+      rank: '',
+    },
+  },
+  {
+    id: 'M3R7T9',
+    game: 'lol',
+    tier: 'Diamond',
+    rank: 'I',
+    region: 'NA',
+    champions: 140,
+    skins: 82,
+    price: 3200,
+    company: 'Boost Royal',
+    status: 'Available',
+    isRentedByUser: true,
+    refundableAmount: 1600,
+    expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 12).toISOString(), // 12 hours from now
+    soloQueueRank: {
+      tier: 'Diamond',
+      rank: 'I',
+      lp: 65,
+    },
   },
 ];
 
 // Constants
 export const REGIONS = ['NA', 'EUW', 'EUNE', 'KR', 'BR', 'LAN', 'LAS', 'OCE', 'TR', 'RU', 'JP'];
-export const TIERS = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Master', 'Grandmaster', 'Challenger'];
+export const LOL_TIERS = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Master', 'Grandmaster', 'Challenger'];
+export const VALORANT_TIERS = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Ascendant', 'Immortal', 'Radiant'];
 export const RANKS = ['I', 'II', 'III', 'IV'];
 export const COMPANIES = ['Boost Royal', 'EBNET', 'Public'];
-export const STATUSES = ['Verified', 'Restricted'];
+export const STATUSES = ['Available', 'Rented', 'Reserved'];
+export const GAMES = ['League of Legends', 'Valorant'];
 
 // Sample champions and skins data
 export const CHAMPIONS = [

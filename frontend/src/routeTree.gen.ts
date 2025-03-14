@@ -15,6 +15,7 @@ import { Route as LoginImport } from './routes/login'
 import { Route as ProtectedIndexImport } from './routes/_protected/index'
 import { Route as ProtectedSubscriptionImport } from './routes/_protected/subscription'
 import { Route as ProtectedAccountsImport } from './routes/_protected/accounts'
+import { Route as ProtectedActiveAccountsImport } from './routes/_protected/ActiveAccounts'
 
 // Create/Update Routes
 
@@ -42,6 +43,12 @@ const ProtectedAccountsRoute = ProtectedAccountsImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const ProtectedActiveAccountsRoute = ProtectedActiveAccountsImport.update({
+  id: '/_protected/ActiveAccounts',
+  path: '/ActiveAccounts',
+  getParentRoute: () => rootRoute,
+} as any)
+
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
@@ -51,6 +58,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginImport
+      parentRoute: typeof rootRoute
+    }
+    '/_protected/ActiveAccounts': {
+      id: '/_protected/ActiveAccounts'
+      path: '/ActiveAccounts'
+      fullPath: '/ActiveAccounts'
+      preLoaderRoute: typeof ProtectedActiveAccountsImport
       parentRoute: typeof rootRoute
     }
     '/_protected/accounts': {
@@ -81,6 +95,7 @@ declare module '@tanstack/react-router' {
 
 export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
+  '/ActiveAccounts': typeof ProtectedActiveAccountsRoute
   '/accounts': typeof ProtectedAccountsRoute
   '/subscription': typeof ProtectedSubscriptionRoute
   '/': typeof ProtectedIndexRoute
@@ -88,6 +103,7 @@ export interface FileRoutesByFullPath {
 
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
+  '/ActiveAccounts': typeof ProtectedActiveAccountsRoute
   '/accounts': typeof ProtectedAccountsRoute
   '/subscription': typeof ProtectedSubscriptionRoute
   '/': typeof ProtectedIndexRoute
@@ -96,6 +112,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/login': typeof LoginRoute
+  '/_protected/ActiveAccounts': typeof ProtectedActiveAccountsRoute
   '/_protected/accounts': typeof ProtectedAccountsRoute
   '/_protected/subscription': typeof ProtectedSubscriptionRoute
   '/_protected/': typeof ProtectedIndexRoute
@@ -103,12 +120,13 @@ export interface FileRoutesById {
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/login' | '/accounts' | '/subscription' | '/'
+  fullPaths: '/login' | '/ActiveAccounts' | '/accounts' | '/subscription' | '/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/accounts' | '/subscription' | '/'
+  to: '/login' | '/ActiveAccounts' | '/accounts' | '/subscription' | '/'
   id:
     | '__root__'
     | '/login'
+    | '/_protected/ActiveAccounts'
     | '/_protected/accounts'
     | '/_protected/subscription'
     | '/_protected/'
@@ -117,6 +135,7 @@ export interface FileRouteTypes {
 
 export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
+  ProtectedActiveAccountsRoute: typeof ProtectedActiveAccountsRoute
   ProtectedAccountsRoute: typeof ProtectedAccountsRoute
   ProtectedSubscriptionRoute: typeof ProtectedSubscriptionRoute
   ProtectedIndexRoute: typeof ProtectedIndexRoute
@@ -124,6 +143,7 @@ export interface RootRouteChildren {
 
 const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
+  ProtectedActiveAccountsRoute: ProtectedActiveAccountsRoute,
   ProtectedAccountsRoute: ProtectedAccountsRoute,
   ProtectedSubscriptionRoute: ProtectedSubscriptionRoute,
   ProtectedIndexRoute: ProtectedIndexRoute,
@@ -140,6 +160,7 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/login",
+        "/_protected/ActiveAccounts",
         "/_protected/accounts",
         "/_protected/subscription",
         "/_protected/"
@@ -147,6 +168,9 @@ export const routeTree = rootRoute
     },
     "/login": {
       "filePath": "login.tsx"
+    },
+    "/_protected/ActiveAccounts": {
+      "filePath": "_protected/ActiveAccounts.tsx"
     },
     "/_protected/accounts": {
       "filePath": "_protected/accounts.tsx"

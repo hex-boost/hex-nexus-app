@@ -1,11 +1,13 @@
+'use client';
+
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { Clock, CoinsIcon as CoinIcon, Shield } from 'lucide-react';
+import { CoinsIcon as CoinIcon } from 'lucide-react';
 
 export default function LastRentedAccount() {
   // Example data for last rented account
   const lastAccount = {
     id: 'L4X92C',
+    game: 'lol',
     tier: 'Diamond',
     rank: 'III',
     rentedAt: '2024-03-15T14:20:00Z',
@@ -51,65 +53,71 @@ export default function LastRentedAccount() {
     }
   };
 
+  // Helper function to get game icon
+  const getGameIcon = (game: 'lol' | 'valorant') => {
+    if (game === 'lol') {
+      return '/placeholder.svg?height=24&width=24&text=LoL';
+    } else {
+      return '/placeholder.svg?height=24&width=24&text=VAL';
+    }
+  };
+
   return (
-    <div className="w-full">
-      <div className="bg-zinc-50 dark:bg-zinc-800/30 rounded-xl p-5">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-md bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-              <span className="text-sm font-medium text-blue-600 dark:text-blue-400">{lastAccount.id}</span>
-            </div>
-            <div>
-              <p className="text-xs text-zinc-600 dark:text-zinc-400">Account ID</p>
-              <div className="flex items-center gap-1">
-                <Shield className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                <span className={`text-sm font-medium ${getRankColor(lastAccount.tier)}`}>
-                  {lastAccount.tier}
-                  {' '}
-                  {lastAccount.rank}
-                </span>
-              </div>
-            </div>
-          </div>
-          <div
-            className={cn(
-              'px-2 py-1 rounded-full text-xs font-medium',
-              'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
-            )}
-          >
-            Previously Rented
-          </div>
+    <div className="bg-zinc-50 dark:bg-zinc-800/30 rounded-xl p-4 flex items-center">
+      <div className="flex items-center gap-4 flex-1">
+        <div className="flex items-center gap-2">
+          <img
+            src={getGameIcon(lastAccount.game as 'lol' | 'valorant') || '/placeholder.svg'}
+            alt={lastAccount.game === 'lol' ? 'League of Legends' : 'Valorant'}
+            className="w-6 h-6"
+          />
+          <span className="text-sm font-medium">{lastAccount.id}</span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
-          <div>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400">Champions</p>
-            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{lastAccount.champions}</p>
-          </div>
-          <div>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400">Skins</p>
-            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{lastAccount.skins}</p>
-          </div>
-          <div>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400">Rental Duration</p>
-            <div className="flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400" />
-              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                {formatRentalTime(lastAccount.rentalDuration)}
-              </p>
-            </div>
-          </div>
-          <div>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400">Rental Cost</p>
-            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 flex items-center gap-1">
-              <CoinIcon className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
-              <span>{lastAccount.cost}</span>
-            </p>
-          </div>
+        <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-700"></div>
+
+        <div>
+          <span className={`text-sm font-medium ${getRankColor(lastAccount.tier)}`}>
+            {lastAccount.tier}
+            {' '}
+            {lastAccount.rank}
+          </span>
         </div>
 
-        <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">Rent Again</Button>
+        <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-700"></div>
+
+        <div className="flex items-center gap-1">
+          <span className="text-sm text-zinc-600 dark:text-zinc-400">Champions:</span>
+          <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{lastAccount.champions}</span>
+        </div>
+
+        <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-700"></div>
+
+        <div className="flex items-center gap-1">
+          <span className="text-sm text-zinc-600 dark:text-zinc-400">Skins:</span>
+          <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{lastAccount.skins}</span>
+        </div>
+
+        <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-700"></div>
+
+        <div className="flex items-center gap-1">
+          <span className="text-sm text-zinc-600 dark:text-zinc-400">Duration:</span>
+          <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+            {formatRentalTime(lastAccount.rentalDuration)}
+          </span>
+        </div>
+
+        <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-700"></div>
+
+        <div className="flex items-center gap-1">
+          <CoinIcon className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
+          <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{lastAccount.cost}</span>
+        </div>
       </div>
+
+      <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white ml-4">
+        Rent Again
+      </Button>
     </div>
   );
 }

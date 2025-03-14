@@ -4,7 +4,7 @@ import LastRentedAccount from './last-rented-account';
 import RecentTransactions from './recent-transactions';
 import SubscriptionStatus from './subscription-status';
 
-export default function () {
+export default function Content() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
