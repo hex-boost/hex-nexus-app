@@ -174,76 +174,76 @@ function MyAccounts() {
         <TabsContent value="active" className="space-y-6 pt-4">
           {filteredActiveAccounts.length > 0
             ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredActiveAccounts.map(account => (
-                  <AccountActiveState
-                    key={account.accountId}
-                    accountId={account.accountId}
-                    game={account.game as 'lol' | 'valorant'}
-                    rentedAt={account.rentedAt}
-                    expiresAt={account.expiresAt}
-                    gameName={account.gameName}
-                    refundableAmount={account.refundableAmount}
-                    leaverBusterStatus={account.leaverBusterStatus}
-                    soloQueueRank={account.soloQueueRank}
-                    flexQueueRank={account.flexQueueRank}
-                    valorantRank={account.valorantRank}
-                  />
-                ))}
-              </div>
-            )
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredActiveAccounts.map(account => (
+                    <AccountActiveState
+                      key={account.accountId}
+                      accountId={account.accountId}
+                      game={account.game as 'lol' | 'valorant'}
+                      rentedAt={account.rentedAt}
+                      expiresAt={account.expiresAt}
+                      gameName={account.gameName}
+                      refundableAmount={account.refundableAmount}
+                      leaverBusterStatus={account.leaverBusterStatus}
+                      soloQueueRank={account.soloQueueRank}
+                      flexQueueRank={account.flexQueueRank}
+                      valorantRank={account.valorantRank}
+                    />
+                  ))}
+                </div>
+              )
             : (
-              <div className="text-center py-12">
-                <p className="text-zinc-600 dark:text-zinc-400">
-                  {searchQuery ? 'No active accounts match your search criteria.' : 'You don\'t have any active accounts.'}
-                </p>
-                <Button className="mt-4">Browse Available Accounts</Button>
-              </div>
-            )}
+                <div className="text-center py-12">
+                  <p className="text-zinc-600 dark:text-zinc-400">
+                    {searchQuery ? 'No active accounts match your search criteria.' : 'You don\'t have any active accounts.'}
+                  </p>
+                  <Button className="mt-4">Browse Available Accounts</Button>
+                </div>
+              )}
         </TabsContent>
 
         {/* Rental History Tab */}
         <TabsContent value="history" className="space-y-6 pt-4">
           {filteredHistoryAccounts.length > 0
             ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredHistoryAccounts.map(account => (
-                  <div
-                    key={account.accountId}
-                    className="bg-white dark:bg-zinc-900/70 border border-zinc-100 dark:border-zinc-800 rounded-lg p-4"
-                  >
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="text-sm text-zinc-600 dark:text-zinc-400">
-                        Rented:
-                        {' '}
-                        {new Date(account.rentedAt).toLocaleDateString()}
-                      </span>
-                      <span className="text-sm text-zinc-600 dark:text-zinc-400">
-                        Expired:
-                        {' '}
-                        {new Date(account.expiresAt).toLocaleDateString()}
-                      </span>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredHistoryAccounts.map(account => (
+                    <div
+                      key={account.accountId}
+                      className="bg-white dark:bg-zinc-900/70 border border-zinc-100 dark:border-zinc-800 rounded-lg p-4"
+                    >
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-sm text-zinc-600 dark:text-zinc-400">
+                          Rented:
+                          {' '}
+                          {new Date(account.rentedAt).toLocaleDateString()}
+                        </span>
+                        <span className="text-sm text-zinc-600 dark:text-zinc-400">
+                          Expired:
+                          {' '}
+                          {new Date(account.expiresAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <AccountInfoDisplay
+                        accountId={account.accountId}
+                        game={account.game as 'lol' | 'valorant'}
+                        status={account.status}
+                        leaverBusterStatus={account.leaverBusterStatus}
+                        soloQueueRank={account.soloQueueRank}
+                        previousSeasonRank={account.previousSeasonRank}
+                        valorantRank={account.valorantRank}
+                      />
                     </div>
-                    <AccountInfoDisplay
-                      accountId={account.accountId}
-                      game={account.game as 'lol' | 'valorant'}
-                      status={account.status}
-                      leaverBusterStatus={account.leaverBusterStatus}
-                      soloQueueRank={account.soloQueueRank}
-                      previousSeasonRank={account.previousSeasonRank}
-                      valorantRank={account.valorantRank}
-                    />
-                  </div>
-                ))}
-              </div>
-            )
+                  ))}
+                </div>
+              )
             : (
-              <div className="text-center py-12">
-                <p className="text-zinc-600 dark:text-zinc-400">
-                  {searchQuery ? 'No rental history matches your search criteria.' : 'You don\'t have any rental history.'}
-                </p>
-              </div>
-            )}
+                <div className="text-center py-12">
+                  <p className="text-zinc-600 dark:text-zinc-400">
+                    {searchQuery ? 'No rental history matches your search criteria.' : 'You don\'t have any rental history.'}
+                  </p>
+                </div>
+              )}
         </TabsContent>
       </Tabs>
     </div>

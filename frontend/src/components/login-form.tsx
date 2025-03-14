@@ -296,29 +296,29 @@ export function LoginForm({
                 <TabsList className="text-center text-sm">
                   {activeTab === 'login'
                     ? (
-                      <>
-                        Não tem uma conta?
-                        {' '}
-                        <TabsTrigger
-                          value="register"
-                          className="underline underline-offset-4 cursor-pointer"
-                        >
-                          Cadastre-se
-                        </TabsTrigger>
-                      </>
-                    )
+                        <>
+                          Não tem uma conta?
+                          {' '}
+                          <TabsTrigger
+                            value="register"
+                            className="underline underline-offset-4 cursor-pointer"
+                          >
+                            Cadastre-se
+                          </TabsTrigger>
+                        </>
+                      )
                     : (
-                      <>
-                        Já tem uma conta?
-                        {' '}
-                        <TabsTrigger
-                          value="login"
-                          className="underline underline-offset-4 cursor-pointer"
-                        >
-                          Faça login
-                        </TabsTrigger>
-                      </>
-                    )}
+                        <>
+                          Já tem uma conta?
+                          {' '}
+                          <TabsTrigger
+                            value="login"
+                            className="underline underline-offset-4 cursor-pointer"
+                          >
+                            Faça login
+                          </TabsTrigger>
+                        </>
+                      )}
                 </TabsList>
 
               </form>

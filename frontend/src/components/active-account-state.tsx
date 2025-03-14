@@ -224,11 +224,11 @@ export default function AccountActiveState({
         <CardTitle className="text-xl mt-2">
           {gameName
             ? (
-              <span className="font-bold">{gameName}</span>
-            )
+                <span className="font-bold">{gameName}</span>
+              )
             : (
-              <span className="text-zinc-500 dark:text-zinc-400 italic">Game name hidden until login</span>
-            )}
+                <span className="text-zinc-500 dark:text-zinc-400 italic">Game name hidden until login</span>
+              )}
         </CardTitle>
         <CardDescription>
           Rented account - Expires in
@@ -268,53 +268,53 @@ export default function AccountActiveState({
                 <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">Solo Queue</p>
                 {soloQueueRank
                   ? (
-                    <div className="flex items-center gap-1.5">
-                      <img
-                        src={getTierIcon(soloQueueRank.tier) || '/placeholder.svg'}
-                        alt={soloQueueRank.tier}
-                        className="w-5 h-5"
-                      />
-                      <div>
-                        <p className={`text-sm font-medium ${getRankColor(soloQueueRank.tier)}`}>
-                          {soloQueueRank.tier}
-                          {' '}
-                          {soloQueueRank.rank}
-                        </p>
-                        <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                          {soloQueueRank.lp}
-                          {' '}
-                          LP
-                        </p>
-                      </div>
-                    </div>
-                  )
-                  : previousSeasonRank
-                    ? (
                       <div className="flex items-center gap-1.5">
                         <img
-                          src={getTierIcon(previousSeasonRank.tier) || '/placeholder.svg'}
-                          alt={previousSeasonRank.tier}
-                          className="w-5 h-5 opacity-70"
+                          src={getTierIcon(soloQueueRank.tier) || '/placeholder.svg'}
+                          alt={soloQueueRank.tier}
+                          className="w-5 h-5"
                         />
                         <div>
-                          <p className={`text-sm font-medium ${getRankColor(previousSeasonRank.tier)} opacity-70`}>
-                            Unranked
+                          <p className={`text-sm font-medium ${getRankColor(soloQueueRank.tier)}`}>
+                            {soloQueueRank.tier}
+                            {' '}
+                            {soloQueueRank.rank}
                           </p>
                           <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                            S
-                            {previousSeasonRank.season}
-                            :
+                            {soloQueueRank.lp}
                             {' '}
-                            {previousSeasonRank.tier}
-                            {' '}
-                            {previousSeasonRank.rank}
+                            LP
                           </p>
                         </div>
                       </div>
                     )
+                  : previousSeasonRank
+                    ? (
+                        <div className="flex items-center gap-1.5">
+                          <img
+                            src={getTierIcon(previousSeasonRank.tier) || '/placeholder.svg'}
+                            alt={previousSeasonRank.tier}
+                            className="w-5 h-5 opacity-70"
+                          />
+                          <div>
+                            <p className={`text-sm font-medium ${getRankColor(previousSeasonRank.tier)} opacity-70`}>
+                              Unranked
+                            </p>
+                            <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                              S
+                              {previousSeasonRank.season}
+                              :
+                              {' '}
+                              {previousSeasonRank.tier}
+                              {' '}
+                              {previousSeasonRank.rank}
+                            </p>
+                          </div>
+                        </div>
+                      )
                     : (
-                      <p className="text-sm text-zinc-600 dark:text-zinc-400">Unranked</p>
-                    )}
+                        <p className="text-sm text-zinc-600 dark:text-zinc-400">Unranked</p>
+                      )}
               </div>
 
               {/* Flex Queue Rank */}
@@ -322,29 +322,29 @@ export default function AccountActiveState({
                 <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">Flex Queue</p>
                 {flexQueueRank
                   ? (
-                    <div className="flex items-center gap-1.5">
-                      <img
-                        src={getTierIcon(flexQueueRank.tier) || '/placeholder.svg'}
-                        alt={flexQueueRank.tier}
-                        className="w-5 h-5"
-                      />
-                      <div>
-                        <p className={`text-sm font-medium ${getRankColor(flexQueueRank.tier)}`}>
-                          {flexQueueRank.tier}
-                          {' '}
-                          {flexQueueRank.rank}
-                        </p>
-                        <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                          {flexQueueRank.lp}
-                          {' '}
-                          LP
-                        </p>
+                      <div className="flex items-center gap-1.5">
+                        <img
+                          src={getTierIcon(flexQueueRank.tier) || '/placeholder.svg'}
+                          alt={flexQueueRank.tier}
+                          className="w-5 h-5"
+                        />
+                        <div>
+                          <p className={`text-sm font-medium ${getRankColor(flexQueueRank.tier)}`}>
+                            {flexQueueRank.tier}
+                            {' '}
+                            {flexQueueRank.rank}
+                          </p>
+                          <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                            {flexQueueRank.lp}
+                            {' '}
+                            LP
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  )
+                    )
                   : (
-                    <p className="text-sm text-zinc-600 dark:text-zinc-400">Unranked</p>
-                  )}
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400">Unranked</p>
+                    )}
               </div>
             </>
           ) : (
@@ -354,24 +354,24 @@ export default function AccountActiveState({
                 <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">Competitive Rank</p>
                 {valorantRank
                   ? (
-                    <div className="flex items-center gap-1.5">
-                      <img
-                        src={getTierIcon(valorantRank.tier) || '/placeholder.svg'}
-                        alt={valorantRank.tier}
-                        className="w-5 h-5"
-                      />
-                      <div>
-                        <p className={`text-sm font-medium ${getRankColor(valorantRank.tier)}`}>
-                          {valorantRank.tier}
-                          {' '}
-                          {valorantRank.rank}
-                        </p>
+                      <div className="flex items-center gap-1.5">
+                        <img
+                          src={getTierIcon(valorantRank.tier) || '/placeholder.svg'}
+                          alt={valorantRank.tier}
+                          className="w-5 h-5"
+                        />
+                        <div>
+                          <p className={`text-sm font-medium ${getRankColor(valorantRank.tier)}`}>
+                            {valorantRank.tier}
+                            {' '}
+                            {valorantRank.rank}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  )
+                    )
                   : (
-                    <p className="text-sm text-zinc-600 dark:text-zinc-400">Unranked</p>
-                  )}
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400">Unranked</p>
+                    )}
               </div>
             </>
           )}
@@ -389,11 +389,11 @@ export default function AccountActiveState({
             Account Summary
             {isOpen
               ? (
-                <ChevronUp className="h-4 w-4 text-zinc-500" />
-              )
+                  <ChevronUp className="h-4 w-4 text-zinc-500" />
+                )
               : (
-                <ChevronDown className="h-4 w-4 text-zinc-500" />
-              )}
+                  <ChevronDown className="h-4 w-4 text-zinc-500" />
+                )}
           </CollapsibleTrigger>
           <CollapsibleContent className="p-3 pt-0 border-t">
             <div className="space-y-3">

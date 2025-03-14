@@ -295,11 +295,11 @@ function RouteComponent() {
 
     return sortConfig.direction === 'ascending'
       ? (
-        <ArrowUp className="ml-1 h-4 w-4" />
-      )
+          <ArrowUp className="ml-1 h-4 w-4" />
+        )
       : (
-        <ArrowDown className="ml-1 h-4 w-4" />
-      );
+          <ArrowDown className="ml-1 h-4 w-4" />
+        );
   };
 
   // Handle view account details
@@ -759,65 +759,65 @@ function RouteComponent() {
                   <td className="p-3" onClick={e => e.stopPropagation()}>
                     {account.isRentedByUser
                       ? (
-                        <div className="flex gap-2">
+                          <div className="flex gap-2">
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="h-8 bg-blue-600 hover:bg-blue-700"
+                              onClick={() => handleLoginToAccount(account.id, account.game)}
+                            >
+                              <LogIn className="h-4 w-4 mr-1" />
+                              Login
+                            </Button>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button variant="outline" size="sm" className="h-8">
+                                  <ArrowDownToLine className="h-4 w-4 mr-1" />
+                                  Drop
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Drop Account & Refund</DialogTitle>
+                                  <DialogDescription>
+                                    Are you sure you want to drop this account? You will be refunded
+                                    {' '}
+                                    {account.refundableAmount}
+                                    {' '}
+                                    coins.
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md p-3 text-sm text-amber-800 dark:text-amber-300">
+                                  <p>
+                                    This action cannot be undone. The account will be immediately returned to the available
+                                    pool.
+                                  </p>
+                                </div>
+                                <DialogFooter className="flex gap-3 sm:justify-end">
+                                  <Button variant="outline">Cancel</Button>
+                                  <Button
+                                    variant="destructive"
+                                    onClick={() => handleDropAccount(account.id)}
+                                    className="flex items-center gap-1"
+                                  >
+                                    <ArrowDownToLine className="h-4 w-4" />
+                                    Drop & Refund
+                                  </Button>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
+                          </div>
+                        )
+                      : (
                           <Button
                             variant="default"
                             size="sm"
                             className="h-8 bg-blue-600 hover:bg-blue-700"
-                            onClick={() => handleLoginToAccount(account.id, account.game)}
+                            disabled={account.status !== 'Available'}
                           >
-                            <LogIn className="h-4 w-4 mr-1" />
-                            Login
+                            Rent Now
                           </Button>
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button variant="outline" size="sm" className="h-8">
-                                <ArrowDownToLine className="h-4 w-4 mr-1" />
-                                Drop
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Drop Account & Refund</DialogTitle>
-                                <DialogDescription>
-                                  Are you sure you want to drop this account? You will be refunded
-                                  {' '}
-                                  {account.refundableAmount}
-                                  {' '}
-                                  coins.
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md p-3 text-sm text-amber-800 dark:text-amber-300">
-                                <p>
-                                  This action cannot be undone. The account will be immediately returned to the available
-                                  pool.
-                                </p>
-                              </div>
-                              <DialogFooter className="flex gap-3 sm:justify-end">
-                                <Button variant="outline">Cancel</Button>
-                                <Button
-                                  variant="destructive"
-                                  onClick={() => handleDropAccount(account.id)}
-                                  className="flex items-center gap-1"
-                                >
-                                  <ArrowDownToLine className="h-4 w-4" />
-                                  Drop & Refund
-                                </Button>
-                              </DialogFooter>
-                            </DialogContent>
-                          </Dialog>
-                        </div>
-                      )
-                      : (
-                        <Button
-                          variant="default"
-                          size="sm"
-                          className="h-8 bg-blue-600 hover:bg-blue-700"
-                          disabled={account.status !== 'Available'}
-                        >
-                          Rent Now
-                        </Button>
-                      )}
+                        )}
                   </td>
                 </tr>
               ))}
@@ -910,77 +910,77 @@ function RouteComponent() {
               <div className="flex border-t border-zinc-100 dark:border-zinc-800" onClick={e => e.stopPropagation()}>
                 {account.isRentedByUser
                   ? (
-                    <>
-                      <Button
-                        variant="ghost"
-                        className="flex-1 rounded-none text-xs h-10 text-zinc-600 dark:text-zinc-400"
-                        onClick={() => handleLoginToAccount(account.id, account.game)}
-                      >
-                        <LogIn className="h-4 w-4 mr-1" />
-                        Login
-                      </Button>
-                      <div className="w-px bg-zinc-100 dark:bg-zinc-800" />
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            className="flex-1 rounded-none text-xs h-10 text-zinc-600 dark:text-zinc-400"
-                          >
-                            <ArrowDownToLine className="h-4 w-4 mr-1" />
-                            Drop
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Drop Account & Refund</DialogTitle>
-                            <DialogDescription>
-                              Are you sure you want to drop this account? You will be refunded
-                              {' '}
-                              {account.refundableAmount}
-                              {' '}
-                              coins.
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md p-3 text-sm text-amber-800 dark:text-amber-300">
-                            <p>
-                              This action cannot be undone. The account will be immediately returned to the available
-                              pool.
-                            </p>
-                          </div>
-                          <DialogFooter className="flex gap-3 sm:justify-end">
-                            <Button variant="outline">Cancel</Button>
+                      <>
+                        <Button
+                          variant="ghost"
+                          className="flex-1 rounded-none text-xs h-10 text-zinc-600 dark:text-zinc-400"
+                          onClick={() => handleLoginToAccount(account.id, account.game)}
+                        >
+                          <LogIn className="h-4 w-4 mr-1" />
+                          Login
+                        </Button>
+                        <div className="w-px bg-zinc-100 dark:bg-zinc-800" />
+                        <Dialog>
+                          <DialogTrigger asChild>
                             <Button
-                              variant="destructive"
-                              onClick={() => handleDropAccount(account.id)}
-                              className="flex items-center gap-1"
+                              variant="ghost"
+                              className="flex-1 rounded-none text-xs h-10 text-zinc-600 dark:text-zinc-400"
                             >
-                              <ArrowDownToLine className="h-4 w-4" />
-                              Drop & Refund
+                              <ArrowDownToLine className="h-4 w-4 mr-1" />
+                              Drop
                             </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                    </>
-                  )
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Drop Account & Refund</DialogTitle>
+                              <DialogDescription>
+                                Are you sure you want to drop this account? You will be refunded
+                                {' '}
+                                {account.refundableAmount}
+                                {' '}
+                                coins.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md p-3 text-sm text-amber-800 dark:text-amber-300">
+                              <p>
+                                This action cannot be undone. The account will be immediately returned to the available
+                                pool.
+                              </p>
+                            </div>
+                            <DialogFooter className="flex gap-3 sm:justify-end">
+                              <Button variant="outline">Cancel</Button>
+                              <Button
+                                variant="destructive"
+                                onClick={() => handleDropAccount(account.id)}
+                                className="flex items-center gap-1"
+                              >
+                                <ArrowDownToLine className="h-4 w-4" />
+                                Drop & Refund
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                      </>
+                    )
                   : (
-                    <>
-                      <Button
-                        variant="ghost"
-                        className="flex-1 rounded-none text-xs h-10 text-zinc-600 dark:text-zinc-400"
-                        onClick={handleViewAccountDetails}
-                      >
-                        View Details
-                      </Button>
-                      <div className="w-px bg-zinc-100 dark:bg-zinc-800" />
-                      <Button
-                        variant="ghost"
-                        className="flex-1 rounded-none text-xs h-10 text-zinc-600 dark:text-zinc-400"
-                        disabled={account.status !== 'Available'}
-                      >
-                        Rent Now
-                      </Button>
-                    </>
-                  )}
+                      <>
+                        <Button
+                          variant="ghost"
+                          className="flex-1 rounded-none text-xs h-10 text-zinc-600 dark:text-zinc-400"
+                          onClick={handleViewAccountDetails}
+                        >
+                          View Details
+                        </Button>
+                        <div className="w-px bg-zinc-100 dark:bg-zinc-800" />
+                        <Button
+                          variant="ghost"
+                          className="flex-1 rounded-none text-xs h-10 text-zinc-600 dark:text-zinc-400"
+                          disabled={account.status !== 'Available'}
+                        >
+                          Rent Now
+                        </Button>
+                      </>
+                    )}
               </div>
             </div>
           ))}

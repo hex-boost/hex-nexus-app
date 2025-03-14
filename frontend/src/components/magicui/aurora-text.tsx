@@ -119,14 +119,14 @@ export function AuroraText({
       colors.forEach((color, i) => {
         const x
           = canvas.width
-          * (0.5
-            + Math.cos(time * 0.8 + i * 1.3) * 0.4
-            + Math.sin(time * 0.5 + i * 0.7) * 0.2);
+            * (0.5
+              + Math.cos(time * 0.8 + i * 1.3) * 0.4
+              + Math.sin(time * 0.5 + i * 0.7) * 0.2);
         const y
           = canvas.height
-          * (0.5
-            + Math.sin(time * 0.7 + i * 1.5) * 0.4
-            + Math.cos(time * 0.6 + i * 0.8) * 0.2);
+            * (0.5
+              + Math.sin(time * 0.7 + i * 1.5) * 0.4
+              + Math.cos(time * 0.6 + i * 0.8) * 0.2);
 
         const gradient = ctx.createRadialGradient(
           x,
