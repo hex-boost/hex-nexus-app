@@ -1,34 +1,31 @@
+import { CollapseMenuButton } from '@/components/admin-panel/collapse-menu-button';
+import { Button } from '@/components/ui/button';
 
-import { Link, useLocation } from '@tanstack/react-router'
-import { LogOut } from "lucide-react";
-
-import { cn } from "@/lib/utils";
-import { getMenuList } from "@/lib/menu-list";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { CollapseMenuButton } from "@/components/admin-panel/collapse-menu-button";
 import {
   Tooltip,
-  TooltipTrigger,
   TooltipContent,
-  TooltipProvider
-} from "@/components/ui/tooltip";
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { getMenuList } from '@/lib/menu-list';
+import { cn } from '@/lib/utils';
+import { Link, useLocation } from '@tanstack/react-router';
 import clsx from 'clsx';
+import { LogOut } from 'lucide-react';
 
-interface MenuProps {
+type MenuProps = {
   isOpen: boolean | undefined;
-}
+};
 
 export function Menu({ isOpen }: MenuProps) {
-
-  const { pathname } = useLocation()
+  const { pathname } = useLocation();
   const menuList = getMenuList();
 
   return (
     <nav className="mt-8 h-full w-full">
       <ul className="flex flex-col min-h-[calc(100vh-48px-36px-16px-32px)] lg:min-h-[calc(100vh-32px-40px-32px)] items-start space-y-1 px-2">
         {menuList.map(({ menus }, index) => (
-          <li className={cn("w-full")} key={index}>
+          <li className={cn('w-full')} key={index}>
 
             {menus.map(
               ({ href, label, icon: Icon, submenus }, index) =>
@@ -38,22 +35,22 @@ export function Menu({ isOpen }: MenuProps) {
                       <Tooltip delayDuration={100}>
                         <TooltipTrigger asChild>
                           <Button
-                            className={clsx("hover:bg-primary/10 w-full   rounded-md justify-start h-10 mb-4", pathname.endsWith(href) ? "bg-primary/10 text-blue-400" : "bg-transparent text-muted-foreground  hover:text-blue-400/80")}
+                            className={clsx('hover:bg-primary/10 w-full   rounded-md justify-start h-10 mb-4', pathname.endsWith(href) ? 'bg-primary/10 text-blue-400' : 'bg-transparent text-muted-foreground  hover:text-blue-400/80')}
                             asChild
                           >
                             <Link to={href}>
                               <span
-                                className={cn(isOpen === false ? "" : "mr-4")}
+                                className={cn(isOpen === false ? '' : 'mr-4')}
                               >
                                 {/* @ts-ignore */}
                                 <Icon size={20} className="stroke-2" />
                               </span>
                               <p
                                 className={cn(
-                                  "max-w-[200px] truncate",
+                                  'max-w-[200px] truncate',
                                   isOpen === false
-                                    ? "-translate-x-96 opacity-0"
-                                    : "translate-x-0 opacity-100"
+                                    ? '-translate-x-96 opacity-0'
+                                    : 'translate-x-0 opacity-100',
                                 )}
                               >
                                 {label}
@@ -81,7 +78,7 @@ export function Menu({ isOpen }: MenuProps) {
                       isOpen={isOpen}
                     />
                   </div>
-                )
+                ),
             )}
           </li>
         ))}
@@ -94,13 +91,13 @@ export function Menu({ isOpen }: MenuProps) {
                   variant="outline"
                   className="w-full justify-center h-10 mt-5"
                 >
-                  <span className={cn(isOpen === false ? "" : "mr-4")}>
+                  <span className={cn(isOpen === false ? '' : 'mr-4')}>
                     <LogOut size={18} />
                   </span>
                   <p
                     className={cn(
-                      "whitespace-nowrap",
-                      isOpen === false ? "opacity-0 hidden" : "opacity-100"
+                      'whitespace-nowrap',
+                      isOpen === false ? 'opacity-0 hidden' : 'opacity-100',
                     )}
                   >
                     Sign out

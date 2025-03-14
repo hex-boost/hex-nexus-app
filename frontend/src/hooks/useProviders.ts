@@ -1,5 +1,5 @@
-import { providerAuth, strapiClient } from "@/lib/strapi";
-import { useUserStore } from "@/stores/useUserStore";
+import { providerAuth, strapiClient } from '@/lib/strapi';
+import { useUserStore } from '@/stores/useUserStore';
 
 export async function authenticateProviders(access_token: string) {
   try {
@@ -15,17 +15,12 @@ export async function authenticateProviders(access_token: string) {
     // Substituição de cookie por localStorage
     localStorage.removeItem('authToken');
 
-
-
-
     await strapiClient.uploadImage(avatarUrl, user.id);
     localStorage.setItem('authToken', jwt);
-    const updatedUser = strapiClient.axios.get('/api/users/me')
+    const updatedUser = strapiClient.axios.get('/api/users/me');
     useUserStore().login(updatedUser, jwt);
-
   } catch (error) {
     // Limpeza de tokens em caso de erro
     localStorage.removeItem('authToken');
   }
-
 }

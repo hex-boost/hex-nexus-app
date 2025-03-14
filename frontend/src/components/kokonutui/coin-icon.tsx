@@ -14,6 +14,5 @@ export default function CoinIcon({ className }: { className?: string }) {
       <path d="M12 8v8" />
       <path d="M8 12h8" />
     </svg>
-  )
+  );
 }
-

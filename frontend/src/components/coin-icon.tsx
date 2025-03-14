@@ -1,4 +1,3 @@
-
 export function CoinIcon({ className }: { className?: string }) {
   return (
     <svg

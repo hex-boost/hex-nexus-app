@@ -1,11 +1,12 @@
+import { Link } from '@tanstack/react-router';
 
-import { Link } from '@tanstack/react-router'
 export function Footer() {
   return (
     <div className="z-20 w-full bg-background/95 shadow backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-4 md:mx-8 flex h-14 items-center">
         <p className="text-xs md:text-sm leading-loose text-muted-foreground text-left">
-          Built on top of{" "}
+          Built on top of
+          {' '}
           <Link
             to="/"
             target="_blank"
@@ -14,7 +15,8 @@ export function Footer() {
           >
             shadcn/ui
           </Link>
-          . The source code is available on{" "}
+          . The source code is available on
+          {' '}
           <Link
             to="/"
             target="_blank"

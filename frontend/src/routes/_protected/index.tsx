@@ -1,5 +1,5 @@
-import { HomeDashboard } from '@/components/HomeDashboard'
-import { createFileRoute, redirect, Outlet } from '@tanstack/react-router'
+import { HomeDashboard } from '@/components/HomeDashboard';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_protected/')({
   beforeLoad: async ({ context, location }) => {
@@ -7,8 +7,8 @@ export const Route = createFileRoute('/_protected/')({
       throw redirect({
         to: '/login',
         search: { redirect: location.href },
-      })
+      });
     }
   },
   component: () => <HomeDashboard />,
-})
+});

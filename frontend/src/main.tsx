@@ -1,10 +1,10 @@
-import React from 'react'
-import { routeTree } from './routeTree.gen.ts'
-import ReactDOM from 'react-dom/client'
-import './index.css'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createRouter, RouterProvider } from '@tanstack/react-router';
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { routeTree } from './routeTree.gen.ts';
 import { useUserStore } from './stores/useUserStore.ts';
+import './index.css';
 
 // import { ReactQueryDevtoolsPanel } from '@tanstack/react-query-devtools'
 const queryClient = new QueryClient({
@@ -20,22 +20,21 @@ const router = createRouter({
   context: {
     auth: {
       isAuthenticated: () => useUserStore.getState().isAuthenticated(),
-    }
-  }
-}
-)
-// Register the router instance for type safety
-declare module '@tanstack/react-router' {
-  interface Register {
-    router: typeof router
-  }
-}
+    },
+  },
+},
+);
+// declare module '@tanstack/react-router' {
+//   type Register = {
+//     router: typeof router;
+//   };
+// }
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
 
-    {/*<ReactQueryDevtoolsPanel client={queryClient} />*/}
+    {/* <ReactQueryDevtoolsPanel client={queryClient} /> */}
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
     </QueryClientProvider>
   </React.StrictMode>,
-)
+);

@@ -1,6 +1,5 @@
-
-import { ProviderAuth, Strapi, UserAuth, UserBase } from "strapi-ts-sdk"
-import { StrapiDefaultOptions } from "strapi-ts-sdk/dist/infra/strapi-sdk/src";
+import type { StrapiDefaultOptions } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
+import { ProviderAuth, Strapi, UserAuth, UserBase } from 'strapi-ts-sdk';
 
 const defaults: StrapiDefaultOptions = {
   url: import.meta.env.VITE_BACKEND_URL || 'http://localhost:1337',
@@ -13,8 +12,8 @@ const defaults: StrapiDefaultOptions = {
   },
   axiosOptions: {},
 };
-export const strapiClient = new Strapi({ ...defaults })
+export const strapiClient = new Strapi({ ...defaults });
 
-export const userAuth = new UserAuth(strapiClient)
-export const providerAuth = new ProviderAuth(strapiClient, userAuth)
-export const userBase = new UserBase(strapiClient)
+export const userAuth = new UserAuth(strapiClient);
+export const providerAuth = new ProviderAuth(strapiClient, userAuth);
+export const userBase = new UserBase(strapiClient);

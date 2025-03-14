@@ -1,8 +1,8 @@
-import { CreditCard, Shield, Clock, BarChart2 } from "lucide-react"
-import SubscriptionStatus from "./subscription-status"
-import CurrentlyRentedAccounts from "./currently-rented-accounts"
-import LastRentedAccount from "./last-rented-account"
-import RecentTransactions from "./recent-transactions"
+import { BarChart2, Clock, CreditCard, Shield } from 'lucide-react';
+import CurrentlyRentedAccounts from './currently-rented-accounts';
+import LastRentedAccount from './last-rented-account';
+import RecentTransactions from './recent-transactions';
+import SubscriptionStatus from './subscription-status';
 
 export default function () {
   return (
@@ -40,6 +40,5 @@ export default function () {
         <RecentTransactions />
       </div>
     </div>
-  )
+  );
 }
-

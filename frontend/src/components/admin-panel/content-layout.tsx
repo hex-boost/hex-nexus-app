@@ -1,9 +1,9 @@
-import { Navbar } from "@/components/admin-panel/navbar";
+import { Navbar } from '@/components/admin-panel/navbar';
 
-interface ContentLayoutProps {
+type ContentLayoutProps = {
   title: string;
   children: React.ReactNode;
-}
+};
 
 export function ContentLayout({ title, children }: ContentLayoutProps) {
   return (

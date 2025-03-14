@@ -1,4 +1,4 @@
-import { User, Home, Star } from '@geist-ui/icons';
+import { Home, Star, User } from '@geist-ui/icons';
 
 type Submenu = {
   href: string;
@@ -21,22 +21,22 @@ export function getMenuList(): Group[] {
     {
       menus: [
         {
-          href: "/",
-          label: "Dashboard",
+          href: '/',
+          label: 'Dashboard',
           icon: Home,
-          submenus: []
+          submenus: [],
         },
         {
-          href: "/accounts",
-          label: "Accounts",
-          icon: User
+          href: '/accounts',
+          label: 'Accounts',
+          icon: User,
         },
         {
-          href: "/subscription",
-          label: "Subscription",
-          icon: Star
-        }
-      ]
-    }
+          href: '/subscription',
+          label: 'Subscription',
+          icon: Star,
+        },
+      ],
+    },
   ];
 }

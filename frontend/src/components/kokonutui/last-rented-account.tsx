@@ -1,55 +1,55 @@
-import { cn } from "@/lib/utils"
-import { Shield, Clock, CoinsIcon as CoinIcon } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { Clock, CoinsIcon as CoinIcon, Shield } from 'lucide-react';
 
 export default function LastRentedAccount() {
   // Example data for last rented account
   const lastAccount = {
-    id: "L4X92C",
-    tier: "Diamond",
-    rank: "III",
-    rentedAt: "2024-03-15T14:20:00Z",
+    id: 'L4X92C',
+    tier: 'Diamond',
+    rank: 'III',
+    rentedAt: '2024-03-15T14:20:00Z',
     rentalDuration: 6, // hours
     champions: 152,
     skins: 93,
     cost: 2800,
-  }
+  };
 
   // Format rental time
   const formatRentalTime = (hours: number) => {
     if (hours < 24) {
-      return `${hours} hours`
+      return `${hours} hours`;
     } else {
-      const days = Math.floor(hours / 24)
-      const remainingHours = hours % 24
-      return remainingHours > 0 ? `${days}d ${remainingHours}h` : `${days} days`
+      const days = Math.floor(hours / 24);
+      const remainingHours = hours % 24;
+      return remainingHours > 0 ? `${days}d ${remainingHours}h` : `${days} days`;
     }
-  }
+  };
 
   // Helper function to get rank color
   const getRankColor = (tier: string) => {
     switch (tier.toLowerCase()) {
-      case "iron":
-      case "bronze":
-        return "text-zinc-600 dark:text-zinc-400"
-      case "silver":
-        return "text-zinc-400 dark:text-zinc-300"
-      case "gold":
-        return "text-amber-500 dark:text-amber-400"
-      case "platinum":
-        return "text-cyan-500 dark:text-cyan-400"
-      case "diamond":
-        return "text-blue-500 dark:text-blue-400"
-      case "master":
-        return "text-purple-500 dark:text-purple-400"
-      case "grandmaster":
-        return "text-red-500 dark:text-red-400"
-      case "challenger":
-        return "text-yellow-500 dark:text-yellow-400"
+      case 'iron':
+      case 'bronze':
+        return 'text-zinc-600 dark:text-zinc-400';
+      case 'silver':
+        return 'text-zinc-400 dark:text-zinc-300';
+      case 'gold':
+        return 'text-amber-500 dark:text-amber-400';
+      case 'platinum':
+        return 'text-cyan-500 dark:text-cyan-400';
+      case 'diamond':
+        return 'text-blue-500 dark:text-blue-400';
+      case 'master':
+        return 'text-purple-500 dark:text-purple-400';
+      case 'grandmaster':
+        return 'text-red-500 dark:text-red-400';
+      case 'challenger':
+        return 'text-yellow-500 dark:text-yellow-400';
       default:
-        return "text-zinc-600 dark:text-zinc-400"
+        return 'text-zinc-600 dark:text-zinc-400';
     }
-  }
+  };
 
   return (
     <div className="w-full">
@@ -64,15 +64,17 @@ export default function LastRentedAccount() {
               <div className="flex items-center gap-1">
                 <Shield className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                 <span className={`text-sm font-medium ${getRankColor(lastAccount.tier)}`}>
-                  {lastAccount.tier} {lastAccount.rank}
+                  {lastAccount.tier}
+                  {' '}
+                  {lastAccount.rank}
                 </span>
               </div>
             </div>
           </div>
           <div
             className={cn(
-              "px-2 py-1 rounded-full text-xs font-medium",
-              "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
+              'px-2 py-1 rounded-full text-xs font-medium',
+              'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
             )}
           >
             Previously Rented
@@ -109,6 +111,5 @@ export default function LastRentedAccount() {
         <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">Rent Again</Button>
       </div>
     </div>
-  )
+  );
 }
-

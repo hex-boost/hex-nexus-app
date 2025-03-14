@@ -1,16 +1,17 @@
-import { cn } from "@/lib/utils"
-import hexNexusAuthBg from "@/assets/hex-nexus-auth-bg.png"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { FlickeringGrid } from "./magicui/flickering-grid"
-import { userAuth } from "@/lib/strapi"
-import { useState } from "react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@radix-ui/react-tabs"
-import { useMutation } from "@tanstack/react-query"
-import { useUserStore } from "@/stores/useUserStore"
-import { StartDiscordOAuth } from '@main'
+import hexNexusAuthBg from '@/assets/logo-hex-boost.svg';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { userAuth } from '@/lib/strapi';
+import { cn } from '@/lib/utils';
+import { useUserStore } from '@/stores/useUserStore';
+import { StartDiscordOAuth } from '@main';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@radix-ui/react-tabs';
+import { useMutation } from '@tanstack/react-query';
+import { useState } from 'react';
+import { FlickeringGrid } from './magicui/flickering-grid';
+import { Globe, GLOBE_CONFIG } from './magicui/globe';
 
 function DiscordSvg() {
   return (
@@ -37,21 +38,20 @@ function DiscordSvg() {
       </g>
     </svg>
 
-  )
+  );
 }
 
 export function LoginForm({
   className,
   ...props
-}: React.ComponentProps<"div">) {
-
-  const [activeTab, setActiveTab] = useState("login")
-  const { login } = useUserStore()
+}: React.ComponentProps<'div'>) {
+  const [activeTab, setActiveTab] = useState('login');
+  const { login } = useUserStore();
   const [formData, setFormData] = useState({
-    email: "",
-    username: "",
-    password: ""
-  })
+    email: '',
+    username: '',
+    password: '',
+  });
   const loginMutation = useMutation(
     {
       mutationFn:
@@ -59,14 +59,14 @@ export function LoginForm({
         async () => {
           return await userAuth.login({
             identifier: formData.email,
-            password: formData.password
-          })
+            password: formData.password,
+          });
         },
 
-      onSuccess: (data) => login(data.user, data.jwt),
-      onError: (error) => console.error("Erro na autenticação:", error)
-    }
-  )
+      onSuccess: data => login(data.user, data.jwt),
+      onError: error => console.error('Erro na autenticação:', error),
+    },
+  );
 
   const registerMutation = useMutation(
     {
@@ -75,58 +75,71 @@ export function LoginForm({
           return await userAuth.register({
             username: formData.username,
             email: formData.email,
-            password: formData.password
-          })
+            password: formData.password,
+          });
         },
-      onSuccess: (data) => login(data.user, data.jwt),
-      onError: (error) => console.error("Erro no registro:", error)
-    }
-  )
+      onSuccess: data => login(data.user, data.jwt),
+      onError: error => console.error('Erro no registro:', error),
+    },
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (activeTab === "login") {
-      loginMutation.mutate()
+    e.preventDefault();
+    if (activeTab === 'login') {
+      loginMutation.mutate();
     } else {
-      registerMutation.mutate()
+      registerMutation.mutate();
     }
-  }
+  };
   const discordLoginMutation = useMutation(
     {
       mutationFn:
         async () => {
           const result = await StartDiscordOAuth();
-          console.log(result)
+          console.log(result);
           return { ...result };
         },
       onSuccess: (data) => {
-        login(data.user, data.jwt)
+        login(data.user, data.jwt);
 
         console.log('Login com Discord concluído com sucesso!');
       },
       onError: (error) => {
         console.error('Erro no login:', error);
-      }
-    }
+      },
+    },
   );
 
-  const isLoading = activeTab === "login" ? loginMutation.isPending : registerMutation.isPending
+  const isLoading = activeTab === 'login' ? loginMutation.isPending : registerMutation.isPending;
   return (
 
     <div className=" min-h-screen  flex items-center justify-center  bg-background ">
       <div
-        className={cn("flex justify-center items-center w-[1280px] h-[720px] flex-col gap-6", className)} {...props}>
+        className={cn('flex justify-center items-center w-[1280px] h-[720px] flex-col gap-6', className)}
+        {...props}
+      >
         <Card className="border-none overflow-hidden w-full h-full">
           <CardContent className="grid  w-full h-full p-0 md:grid-cols-2">
 
-            <div className="relative hidden  md:block">
-              <div className="absolute inset-0  flex items-center h-full justify-center">
-
-                <img
-                  src={hexNexusAuthBg}
-                  alt="Image"
-                  className="  object-cover z-10  "
-                />
+            <div className="relative h-full hidden  md:block">
+              <div className="absolute inset-0  flex items-start pt-6 h-full justify-center">
+                <div className="flex flex-col items-center p-8">
+                  <img
+                    src={hexNexusAuthBg}
+                    alt="Hex Nexus Logo"
+                    width={64}
+                    height={64}
+                    className="object-cover z-10 mb-4"
+                  />
+                  <h1 className="text-4xl font-bold mb-2">Hex Nexus</h1>
+                  <p className="text-base text-muted-foreground font-medium text-center mb-1">
+                    The number one place to find your account.
+                    <br />
+                    <strong className="font-medium text-white">Never waste your time </strong>
+                    {' '}
+                    searching for accounts again.
+                  </p>
+                </div>
 
                 <FlickeringGrid
                   className="absolute opacity-50 inset-0 z-0 size-full"
@@ -137,20 +150,38 @@ export function LoginForm({
                   maxOpacity={0.2}
                   flickerChance={0.1}
                 />
+
+                <Globe
+                  className="!-bottom-40 inset-auto"
+                  config={
+                    {
+                      ...GLOBE_CONFIG,
+                      dark: 0.8,
+                      baseColor: [0.2706, 0.3216, 0.7216], // #4552B8
+                      markerColor: [0.3020, 0.2824, 0.5137], // #4D4883
+                      glowColor: [0.5176, 0.6392, 0.9098], // #8
+                    }
+                  }
+                />
               </div>
             </div>
 
-            <Tabs value={activeTab} onValueChange={setActiveTab}
-
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
               className="flex justify-center w-full items-center p-6 md:p-8"
             >
-              <form onSubmit={handleSubmit}
-                className="flex flex-col gap-6 justify-center max-w-[480px]  w-full items-center ">
+              <form
+                onSubmit={handleSubmit}
+                className="flex flex-col gap-6 justify-center max-w-[480px]  w-full items-center "
+              >
 
                 <TabsContent
 
                   key="login"
-                  className="w-full flex flex-col gap-6" value="login">
+                  className="w-full flex flex-col gap-6"
+                  value="login"
+                >
                   <div className="flex w-full flex-col items-center text-center">
                     <h1 className="text-2xl font-bold">Bem-vindo de volta</h1>
                     <p className="text-balance text-muted-foreground">
@@ -167,7 +198,7 @@ export function LoginForm({
                       placeholder="exemplo@email.com"
                       required
                       value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      onChange={e => setFormData({ ...formData, email: e.target.value })}
                     />
                   </div>
                   <div className="grid gap-2">
@@ -186,7 +217,7 @@ export function LoginForm({
                       type="password"
                       required
                       value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      onChange={e => setFormData({ ...formData, password: e.target.value })}
                     />
                   </div>
                 </TabsContent>
@@ -206,7 +237,7 @@ export function LoginForm({
                       id="username"
                       required
                       value={formData.username}
-                      onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                      onChange={e => setFormData({ ...formData, username: e.target.value })}
                     />
                   </div>
                   <div className="grid gap-2">
@@ -217,7 +248,7 @@ export function LoginForm({
                       placeholder="exemplo@email.com"
                       required
                       value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      onChange={e => setFormData({ ...formData, email: e.target.value })}
                     />
                   </div>
                   <div className="grid gap-2">
@@ -227,56 +258,67 @@ export function LoginForm({
                       type="password"
                       required
                       value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      onChange={e => setFormData({ ...formData, password: e.target.value })}
                     />
                   </div>
                 </TabsContent>
 
                 <Button loading={isLoading} type="submit" className="w-full" disabled={isLoading}>
-                  {activeTab === "login"
-                    ? isLoading ? "Entrando..." : "Entrar"
-                    : isLoading ? "Cadastrando..." : "Cadastrar"}
+                  {activeTab === 'login'
+                    ? isLoading ? 'Entrando...' : 'Entrar'
+                    : isLoading ? 'Cadastrando...' : 'Cadastrar'}
                 </Button>
 
                 <div
-                  className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
+                  className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border"
+                >
                   <span className="relative z-10 bg-background px-2 text-muted-foreground">
                     Ou continue com
                   </span>
                 </div>
 
-                <Button type="button" disabled={discordLoginMutation.isPending} loading={discordLoginMutation.isPending} onClick={() => discordLoginMutation.mutate()} variant="outline"
-                  className="w-full space-x-2">
+                <Button
+                  type="button"
+                  disabled={discordLoginMutation.isPending}
+                  loading={discordLoginMutation.isPending}
+                  onClick={() => discordLoginMutation.mutate()}
+                  variant="outline"
+                  className="w-full space-x-2"
+                >
 
                   {
-                    !discordLoginMutation.isPending &&
-                    <DiscordSvg />
+                    !discordLoginMutation.isPending
+                    && <DiscordSvg />
                   }
                   <p>Entrar com Discord</p>
                 </Button>
 
                 <TabsList className="text-center text-sm">
-                  {activeTab === "login" ? (
-                    <>
-                      Não tem uma conta?{" "}
-                      <TabsTrigger
-                        value="register"
-                        className="underline underline-offset-4 cursor-pointer"
-                      >
-                        Cadastre-se
-                      </TabsTrigger>
-                    </>
-                  ) : (
-                    <>
-                      Já tem uma conta?{" "}
-                      <TabsTrigger
-                        value="login"
-                        className="underline underline-offset-4 cursor-pointer"
-                      >
-                        Faça login
-                      </TabsTrigger>
-                    </>
-                  )}
+                  {activeTab === 'login'
+                    ? (
+                      <>
+                        Não tem uma conta?
+                        {' '}
+                        <TabsTrigger
+                          value="register"
+                          className="underline underline-offset-4 cursor-pointer"
+                        >
+                          Cadastre-se
+                        </TabsTrigger>
+                      </>
+                    )
+                    : (
+                      <>
+                        Já tem uma conta?
+                        {' '}
+                        <TabsTrigger
+                          value="login"
+                          className="underline underline-offset-4 cursor-pointer"
+                        >
+                          Faça login
+                        </TabsTrigger>
+                      </>
+                    )}
                 </TabsList>
 
               </form>
@@ -286,5 +328,5 @@ export function LoginForm({
         </Card>
       </div>
     </div>
-  )
+  );
 }

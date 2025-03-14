@@ -1,39 +1,39 @@
-import { cn } from "@/lib/utils"
-import { Shield, Calendar, AlertCircle, CheckCircle2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { AlertCircle, Calendar, CheckCircle2, Shield } from 'lucide-react';
 
-interface SubscriptionStatusProps {
-  className?: string
-}
+type SubscriptionStatusProps = {
+  className?: string;
+};
 
 export default function SubscriptionStatus({ className }: SubscriptionStatusProps) {
   // Example subscription data
   const subscription = {
-    tier: "Premium",
-    status: "active",
-    expiresAt: "2024-04-15T23:59:59Z",
+    tier: 'Premium',
+    status: 'active',
+    expiresAt: '2024-04-15T23:59:59Z',
     features: [
-      "Unlimited account rentals",
-      "Priority customer support",
-      "Exclusive high-tier accounts",
-      "Discounted rental rates",
+      'Unlimited account rentals',
+      'Priority customer support',
+      'Exclusive high-tier accounts',
+      'Discounted rental rates',
     ],
-  }
+  };
 
   // Calculate days remaining
-  const expiryDate = new Date(subscription.expiresAt)
-  const today = new Date()
-  const daysRemaining = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+  const expiryDate = new Date(subscription.expiresAt);
+  const today = new Date();
+  const daysRemaining = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
   // Format expiry date
-  const formattedExpiryDate = expiryDate.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  })
+  const formattedExpiryDate = expiryDate.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
 
   return (
-    <div className={cn("w-full", className)}>
+    <div className={cn('w-full', className)}>
       <div className="bg-zinc-50 dark:bg-zinc-800/30 rounded-xl p-5 mb-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
@@ -42,23 +42,25 @@ export default function SubscriptionStatus({ className }: SubscriptionStatusProp
           </h3>
           <div
             className={cn(
-              "px-3 py-1 rounded-full text-xs font-medium",
-              subscription.status === "active"
-                ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400"
-                : "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400",
+              'px-3 py-1 rounded-full text-xs font-medium',
+              subscription.status === 'active'
+                ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
+                : 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400',
             )}
           >
-            {subscription.status === "active" ? (
-              <div className="flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                Active
-              </div>
-            ) : (
-              <div className="flex items-center gap-1">
-                <AlertCircle className="w-3.5 h-3.5" />
-                Expired
-              </div>
-            )}
+            {subscription.status === 'active'
+              ? (
+                  <div className="flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Active
+                  </div>
+                )
+              : (
+                  <div className="flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    Expired
+                  </div>
+                )}
           </div>
         </div>
 
@@ -67,7 +69,12 @@ export default function SubscriptionStatus({ className }: SubscriptionStatusProp
           <div>
             <p className="text-xs text-zinc-600 dark:text-zinc-400">Expires on</p>
             <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-              {formattedExpiryDate} ({daysRemaining} days)
+              {formattedExpiryDate}
+              {' '}
+              (
+              {daysRemaining}
+              {' '}
+              days)
             </p>
           </div>
         </div>
@@ -94,6 +101,5 @@ export default function SubscriptionStatus({ className }: SubscriptionStatusProp
         </Button>
       </div>
     </div>
-  )
+  );
 }
-

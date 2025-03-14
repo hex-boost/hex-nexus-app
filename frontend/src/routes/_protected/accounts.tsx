@@ -23,7 +23,7 @@ import { Badge } from "@/components/ui/badge"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { CoinIcon } from '@/components/coin-icon'
-import { CHAMPIONS, SKINS, TIERS, STATUSES, REGIONS, RANKS, COMPANIES, ACCOUNTS } from '@/components/accountsMock'
+import { CHAMPIONS, SKINS, TIERS, STATUSES, REGIONS, RANKS, COMPANIES, ACCOUNTS, Account } from '@/components/accountsMock'
 
 function MultiSelect({
   options,
