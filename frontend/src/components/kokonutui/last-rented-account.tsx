@@ -115,7 +115,7 @@ export default function LastRentedAccount() {
         </div>
       </div>
 
-      <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white ml-4">
+      <Button size="sm" className="bg-blue-600 hover:bg-blue-700 py-2 text-white ml-4">
         Rent Again
       </Button>
     </div>

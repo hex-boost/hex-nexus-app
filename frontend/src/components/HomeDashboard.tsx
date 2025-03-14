@@ -5,11 +5,11 @@ export function HomeDashboard() {
   const { user } = useUserStore();
   return (
     <>
-      <h1 className="text-5xl mb-6 pt-12">
-        Welcome back
+      <h1 className="text-5xl  pt-12 mb-6">
+        Welcome
         {' '}
 
-        {user.username}
+        {user?.username}
       </h1>
       <Dashboard />
     </>
