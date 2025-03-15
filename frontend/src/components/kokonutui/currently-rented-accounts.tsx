@@ -87,7 +87,7 @@ export default function CurrentlyRentedAccounts({ accounts = ACCOUNTS, className
   };
 
   return (
-    <div className={cn('w-full', className)}>
+    <div className={cn('w-full flex h-full flex-col justify-between', className)}>
       <div className="space-y-1 mb-4">
         {accounts.map((account) => {
           const { days, hours } = getTimeRemaining(account.expiresAt);
@@ -105,6 +105,7 @@ export default function CurrentlyRentedAccounts({ accounts = ACCOUNTS, className
             >
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800">
+
                   <User className="w-4 h-4 text-zinc-900 dark:text-zinc-100" />
                 </div>
                 <div>
@@ -147,7 +148,7 @@ export default function CurrentlyRentedAccounts({ accounts = ACCOUNTS, className
         })}
       </div>
 
-      <Button variant="outline" size="sm" className="w-full text-xs flex items-center justify-center gap-1">
+      <Button variant="outline" className=" w-full  flex items-center justify-center gap-1">
         <span>View All Rented Accounts</span>
         <ArrowRight className="w-3.5 h-3.5" />
       </Button>

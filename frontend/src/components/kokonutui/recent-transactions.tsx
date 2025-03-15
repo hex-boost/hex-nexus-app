@@ -11,6 +11,7 @@ import {
   User,
   Wallet,
 } from 'lucide-react';
+import { Button } from '../ui/button';
 
 type Transaction = {
   id: string;
@@ -136,40 +137,47 @@ export default function RecentTransactions({ transactions = TRANSACTIONS, classN
                 </span>
                 {transaction.type === 'deposit' || transaction.type === 'refund'
                   ? (
-                      <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                    )
+                    <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  )
                   : (
-                      <ArrowUpRight className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
-                    )}
+                    <ArrowUpRight className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
+                  )}
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      <button
-        type="button"
-        className={cn(
-          'w-full flex items-center justify-center gap-2',
-          'py-2 px-3 rounded-lg',
-          'text-xs font-medium',
-          'bg-gradient-to-r from-blue-600 to-blue-500',
-          'dark:from-blue-500 dark:to-blue-400',
-          'text-white',
-          'hover:from-blue-700 hover:to-blue-600',
-          'dark:hover:from-blue-600 dark:hover:to-blue-500',
-          'shadow-sm hover:shadow',
-          'transform transition-all duration-200',
-          'hover:-translate-y-0.5',
-          'active:translate-y-0',
-          'focus:outline-none focus:ring-2',
-          'focus:ring-blue-500 dark:focus:ring-blue-400',
-          'focus:ring-offset-2 dark:focus:ring-offset-zinc-900',
-        )}
+      <Button
+        variant="outline"
+        className="w-full"
       >
         <span>View All Transactions</span>
         <ArrowRight className="w-3.5 h-3.5" />
-      </button>
+      </Button>
+      {/* <button */}
+      {/*   type="button" */}
+      {/*   className={cn( */}
+      {/*     'w-full flex items-center justify-center gap-2', */}
+      {/*     'py-2 px-3 rounded-lg', */}
+      {/*     'text-xs font-medium', */}
+      {/*     'bg-gradient-to-r from-blue-600 to-blue-500', */}
+      {/*     'dark:from-blue-500 dark:to-blue-400', */}
+      {/*     'text-white', */}
+      {/*     'hover:from-blue-700 hover:to-blue-600', */}
+      {/*     'dark:hover:from-blue-600 dark:hover:to-blue-500', */}
+      {/*     'shadow-sm hover:shadow', */}
+      {/*     'transform transition-all duration-200', */}
+      {/*     'hover:-translate-y-0.5', */}
+      {/*     'active:translate-y-0', */}
+      {/*     'focus:outline-none focus:ring-2', */}
+      {/*     'focus:ring-blue-500 dark:focus:ring-blue-400', */}
+      {/*     'focus:ring-offset-2 dark:focus:ring-offset-zinc-900', */}
+      {/*   )} */}
+      {/* > */}
+      {/*   <span>View All Transactions</span> */}
+      {/*   <ArrowRight className="w-3.5 h-3.5" /> */}
+      {/* </button> */}
     </div>
   );
 }

@@ -157,11 +157,11 @@ export default function List02({ transactions = TRANSACTIONS, className }: List0
                   </span>
                   {transaction.type === 'incoming'
                     ? (
-                        <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                      )
+                      <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    )
                     : (
-                        <ArrowUpRight className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
-                      )}
+                      <ArrowUpRight className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
+                    )}
                 </div>
               </div>
             </div>

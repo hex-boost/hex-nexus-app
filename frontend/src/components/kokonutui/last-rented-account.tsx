@@ -1,10 +1,10 @@
-'use client';
-
 import { Button } from '@/components/ui/button';
+import { useMapping } from '@/lib/useMapping';
 import { CoinsIcon as CoinIcon } from 'lucide-react';
+import { Badge } from '../ui/badge';
 
 export default function LastRentedAccount() {
-  // Example data for last rented account
+  const { getRankColor, getGameIcon } = useMapping();
   const lastAccount = {
     id: 'L4X92C',
     game: 'lol',
@@ -16,8 +16,6 @@ export default function LastRentedAccount() {
     skins: 93,
     cost: 2800,
   };
-
-  // Format rental time
   const formatRentalTime = (hours: number) => {
     if (hours < 24) {
       return `${hours} hours`;
@@ -28,50 +26,16 @@ export default function LastRentedAccount() {
     }
   };
 
-  // Helper function to get rank color
-  const getRankColor = (tier: string) => {
-    switch (tier.toLowerCase()) {
-      case 'iron':
-      case 'bronze':
-        return 'text-zinc-600 dark:text-zinc-400';
-      case 'silver':
-        return 'text-zinc-400 dark:text-zinc-300';
-      case 'gold':
-        return 'text-amber-500 dark:text-amber-400';
-      case 'platinum':
-        return 'text-cyan-500 dark:text-cyan-400';
-      case 'diamond':
-        return 'text-blue-500 dark:text-blue-400';
-      case 'master':
-        return 'text-purple-500 dark:text-purple-400';
-      case 'grandmaster':
-        return 'text-red-500 dark:text-red-400';
-      case 'challenger':
-        return 'text-yellow-500 dark:text-yellow-400';
-      default:
-        return 'text-zinc-600 dark:text-zinc-400';
-    }
-  };
-
-  // Helper function to get game icon
-  const getGameIcon = (game: 'lol' | 'valorant') => {
-    if (game === 'lol') {
-      return '/placeholder.svg?height=24&width=24&text=LoL';
-    } else {
-      return '/placeholder.svg?height=24&width=24&text=VAL';
-    }
-  };
-
   return (
-    <div className="bg-zinc-50 dark:bg-zinc-800/30 rounded-xl p-4 flex items-center">
+    <div className="rounded-xl p-4 flex items-center">
       <div className="flex items-center gap-4 flex-1">
         <div className="flex items-center gap-2">
-          <img
-            src={getGameIcon(lastAccount.game as 'lol' | 'valorant') || '/placeholder.svg'}
-            alt={lastAccount.game === 'lol' ? 'League of Legends' : 'Valorant'}
-            className="w-6 h-6"
-          />
-          <span className="text-sm font-medium">{lastAccount.id}</span>
+
+          {getGameIcon(lastAccount.game as 'lol' | 'valorant', { size: 32, className: 'text-blue-300 w-6 h-6' })}
+          <span className="text-sm font-medium">
+            #
+            {lastAccount.id}
+          </span>
         </div>
 
         <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-700"></div>
@@ -84,6 +48,8 @@ export default function LastRentedAccount() {
           </span>
         </div>
 
+        <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-700"></div>
+        <Badge>Available</Badge>
         <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-700"></div>
 
         <div className="flex items-center gap-1">
@@ -115,7 +81,7 @@ export default function LastRentedAccount() {
         </div>
       </div>
 
-      <Button size="sm" className="bg-blue-600 hover:bg-blue-700 py-2 text-white ml-4">
+      <Button size="lg" className="bg-blue-600 hover:bg-blue-700 py-2 text-white ml-4">
         Rent Again
       </Button>
     </div>

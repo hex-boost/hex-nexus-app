@@ -1,3 +1,4 @@
+import type { UserType } from '@/types/types';
 import type { StrapiDefaultOptions } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
 import { ProviderAuth, Strapi, UserAuth, UserBase } from 'strapi-ts-sdk';
 
@@ -14,6 +15,6 @@ const defaults: StrapiDefaultOptions = {
 };
 export const strapiClient = new Strapi({ ...defaults });
 
-export const userAuth = new UserAuth(strapiClient);
-export const providerAuth = new ProviderAuth(strapiClient, userAuth);
-export const userBase = new UserBase(strapiClient);
+export const userAuth = new UserAuth<UserType>(strapiClient);
+export const providerAuth = new ProviderAuth<UserType>(strapiClient, userAuth);
+export const userBase = new UserBase<UserType>(strapiClient);
