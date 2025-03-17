@@ -1,7 +1,9 @@
 import type { UserType } from '@/types/types';
-import type { StrapiRequestParams } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
+import type { StrapiError } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
 import { strapiClient } from '@/lib/strapi';
+import { useUserStore } from '@/stores/useUserStore';
 import { useQuery } from '@tanstack/react-query';
+import { redirect } from '@tanstack/react-router';
 import { Activity, CreditCard, Shield } from 'lucide-react';
 import CurrentlyRentedAccounts from './currently-rented-accounts';
 import LastRentedAccount from './last-rented-account';
@@ -9,14 +11,21 @@ import RecentTransactions from './recent-transactions';
 import SubscriptionStatus from './subscription-status';
 
 export default function Dashboard() {
-  const { data: user, isLoading } = useQuery({
-    queryKey: ['user', 'me'],
+  const { logout } = useUserStore();
+  const { data: user, isLoading, isError, error } = useQuery<UserType, StrapiError>({
+    queryKey: ['users', 'me'],
 
-    queryFn: () => strapiClient.request<UserType>('get', 'users/me', {
-      params: { populate: ['role', 'avatar', 'premium'] } as StrapiRequestParams,
-    }),
+    queryFn: () => strapiClient.request<UserType>('get', 'users/me'),
 
   });
+
+  if (isError) {
+    if (error.error.status === 401) {
+      logout();
+      redirect({ to: '/login' });
+      return;
+    }
+  }
   if (isLoading) {
     return <div>Loading...</div>;
   }

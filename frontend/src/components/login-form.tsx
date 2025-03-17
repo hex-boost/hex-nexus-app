@@ -9,7 +9,6 @@ import { useUserStore } from '@/stores/useUserStore';
 import { StartDiscordOAuth } from '@main';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@radix-ui/react-tabs';
 import { useMutation } from '@tanstack/react-query';
-import { useRouter } from '@tanstack/react-router';
 import { useState } from 'react';
 import { FlickeringGrid } from './magicui/flickering-grid';
 import { Globe, GLOBE_CONFIG } from './magicui/globe';
@@ -48,7 +47,6 @@ export function LoginForm({
 }: React.ComponentProps<'div'>) {
   const [activeTab, setActiveTab] = useState('login');
   const { login } = useUserStore();
-  const router = useRouter();
   const [formData, setFormData] = useState({
     email: '',
     username: '',
@@ -68,7 +66,7 @@ export function LoginForm({
       onSuccess: (data) => {
         login(data.user, data.jwt);
 
-        router.navigate('/');
+        // router.navigate('');
       },
       onError: error => console.error('Erro na autenticação:', error),
     },

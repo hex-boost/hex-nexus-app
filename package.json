@@ -1,1 +1,5 @@
-{}
+{
+  "dependencies": {
+    "strapi-ts-sdk": "^1.0.48"
+  }
+}
