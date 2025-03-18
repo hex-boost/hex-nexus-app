@@ -1,3 +1,12 @@
+import bronzeIcon from '@/assets/league_of_legends_bronze.svg';
+import challengerIcon from '@/assets/league_of_legends_challenger.svg';
+import diamondIcon from '@/assets/league_of_legends_diamond.svg';
+import goldIcon from '@/assets/league_of_legends_gold.svg';
+import grandmasterIcon from '@/assets/league_of_legends_grandmaster.svg';
+import ironIcon from '@/assets/league_of_legends_iron.svg';
+import masterIcon from '@/assets/league_of_legends_master.svg';
+import platinumIcon from '@/assets/league_of_legends_platinum.svg';
+import silverIcon from '@/assets/league_of_legends_silver.svg';
 import { LolIcon, ValorantIcon } from './icons';
 
 export function useMapping() {
@@ -25,8 +34,19 @@ export function useMapping() {
     }
   };
   function getEloIcon(rank: string) {
-    // Use absolute paths from the public directory
-    return `@/assets/league_of_legends_${rank.toLowerCase()}.svg`;
+    const icons: Record<string, string> = {
+      iron: ironIcon,
+      bronze: bronzeIcon,
+      silver: silverIcon,
+      gold: goldIcon,
+      platinum: platinumIcon,
+      diamond: diamondIcon,
+      master: masterIcon,
+      grandmaster: grandmasterIcon,
+      challenger: challengerIcon,
+    };
+
+    return icons[rank.toLowerCase()] || ironIcon; // Default to iron if not found
   }
   const getGameIcon = (game: 'lol' | 'valorant', props?: { size?: number; className?: string }) => {
     if (game === 'lol') {

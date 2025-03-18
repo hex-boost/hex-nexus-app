@@ -563,7 +563,7 @@ function Accounts() {
                     <td className="p-3 text-sm font-medium text-zinc-900 dark:text-zinc-100">{account.documentId.slice(0, 6).toUpperCase()}</td>
                     <td className="p-3">
                       <div className="flex items-center gap-2">
-                        <img alt={ranking.elo} src={getEloIcon(ranking.elo)} />
+                        <img className="w-4 h-4" alt={ranking.elo} src={getEloIcon(ranking.elo)} />
                         <span className={`text-sm font-medium ${getRankColor(ranking?.elo)}`}>
                           {ranking?.division || ranking.division}
                           {' '}
