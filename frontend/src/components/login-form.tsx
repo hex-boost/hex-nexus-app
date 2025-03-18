@@ -9,9 +9,10 @@ import { useUserStore } from '@/stores/useUserStore';
 import { StartDiscordOAuth } from '@main';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@radix-ui/react-tabs';
 import { useMutation } from '@tanstack/react-query';
+import { useRouter } from '@tanstack/react-router';
 import { useState } from 'react';
 import { FlickeringGrid } from './magicui/flickering-grid';
-import { Globe, GLOBE_CONFIG } from './magicui/globe';
+import Globe from './magicui/globe';
 
 function DiscordSvg() {
   return (
@@ -46,6 +47,7 @@ export function LoginForm({
   ...props
 }: React.ComponentProps<'div'>) {
   const [activeTab, setActiveTab] = useState('login');
+  const router = useRouter();
   const { login } = useUserStore();
   const [formData, setFormData] = useState({
     email: '',
@@ -66,7 +68,7 @@ export function LoginForm({
       onSuccess: (data) => {
         login(data.user, data.jwt);
 
-        // router.navigate('');
+        router.navigate({ to: '/' });
       },
       onError: error => console.error('Erro na autenticação:', error),
     },
@@ -82,7 +84,11 @@ export function LoginForm({
             password: formData.password,
           });
         },
-      onSuccess: data => login(data.user, data.jwt),
+      onSuccess: (data) => {
+        login(data.user, data.jwt);
+
+        router.navigate({ to: '/' });
+      },
       onError: error => console.error('Erro no registro:', error),
     },
   );
@@ -113,7 +119,6 @@ export function LoginForm({
       },
     },
   );
-
   const isLoading = activeTab === 'login' ? loginMutation.isPending : registerMutation.isPending;
   return (
 
@@ -155,18 +160,7 @@ export function LoginForm({
                   flickerChance={0.1}
                 />
 
-                <Globe
-                  className="!-bottom-40 inset-auto"
-                  config={
-                    {
-                      ...GLOBE_CONFIG,
-                      dark: 0.8,
-                      baseColor: [0.2706, 0.3216, 0.7216], // #4552B8
-                      markerColor: [0.3020, 0.2824, 0.5137], // #4D4883
-                      glowColor: [0.5176, 0.6392, 0.9098], // #8
-                    }
-                  }
-                />
+                <Globe />
               </div>
             </div>
 

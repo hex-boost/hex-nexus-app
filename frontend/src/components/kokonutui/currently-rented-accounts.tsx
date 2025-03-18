@@ -1,66 +1,46 @@
+import type { AccountType } from '@/types/types.ts';
+import { NoActiveAccounts } from '@/components/empty-states.tsx';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { ArrowRight, Clock, User } from 'lucide-react';
-
-type Account = {
-  id: string;
-  tier: string;
-  rank: string;
-  rentedAt: string;
-  expiresAt: string;
-  champions: number;
-  skins: number;
-};
+import { ArrowRight, Clock } from 'lucide-react';
+import { AccountGameIcon } from '../GameComponents';
 
 type CurrentlyRentedAccountsProps = {
   className?: string;
-  accounts?: Account[];
+  accounts: AccountType[];
 };
 
-const ACCOUNTS: Account[] = [
-  {
-    id: 'X7F9P2',
-    tier: 'Diamond',
-    rank: 'II',
-    rentedAt: '2024-03-10T10:30:00Z',
-    expiresAt: '2024-03-17T10:30:00Z',
-    champions: 145,
-    skins: 78,
-  },
-  {
-    id: 'R5M3K8',
-    tier: 'Platinum',
-    rank: 'I',
-    rentedAt: '2024-03-12T15:45:00Z',
-    expiresAt: '2024-03-19T15:45:00Z',
-    champions: 132,
-    skins: 65,
-  },
-  {
-    id: 'L2G7T4',
-    tier: 'Master',
-    rank: '',
-    rentedAt: '2024-03-13T09:15:00Z',
-    expiresAt: '2024-03-20T09:15:00Z',
-    champions: 158,
-    skins: 112,
-  },
-];
-
-export default function CurrentlyRentedAccounts({ accounts = ACCOUNTS, className }: CurrentlyRentedAccountsProps) {
+export default function CurrentlyRentedAccounts({ accounts, className }: CurrentlyRentedAccountsProps) {
   // Helper function to calculate time remaining
-  const getTimeRemaining = (expiryDateStr: string) => {
+  const getFormattedTimeRemaining = (expiryDateStr: string): string => {
     const expiryDate = new Date(expiryDateStr);
     const now = new Date();
     const diffMs = expiryDate.getTime() - now.getTime();
 
-    // Convert to days and hours
+    // Check if already expired
+    if (diffMs <= 0) {
+      // Return expired message
+      return 'Expired';
+    }
+
+    // Calculate days and hours
     const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
 
-    return { days, hours };
+    // Format the time string
+    if (days > 0) {
+      return `${days}d ${hours}h left`;
+    } else if (hours > 0) {
+      return `${hours}h left`;
+    } else {
+      // Less than an hour left
+      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+      return `${minutes}m left`;
+    }
   };
-
+  if (!accounts || accounts.length === 0) {
+    return <NoActiveAccounts onBrowse={() => void 0} />;
+  }
   // Helper function to get rank color
   const getRankColor = (tier: string) => {
     switch (tier.toLowerCase()) {
@@ -90,9 +70,12 @@ export default function CurrentlyRentedAccounts({ accounts = ACCOUNTS, className
     <div className={cn('w-full flex h-full flex-col justify-between', className)}>
       <div className="space-y-1 mb-4">
         {accounts.map((account) => {
-          const { days, hours } = getTimeRemaining(account.expiresAt);
-          const rankColor = getRankColor(account.tier);
+          const mostRecentAction = account.actionHistory.reduce((latest, current) =>
+            new Date(latest.createdAt) > new Date(current.createdAt) ? latest : current,
+          );
 
+          const currentRanking = account.rankings.find(ranking => !ranking.isPrevious)!;
+          const rankColor = getRankColor(currentRanking?.elo?.toLowerCase());
           return (
             <div
               key={account.id}
@@ -105,27 +88,28 @@ export default function CurrentlyRentedAccounts({ accounts = ACCOUNTS, className
             >
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800">
-
-                  <User className="w-4 h-4 text-zinc-900 dark:text-zinc-100" />
+                  <AccountGameIcon game="lol" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-medium text-zinc-900 dark:text-zinc-100">{account.id}</h3>
+                  <h3 className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
+                    {account.id}
+                  </h3>
                   <div className="flex items-center gap-1">
-                    <span className={`text-[11px] font-medium ${rankColor}`}>
-                      {account.tier}
+                    <span className={`text-[11px] font-medium ${rankColor} capitalize`}>
+                      {currentRanking.elo}
                       {' '}
-                      {account.rank}
+                      {currentRanking.division}
                     </span>
                     <span className="text-[11px] text-zinc-600 dark:text-zinc-400">
                       •
                       {' '}
-                      {account.champions}
+                      {account.LCUchampions.length}
                       {' '}
-                      champions •
+                      Champions •
                       {' '}
-                      {account.skins}
+                      {account.LCUskins.length}
                       {' '}
-                      skins
+                      Skins
                     </span>
                   </div>
                 </div>
@@ -135,10 +119,8 @@ export default function CurrentlyRentedAccounts({ accounts = ACCOUNTS, className
                 <div className="flex items-center gap-1">
                   <Clock className="w-3 h-3 text-amber-500 dark:text-amber-400" />
                   <span className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100">
-                    {days}
-                    d
-                    {hours}
-                    h left
+
+                    {getFormattedTimeRemaining(mostRecentAction.expirationTime.toString())}
                   </span>
                 </div>
                 <button className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline">View Account</button>

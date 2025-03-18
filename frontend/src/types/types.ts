@@ -1,13 +1,39 @@
+import type {
+  AdminApiToken,
+  AdminApiTokenPermission,
+  AdminPermission,
+  AdminRole,
+  AdminTransferToken,
+  AdminTransferTokenPermission,
+  AdminUser,
+  ApiAccountAccount,
+  ApiActionAction,
+  ApiPremiumPremium,
+  ApiPricePrice,
+  ApiRankingRanking,
+  ApiTransactionTransaction,
+  PluginContentReleasesRelease,
+  PluginContentReleasesReleaseAction,
+  PluginI18NLocale,
+  PluginReviewWorkflowsWorkflow,
+  PluginReviewWorkflowsWorkflowStage,
+  PluginUploadFile,
+  PluginUploadFolder,
+  PluginUsersPermissionsPermission,
+  PluginUsersPermissionsRole,
+  PluginUsersPermissionsUser,
+} from '@/types/generated/contentTypes';
 import type { Entity } from './conversion';
-import type { AdminApiToken, AdminApiTokenPermission, AdminPermission, AdminRole, AdminTransferToken, AdminTransferTokenPermission, AdminUser, ApiActionAction, ApiPremiumPremium, ApiPricePrice, ApiRankingRanking, ApiTransactionTransaction, PluginContentReleasesRelease, PluginContentReleasesReleaseAction, PluginI18NLocale, PluginReviewWorkflowsWorkflow, PluginReviewWorkflowsWorkflowStage, PluginUploadFile, PluginUploadFolder, PluginUsersPermissionsPermission, PluginUsersPermissionsRole, PluginUsersPermissionsUser } from './generated/contentTypes';
 
 export type UserType = Entity<PluginUsersPermissionsUser>;
+export type AccountType = Entity<ApiAccountAccount>;
 export type AccountPermissions = Entity<PluginUsersPermissionsUser>['accountPermissions'];
 export type ApiTokenType = Entity<AdminApiToken>;
 export type ApiTokenPermissionType = Entity<AdminApiTokenPermission>;
 export type AdminPermissionType = Entity<AdminPermission>;
 export type AdminRoleType = Entity<AdminRole>;
 export type TransferTokenType = Entity<AdminTransferToken>;
+
 export type TransferTokenPermissionType = Entity<AdminTransferTokenPermission>;
 export type AdminUserType = Entity<AdminUser>;
 

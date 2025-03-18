@@ -1,80 +1,25 @@
 'use client';
 
+import type { AccountType } from '@/types/types';
 import { Badge } from '@/components/ui/badge';
+import { useMapping } from '@/lib/useMapping';
 import { cn } from '@/lib/utils';
-import { AlertTriangle, Ban, Shield } from 'lucide-react';
+import { AccountGameIcon } from './GameComponents';
 
-type AccountInfoDisplayProps = {
-  accountId: string;
-  game: 'lol' | 'valorant';
-  status: 'Available' | 'Rented' | 'Reserved' | 'Maintenance';
-  gameName?: string;
-  leaverBusterStatus: 'None' | 'Low' | 'Medium' | 'High';
-  soloQueueRank?: {
-    tier: string;
-    rank: string;
-    lp: number;
-  };
-  flexQueueRank?: {
-    tier: string;
-    rank: string;
-    lp: number;
-  };
-  previousSeasonRank?: {
-    tier: string;
-    rank: string;
-    season: number;
-  };
-  valorantRank?: {
-    tier: string;
-    rank: string;
-  };
-  compact?: boolean;
-};
+// Define the Account type based on your data structure
 
-// Helper function to get rank color
-const getRankColor = (tier: string) => {
-  switch (tier.toLowerCase()) {
-    case 'iron':
-    case 'bronze':
-      return 'text-zinc-600 dark:text-zinc-400';
-    case 'silver':
-      return 'text-zinc-400 dark:text-zinc-300';
-    case 'gold':
-      return 'text-amber-500 dark:text-amber-400';
-    case 'platinum':
-      return 'text-cyan-500 dark:text-cyan-400';
-    case 'diamond':
-      return 'text-blue-500 dark:text-blue-400';
-    case 'master':
-      return 'text-purple-500 dark:text-purple-400';
-    case 'grandmaster':
-      return 'text-red-500 dark:text-red-400';
-    case 'challenger':
-    case 'radiant':
-      return 'text-yellow-500 dark:text-yellow-400';
-    case 'immortal':
-      return 'text-red-500 dark:text-red-400';
-    case 'ascendant':
-      return 'text-emerald-500 dark:text-emerald-400';
-    default:
-      return 'text-zinc-600 dark:text-zinc-400';
+// Helper function to derive status from account properties
+const getAccountStatus = (account: AccountType): 'Available' | 'Rented' | 'Reserved' | 'Maintenance' => {
+  if (account.isRented) {
+    return 'Rented';
   }
-};
-
-// Helper function to get tier icon
-const getTierIcon = (tier: string) => {
-  // In a real app, you would use actual tier icons
-  return `/placeholder.svg?height=24&width=24&text=${tier.charAt(0)}`;
-};
-
-// Helper function to get game icon
-const getGameIcon = (game: 'lol' | 'valorant') => {
-  if (game === 'lol') {
-    return '/placeholder.svg?height=24&width=24&text=LoL';
-  } else {
-    return '/placeholder.svg?height=24&width=24&text=VAL';
-  }
+  // if (account.type === 'maintenance') {
+  //   return 'Maintenance';
+  // }
+  // if (account.type === 'reserved') {
+  //   return 'Reserved';
+  // }
+  return 'Available';
 };
 
 // Helper function to get status color
@@ -92,197 +37,135 @@ const getStatusColor = (status: 'Available' | 'Rented' | 'Reserved' | 'Maintenan
 };
 
 // Helper function to get leaver buster status info
-const getLeaverBusterInfo = (status: 'None' | 'Low' | 'Medium' | 'High') => {
-  switch (status) {
-    case 'None':
-      return {
-        color: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400',
-        icon: Shield,
-        label: 'No Penalties',
-        description: 'This account has no leaver buster penalties.',
-      };
-    case 'Low':
-      return {
-        color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
-        icon: AlertTriangle,
-        label: 'Low Priority (5min)',
-        description: 'This account has a low-priority queue of 5 minutes for 3 games.',
-      };
-    case 'Medium':
-      return {
-        color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400',
-        icon: AlertTriangle,
-        label: 'Low Priority (10min)',
-        description: 'This account has a low-priority queue of 10 minutes for 5 games.',
-      };
-    case 'High':
-      return {
-        color: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400',
-        icon: Ban,
-        label: 'Low Priority (20min)',
-        description: 'This account has a low-priority queue of 20 minutes for 5 games.',
-      };
-  }
+// const getLeaverBusterInfo = (status: 'None' | 'Low' | 'Medium' | 'High' | null) => {
+//   switch (status) {
+//     case 'Low':
+//       return {
+//         color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
+//         icon: AlertTriangle,
+//         label: 'Low Priority (5min)',
+//         description: 'This account has a low-priority queue of 5 minutes for 3 games.',
+//       };
+//     case 'Medium':
+//       return {
+//         color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400',
+//         icon: AlertTriangle,
+//         label: 'Low Priority (10min)',
+//         description: 'This account has a low-priority queue of 10 minutes for 5 games.',
+//       };
+//     case 'High':
+//       return {
+//         color: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400',
+//         icon: Ban,
+//         label: 'Low Priority (20min)',
+//         description: 'This account has a low-priority queue of 20 minutes for 5 games.',
+//       };
+//     case 'None':
+//     case null:
+//     default:
+//       return {
+//         color: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400',
+//         icon: Shield,
+//         label: 'No Penalties',
+//         description: 'This account has no leaver buster penalties.',
+//       };
+//   }
+// };
+
+// Simplified props interface that takes the whole account object
+type AccountInfoDisplayProps = {
+  account: AccountType;
+  compact?: boolean;
 };
 
 export default function AccountInfoDisplay({
-  accountId,
-  game,
-  status,
-  gameName,
-  leaverBusterStatus,
-  soloQueueRank,
-  flexQueueRank,
-  previousSeasonRank,
-  valorantRank,
-  compact = false,
+  account,
 }: AccountInfoDisplayProps) {
-  const leaverBusterInfo = getLeaverBusterInfo(leaverBusterStatus);
-  const LeaverIcon = leaverBusterInfo.icon;
+  const { getRankColor } = useMapping();
+
+  const status = getAccountStatus(account);
+
+  const placeholderRank = {
+    tier: 'Gold',
+    rank: 'IV',
+    lp: 75,
+  };
 
   return (
-    <div className={cn('w-full', compact ? 'space-y-2' : 'space-y-4')}>
+    <div className={cn('w-full', 'space-y-4')}>
       {/* Header with ID and Status */}
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-2">
-          <img
-            src={getGameIcon(game) || '/placeholder.svg'}
-            alt={game === 'lol' ? 'League of Legends' : 'Valorant'}
-            className="w-5 h-5"
-          />
-          <span className="text-sm font-medium">{accountId}</span>
+          <AccountGameIcon game="lol" />
+          <span className="text-sm font-medium">{account.username}</span>
         </div>
         <Badge className={cn('px-3 py-1', getStatusColor(status))}>{status}</Badge>
       </div>
 
       {/* Game Name (if available) */}
-      {gameName && <div className="text-base font-medium text-zinc-900 dark:text-zinc-50">{gameName}</div>}
+      {account.gamename && (
+        <div className="text-base font-medium text-zinc-900 dark:text-zinc-50">
+          {account.gamename}
+          {account.tagline ? `#${account.tagline}` : ''}
+        </div>
+      )}
 
-      {/* Rank information */}
-      <div className={cn('grid gap-3', compact ? 'grid-cols-2' : 'grid-cols-1 sm:grid-cols-2')}>
-        {game === 'lol' ? (
-          <>
-            {/* Solo Queue Rank */}
-            <div className="bg-zinc-50 dark:bg-zinc-800/30 p-2 rounded-md">
-              <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">Solo Queue</p>
-              {soloQueueRank
-                ? (
-                    <div className="flex items-center gap-1.5">
-                      <img
-                        src={getTierIcon(soloQueueRank.tier) || '/placeholder.svg'}
-                        alt={soloQueueRank.tier}
-                        className="w-5 h-5"
-                      />
-                      <div>
-                        <p className={`text-sm font-medium ${getRankColor(soloQueueRank.tier)}`}>
-                          {soloQueueRank.tier}
-                          {' '}
-                          {soloQueueRank.rank}
-                        </p>
-                        <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                          {soloQueueRank.lp}
-                          {' '}
-                          LP
-                        </p>
-                      </div>
-                    </div>
-                  )
-                : previousSeasonRank
-                  ? (
-                      <div className="flex items-center gap-1.5">
-                        <img
-                          src={getTierIcon(previousSeasonRank.tier) || '/placeholder.svg'}
-                          alt={previousSeasonRank.tier}
-                          className="w-5 h-5 opacity-70"
-                        />
-                        <div>
-                          <p className={`text-sm font-medium ${getRankColor(previousSeasonRank.tier)} opacity-70`}>
-                            Unranked
-                          </p>
-                          <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                            S
-                            {previousSeasonRank.season}
-                            :
-                            {' '}
-                            {previousSeasonRank.tier}
-                            {' '}
-                            {previousSeasonRank.rank}
-                          </p>
-                        </div>
-                      </div>
-                    )
-                  : (
-                      <p className="text-sm text-zinc-600 dark:text-zinc-400">Unranked</p>
-                    )}
-            </div>
+      {/* Rank information - using placeholders since actual rank data is not provided */}
+      <div className={cn('grid gap-3', 'grid-cols-1 sm:grid-cols-2')}>
+        {/* Solo Queue Rank - Using placeholder */}
+        <div className="bg-zinc-50 dark:bg-zinc-800/30 p-2 rounded-md">
+          <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">Solo Queue</p>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">Not Available</p>
+        </div>
 
-            {/* Flex Queue Rank */}
-            <div className="bg-zinc-50 dark:bg-zinc-800/30 p-2 rounded-md">
-              <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">Flex Queue</p>
-              {flexQueueRank
-                ? (
-                    <div className="flex items-center gap-1.5">
-                      <img
-                        src={getTierIcon(flexQueueRank.tier) || '/placeholder.svg'}
-                        alt={flexQueueRank.tier}
-                        className="w-5 h-5"
-                      />
-                      <div>
-                        <p className={`text-sm font-medium ${getRankColor(flexQueueRank.tier)}`}>
-                          {flexQueueRank.tier}
-                          {' '}
-                          {flexQueueRank.rank}
-                        </p>
-                        <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                          {flexQueueRank.lp}
-                          {' '}
-                          LP
-                        </p>
-                      </div>
-                    </div>
-                  )
-                : (
-                    <p className="text-sm text-zinc-600 dark:text-zinc-400">Unranked</p>
-                  )}
-            </div>
-          </>
-        ) : (
-          <>
-            {/* Valorant Rank */}
-            <div className={cn('bg-zinc-50 dark:bg-zinc-800/30 p-2 rounded-md', compact ? 'col-span-2' : '')}>
-              <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">Competitive Rank</p>
-              {valorantRank
-                ? (
-                    <div className="flex items-center gap-1.5">
-                      <img
-                        src={getTierIcon(valorantRank.tier) || '/placeholder.svg'}
-                        alt={valorantRank.tier}
-                        className="w-5 h-5"
-                      />
-                      <div>
-                        <p className={`text-sm font-medium ${getRankColor(valorantRank.tier)}`}>
-                          {valorantRank.tier}
-                          {' '}
-                          {valorantRank.rank}
-                        </p>
-                      </div>
-                    </div>
-                  )
-                : (
-                    <p className="text-sm text-zinc-600 dark:text-zinc-400">Unranked</p>
-                  )}
-            </div>
-          </>
-        )}
+        {/* Flex Queue Rank - Using placeholder */}
+        <div className="bg-zinc-50 dark:bg-zinc-800/30 p-2 rounded-md">
+          <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">Flex Queue</p>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">Not Available</p>
+        </div>
+      </div>
+
+      {/* Server Information */}
+      <div className="bg-zinc-50 dark:bg-zinc-800/30 p-2 rounded-md">
+        <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">Server</p>
+        <p className="text-sm font-medium">{account.server}</p>
       </div>
 
       {/* Leaver Buster Status */}
-      <div className={cn('flex items-center gap-2 p-2 rounded-md', leaverBusterInfo.color)}>
-        <LeaverIcon className="h-4 w-4" />
-        <span className={compact ? 'text-xs' : 'text-sm'}>
-          {compact ? leaverBusterInfo.label : leaverBusterInfo.description}
-        </span>
-      </div>
+      {/* <div className={cn('flex items-center gap-2 p-2 rounded-md', leaverBusterInfo.color)}> */}
+      {/*   <LeaverIcon className="h-4 w-4" /> */}
+      {/*   <span className={compact ? 'text-xs' : 'text-sm'}> */}
+      {/*     {compact ? leaverBusterInfo.label : leaverBusterInfo.description} */}
+      {/*   </span> */}
+      {/* </div> */}
+
+      {/* Available Champions Info */}
+      {
+        account.LCUchampions && account.LCUchampions.length > 0 && (
+          <div className="bg-zinc-50 dark:bg-zinc-800/30 p-2 rounded-md">
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">Champions</p>
+            <p className="text-sm font-medium">
+              {account.LCUchampions.length}
+              {' '}
+              available
+            </p>
+          </div>
+        )
+      }
+
+      {/* Available Skins Info */}
+      {
+        account.LCUskins && account.LCUskins.length > 0 && (
+          <div className="bg-zinc-50 dark:bg-zinc-800/30 p-2 rounded-md">
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">Skins</p>
+            <p className="text-sm font-medium">
+              {account.LCUskins.length}
+              {' '}
+              available
+            </p>
+          </div>
+        )
+      }
     </div>
   );
 }

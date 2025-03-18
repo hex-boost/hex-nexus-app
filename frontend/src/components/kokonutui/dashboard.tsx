@@ -4,10 +4,9 @@ import { strapiClient } from '@/lib/strapi';
 import { useUserStore } from '@/stores/useUserStore';
 import { useQuery } from '@tanstack/react-query';
 import { redirect } from '@tanstack/react-router';
-import { Activity, CreditCard, Shield } from 'lucide-react';
+import { Activity, Shield } from 'lucide-react';
 import CurrentlyRentedAccounts from './currently-rented-accounts';
 import LastRentedAccount from './last-rented-account';
-import RecentTransactions from './recent-transactions';
 import SubscriptionStatus from './subscription-status';
 
 export default function Dashboard() {
@@ -20,7 +19,7 @@ export default function Dashboard() {
   });
 
   if (isError) {
-    if (error.error.status === 401) {
+    if ([401, 403].includes(error.error.status)) {
       logout();
       redirect({ to: '/login' });
       return;
@@ -47,7 +46,7 @@ export default function Dashboard() {
             <Activity className="w-4 h-4 text-zinc-900 dark:text-zinc-50" />
             Currently Rented Accounts
           </h2>
-          <CurrentlyRentedAccounts />
+          <CurrentlyRentedAccounts accounts={user.rentedAccounts.filter(account => account.isRented)} />
         </div>
       </div>
 
@@ -59,13 +58,14 @@ export default function Dashboard() {
         <LastRentedAccount />
       </div>
 
-      <div className="bg-white dark:bg-black/20 rounded-xl p-6 border border-gray-200 dark:border-[#1F1F23]">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 text-left flex items-center gap-2">
-          <CreditCard className="w-4 h-4 text-zinc-900 dark:text-zinc-50" />
-          Transactions
-        </h2>
-        <RecentTransactions />
-      </div>
+      {/* <div className="bg-white dark:bg-black/20 rounded-xl p-6 border border-gray-200 dark:border-[#1F1F23]"> */}
+      {/*   <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 text-left flex items-center gap-2"> */}
+      {/*     <CreditCard className="w-4 h-4 text-zinc-900 dark:text-zinc-50" /> */}
+      {/*     Transactions */}
+      {/*   </h2> */}
+      {/**/}
+      {/*   <RecentTransactions transactions={user.transactions} /> */}
+      {/* </div> */}
     </div>
   );
 }

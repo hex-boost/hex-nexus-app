@@ -24,6 +24,12 @@ export function useMapping() {
         return 'text-zinc-600 dark:text-zinc-400';
     }
   };
+  function getEloIcon(rank: string) {
+    if (rank === 'gold') {
+      return <div>'gold'</div>;
+    }
+    return null;
+  }
   const getGameIcon = (game: 'lol' | 'valorant', props?: { size?: number; className?: string }) => {
     if (game === 'lol') {
       return <LolIcon {...props} />;
@@ -32,6 +38,7 @@ export function useMapping() {
     }
   };
   return {
+    getEloIcon,
     getRankColor,
     getGameIcon,
 

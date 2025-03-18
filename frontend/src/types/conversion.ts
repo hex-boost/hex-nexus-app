@@ -1,9 +1,6 @@
+import type { RankingType } from '@/types/types.ts';
 import type { Public, Schema, Struct } from '@strapi/types';
 import type { ApiResponse } from 'strapi-ts-sdk';
-import type {
-
-  PluginUsersPermissionsUser,
-} from './generated/contentTypes';
 
 // Simplified helper that just uses the ContentTypeSchemas directly
 export type GetContentTypeSchema<T extends string> =
@@ -11,14 +8,15 @@ export type GetContentTypeSchema<T extends string> =
 type ExtractValueFromLabelValue<T extends string> =
   T extends `${string}:${infer Value}` ? Value : T;
 
-// Recursive entity without depth control - will expand infinitely
 type RecursiveEntity<
   EntityType extends Struct.CollectionTypeSchema | Struct.SingleTypeSchema,
 > = {
   id: number;
+  documentId: string;
 } & {
   [K in keyof EntityType['attributes']]: ExtractRecursiveType<
-    EntityType['attributes'][K]
+    EntityType['attributes'][K],
+    K
   >;
 };
 
@@ -32,20 +30,22 @@ type ExpandRelations<R> =
         : R extends Schema.Attribute.Relation<'oneToOne', infer Target>
           ? Entity<GetContentTypeSchema<Target>>
           : any;
-// Extract types without depth control
-type ExtractRecursiveType<T> =
-  T extends Schema.Attribute.Integer ? number :
-    T extends Schema.Attribute.String ? string :
-      T extends Schema.Attribute.Email ? string :
-        T extends Schema.Attribute.Password ? string :
-          T extends Schema.Attribute.Decimal ? number :
-            T extends Schema.Attribute.Boolean ? boolean :
-              T extends Schema.Attribute.Media<'images', infer R>
-                ? R extends true ? ApiResponse.Avatar[] : ApiResponse.Avatar :
-                T extends Schema.Attribute.Media<infer _, infer R>
+
+// Extract types with field name awareness
+type ExtractRecursiveType<T, K extends string | number | symbol = never> =
+  K extends 'ranking'
+    ? RankingType :
+    T extends Schema.Attribute.Integer ? number :
+      T extends Schema.Attribute.String ? string :
+        T extends Schema.Attribute.Email ? string :
+          T extends Schema.Attribute.Password ? string :
+            T extends Schema.Attribute.Decimal ? number :
+              T extends Schema.Attribute.Boolean ? boolean :
+                T extends Schema.Attribute.Media<'images', infer R>
                   ? R extends true ? ApiResponse.Avatar[] : ApiResponse.Avatar :
-                  T extends Schema.Attribute.Enumeration<infer U> ? U :
-                    T extends Schema.Attribute.Enumeration<infer U extends string[]> ? U[number] | string :
+                  T extends Schema.Attribute.Media<infer _, infer R>
+                    ? R extends true ? ApiResponse.Avatar[] : ApiResponse.Avatar :
+                    T extends Schema.Attribute.Enumeration<infer U extends string[]> ? U[number] :
                       T extends Schema.Attribute.DateTime ? Date :
                         T extends Schema.Attribute.JSON & Schema.Attribute.CustomField<'plugin::multi-select.multi-select', infer U extends readonly string[]>
                           ? ExtractValueFromLabelValue<U[number]>[] :
@@ -55,9 +55,6 @@ type ExtractRecursiveType<T> =
                                 T extends Schema.Attribute.RichText ? string :
                                   T extends Schema.Attribute.Relation<any, any> ? ExpandRelations<T> :
                                     unknown;
-
 // Main Entity type for external use
 export type Entity<EntityType extends Struct.CollectionTypeSchema | Struct.SingleTypeSchema> =
   RecursiveEntity<EntityType>;
-const user = {} as Entity<PluginUsersPermissionsUser>;
-user.transactions.forEach(trans => trans.sender);

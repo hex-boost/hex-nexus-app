@@ -1,5 +1,3 @@
-'use client';
-
 import type { COBEOptions } from 'cobe';
 import { cn } from '@/lib/utils';
 import createGlobe from 'cobe';
@@ -9,20 +7,21 @@ import { useEffect, useRef } from 'react';
 
 const MOVEMENT_DAMPING = 1400;
 
-export const GLOBE_CONFIG: COBEOptions = {
+const GLOBE_CONFIG: COBEOptions = {
   width: 800,
   height: 800,
   onRender: () => { },
   devicePixelRatio: 2,
   phi: 0,
+
+  dark: 0.8,
+  baseColor: [0.2706, 0.3216, 0.7216], // #4552B8
+  markerColor: [0.3020, 0.2824, 0.5137], // #4D4883
+  glowColor: [0.5176, 0.6392, 0.9098], // #8
   theta: 0.3,
-  dark: 0,
   diffuse: 0.4,
   mapSamples: 16000,
   mapBrightness: 1.2,
-  baseColor: [1, 1, 1],
-  markerColor: [251 / 255, 100 / 255, 21 / 255],
-  glowColor: [1, 1, 1],
   markers: [
     { location: [14.5995, 120.9842], size: 0.03 },
     { location: [19.076, 72.8777], size: 0.1 },
@@ -37,13 +36,13 @@ export const GLOBE_CONFIG: COBEOptions = {
   ],
 };
 
-export function Globe({
+const Globe = ({
   className,
   config = GLOBE_CONFIG,
 }: {
   className?: string;
   config?: COBEOptions;
-}) {
+}) => {
   let phi = 0;
   let width = 0;
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -106,7 +105,7 @@ export function Globe({
   return (
     <div
       className={cn(
-        'absolute mx-auto inset-0 aspect-[1/1] w-full max-w-[600px]',
+        'absolute h-full -bottom-40 mx-auto aspect-[1/1] w-full max-w-[600px] flex items-center justify-center',
         className,
       )}
     >
@@ -127,4 +126,6 @@ export function Globe({
       />
     </div>
   );
-}
+};
+
+export default Globe;
