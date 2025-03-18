@@ -33,7 +33,7 @@ export function MultiSelect({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0" align="start">
-        <Command className="max-h-[300px]">
+        <Command className="max-h-[300px] border-input !bg-input/30">
           <CommandInput placeholder={`Search ${placeholder.toLowerCase()}...`} />
           <CommandList>
             <CommandEmpty>No results found.</CommandEmpty>

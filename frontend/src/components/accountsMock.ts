@@ -257,11 +257,11 @@ export const ACCOUNTS: Account[] = [
 ];
 
 // Constants
-export const REGIONS = ['NA', 'EUW', 'EUNE', 'KR', 'BR', 'LAN', 'LAS', 'OCE', 'TR', 'RU', 'JP'];
+export const REGIONS = ['NA', 'EUW', 'EUNE', 'OCE'];
 export const LOL_TIERS = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Master', 'Grandmaster', 'Challenger'];
 export const VALORANT_TIERS = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Ascendant', 'Immortal', 'Radiant'];
 export const RANKS = ['I', 'II', 'III', 'IV'];
-export const COMPANIES = ['Boost Royal', 'EBNET', 'Public'];
+export const COMPANIES = ['Boost Royal', 'Nexus'];
 export const STATUSES = ['Available', 'Rented', 'Reserved'];
 export const GAMES = ['League of Legends', 'Valorant'];
 

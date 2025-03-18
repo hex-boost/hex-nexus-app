@@ -25,10 +25,8 @@ export function useMapping() {
     }
   };
   function getEloIcon(rank: string) {
-    if (rank === 'gold') {
-      return <div>'gold'</div>;
-    }
-    return null;
+    // Use absolute paths from the public directory
+    return `@/assets/league_of_legends_${rank.toLowerCase()}.svg`;
   }
   const getGameIcon = (game: 'lol' | 'valorant', props?: { size?: number; className?: string }) => {
     if (game === 'lol') {
