@@ -1,14 +1,16 @@
-import { CHAMPIONS, COMPANIES, LOL_TIERS, RANKS, REGIONS, SKINS, VALORANT_TIERS } from '@/components/accountsMock';
+import { COMPANIES, LOL_TIERS, RANKS, REGIONS, VALORANT_TIERS } from '@/components/accountsMock';
 import { CoinIcon } from '@/components/coin-icon';
 import { AccountGameIcon } from '@/components/GameComponents';
-import { MultiSelect } from '@/components/multi-select.tsx';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { MultiSelectCombobox } from '@/components/ui/multi-select-combobox.tsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { useAccounts } from '@/hooks/useAccounts.tsx';
+import { useAllDataDragon } from '@/hooks/useDataDragon.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
 import { cn } from '@/lib/utils';
 import { createFileRoute } from '@tanstack/react-router';
@@ -19,48 +21,7 @@ import {
   MoreHorizontal,
   Search,
 } from 'lucide-react';
-
-// Types
-
-export type Root = {
-  data: Data;
-};
-
-export type Data = {
-  id: number;
-  documentId: string;
-  league: League;
-  valorant: Valorant;
-  createdAt: string;
-  updatedAt: string;
-  publishedAt: string;
-  timeMultipliers: number[];
-};
-
-export type League = {
-  Gold: number;
-  Iron: number;
-  Bronze: number;
-  Silver: number;
-  Diamond: number;
-  Radiant: number;
-  Immortal: number;
-  Platinum: number;
-  Unranked: number;
-};
-
-export type Valorant = {
-  Gold: number;
-  Iron: number;
-  Bronze: number;
-  Master: number;
-  Silver: number;
-  Diamond: number;
-  Platinum: number;
-  Unranked: number;
-  Challenger: number;
-  Grandmaster: number;
-};
+import React, { useState } from 'react';
 
 // Helper function to get company icon
 export const Route = createFileRoute('/_protected/accounts/')({
@@ -70,6 +31,12 @@ export const Route = createFileRoute('/_protected/accounts/')({
 function Accounts() {
   const { isPriceLoading, price, isLoading: isAccountLoading, accounts, filteredAccounts, filters, setFilters, showFilters, setShowFilters, searchQuery, setSearchQuery, requestSort, resetFilters, SortIndicator, handleViewAccountDetails, getRankColor, getEloIcon, getRegionIcon } = useAccounts();
   const { getCompanyIcon } = useMapping();
+  const [loadDragonData, setLoadDragonData] = useState(false);
+
+  const { allChampions, allSkins, isLoading: isDataDragonLoading } = useAllDataDragon(loadDragonData);
+  const [selectedChampionIds, setSelectedChampionIds] = useState<string[]>([]);
+  const [selectedSkinIds, setSelectedSkinIds] = useState<string[]>([]);
+
   const isLoading = isPriceLoading || isAccountLoading;
   if (isLoading) {
     return <div>Loading...</div>;
@@ -80,7 +47,8 @@ function Accounts() {
   }
   return (
     <>
-      <h1 className="text-5xl font-semibold pb-6 pt-12">Accounts Available</h1>
+      <h1 className="text-4xl font-semibold pb-6 pt-12">Accounts Available</h1>
+
       <div className="space-y-6">
         {/* Header with search and view toggle */}
         <div className="flex flex-col sm:flex-row gap-4 justify-between">
@@ -211,21 +179,87 @@ function Accounts() {
 
                 <div>
                   <Label className="text-sm font-medium mb-1.5 block">Specific Champions</Label>
-                  <MultiSelect
-                    options={CHAMPIONS}
-                    selected={filters.selectedChampions}
-                    onChange={value => setFilters({ ...filters, selectedChampions: value })}
-                    placeholder="Select Champion"
+                  <MultiSelectCombobox
+                    label=" champions"
+                    isLoading={isDataDragonLoading}
+                    options={allChampions.map(champion => ({
+                      label: champion.name,
+                      value: champion.id,
+                      avatar: champion.imageUrl,
+                    }))}
+                    value={selectedChampionIds}
+                    onChange={setSelectedChampionIds}
+                    renderItem={option => (
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={option.avatar} />
+                          <AvatarFallback>{option.label[0]}</AvatarFallback>
+                        </Avatar>
+                        {option.label}
+                      </div>
+                    )}
+                    renderSelectedItem={selectedValues => (
+                      <div className="flex -space-x-2">
+                        {selectedValues.map((id) => {
+                          const champion = allChampions.find(c => c.id === id);
+                          return (
+                            <Avatar key={id} className="h-6 w-6 border-2 border-background">
+                              <AvatarImage src={champion?.imageUrl} />
+                              <AvatarFallback>{champion?.name?.[0] || 'C'}</AvatarFallback>
+                            </Avatar>
+                          );
+                        })}
+                      </div>
+                    )}
                   />
                 </div>
 
                 <div>
                   <Label className="text-sm font-medium mb-1.5 block">Specific Skins</Label>
-                  <MultiSelect
-                    options={SKINS}
-                    selected={filters.selectedSkins}
-                    onChange={value => setFilters({ ...filters, selectedSkins: value })}
-                    placeholder="Select Skin"
+                  <MultiSelectCombobox
+                    label=" skins"
+                    options={allSkins
+                      .filter(skin => skin.name !== 'default') // Remove default skins
+                      .map(skin => ({
+                        label: skin.name,
+                        value: skin.id.toString(),
+                        avatar: skin.imageAvatarUrl,
+                      }))}
+                    value={selectedSkinIds}
+                    onOpenChange={(open) => {
+                      if (open) {
+                        setLoadDragonData(true);
+                      }
+                    }}
+                    isLoading={isDataDragonLoading}
+                    onChange={setSelectedSkinIds}
+                    renderItem={option => (
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage
+                            src={option.avatar}
+                            alt={option.label}
+                            className="object-cover object-top scale-150"
+                          />
+                          <AvatarFallback>{option.label[0]}</AvatarFallback>
+                        </Avatar>
+                        {option.label}
+                      </div>
+                    )}
+                    renderSelectedItem={selectedValues => (
+                      <div className="flex -space-x-2">
+                        {selectedValues.map((id) => {
+                          // Use skin data instead of champion data
+                          const skin = allSkins.find(s => s.id.toString() === id);
+                          return (
+                            <Avatar key={id} className="h-6 w-6 border-2 border-background">
+                              <AvatarImage src={skin?.imageAvatarUrl} alt={skin?.name} />
+                              <AvatarFallback>{skin?.name?.[0] || 'S'}</AvatarFallback>
+                            </Avatar>
+                          );
+                        })}
+                      </div>
+                    )}
                   />
                 </div>
               </div>
@@ -233,13 +267,13 @@ function Accounts() {
               {/* Company and Status */}
               <div className="space-y-6 flex flex-col justify-between h-full">
                 <div>
-                  <Label className="text-sm font-medium mb-3 block">Company</Label>
+                  <Label className="text-sm font-medium mb-1.5 block">Company</Label>
                   <div className="grid grid-cols-2 gap-3">
                     {COMPANIES.map(company => (
                       <div
                         key={company}
                         className={cn(
-                          'flex relative flex-col items-center justify-center p-3 rounded-lg border cursor-pointer transition-all',
+                          'flex relative flex-col items-center justify-center py-4 rounded-lg border cursor-pointer transition-all',
                           filters.company === company
                             ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                             : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700',
@@ -268,11 +302,9 @@ function Accounts() {
                   </div>
                 </div>
 
-                <div className="pt-4">
-                  <Button variant="outline" size="sm" onClick={resetFilters} className="w-full">
-                    Reset All Filters
-                  </Button>
-                </div>
+                <Button variant="outline" size="lg" className="" onClick={resetFilters}>
+                  Reset All Filters
+                </Button>
               </div>
             </div>
           </div>
@@ -296,8 +328,8 @@ function Accounts() {
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-zinc-50  dark:bg-black/20">
-                <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Game</th>
                 <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">ID</th>
+                <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Game</th>
                 <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Rank</th>
                 <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Region</th>
                 <th
@@ -343,15 +375,15 @@ function Accounts() {
                     className="border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/30 cursor-pointer"
                     onClick={() => handleViewAccountDetails(account.documentId)}
                   >
+                    <td className="p-3 text-sm font-medium text-zinc-900 dark:text-zinc-100">{account.documentId.slice(0, 6).toUpperCase()}</td>
+
                     <td className="p-3">
                       <AccountGameIcon game="lol" />
                     </td>
-                    <td className="p-3 text-sm font-medium text-zinc-900 dark:text-zinc-100">{account.documentId.slice(0, 6).toUpperCase()}</td>
                     <td className="p-3">
                       <div className="flex items-center gap-2">
                         <img className="w-6 h-6" alt={ranking.elo} src={getEloIcon(ranking.elo)} />
                         <span className={`text-sm capitalize font-medium ${getRankColor(ranking?.elo)}`}>
-                          {ranking?.elo || ranking.elo}
                           {' '}
                           {ranking?.division || ranking.division}
                         </span>
@@ -365,13 +397,13 @@ function Accounts() {
                         {/*  alt={account.server} */}
                         {/*  className="w-5 h-5" */}
                         {/* /> */}
-                        <span className="text-sm text-zinc-600 dark:text-zinc-400">{account.server}</span>
+                        <span className="text-sm text-zinc-600 dark:text-zinc-400">{account.server.slice(0, account.server.length - 1)}</span>
                       </div>
                     </td>
                     <td className="p-3 text-sm text-zinc-600 dark:text-zinc-400">
-                      {account.LCUchampions}
+                      {account.LCUchampions.length}
                     </td>
-                    <td className="p-3 text-sm text-zinc-600 dark:text-zinc-400">{account.LCUskins}</td>
+                    <td className="p-3 text-sm text-zinc-600 dark:text-zinc-400">{account.LCUskins.length}</td>
                     <td className="p-3">
                       <div className="flex items-center gap-2">
                         <img
@@ -400,6 +432,7 @@ function Accounts() {
                       <div className="flex items-center gap-1 text-sm font-medium text-zinc-900 dark:text-zinc-100">
                         <CoinIcon className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
                         {isPriceLoading
+
                           ? (
                               <Skeleton className="h-4 w-16" />
                             )
@@ -417,7 +450,10 @@ function Accounts() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleViewAccountDetails(account.documentId)}>View Details</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleViewAccountDetails(account.documentId)}>
+                            View
+                            Details
+                          </DropdownMenuItem>
                           {/* <DropdownMenuItem>Rent Account</DropdownMenuItem> */}
                           {/* <DropdownMenuItem>Add to Favorites</DropdownMenuItem> */}
                         </DropdownMenuContent>

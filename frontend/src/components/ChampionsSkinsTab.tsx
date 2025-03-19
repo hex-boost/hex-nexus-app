@@ -67,7 +67,7 @@ export function ChampionsSkinsTab({ tabs, tabLabel, activeTab, onTabChangeAction
             style={activeStyle}
           />
           <div className="relative flex items-center w-full">
-            {tabs.map((tab, index) => (
+            {tabs.map((_, index) => (
               <div
                 key={index}
                 ref={el => (tabRefs.current[index] = el)}

@@ -35,26 +35,28 @@ type ExpandRelations<R> =
 type ExtractRecursiveType<T, K extends string | number | symbol = never> =
   K extends 'ranking'
     ? RankingType :
-    T extends Schema.Attribute.Integer ? number :
-      T extends Schema.Attribute.String ? string :
-        T extends Schema.Attribute.Email ? string :
-          T extends Schema.Attribute.Password ? string :
-            T extends Schema.Attribute.Decimal ? number :
-              T extends Schema.Attribute.Boolean ? boolean :
-                T extends Schema.Attribute.Media<'images', infer R>
-                  ? R extends true ? ApiResponse.Avatar[] : ApiResponse.Avatar :
-                  T extends Schema.Attribute.Media<infer _, infer R>
-                    ? R extends true ? ApiResponse.Avatar[] : ApiResponse.Avatar :
-                    T extends Schema.Attribute.Enumeration<infer U extends string[]> ? U[number] :
-                      T extends Schema.Attribute.DateTime ? Date :
-                        T extends Schema.Attribute.JSON & Schema.Attribute.CustomField<'plugin::multi-select.multi-select', infer U extends readonly string[]>
-                          ? ExtractValueFromLabelValue<U[number]>[] :
-                          T extends Schema.Attribute.JSON ? any :
-                            T extends Schema.Attribute.Time ? string :
-                              T extends Schema.Attribute.Text ? string :
-                                T extends Schema.Attribute.RichText ? string :
-                                  T extends Schema.Attribute.Relation<any, any> ? ExpandRelations<T> :
-                                    unknown;
+    K extends 'LCUchampions' ? number[] :
+      K extends 'LCUskins' ? number[] :
+        T extends Schema.Attribute.Integer ? number :
+          T extends Schema.Attribute.String ? string :
+            T extends Schema.Attribute.Email ? string :
+              T extends Schema.Attribute.Password ? string :
+                T extends Schema.Attribute.Decimal ? number :
+                  T extends Schema.Attribute.Boolean ? boolean :
+                    T extends Schema.Attribute.Media<'images', infer R>
+                      ? R extends true ? ApiResponse.Avatar[] : ApiResponse.Avatar :
+                      T extends Schema.Attribute.Media<infer _, infer R>
+                        ? R extends true ? ApiResponse.Avatar[] : ApiResponse.Avatar :
+                        T extends Schema.Attribute.Enumeration<infer U extends string[]> ? U[number] :
+                          T extends Schema.Attribute.DateTime ? Date :
+                            T extends Schema.Attribute.JSON & Schema.Attribute.CustomField<'plugin::multi-select.multi-select', infer U extends readonly string[]>
+                              ? ExtractValueFromLabelValue<U[number]>[] :
+                              T extends Schema.Attribute.JSON ? any :
+                                T extends Schema.Attribute.Time ? string :
+                                  T extends Schema.Attribute.Text ? string :
+                                    T extends Schema.Attribute.RichText ? string :
+                                      T extends Schema.Attribute.Relation<any, any> ? ExpandRelations<T> :
+                                        unknown;
 // Main Entity type for external use
 export type Entity<EntityType extends Struct.CollectionTypeSchema | Struct.SingleTypeSchema> =
   RecursiveEntity<EntityType>;

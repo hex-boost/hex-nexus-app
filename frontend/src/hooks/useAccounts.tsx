@@ -1,4 +1,4 @@
-import type { Root } from '@/routes/_protected/accounts';
+import type { PriceData } from '@/types/price.ts';
 import type { AccountType } from '@/types/types';
 import { strapiClient } from '@/lib/strapi.ts';
 import { useMapping } from '@/lib/useMapping';
@@ -16,10 +16,6 @@ export function useAccounts() {
     division: '',
     rank: '',
     region: '',
-    minChampions: 0,
-    maxChampions: 200,
-    minSkins: 0,
-    maxSkins: 150,
     company: '',
     status: '',
     selectedChampions: [] as string[],
@@ -46,7 +42,7 @@ export function useAccounts() {
   const { data: price, isLoading: isPriceLoading } = useQuery({
     queryKey: ['price'],
     queryFn: async () => {
-      const res = await strapiClient.request<Root>('get', 'price');
+      const res = await strapiClient.request<PriceData>('get', 'price');
       return res.data;
     },
   });
@@ -91,46 +87,28 @@ export function useAccounts() {
 
   const filteredAccounts = useMemo(() => {
     return sortedAccounts.filter((account) => {
-      if (searchQuery && !account.id.toString().includes(searchQuery.toLowerCase())) {
+      return true;
+      if (searchQuery && !account.documentId.toString().includes(searchQuery.toLowerCase())) {
         return false;
       }
 
-      if (
-        filters.game
-        && ((filters.game === 'League of Legends' && account.bannedGames.includes('league'))
-          || (filters.game === 'Valorant' && account.bannedGames.includes('valorant')))
-      ) {
+      if (filters.division && filters.division !== 'any'
+        && !account.rankings.some(ranking => ranking.division === filters.division)) {
         return false;
       }
 
-      if (filters.division && !account.rankings.some(ranking => ranking.division === filters.division)) {
+      if (filters.rank && filters.rank !== 'any'
+        && account.rankings.some(ranking => ranking.elo !== filters.rank)) {
         return false;
       }
 
-      if (filters.rank && account.rankings.some(ranking => ranking.elo !== filters.rank)) {
+      if (filters.region && filters.region !== 'any' && account.server !== filters.region) {
         return false;
       }
 
-      if (filters.region && account.server !== filters.region) {
+      if (filters.company && filters.company !== 'any' && account.type !== filters.company) {
         return false;
       }
-
-      if (
-        account.bannedGames.includes('league')
-        && (account.LCUchampions < filters.minChampions || account.LCUchampions > filters.maxChampions)
-      ) {
-        return false;
-      }
-
-      if (account.LCUskins < filters.minSkins || account.LCUskins > filters.maxSkins) {
-        return false;
-      }
-
-      if (filters.company && account.type !== filters.company) {
-        return false;
-      }
-
-      return !(filters.status && account.type !== filters.status);
     });
   }, [sortedAccounts, searchQuery, filters]);
 
@@ -140,10 +118,6 @@ export function useAccounts() {
       division: '',
       rank: '',
       region: '',
-      minChampions: 0,
-      maxChampions: 200,
-      minSkins: 0,
-      maxSkins: 150,
       company: '',
       status: '',
       selectedChampions: [],

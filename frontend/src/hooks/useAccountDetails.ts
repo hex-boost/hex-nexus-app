@@ -1,4 +1,5 @@
 import type { AccountType } from '@/types/types.ts';
+import { strapiClient } from '@/lib/strapi.ts';
 import { useCallback, useMemo, useState } from 'react';
 
 type RentalOption = {
@@ -56,8 +57,11 @@ export function useAccountDetails({
     alert(`Logging in to ${'lol' === 'lol' ? 'League of Legends' : 'Valorant'} with account: ${account.id}`);
   }, [account.id]);
 
-  const handleRentAccount = useCallback(() => {
-    // Implementation to be added
+  const handleRentAccount = useCallback((accountId, time) => {
+    strapiClient.create(`accounts/${accountId}`, {
+      game: 'league',
+      time,
+    });
   }, []);
 
   const handleDropAccount = useCallback(() => {
