@@ -1,83 +1,38 @@
-import AccountInfoDisplay from '@/components/account-info-display';
+import type { AccountType } from '@/types/types.ts';
 
-import { createFileRoute, Link, useParams } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
-
-const parseId = (id: string): number => {
-  const numId = Number.parseInt(id, 10);
-  if (Number.isNaN(numId)) {
-    throw new TypeError('Invalid account ID. Must be a number.');
-  }
-  return numId;
-};
+import AccountDetails from '@/components/account-details.tsx';
+import { strapiClient } from '@/lib/strapi.ts';
+import { createFileRoute, Link, useLoaderData, useParams } from '@tanstack/react-router';
 
 // The component that will render when the route matches
 export const Route = createFileRoute('/_protected/accounts/$id')({
-  loader: async ({ params }) => {
-    // Convert string ID to number
-    const numericId = parseId(params.id);
-
-    // Use the numeric ID in your fetch
-    const response = await fetch(`/api/accounts/${numericId}`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch account');
-    }
-    return response.json();
+  loader: async () => {
+    // Fetch all accounts
+    const res = await strapiClient.find<AccountType[]>('accounts/available');
+    return res.data;
   },
   beforeLoad: ({ params }) => {
     if (!('id' in params)) {
-      throw new Error('Invalid account ID. Must be a number.');
+      throw new Error('Invalid account ID');
     }
-    // TypeScript now knows params.id exists and is a string
-    if (!/^\d+$/.test(params.id)) {
-      throw new Error('Invalid account ID. Must be a number.');
-    }
+    // No longer checking for numeric IDs since documentIds are strings
   },
-
-  // The loader also has typed params
-
   component: AccountByID,
 });
 
 function AccountByID() {
   // Access the route parameters
   const { id } = useParams({ from: '/_protected/accounts/$id' });
-  const [account, setAccount] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // Get accounts from loader data
+  const accounts = useLoaderData({ from: '/_protected/accounts/$id' });
 
-  useEffect(() => {
-    async function fetchAccount() {
-      try {
-        setLoading(true);
-        // Use the ID parameter to fetch data
-        const response = await fetch(`/api/accounts/${id}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch account');
-        }
-        const data = await response.json();
-        setAccount(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    }
+  // Find the specific account by documentId
+  const account = accounts?.find(acc => acc.documentId === id) || null;
 
-    fetchAccount();
-  }, [id]);
-
-  if (loading) {
+  if (!accounts) {
     return <div>Loading account details...</div>;
   }
-  if (error) {
-    return (
-      <div>
-        Error:
-        {error}
-      </div>
-    );
-  }
+
   if (!account) {
     return <div>Account not found</div>;
   }
@@ -85,19 +40,23 @@ function AccountByID() {
   return (
     <div className="p-4">
       <div className="mb-4">
-        <Link to="/_protected/accounts" className="text-blue-600 hover:underline">
+        <Link to="/accounts" className="text-blue-600 hover:underline">
           ← Back to Accounts
         </Link>
       </div>
 
       <h1 className="text-2xl font-bold mb-4">
         Account Details (ID:
+        {' '}
         {id}
         )
       </h1>
 
-      {/* Use your AccountInfoDisplay component with the fetched account */}
-      <AccountInfoDisplay account={account} />
+      <div className="space-y-8">
+        {/* Pass the filtered account to the AccountInfoDisplay component */}
+        <AccountDetails rentalOptions={[{ hours: 1, price: 500 }]} account={account} />
+
+      </div>
     </div>
   );
 }

@@ -23,17 +23,19 @@ export function MultiSelect({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          variant="outline"
+          variant="ghost"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between h-9 px-3 text-sm"
+          className="w-full font-normal justify-between border bg-input/30 border-input h-9 px-3 text-sm"
         >
-          {selected.length > 0 ? `${selected.length} selected` : placeholder}
+          <span className={selected.length > 0 ? '' : 'text-muted-foreground'}>
+            {selected.length > 0 ? `${selected.length} selected` : placeholder}
+          </span>
           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0" align="start">
-        <Command className="max-h-[300px] border-input !bg-input/30">
+        <Command className="max-h-[300px] ">
           <CommandInput placeholder={`Search ${placeholder.toLowerCase()}...`} />
           <CommandList>
             <CommandEmpty>No results found.</CommandEmpty>

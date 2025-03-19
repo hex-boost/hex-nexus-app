@@ -151,7 +151,13 @@
     transform: translateY(0);
   }
 }
+.fill-background {
+  fill: var(--muted);
+}
 
+.fill-foreground {
+  fill: var(--foreground);
+}
 @keyframes slide-out-to-top-portal {
   from {
     opacity: 1;

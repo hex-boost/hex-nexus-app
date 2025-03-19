@@ -257,7 +257,7 @@ export const ACCOUNTS: Account[] = [
 ];
 
 // Constants
-export const REGIONS = ['NA', 'EUW', 'EUNE', 'OCE'];
+export const REGIONS = ['NA1', 'EUW1', 'EUNE1', 'OCE1'];
 export const LOL_TIERS = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Master', 'Grandmaster', 'Challenger'];
 export const VALORANT_TIERS = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Ascendant', 'Immortal', 'Radiant'];
 export const RANKS = ['I', 'II', 'III', 'IV'];

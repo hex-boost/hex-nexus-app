@@ -1,25 +1,52 @@
 'use client';
 
-import type { AccountType } from '@/types/types';
 import { Badge } from '@/components/ui/badge';
-import { useMapping } from '@/lib/useMapping';
+import { useMapping } from '@/lib/useMapping.tsx';
 import { cn } from '@/lib/utils';
-import { AccountGameIcon } from './GameComponents';
 
-// Define the Account type based on your data structure
+type AccountInfoDisplayProps = {
+  accountId: string;
+  game: 'lol' | 'valorant';
+  status: 'Available' | 'Rented' | 'Reserved' | 'Maintenance';
+  gameName?: string;
+  leaverBusterStatus?: 'None' | 'Low' | 'Medium' | 'High';
+  soloQueueRank: {
+    elo: string;
+    division: string;
+    points: number;
+  };
+  flexQueueRank?: {
+    elo: string;
+    division: string;
+    points: number;
+  };
+  previousSeasonRank?: {
+    tier: string;
+    rank: string;
+    season: number;
+  };
+  valorantRank?: {
+    tier: string;
+    rank: string;
+  };
+  compact?: boolean;
+};
 
-// Helper function to derive status from account properties
-const getAccountStatus = (account: AccountType): 'Available' | 'Rented' | 'Reserved' | 'Maintenance' => {
-  if (account.isRented) {
-    return 'Rented';
+// Helper function to get rank color
+
+// Helper function to get tier icon
+const getTierIcon = (tier: string) => {
+  // In a real app, you would use actual tier icons
+  return `/placeholder.svg?height=24&width=24&text=${tier.charAt(0)}`;
+};
+
+// Helper function to get game icon
+const getGameIcon = (game: 'lol' | 'valorant') => {
+  if (game === 'lol') {
+    return '/placeholder.svg?height=24&width=24&text=LoL';
+  } else {
+    return '/placeholder.svg?height=24&width=24&text=VAL';
   }
-  // if (account.type === 'maintenance') {
-  //   return 'Maintenance';
-  // }
-  // if (account.type === 'reserved') {
-  //   return 'Reserved';
-  // }
-  return 'Available';
 };
 
 // Helper function to get status color
@@ -37,8 +64,15 @@ const getStatusColor = (status: 'Available' | 'Rented' | 'Reserved' | 'Maintenan
 };
 
 // Helper function to get leaver buster status info
-// const getLeaverBusterInfo = (status: 'None' | 'Low' | 'Medium' | 'High' | null) => {
+// const getLeaverBusterInfo = (status: 'None' | 'Low' | 'Medium' | 'High') => {
 //   switch (status) {
+//     case 'None':
+//       return {
+//         color: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400',
+//         icon: Shield,
+//         label: 'No Penalties',
+//         description: 'This account has no leaver buster penalties.',
+//       };
 //     case 'Low':
 //       return {
 //         color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
@@ -60,112 +94,139 @@ const getStatusColor = (status: 'Available' | 'Rented' | 'Reserved' | 'Maintenan
 //         label: 'Low Priority (20min)',
 //         description: 'This account has a low-priority queue of 20 minutes for 5 games.',
 //       };
-//     case 'None':
-//     case null:
-//     default:
-//       return {
-//         color: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400',
-//         icon: Shield,
-//         label: 'No Penalties',
-//         description: 'This account has no leaver buster penalties.',
-//       };
 //   }
 // };
 
-// Simplified props interface that takes the whole account object
-type AccountInfoDisplayProps = {
-  account: AccountType;
-  compact?: boolean;
-};
-
 export default function AccountInfoDisplay({
-  account,
+  accountId,
+  game,
+  status,
+  gameName,
+  leaverBusterStatus,
+  soloQueueRank,
+  flexQueueRank,
+  previousSeasonRank,
+  compact = false,
 }: AccountInfoDisplayProps) {
-  const { getRankColor } = useMapping();
-
-  const status = getAccountStatus(account);
-
-  const placeholderRank = {
-    tier: 'Gold',
-    rank: 'IV',
-    lp: 75,
-  };
-
+  // const leaverBusterInfo = getLeaverBusterInfo(leaverBusterStatus);
+  // const LeaverIcon = leaverBusterInfo.icon;
+  const { getRankColor, getEloIcon } = useMapping();
   return (
-    <div className={cn('w-full', 'space-y-4')}>
+    <div className={cn('w-full', compact ? 'space-y-2' : 'space-y-4')}>
       {/* Header with ID and Status */}
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-2">
-          <AccountGameIcon game="lol" />
-          <span className="text-sm font-medium">{account.username}</span>
+          <img
+            src={getGameIcon(game) || '/placeholder.svg'}
+            alt={game === 'lol' ? 'League of Legends' : 'Valorant'}
+            className="w-5 h-5"
+          />
+          <span className="text-sm font-medium">{accountId}</span>
         </div>
         <Badge className={cn('px-3 py-1', getStatusColor(status))}>{status}</Badge>
       </div>
 
       {/* Game Name (if available) */}
-      {account.gamename && (
-        <div className="text-base font-medium text-zinc-900 dark:text-zinc-50">
-          {account.gamename}
-          {account.tagline ? `#${account.tagline}` : ''}
-        </div>
-      )}
+      {gameName && <div className="text-base font-medium text-zinc-900 dark:text-zinc-50">{gameName}</div>}
 
-      {/* Rank information - using placeholders since actual rank data is not provided */}
-      <div className={cn('grid gap-3', 'grid-cols-1 sm:grid-cols-2')}>
-        {/* Solo Queue Rank - Using placeholder */}
-        <div className="bg-zinc-50 dark:bg-zinc-800/30 p-2 rounded-md">
-          <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">Solo Queue</p>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">Not Available</p>
-        </div>
+      {/* Rank information */}
+      <div className={cn('grid gap-3', compact ? 'grid-cols-2' : 'grid-cols-1 sm:grid-cols-2')}>
+        <>
+          {/* Solo Queue Rank */}
+          <div className="bg-zinc-50 dark:bg-zinc-800/30 p-2 rounded-md">
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">Solo Queue</p>
+            {soloQueueRank
+              ? (
+                  <div className="flex items-center gap-1.5">
+                    <img
+                      src={getEloIcon(soloQueueRank.elo) || '/placeholder.svg'}
+                      alt={soloQueueRank.elo}
+                      className="w-5 h-5"
+                    />
+                    <div>
 
-        {/* Flex Queue Rank - Using placeholder */}
-        <div className="bg-zinc-50 dark:bg-zinc-800/30 p-2 rounded-md">
-          <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">Flex Queue</p>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">Not Available</p>
-        </div>
-      </div>
+                      <p className={`text-sm font-medium ${getRankColor(soloQueueRank.elo)}`}>
+                        {soloQueueRank.elo}
+                        {' '}
+                        {soloQueueRank.division}
+                      </p>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                        {soloQueueRank.points}
+                        {' '}
+                        LP
+                      </p>
+                    </div>
+                  </div>
+                )
+              : previousSeasonRank
+                ? (
+                    <div className="flex items-center gap-1.5">
+                      <img
+                        src={getTierIcon(previousSeasonRank.tier) || '/placeholder.svg'}
+                        alt={previousSeasonRank.tier}
+                        className="w-5 h-5 opacity-70"
+                      />
+                      <div>
+                        <p className={`text-sm font-medium ${getRankColor(previousSeasonRank.tier)} opacity-70`}>
+                          Unranked
+                        </p>
+                        <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                          S
+                          {previousSeasonRank.season}
+                          :
+                          {' '}
+                          {previousSeasonRank.tier}
+                          {' '}
+                          {previousSeasonRank.rank}
+                        </p>
+                      </div>
+                    </div>
+                  )
+                : (
+                    <p className="text-sm text-zinc-600 dark:text-zinc-400">Unranked</p>
+                  )}
+          </div>
 
-      {/* Server Information */}
-      <div className="bg-zinc-50 dark:bg-zinc-800/30 p-2 rounded-md">
-        <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">Server</p>
-        <p className="text-sm font-medium">{account.server}</p>
+          {/* Flex Queue Rank */}
+          <div className="bg-zinc-50 dark:bg-zinc-800/30 p-2 rounded-md">
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">Flex Queue</p>
+            {flexQueueRank
+              ? (
+                  <div className="flex items-center gap-1.5">
+                    <img
+                      src={getTierIcon(flexQueueRank.tier) || '/placeholder.svg'}
+                      alt={flexQueueRank.tier}
+                      className="w-5 h-5"
+                    />
+                    <div>
+                      <p className={`text-sm font-medium ${getRankColor(flexQueueRank.tier)}`}>
+                        {flexQueueRank.tier}
+                        {' '}
+                        {flexQueueRank.rank}
+                      </p>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                        {flexQueueRank.lp}
+                        {' '}
+                        LP
+                      </p>
+                    </div>
+                  </div>
+                )
+              : (
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">Unranked</p>
+                )}
+          </div>
+        </>
+
       </div>
 
       {/* Leaver Buster Status */}
       {/* <div className={cn('flex items-center gap-2 p-2 rounded-md', leaverBusterInfo.color)}> */}
-      {/*   <LeaverIcon className="h-4 w-4" /> */}
-      {/*   <span className={compact ? 'text-xs' : 'text-sm'}> */}
-      {/*     {compact ? leaverBusterInfo.label : leaverBusterInfo.description} */}
-      {/*   </span> */}
+      {/*  <LeaverIcon className="h-4 w-4" /> */}
+      {/*  <span className={compact ? 'text-xs' : 'text-sm'}> */}
+      {/*    {compact ? leaverBusterInfo.label : leaverBusterInfo.description} */}
+      {/*  </span> */}
       {/* </div> */}
-
-      {/* Available Champions Info */}
-      {
-        account.LCUchampions && account.LCUchampions.length > 0 && (
-          <div className="bg-zinc-50 dark:bg-zinc-800/30 p-2 rounded-md">
-            <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">Champions</p>
-            <p className="text-sm font-medium">
-              {account.LCUchampions.length}
-              {' '}
-              available
-            </p>
-          </div>
-        )
-      }
-
-      {/* Available Skins Info */}
-      {
-        account.LCUskins && account.LCUskins.length > 0 && (
-          <div className="bg-zinc-50 dark:bg-zinc-800/30 p-2 rounded-md">
-            <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">Skins</p>
-            <p className="text-sm font-medium">
-              {account.LCUskins.length}
-              {' '}
-              available
-            </p>
-          </div>
-        )
-      }
     </div>
   );
 }
