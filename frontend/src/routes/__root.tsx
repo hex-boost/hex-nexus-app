@@ -1,6 +1,7 @@
 import AdminPanelLayout from '@/components/admin-panel/admin-panel-layout';
 import { LoginForm } from '@/components/login-form';
 
+import { Toaster } from '@/components/ui/sonner.tsx';
 import { useUserStore } from '@/stores/useUserStore';
 import { createRootRouteWithContext, Outlet } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
@@ -15,6 +16,8 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     const { isAuthenticated } = useUserStore();
     return (
       <>
+        <Toaster />
+
         <TanStackRouterDevtools />
         {isAuthenticated()
           ? (

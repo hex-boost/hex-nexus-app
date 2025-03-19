@@ -1,6 +1,8 @@
 'use client';
 
+import type { Price } from '@/types/price.ts';
 import type { AccountType } from '@/types/types.ts';
+import type { StrapiError } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
 import { ChampionsSkinsTab } from '@/components/ChampionsSkinsTab.tsx';
 import { CoinIcon } from '@/components/coin-icon.tsx';
 import { Badge } from '@/components/ui/badge';
@@ -16,58 +18,61 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { useAccountDetails } from '@/hooks/useAccountDetails.ts';
 import { useAllDataDragon } from '@/hooks/useDataDragon.ts';
+import { strapiClient } from '@/lib/strapi.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
 import { cn } from '@/lib/utils';
+import { useMutation } from '@tanstack/react-query';
 import { ArrowDownToLine, Check, CircleCheckBig, Clock, LogIn, Search, Shield, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import AccountInfoDisplay from './account-info-display';
 
 // Types
 
-type RentalOption = {
-  hours: number;
-  price: number;
-};
-
 // Rental options
 
-// Helper function to get skin rarity color
-
-export default function AccountDetails({ account, rentalOptions }: {
-  rentalOptions: RentalOption[];
+export default function AccountDetails({ account, price, onAccountChange, dropRefund }: {
+  onAccountChange: () => void;
+  price: Price;
+  dropRefund?: number;
   account: AccountType;
 }) {
   const {
-    selectedRentalOption,
-    setSelectedRentalOption,
     championsSearch,
     setChampionsSearch,
     skinsSearch,
     setSkinsSearch,
-    isDropDialogOpen,
-    setIsDropDialogOpen,
-    // filteredChampions,
-    // filteredSkins,
     handleLoginToAccount,
     handleRentAccount,
-    handleDropAccount,
-  } = useAccountDetails({ account, rentalOptions });
-
-  const gameType = account.bannedGames?.includes('league') ? 'valorant' : 'lol';
+    getFlexQueueRank,
+    getSoloQueueRank,
+    setSelectedRentalOptionIndex,
+    selectedRentalOptionIndex,
+    isRentPending,
+    isDropDialogOpen,
+    setIsDropDialogOpen,
+  } = useAccountDetails({ account, price, onAccountChange });
 
   // Function to get rank info from rankings array
-  const getSoloQueueRank = () => {
-    const soloRank = account.rankings?.find(r => r.queueType === 'soloqueue');
-    return { elo: soloRank?.elo, points: soloRank?.points, division: soloRank?.division };
-  };
-
-  const getFlexQueueRank = () => {
-    const flexRank = account.rankings?.find(r => r.queueType === 'flex');
-    return { elo: flexRank?.elo, points: flexRank?.points, division: flexRank?.division };
-  };
   // const {} = useMapping();
+
+  const { mutate: handleDropAccount, isPending: isDropPending } = useMutation<{ message: string }, StrapiError, any>({
+    mutationKey: ['accounts', 'drop', account.documentId],
+    mutationFn: async () => {
+      return await strapiClient.request<{ message: string }>('post', `accounts/${account.documentId}/drop`);
+    },
+    onSuccess: (data) => {
+      toast.success(data.message);
+      onAccountChange();
+    },
+    onError: (error) => {
+      toast.error(error.error.message);
+      onAccountChange();
+    },
+  });
   const {
     allChampions,
     rawChampionsData,
@@ -110,13 +115,20 @@ export default function AccountDetails({ account, rentalOptions }: {
   }, [account.LCUchampions, championsSearch, allChampions, isLoading, rawChampionsData]);
 
   const [activeTab, setActiveTab] = useState(0);
-  const { getCompanyIcon, getGameIcon, getStatusColor } = useMapping();
-  const status = account.user ? 'Rented' : 'Available';
+  const { getCompanyIcon, getGameIcon } = useMapping();
+  const soloQueueRank = getSoloQueueRank();
+  const baseElo = soloQueueRank?.elo || 'default';
+  const baseEloUpperCase = baseElo.charAt(0).toUpperCase() + baseElo.slice(1);
+  const basePrice = price.league[baseEloUpperCase] || 666;
+  const rentalOptionsWithPrice = price.timeMultipliers.map(percentage => ({
+    hours: percentage,
+    price: percentage === 0 ? basePrice : basePrice * (1 + percentage / 100),
+  }));
   return (
 
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
       {/* Left column - Account details */}
-      <div className="lg:col-span-2 space-y-6">
+      <div className="lg:col-span-3 space-y-6">
         {/* Account info card */}
         <Card>
           <CardHeader className="border-none justify-center">
@@ -244,7 +256,7 @@ export default function AccountDetails({ account, rentalOptions }: {
                 {filteredChampions.map(champion => (
                   <div
                     key={champion.id}
-                    className="bg-zinc-50 dark:bg-zinc-800/30 rounded-md overflow-hidden flex flex-col items-center"
+                    className="scale-110 rounded-md overflow-hidden flex flex-col items-center"
                   >
                     <img
                       src={champion.imageUrl}
@@ -309,11 +321,11 @@ export default function AccountDetails({ account, rentalOptions }: {
                         alt={skin.name}
                         className="w-full rounded-tl-md rounded-tr-md h-auto object-cover"
                       />
-                      <Badge
-                        className={cn('absolute z-[10] -top-2 -right-2 text-[10px] px-1 py-0', skin.rarity)}
-                      >
-                        {skin.rarity}
-                      </Badge>
+                      {/* <Badge */}
+                      {/*  className={cn('absolute z-[10] -top-2 -right-2 text-[10px] px-1 py-0 blur-[0.04px]  ', skin.rarity)} */}
+                      {/* > */}
+                      {/*  {skin.rarity} */}
+                      {/* </Badge> */}
                     </div>
                     <div className="p-2">
                       <p className="text-xs font-medium text-zinc-900 dark:text-zinc-50 truncate">{skin.name}</p>
@@ -338,8 +350,8 @@ export default function AccountDetails({ account, rentalOptions }: {
       </div>
 
       {/* Right column - Rental options */}
-      <div className="space-y-6">
-        {account.user ? (/* Rented Account Card */
+      <div className="space-y-6 col-span-2">
+        {account.user ? (
           <Card>
             <CardHeader>
               <CardTitle>Rented Account</CardTitle>
@@ -364,7 +376,10 @@ export default function AccountDetails({ account, rentalOptions }: {
                     className="flex items-center gap-1 text-lg font-semibold text-zinc-900 dark:text-zinc-50"
                   >
                     <CoinIcon className="w-4 h-4 text-amber-500 dark:text-amber-400" />
-                    {/* {account.refundableAmount!.toLocaleString()} */}
+                    {dropRefund
+                      ? <>{dropRefund.toLocaleString()}</>
+                      : <Skeleton className="w-6 h-4"></Skeleton>}
+
                     {' '}
                     coins
                   </div>
@@ -414,7 +429,9 @@ export default function AccountDetails({ account, rentalOptions }: {
                     </Button>
                     <Button
                       variant="destructive"
-                      onClick={handleDropAccount}
+                      loading={isDropPending}
+                      disabled={isDropPending}
+                      onClick={() => handleDropAccount()}
                       className="flex items-center gap-1"
                     >
                       <ArrowDownToLine className="h-4 w-4" />
@@ -433,22 +450,22 @@ export default function AccountDetails({ account, rentalOptions }: {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
-                {rentalOptions.map(option => (
+                {price.timeMultipliers.map((option, index) => (
                   <div
-                    key={option.hours}
-                    className={cn('border rounded-lg p-3 cursor-pointer transition-all', selectedRentalOption.hours === option.hours ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700')}
-                    onClick={() => setSelectedRentalOption(option)}
+                    key={index}
+                    className={cn('border rounded-lg p-3 cursor-pointer transition-all', selectedRentalOptionIndex === index ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700')}
+                    onClick={() => setSelectedRentalOptionIndex(index)}
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex items-center gap-1.5">
                         <Clock className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
                         <span className="font-medium text-zinc-900 dark:text-zinc-50">
-                          {option.hours}
+                          {option}
                           {' '}
-                          {option.hours === 1 ? 'hour' : 'hours'}
+                          {option === 0 ? 'minute' : 'minutes'}
                         </span>
                       </div>
-                      {selectedRentalOption.hours === option.hours && (
+                      {selectedRentalOptionIndex === index && (
                         <div className="bg-blue-500 rounded-full p-0.5">
                           <Check className="w-3 h-3 text-white" />
                         </div>
@@ -458,11 +475,11 @@ export default function AccountDetails({ account, rentalOptions }: {
                       className="flex items-center gap-1 text-sm font-medium text-zinc-900 dark:text-zinc-50"
                     >
                       <CoinIcon className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
-                      {option.price.toLocaleString()}
+                      {rentalOptionsWithPrice[index]?.price.toLocaleString() || 0}
                       {' '}
                       coins
                     </div>
-                    {option.hours === 24 && (
+                    {option === 24 && (
                       <Badge
                         variant="outline"
                         className="mt-2 text-xs bg-blue-50 dark:bg-blue-900/20"
@@ -481,15 +498,20 @@ export default function AccountDetails({ account, rentalOptions }: {
                     className="flex items-center gap-1 text-lg font-semibold text-zinc-900 dark:text-zinc-50"
                   >
                     <CoinIcon className="w-4 h-4 text-amber-500 dark:text-amber-400" />
-                    {selectedRentalOption.price.toLocaleString()}
+                    {(() => {
+                      // Make sure we have a valid selected option and price
+                      const selectedOption = rentalOptionsWithPrice[selectedRentalOptionIndex];
+                      return selectedOption ? selectedOption.price.toLocaleString() : '0';
+                    })()}
                     {' '}
                     coins
                   </div>
                 </div>
-
                 <Button
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                  onClick={handleRentAccount}
+                  disabled={!rentalOptionsWithPrice[selectedRentalOptionIndex] || isRentPending}
+                  loading={isRentPending}
+                  onClick={() => handleRentAccount(selectedRentalOptionIndex)}
                 >
                   Rent Now
                 </Button>

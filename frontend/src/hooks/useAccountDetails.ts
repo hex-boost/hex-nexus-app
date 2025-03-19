@@ -1,43 +1,26 @@
+import type { Price } from '@/types/price.ts';
 import type { AccountType } from '@/types/types.ts';
-import { strapiClient } from '@/lib/strapi.ts';
-import { useCallback, useMemo, useState } from 'react';
 
-type RentalOption = {
-  hours: number;
-  price: number;
-};
+import type { StrapiError } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
+import { strapiClient } from '@/lib/strapi.ts';
+import { useMutation } from '@tanstack/react-query';
+import { useCallback, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 
 export function useAccountDetails({
   account,
-  rentalOptions,
+  onAccountChange,
 }: {
+  onAccountChange: () => void;
   account: AccountType;
-  rentalOptions: RentalOption[];
+  price: Price;
 }) {
-  // State management
-  const [selectedRentalOption, setSelectedRentalOption] = useState<RentalOption>(
-    rentalOptions[3] || rentalOptions[0],
-  );
-  const [championsSearch, setChampionsSearch] = useState('');
-  const [skinsSearch, setSkinsSearch] = useState('');
+  const [selectedRentalOptionIndex, setSelectedRentalOptionIndex] = useState<number>(1);
   const [isDropDialogOpen, setIsDropDialogOpen] = useState(false);
 
-  const getSkinRarityColor = (rarity: string) => {
-    switch (rarity) {
-      case 'Common':
-        return 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400';
-      case 'Epic':
-        return 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400';
-      case 'Legendary':
-        return 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400';
-      case 'Ultimate':
-        return 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400';
-      case 'Mythic':
-        return 'bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400';
-      default:
-        return 'bg-zinc-100 dark:bg-zinc-900/30 text-zinc-600 dark:text-zinc-400';
-    }
-  };
+  const [championsSearch, setChampionsSearch] = useState('');
+  const [skinsSearch, setSkinsSearch] = useState('');
+
   // Filtered data with memoization for performance
   const filteredChampions = useMemo(() =>
     account.LCUchampions.filter(champion =>
@@ -52,41 +35,67 @@ export function useAccountDetails({
       // || skin.champion.toLowerCase().includes(skinsSearch.toLowerCase()),
     ), [account.LCUskins, skinsSearch]);
 
-  // Handler functions
+  const getSoloQueueRank = () => {
+    const soloRank = account.rankings?.find(r => r.queueType === 'soloqueue');
+    return { elo: soloRank?.elo, points: soloRank?.points, division: soloRank?.division };
+  };
+
+  const getFlexQueueRank = () => {
+    const flexRank = account.rankings?.find(r => r.queueType === 'flex');
+    return { elo: flexRank?.elo, points: flexRank?.points, division: flexRank?.division };
+  };
   const handleLoginToAccount = useCallback(() => {
     alert(`Logging in to ${'lol' === 'lol' ? 'League of Legends' : 'Valorant'} with account: ${account.id}`);
   }, [account.id]);
-
-  const handleRentAccount = useCallback((accountId, time) => {
-    strapiClient.create(`accounts/${accountId}`, {
-      game: 'league',
-      time,
-    });
-  }, []);
+  const { mutate: handleRentAccount, isPending: isRentPending } = useMutation<
+    { message: string },
+    StrapiError,
+    number
+  >({
+    mutationKey: ['accounts', 'rent', account.documentId],
+    mutationFn: async (timeIndex: number) => {
+      return await strapiClient.request<{ message: string }>('post', `accounts/${account.documentId}/rentals`, {
+        data: {
+          game: 'league',
+          time: timeIndex,
+        },
+      });
+    },
+    onSuccess: (data) => {
+      console.log(data);
+      toast.success(data.message);
+      onAccountChange();
+    },
+    onError: (error) => {
+      toast.error(error.error.message);
+      onAccountChange();
+    },
+  });
 
   const handleDropAccount = useCallback(() => {
-    setIsDropDialogOpen(false);
+    // setIsDropDialogOpen(false);
     // Additional implementation to be added
   }, []);
 
   return {
     // State
-    selectedRentalOption,
-    setSelectedRentalOption,
+    handleRentAccount,
+    isRentPending,
+    setSelectedRentalOptionIndex,
+    selectedRentalOptionIndex,
+    isDropDialogOpen,
+    setIsDropDialogOpen,
     championsSearch,
     setChampionsSearch,
     skinsSearch,
     setSkinsSearch,
-    isDropDialogOpen,
-    setIsDropDialogOpen,
 
     // Derived data
     filteredChampions,
     filteredSkins,
-
-    getSkinRarityColor, // Handlers
+    getFlexQueueRank,
+    getSoloQueueRank,
     handleLoginToAccount,
-    handleRentAccount,
     handleDropAccount,
   };
 }

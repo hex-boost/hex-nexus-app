@@ -189,7 +189,6 @@ export default function AccountActiveState({
 
   // Handle login to game
   const handleLogin = () => {
-    // In a real app, this would integrate with the game client
     alert(`Logging in to ${game === 'lol' ? 'League of Legends' : 'Valorant'} with account: ${accountId}`);
   };
 
@@ -198,12 +197,6 @@ export default function AccountActiveState({
   //   // In a real app, this would navigate to the extension page
   //   alert(`Extending rental for account: ${accountId}`);
   // };
-
-  // Handle drop account
-  const handleDropAccount = () => {
-    setIsDropDialogOpen(false);
-    alert(`Account ${accountId} has been dropped. ${refundableAmount} coins have been refunded.`);
-  };
 
   return (
     <Card className="w-full">
@@ -452,9 +445,9 @@ export default function AccountActiveState({
               <Button variant="outline" onClick={() => setIsDropDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button variant="destructive" onClick={handleDropAccount} className="flex items-center gap-1">
+              <Button variant="destructive" onClick={() => handleDropAccount()} className="flex items-center gap-1">
                 <ArrowDownToLine className="h-4 w-4" />
-                Drop & Refund
+                Drop Account
               </Button>
             </DialogFooter>
           </DialogContent>

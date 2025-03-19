@@ -58,6 +58,22 @@ export function useMapping() {
     return icons[rank.toLowerCase()] || ironIcon; // Default to iron if not found
   }
 
+  const getSkinRarityColor = (rarity: string) => {
+    switch (rarity) {
+      case 'Common':
+        return 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400';
+      case 'Epic':
+        return 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400';
+      case 'Legendary':
+        return 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400';
+      case 'Ultimate':
+        return 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400';
+      case 'Mythic':
+        return 'bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400';
+      default:
+        return 'bg-zinc-100 dark:bg-zinc-900/30 text-zinc-600 dark:text-zinc-400';
+    }
+  };
   const getRegionIcon = (region: 'NA1' | 'EUW1' | 'EUNE1' | 'OCE1' | 'BR1' | 'any') => {
     switch (region) {
       case 'any':
@@ -150,6 +166,6 @@ export function useMapping() {
     getRankColor,
     getGameIcon,
     getStatusColor,
-
+    getSkinRarityColor,
   };
 }

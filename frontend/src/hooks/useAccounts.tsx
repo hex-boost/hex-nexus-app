@@ -1,4 +1,3 @@
-import type { PriceData } from '@/types/price.ts';
 import type { AccountType } from '@/types/types';
 import { strapiClient } from '@/lib/strapi.ts';
 import { useMapping } from '@/lib/useMapping';
@@ -35,14 +34,6 @@ export function useAccounts() {
     queryKey: ['accounts'],
     queryFn: async () => {
       const res = await strapiClient.find<AccountType[]>('accounts/available');
-      return res.data;
-    },
-  });
-
-  const { data: price, isLoading: isPriceLoading } = useQuery({
-    queryKey: ['price'],
-    queryFn: async () => {
-      const res = await strapiClient.request<PriceData>('get', 'price');
       return res.data;
     },
   });
@@ -87,7 +78,6 @@ export function useAccounts() {
 
   const filteredAccounts = useMemo(() => {
     return sortedAccounts.filter((account) => {
-      return true;
       if (searchQuery && !account.documentId.toString().includes(searchQuery.toLowerCase())) {
         return false;
       }
@@ -109,6 +99,7 @@ export function useAccounts() {
       if (filters.company && filters.company !== 'any' && account.type !== filters.company) {
         return false;
       }
+      return true;
     });
   }, [sortedAccounts, searchQuery, filters]);
 
@@ -154,8 +145,6 @@ export function useAccounts() {
     // Data
     accounts,
     isLoading,
-    price,
-    isPriceLoading,
 
     // Mapping utilities
     getRankColor,

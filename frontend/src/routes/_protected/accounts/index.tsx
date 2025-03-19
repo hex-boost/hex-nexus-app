@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { useAccounts } from '@/hooks/useAccounts.tsx';
 import { useAllDataDragon } from '@/hooks/useDataDragon.ts';
+import { usePrice } from '@/hooks/usePrice.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
 import { cn } from '@/lib/utils';
 import { createFileRoute } from '@tanstack/react-router';
@@ -21,7 +22,7 @@ import {
   MoreHorizontal,
   Search,
 } from 'lucide-react';
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 // Helper function to get company icon
 export const Route = createFileRoute('/_protected/accounts/')({
@@ -29,14 +30,15 @@ export const Route = createFileRoute('/_protected/accounts/')({
 });
 
 function Accounts() {
-  const { isPriceLoading, price, isLoading: isAccountLoading, accounts, filteredAccounts, filters, setFilters, showFilters, setShowFilters, searchQuery, setSearchQuery, requestSort, resetFilters, SortIndicator, handleViewAccountDetails, getRankColor, getEloIcon, getRegionIcon } = useAccounts();
+  const { isLoading: isAccountLoading, accounts, filteredAccounts, filters, setFilters, showFilters, setShowFilters, searchQuery, setSearchQuery, requestSort, resetFilters, SortIndicator, handleViewAccountDetails, getRankColor, getEloIcon, getRegionIcon } = useAccounts();
+
   const { getCompanyIcon } = useMapping();
   const [loadDragonData, setLoadDragonData] = useState(false);
 
   const { allChampions, allSkins, isLoading: isDataDragonLoading } = useAllDataDragon(loadDragonData);
   const [selectedChampionIds, setSelectedChampionIds] = useState<string[]>([]);
   const [selectedSkinIds, setSelectedSkinIds] = useState<string[]>([]);
-
+  const { price, isPriceLoading } = usePrice();
   const isLoading = isPriceLoading || isAccountLoading;
   if (isLoading) {
     return <div>Loading...</div>;
@@ -154,7 +156,7 @@ function Accounts() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem className="flex items-center" value="any">
-                        <div className="w-6 h-6">{getRegionIcon('any')}</div>
+                        <div className="w-6 flex items-center justify-center h-6">{getRegionIcon('any')}</div>
                         <span>
                           Any region
                         </span>
@@ -162,10 +164,10 @@ function Accounts() {
                       {REGIONS.map(region => (
                         <SelectItem className="flex items-center" key={region} value={region}>
 
-                          <div className="w-6 h-6">{getRegionIcon(region as any)}</div>
-                          <span>
+                          <div className="w-6 h-6 flex items-center justify-center ">{getRegionIcon(region as any)}</div>
+                          <span className="text-sm">
                             {' '}
-                            {region}
+                            {region.slice(0, region.length - 1)}
                           </span>
                         </SelectItem>
                       ))}

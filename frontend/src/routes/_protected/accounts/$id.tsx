@@ -2,41 +2,82 @@ import type { AccountType } from '@/types/types.ts';
 
 import AccountDetails from '@/components/account-details.tsx';
 import { Button } from '@/components/ui/button.tsx';
+import { usePrice } from '@/hooks/usePrice.ts';
 import { strapiClient } from '@/lib/strapi.ts';
-import { createFileRoute, Link, useLoaderData, useParams } from '@tanstack/react-router';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { createFileRoute, Link, useParams } from '@tanstack/react-router';
 import { ArrowLeftIcon } from 'lucide-react';
 
 // The component that will render when the route matches
 export const Route = createFileRoute('/_protected/accounts/$id')({
-  loader: async () => {
-    // Fetch all accounts
-    const res = await strapiClient.find<AccountType[]>('accounts/available');
-    return res.data;
-  },
   beforeLoad: ({ params }) => {
     if (!('id' in params)) {
       throw new Error('Invalid account ID');
     }
-    // No longer checking for numeric IDs since documentIds are strings
   },
   component: AccountByID,
 });
 
 function AccountByID() {
-  // Access the route parameters
   const { id } = useParams({ from: '/_protected/accounts/$id' });
-  // Get accounts from loader data
-  const accounts = useLoaderData({ from: '/_protected/accounts/$id' });
+  const { price, isPriceLoading } = usePrice();
+  const queryClient = useQueryClient();
 
-  // Find the specific account by documentId
-  const account = accounts?.find(acc => acc.documentId === id) || null;
+  // Fetch available accounts
+  const {
+    data: availableAccounts,
+    isLoading: isAvailableLoading,
+  } = useQuery({
+    queryKey: ['accounts', 'available'],
+    queryFn: () => strapiClient.find<AccountType[]>('accounts/available').then(res => res.data),
+  });
 
-  if (!accounts) {
+  // Fetch rented accounts
+  const {
+    data: rentedAccounts,
+    isLoading: isRentedLoading,
+  } = useQuery({
+    queryKey: ['accounts', 'rented'],
+    queryFn: () => strapiClient.find<AccountType[]>('accounts/rented').then(res => res.data),
+  });
+
+  // Fetch refund data if needed
+  const {
+    data: refundData,
+    isLoading: isRefundLoading,
+    error: refundError,
+  } = useQuery({
+    queryKey: ['accounts', id, 'refund'],
+    queryFn: () => strapiClient.find<{ amount: number }>(`accounts/${id}/refund`).then(res => res.data),
+    enabled: !!id,
+  });
+  console.log('ID param:', id);
+  console.log('Refund data:', refundData);
+  console.log('Refund error:', refundError);
+  // Function to refetch both available and rented accounts data
+  const refetchAccount = () => {
+    // Invalidate queries to trigger refetching
+    queryClient.invalidateQueries({ queryKey: ['accounts', 'available'] });
+    queryClient.invalidateQueries({ queryKey: ['accounts', 'rented'] });
+  };
+
+  // Merge account data with rented account data taking precedence
+  const account = availableAccounts?.find(acc => acc.documentId === id)
+    || rentedAccounts?.find(acc => acc.documentId === id)
+    || null;
+
+  const isLoading = isAvailableLoading || isRentedLoading || isPriceLoading;
+
+  if (isLoading) {
     return <div>Loading account details...</div>;
   }
 
   if (!account) {
     return <div>Account not found</div>;
+  }
+
+  if (!price) {
+    return <div>Price not found</div>;
   }
 
   return (
@@ -46,17 +87,18 @@ function AccountByID() {
           <Button variant="outline" className="space-x-2">
             <ArrowLeftIcon />
             {' '}
-            <span>
-              Back to Accounts
-            </span>
+            <span>Back to Accounts</span>
           </Button>
         </Link>
       </div>
 
       <div className="space-y-8">
-        {/* Pass the filtered account to the AccountInfoDisplay component */}
-        <AccountDetails rentalOptions={[{ hours: 1, price: 500 }]} account={account} />
-
+        <AccountDetails
+          dropRefund={refundData?.amount}
+          price={price}
+          account={account}
+          onAccountChange={refetchAccount}
+        />
       </div>
     </div>
   );
