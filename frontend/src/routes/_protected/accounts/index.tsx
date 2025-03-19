@@ -1,5 +1,3 @@
-import nexusIcon from '@/assets/logo-hex-boost.svg';
-
 import { CHAMPIONS, COMPANIES, LOL_TIERS, RANKS, REGIONS, SKINS, VALORANT_TIERS } from '@/components/accountsMock';
 import { CoinIcon } from '@/components/coin-icon';
 import { AccountGameIcon } from '@/components/GameComponents';
@@ -11,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { useAccounts } from '@/hooks/useAccounts.tsx';
+import { useMapping } from '@/lib/useMapping.tsx';
 import { cn } from '@/lib/utils';
 import { createFileRoute } from '@tanstack/react-router';
 import {
@@ -64,14 +63,6 @@ export type Valorant = {
 };
 
 // Helper function to get company icon
-const getCompanyIcon = (company: string) => {
-  // In a real app, you would use actual company icons
-  if (company === 'Boost Royal') {
-    return `data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAkGBwgHBgkIBwgKCgkLDRYPDQwMDRsUFRAWIB0iIiAdHx8kKDQsJCYxJx8fLT0tMTU3Ojo6GCs/RD84QzQ5OjcBCgoKDQwNGg8PGjclHyU3Nzc3NzcyNzc3Nzc3LjU3ODc3Nzc3Njc3NzcvMzU1Nzc0NTQ3NzU3NzQ3MDcyNzc1Nf/AABEIABwAHAMBEQACEQEDEQH/xAAXAAADAQAAAAAAAAAAAAAAAAADBQYE/8QAKRAAAgECBQMCBwAAAAAAAAAAAQIDAAQFBhETIRIxQVHhFDJDUmFxgf/EABkBAAMBAQEAAAAAAAAAAAAAAAEDBAIFBv/EACYRAAICAAQEBwAAAAAAAAAAAAABAgMEERIhMUHR8AUTUWFxseH/2gAMAwEAAhEDEQA/ABotcts9sHRKw2APGlYbAaFTil5gE2IXHwGHXF2E69mMv066a6eNapitUkjN1nl1ufoS2ZM1TNY2F3gofYMgeWQj5WH0mHj1/Pgnmn1UrU1Pv3OVi8dJwjOnhz6Pv4KrCsdhxG6soraB9u6tmn3SeFKkAp+wTz/O+tS2VOCbfJlteKVkoqK2az/CgCcVNmUii8sVvrGe0kZlSZChK9wDVCnpaYLYKyDg+YmwvItpYSs0V7cskg6ZYZApSVfRhp7jxTJ4uUluiCvw6Fb2k+o5y/lu1wMyi0kleJ3LpHIQdong9J015Gnf7RSLb3ZxH0YaFGel7fQ+C8VNmUGCMCns0aEArDAHQUtgCAVlsB//2Q==`;
-  } else {
-    return nexusIcon;
-  }
-};
 export const Route = createFileRoute('/_protected/accounts/')({
   component: Accounts,
 });
@@ -86,6 +77,7 @@ function Accounts() {
   if ((accounts && accounts.length === 0) || !accounts) {
     return <div>No accounts found.</div>;
   }
+  const { getCompanyIcon } = useMapping();
   return (
 
     <div className="space-y-6">

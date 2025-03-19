@@ -1,6 +1,7 @@
 'use client';
 
 import type { AccountType } from '@/types/types.ts';
+import { ChampionsSkinsTab } from '@/components/ChampionsSkinsTab.tsx';
 import { CoinIcon } from '@/components/coin-icon.tsx';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,11 +16,12 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAccountDetails } from '@/hooks/useAccountDetails.ts';
 import { useDataDragon } from '@/hooks/useDataDragon.ts';
+import { useMapping } from '@/lib/useMapping.tsx';
 import { cn } from '@/lib/utils';
-import { ArrowDownToLine, Check, Clock, LogIn, Search, Shield, X } from 'lucide-react';
+import { ArrowDownToLine, Check, CircleCheckBig, Clock, LogIn, Search, Shield, X } from 'lucide-react';
+import { useState } from 'react';
 import AccountInfoDisplay from './account-info-display';
 
 // Types
@@ -61,10 +63,10 @@ export default function AccountDetails({ account, rentalOptions }: {
     return { elo: soloRank?.elo, points: soloRank?.points, division: soloRank?.division };
   };
 
-  // const getFlexQueueRank = () => {
-  //   const flexRank = account.rankings?.find(r => r.queueType === 'flex');
-  //   return { elo: flexRank.elo, points: flexRank.points, division: flexRank.division };
-  // };
+  const getFlexQueueRank = () => {
+    const flexRank = account.rankings?.find(r => r.queueType === 'flex');
+    return { elo: flexRank?.elo, points: flexRank?.points, division: flexRank?.division };
+  };
   // const {} = useMapping();
   const {
     filteredChampions,
@@ -76,6 +78,8 @@ export default function AccountDetails({ account, rentalOptions }: {
     championsSearch,
     skinsSearch,
   });
+  const [activeTab, setActiveTab] = useState(0);
+  const { getCompanyIcon } = useMapping();
   return (
 
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -83,17 +87,17 @@ export default function AccountDetails({ account, rentalOptions }: {
       <div className="lg:col-span-2 space-y-6">
         {/* Account info card */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
+          <CardHeader className="border-none">
+            <CardTitle className="flex border-none items-center justify-between">
               <span>Account Information</span>
-              <Badge variant="outline" className="flex items-center gap-1">
+              <div variant="ghost" className="flex text-lg capitalize items-center gap-2">
                 <img
-                  src={`/placeholder.svg?height=40&width=40&text=${account.type.split(' ')[0]}`}
+                  src={getCompanyIcon(account.type)}
                   alt={account.type}
-                  className="w-4 h-4 rounded-sm"
+                  className="w-8 h-8 rounded-sm"
                 />
-                {account.type}
-              </Badge>
+                {/* {account.type} */}
+              </div>
             </CardTitle>
             <CardDescription>
               Detailed information about this
@@ -108,92 +112,74 @@ export default function AccountDetails({ account, rentalOptions }: {
               status={account.user ? 'Rented' : 'Available'}
               leaverBusterStatus="None"
               soloQueueRank={getSoloQueueRank()}
-              // flexQueueRank={getFlexQueueRank()}
+              flexQueueRank={getFlexQueueRank()}
               // previousSeasonRank={'unknown'}
               // valorantRank={'unknown'}
             />
 
             {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {'lol' === 'lol' && (
-                <div className="bg-zinc-50 dark:bg-zinc-800/30 p-2 rounded-md">
-                  <p className="text-xs text-zinc-600 dark:text-zinc-400">Champions</p>
-                  <p className="text-base font-semibold text-zinc-900 dark:text-zinc-50">{account.LCUchampions.length}</p>
-                </div>
-              )}
-
-              <div className={'lol' === 'valorant' ? 'col-span-2' : ''}>
-                <div className="bg-zinc-50 dark:bg-zinc-800/30 p-2 rounded-md">
-                  <p className="text-xs text-zinc-600 dark:text-zinc-400">Skins</p>
-                  <p className="text-base font-semibold text-zinc-900 dark:text-zinc-50">{account.LCUskins.length}</p>
-                </div>
+            <div className="grid grid-cols-2  md:grid-cols-3 gap-4">
+              <div className="border p-3 dark:bg-white/[0.01] rounded-lg">
+                <p className="text-sm text-zinc-600 dark:text-zinc-400">Champions</p>
+                <p className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">{account.LCUchampions.length}</p>
               </div>
 
-              {/* <div className="bg-zinc-50 dark:bg-zinc-800/30 p-2 rounded-md"> */}
-              {/*    <p className="text-xs text-zinc-600 dark:text-zinc-400">Win Rate</p> */}
-              {/*    <p className="text-base font-semibold text-zinc-900 dark:text-zinc-50"> */}
-              {/*        {account.winRate} */}
-              {/*        % */}
-              {/*    </p> */}
+              <div className="border p-3 dark:bg-white/[0.01] rounded-lg">
+                <p className="text-sm text-zinc-600 dark:text-zinc-400">Skins</p>
+                <p className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">{account.LCUskins.length}</p>
+              </div>
+
+              <div className="border p-3 dark:bg-white/[0.01] rounded-lg">
+                <p className="text-sm text-zinc-600 dark:text-zinc-400">Server</p>
+                <p className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">{account.server.slice(0, account.server.length - 1)}</p>
+              </div>
+              {/* <div className="bg-zinc-50 dark:bg-zinc-800/30 p-3 rounded-lg"> */}
+              {/*  <p className="text-sm text-zinc-600 dark:text-zinc-400">Last Played</p> */}
+              {/*  <p className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">{ACCOUNT.lastPlayed}</p> */}
               {/* </div> */}
 
-              {/* <div className="bg-zinc-50 dark:bg-zinc-800/30 p-2 rounded-md"> */}
-              {/*  <p className="text-xs text-zinc-600 dark:text-zinc-400">Last Played</p> */}
-              {/*   <p className="text-base font-semibold text-zinc-900 dark:text-zinc-50">{account.lastPlayed}</p> */}
-              {/* </div> */}
             </div>
 
-            {/* Essence - more compact */}
-            <div className="flex gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">BE</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex items-center gap-3 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                <div className="w-10 h-10 ">
+                  <img
+                    src="https://raw.communitydragon.org/15.2/plugins/rcp-fe-lol-collections/global/default/images/skins-viewer/currencies/icon-blue-essence.png"
+                  />
                 </div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-zinc-600 dark:text-zinc-400">Blue Essence:</span>
-                  <span className="font-medium text-zinc-900 dark:text-zinc-50">
+                <div>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">Blue Essence</p>
+                  <p className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
                     {account.blueEssence}
-                  </span>
+                  </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <div
-                  className="w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center"
-                >
-                  <span className="text-white text-xs font-bold">OE</span>
+              <div className="flex items-center gap-3 bg-orange-50 dark:bg-yellow-900/20 p-3 rounded-lg">
+                <div className="w-10 h-10">
+                  <img src="https://wiki.leagueoflegends.com/en-us/images/RP_icon.png?1fb01" />
                 </div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-zinc-600 dark:text-zinc-400">Orange Essence:</span>
-                  <span className="font-medium text-zinc-900 dark:text-zinc-50">
+                <div>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">Riot Points</p>
+                  <p className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
                     {account.riotPoints}
-                  </span>
+                  </p>
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Champions and Skins tabs */}
-        <Tabs defaultValue={'lol' === 'lol' ? 'champions' : 'skins'} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            {'lol' === 'lol' && (
-              <TabsTrigger value="champions">
-                Champions (
-                {account.LCUchampions.length}
-                )
-              </TabsTrigger>
-            )}
-            <TabsTrigger value="skins" className={'lol' === 'valorant' ? 'col-span-2' : ''}>
-              Skins (
-              {account.LCUskins.length}
-              )
-            </TabsTrigger>
-          </TabsList>
+        <div className="w-full bg-card p-6 min-h-[50vh] border rounded-lg">
+          <ChampionsSkinsTab
+            tabLabel={[`Champions (${account.LCUchampions.length})`, `Skins (${account.LCUskins.length})`]}
+            activeTab={activeTab}
+            onTabChangeAction={setActiveTab}
+            tabs={['Champions', 'Skins']}
+          />
 
-          {/* Champions Tab */}
-          {'lol' === 'lol' && (
-            <TabsContent value="champions" className="space-y-4">
+          {activeTab === 0 && (
+            <div className="space-y-4 ">
               <div className="relative">
                 <Search
                   className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-500 dark:text-zinc-400"
@@ -202,7 +188,7 @@ export default function AccountDetails({ account, rentalOptions }: {
                   placeholder="Search champions..."
                   value={championsSearch}
                   onChange={e => setChampionsSearch(e.target.value)}
-                  className="pl-9"
+                  className="pl-9 !bg-transparent "
                 />
                 {championsSearch && (
                   <Button
@@ -246,70 +232,71 @@ export default function AccountDetails({ account, rentalOptions }: {
                   </p>
                 </div>
               )}
-            </TabsContent>
+            </div>
           )}
 
-          {/* Skins Tab */}
-          <TabsContent value="skins" className="space-y-4">
-            <div className="relative">
-              <Search
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-500 dark:text-zinc-400"
-              />
-              <Input
-                placeholder="Search skins or champions..."
-                value={skinsSearch}
-                onChange={e => setSkinsSearch(e.target.value)}
-                className="pl-9"
-              />
-              {skinsSearch && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
-                  onClick={() => setSkinsSearch('')}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+          { activeTab === 1 && (
+            <div className="space-y-4">
+              <div className="relative">
+                <Search
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-500 dark:text-zinc-400"
+                />
+                <Input
+                  placeholder="Search skins or champions..."
+                  value={skinsSearch}
+                  onChange={e => setSkinsSearch(e.target.value)}
+                  className="pl-9 !bg-transparent "
+                />
+                {skinsSearch && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
+                    onClick={() => setSkinsSearch('')}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {filteredSkins.map(skin => (
+                  <div
+                    key={skin.id}
+                    className="bg-zinc-50 dark:bg-zinc-800/30 rounded-md overflow-hidden"
+                  >
+                    <div className="relative">
+                      <img
+                        src={skin.imageUrl}
+                        alt={skin.name}
+                        className="w-full h-auto object-cover"
+                      />
+                      <Badge
+                        className={cn('absolute top-1 right-1 text-[10px] px-1 py-0', skin.rarity)}
+                      >
+                        {skin.rarity}
+                      </Badge>
+                    </div>
+                    <div className="p-2">
+                      <p className="text-xs font-medium text-zinc-900 dark:text-zinc-50 truncate">{skin.name}</p>
+                      <p className="text-[10px] text-zinc-600 dark:text-zinc-400">{skin.champion}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {filteredSkins.length === 0 && (
+                <div className="text-center py-8">
+                  <p className="text-zinc-600 dark:text-zinc-400">
+                    No skins found matching "
+                    {skinsSearch}
+                    "
+                  </p>
+                </div>
               )}
             </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-              {filteredSkins.map(skin => (
-                <div
-                  key={skin.id}
-                  className="bg-zinc-50 dark:bg-zinc-800/30 rounded-md overflow-hidden"
-                >
-                  <div className="relative">
-                    <img
-                      src={skin.imageUrl}
-                      alt={skin.name}
-                      className="w-full h-auto object-cover"
-                    />
-                    <Badge
-                      className={cn('absolute top-1 right-1 text-[10px] px-1 py-0', skin.rarity)}
-                    >
-                      {skin.rarity}
-                    </Badge>
-                  </div>
-                  <div className="p-2">
-                    <p className="text-xs font-medium text-zinc-900 dark:text-zinc-50 truncate">{skin.name}</p>
-                    <p className="text-[10px] text-zinc-600 dark:text-zinc-400">{skin.champion}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {filteredSkins.length === 0 && (
-              <div className="text-center py-8">
-                <p className="text-zinc-600 dark:text-zinc-400">
-                  No skins found matching "
-                  {skinsSearch}
-                  "
-                </p>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+          )}
+        </div>
       </div>
 
       {/* Right column - Rental options */}
@@ -482,8 +469,8 @@ export default function AccountDetails({ account, rentalOptions }: {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-800/30 rounded-lg">
-              <Check className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
+            <div className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-white/[0.01] rounded-lg">
+              <CircleCheckBig className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
               <div>
                 <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Verified Account</p>
                 <p className="text-xs text-zinc-600 dark:text-zinc-400">
@@ -493,8 +480,8 @@ export default function AccountDetails({ account, rentalOptions }: {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-800/30 rounded-lg">
-              <Check className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
+            <div className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-white/[0.01] rounded-lg">
+              <CircleCheckBig className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
               <div>
                 <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Secure Rental</p>
                 <p className="text-xs text-zinc-600 dark:text-zinc-400">
@@ -503,8 +490,8 @@ export default function AccountDetails({ account, rentalOptions }: {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-800/30 rounded-lg">
-              <Check className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
+            <div className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-white/[0.01] rounded-lg">
+              <CircleCheckBig className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
               <div>
                 <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">24/7 Support</p>
                 <p className="text-xs text-zinc-600 dark:text-zinc-400">
