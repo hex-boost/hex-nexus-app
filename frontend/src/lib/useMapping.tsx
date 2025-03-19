@@ -11,6 +11,14 @@ import nexusIcon from '@/assets/logo-hex-boost.svg';
 import { LolIcon, ValorantIcon } from './icons';
 
 export function useMapping() {
+  const getStatusColor = (status: 'Available' | 'Rented') => {
+    switch (status) {
+      case 'Available':
+        return 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400';
+      case 'Rented':
+        return 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400';
+    }
+  };
   const getRankColor = (tier: string) => {
     switch (tier.toLowerCase()) {
       case 'iron':
@@ -141,6 +149,7 @@ export function useMapping() {
     getEloIcon,
     getRankColor,
     getGameIcon,
+    getStatusColor,
 
   };
 }

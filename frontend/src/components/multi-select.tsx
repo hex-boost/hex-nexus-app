@@ -1,4 +1,3 @@
-import { Button } from '@/components/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
@@ -22,9 +21,7 @@ export function MultiSelect({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          role="combobox"
+        <button
           aria-expanded={open}
           className="w-full font-normal justify-between border bg-input/30 border-input h-9 px-3 text-sm"
         >
@@ -32,10 +29,10 @@ export function MultiSelect({
             {selected.length > 0 ? `${selected.length} selected` : placeholder}
           </span>
           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
+        </button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0" align="start">
-        <Command className="max-h-[300px] ">
+        <Command className="max-h-[300px] w-full">
           <CommandInput placeholder={`Search ${placeholder.toLowerCase()}...`} />
           <CommandList>
             <CommandEmpty>No results found.</CommandEmpty>

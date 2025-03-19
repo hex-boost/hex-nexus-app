@@ -79,7 +79,8 @@ export default function AccountDetails({ account, rentalOptions }: {
     skinsSearch,
   });
   const [activeTab, setActiveTab] = useState(0);
-  const { getCompanyIcon } = useMapping();
+  const { getCompanyIcon, getGameIcon, getStatusColor } = useMapping();
+  const status = account.user ? 'Rented' : 'Available';
   return (
 
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -87,22 +88,28 @@ export default function AccountDetails({ account, rentalOptions }: {
       <div className="lg:col-span-2 space-y-6">
         {/* Account info card */}
         <Card>
-          <CardHeader className="border-none">
+          <CardHeader className="border-none justify-center">
             <CardTitle className="flex border-none items-center justify-between">
-              <span>Account Information</span>
-              <div variant="ghost" className="flex text-lg capitalize items-center gap-2">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  {getGameIcon('lol', { size: 48 })}
+                  <div className="flex flex-col gap-1">
+                    <span>
+                      {account.documentId.slice(0, 10)}
+                    </span>
+                    <span className="text-sm text-muted-foreground blur-[2px] select-none transition-all duration-200">Summoner Name</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex text-lg r capitalize items-center gap-2">
                 <img
                   src={getCompanyIcon(account.type)}
                   alt={account.type}
-                  className="w-8 h-8 rounded-sm"
+                  className="w-8 h-8"
                 />
-                {/* {account.type} */}
               </div>
             </CardTitle>
-            <CardDescription>
-              Detailed information about this
-              account
-            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Account Info Display Component */}
@@ -141,7 +148,7 @@ export default function AccountDetails({ account, rentalOptions }: {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center gap-3 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+              <div className="flex items-center gap-3 bg-blue-50 border border-blue-300/20 dark:bg-blue-900/20 p-3 rounded-lg">
                 <div className="w-10 h-10 ">
                   <img
                     src="https://raw.communitydragon.org/15.2/plugins/rcp-fe-lol-collections/global/default/images/skins-viewer/currencies/icon-blue-essence.png"
@@ -155,7 +162,7 @@ export default function AccountDetails({ account, rentalOptions }: {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 bg-orange-50 dark:bg-yellow-900/20 p-3 rounded-lg">
+              <div className="flex items-center gap-3 bg-orange-50 dark:bg-yellow-900/20 border border-yellow-300/20 p-3 rounded-lg">
                 <div className="w-10 h-10">
                   <img src="https://wiki.leagueoflegends.com/en-us/images/RP_icon.png?1fb01" />
                 </div>
@@ -263,16 +270,16 @@ export default function AccountDetails({ account, rentalOptions }: {
                 {filteredSkins.map(skin => (
                   <div
                     key={skin.id}
-                    className="bg-zinc-50 dark:bg-zinc-800/30 rounded-md overflow-hidden"
+                    className="bg-zinc-50 dark:bg-background rounded-md "
                   >
                     <div className="relative">
                       <img
                         src={skin.imageUrl}
                         alt={skin.name}
-                        className="w-full h-auto object-cover"
+                        className="w-full rounded-tl-md rounded-tr-md h-auto object-cover"
                       />
                       <Badge
-                        className={cn('absolute top-1 right-1 text-[10px] px-1 py-0', skin.rarity)}
+                        className={cn('absolute z-[10] -top-2 -right-2 text-[10px] px-1 py-0', skin.rarity)}
                       >
                         {skin.rarity}
                       </Badge>

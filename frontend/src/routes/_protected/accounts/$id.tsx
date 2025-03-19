@@ -1,8 +1,10 @@
 import type { AccountType } from '@/types/types.ts';
 
 import AccountDetails from '@/components/account-details.tsx';
+import { Button } from '@/components/ui/button.tsx';
 import { strapiClient } from '@/lib/strapi.ts';
 import { createFileRoute, Link, useLoaderData, useParams } from '@tanstack/react-router';
+import { ArrowLeftIcon } from 'lucide-react';
 
 // The component that will render when the route matches
 export const Route = createFileRoute('/_protected/accounts/$id')({
@@ -40,17 +42,16 @@ function AccountByID() {
   return (
     <div className="p-4">
       <div className="mb-4">
-        <Link to="/accounts" className="text-blue-600 hover:underline">
-          ← Back to Accounts
+        <Link to="/accounts" className="text-white hover:underline">
+          <Button variant="outline" className="space-x-2">
+            <ArrowLeftIcon />
+            {' '}
+            <span>
+              Back to Accounts
+            </span>
+          </Button>
         </Link>
       </div>
-
-      <h1 className="text-2xl font-bold mb-4">
-        Account Details (ID:
-        {' '}
-        {id}
-        )
-      </h1>
 
       <div className="space-y-8">
         {/* Pass the filtered account to the AccountInfoDisplay component */}

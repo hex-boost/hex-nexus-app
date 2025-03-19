@@ -1,4 +1,3 @@
-import { Badge } from '@/components/ui/badge';
 import { useMapping } from '@/lib/useMapping.tsx';
 import { cn } from '@/lib/utils';
 
@@ -132,14 +131,6 @@ function RankDisplay({
 // Helper function to get game icon
 
 // Helper function to get status color
-const getStatusColor = (status: 'Available' | 'Rented') => {
-  switch (status) {
-    case 'Available':
-      return 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400';
-    case 'Rented':
-      return 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400';
-  }
-};
 
 // Helper function to get leaver buster status info
 // const getLeaverBusterInfo = (status: 'None' | 'Low' | 'Medium' | 'High') => {
@@ -192,14 +183,6 @@ export default function AccountInfoDisplay({
   const { getGameIcon } = useMapping();
   return (
     <div className={cn('w-full', compact ? 'space-y-2' : 'space-y-4')}>
-      {/* Header with ID and Status */}
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          {getGameIcon('lol')}
-          <span className="text-sm font-medium">{accountId}</span>
-        </div>
-        <Badge className={cn('px-3 py-1', getStatusColor(status))}>{status}</Badge>
-      </div>
 
       {/* Game Name (if available) */}
       {gameName && <div className="text-base font-medium text-zinc-900 dark:text-zinc-50">{gameName}</div>}
