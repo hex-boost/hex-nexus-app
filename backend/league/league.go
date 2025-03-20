@@ -75,7 +75,7 @@ func (s *SummonerClient) GetCurrentSummoner() (*types.CurrentSummoner, error) {
 
 	return &result, nil
 }
-func (s *SummonerClient) getAssetsIds(assets map[string]interface{}) ([]int, error) {
+func (s *SummonerClient) getAssetsIds(assets []interface{}) ([]int, error) {
 	var result []int
 	for _, asset := range assets {
 		if championMap, ok := asset.(map[string]interface{}); ok {
@@ -105,12 +105,7 @@ func (s *SummonerClient) GetChampions() ([]int, error) {
 		return nil, errors.New(errMsg)
 	}
 
-	var data string
-	if err := json.Unmarshal(resp.Body(), &data); err != nil {
-		return nil, err
-	}
-
-	decoded, err := s.lcuUtils.DecodeRiotJWT(data)
+	decoded, err := s.lcuUtils.DecodeRiotJWT(encodedData)
 	if err != nil {
 		return nil, err
 	}
@@ -121,52 +116,41 @@ func (s *SummonerClient) GetChampions() ([]int, error) {
 	}
 	championsIds, err := s.getAssetsIds(champions)
 
-	s.logger.Info("Successfully retrieved champions", zap.Int("count", len(result)))
-	return result, nil
+	s.logger.Info("Successfully retrieved champions", zap.Int("count", len(championsIds)))
+	return championsIds, nil
 }
 
 // GetSkins gets list of owned skins
 func (s *SummonerClient) GetSkins() ([]int, error) {
-	s.logger.Debug("Fetching owned skins")
-
-	resp, err := s.lcu.client.R().
-		Get("/lol-inventory/v1/signedInventory/simple?inventoryTypes=%5B%22CHAMPION_SKIN%22%5D")
+	s.logger.Debug("Fetching owned champions")
+	var encodedData string
+	resp, err := s.lcu.client.R().SetResult(&encodedData).
+		Get("/lol-inventory/v1/signedInventory/simple?inventoryTypes=%5B%22CHAMPION%22%5D")
 
 	if err != nil {
-		s.logger.Error("Error fetching skin data", zap.Error(err))
+		s.logger.Error("Error fetching champion data", zap.Error(err))
 		return nil, err
 	}
 
 	if resp.StatusCode() != http.StatusOK {
-		errMsg := fmt.Sprintf("Failed to get skins status: %d", resp.StatusCode())
+		errMsg := fmt.Sprintf("Failed to get champions status: %d", resp.StatusCode())
 		s.logger.Warn(errMsg)
 		return nil, errors.New(errMsg)
 	}
 
-	var data string
-	if err := json.Unmarshal(resp.Body(), &data); err != nil {
-		return nil, err
-	}
-
-	decoded, err := s.lcuUtils.DecodeRiotJWT(data)
+	decoded, err := s.lcuUtils.DecodeRiotJWT(encodedData)
 	if err != nil {
 		return nil, err
 	}
 
-	skins, ok := decoded["payload"].(map[string]interface{})["CHAMPION_SKIN"].([]interface{})
+	skins, ok := decoded.Payload["CHAMPION_SKIN"].([]interface{})
 	if !ok {
-		return nil, errors.New("could not parse skins data")
+		return nil, errors.New("could not parse champions data")
 	}
+	skinsIds, err := s.getAssetsIds(skins)
 
-	var result []int
-	for _, id := range skins {
-		if idFloat, ok := id.(float64); ok {
-			result = append(result, int(idFloat))
-		}
-	}
-
-	s.logger.Info("Successfully retrieved skins", zap.Int("count", len(result)))
-	return result, nil
+	s.logger.Info("Successfully retrieved champions", zap.Int("count", len(skins)))
+	return skinsIds, nil
 }
 
 // GetCurrency gets account currencies (RP, BE, etc)
