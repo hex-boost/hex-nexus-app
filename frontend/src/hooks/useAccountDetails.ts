@@ -45,7 +45,7 @@ export function useAccountDetails({
     return { elo: flexRank?.elo, points: flexRank?.points, division: flexRank?.division };
   };
   const handleLoginToAccount = useCallback(() => {
-    alert(`Logging in to ${'lol' === 'lol' ? 'League of Legends' : 'Valorant'} with account: ${account.id}`);
+
   }, [account.id]);
   const { mutate: handleRentAccount, isPending: isRentPending } = useMutation<
     { message: string },

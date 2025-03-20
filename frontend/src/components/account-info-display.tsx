@@ -28,19 +28,19 @@ type AccountInfoDisplayProps = {
   };
   compact?: boolean;
 };
-const eloColors = {
-  league_of_legends_iron: '#51484A',
-  league_of_legends_bronze: '#8C513A',
-  league_of_legends_silver: '#80989D',
-  league_of_legends_gold: '#CD8837',
-  league_of_legends_emerald: '#149C3A',
-  league_of_legends_platinum: '#25ACD6',
-  league_of_legends_diamond: '#8141EB',
-  league_of_legends_master: '#9D48E0',
-  league_of_legends_grandmaster: '#CD4545',
-  league_of_legends_challenger: '#F4C874',
-  league_of_legends_unranked: '#6B6963',
-};
+// const eloColors = {
+//   league_of_legends_iron: '#51484A',
+//   league_of_legends_bronze: '#8C513A',
+//   league_of_legends_silver: '#80989D',
+//   league_of_legends_gold: '#CD8837',
+//   league_of_legends_emerald: '#149C3A',
+//   league_of_legends_platinum: '#25ACD6',
+//   league_of_legends_diamond: '#8141EB',
+//   league_of_legends_master: '#9D48E0',
+//   league_of_legends_grandmaster: '#CD4545',
+//   league_of_legends_challenger: '#F4C874',
+//   league_of_legends_unranked: '#6B6963',
+// };
 function RankDisplay({
   title,
   rank,
@@ -64,8 +64,8 @@ function RankDisplay({
   getEloIcon: (elo: string) => string;
   getTierIcon?: (tier: string) => string;
 }) {
-  const currentRank = rank?.elo || previousSeasonRank?.tier || 'unranked';
-  const rankColor = eloColors[`league_of_legends_${currentRank.toLowerCase()}`] || '#6B6963';
+  // const currentRank = rank?.elo || previousSeasonRank?.tier || 'unranked';
+  // const rankColor = eloColors[`league_of_legends_${currentRank.toLowerCase()}`] || '#6B6963';
 
   return (
     <div className="bg-zinc-50
@@ -167,11 +167,11 @@ function RankDisplay({
 // };
 
 export default function AccountInfoDisplay({
-  accountId,
-  game,
-  status,
+  // accountId,
+  // game,
+  // status,
   gameName,
-  leaverBusterStatus,
+  // leaverBusterStatus,
   soloQueueRank,
   flexQueueRank,
   previousSeasonRank,
@@ -180,7 +180,6 @@ export default function AccountInfoDisplay({
   // const leaverBusterInfo = getLeaverBusterInfo(leaverBusterStatus);
   // const LeaverIcon = leaverBusterInfo.icon;
   const { getRankColor, getEloIcon } = useMapping();
-  const { getGameIcon } = useMapping();
   return (
     <div className={cn('w-full', compact ? 'space-y-2' : 'space-y-4')}>
 

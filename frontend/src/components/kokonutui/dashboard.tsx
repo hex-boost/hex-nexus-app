@@ -11,6 +11,7 @@ import SubscriptionStatus from './subscription-status';
 
 export default function Dashboard() {
   const { logout } = useUserStore();
+
   const { data: user, isLoading, isError, error } = useQuery<UserType, StrapiError>({
     queryKey: ['users', 'me'],
 
@@ -46,7 +47,7 @@ export default function Dashboard() {
             <Activity className="w-4 h-4 text-zinc-900 dark:text-zinc-50" />
             Currently Rented Accounts
           </h2>
-          <CurrentlyRentedAccounts accounts={user.rentedAccounts.filter(account => account.isRented)} />
+          <CurrentlyRentedAccounts accounts={user.rentedAccounts} />
         </div>
       </div>
 

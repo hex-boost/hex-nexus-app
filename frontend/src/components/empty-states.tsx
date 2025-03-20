@@ -419,7 +419,8 @@ export default function EmptyState({ type, searchQuery = '', onAction, onReset }
   const { animation, iconFallback, title, description, actionLabel, resetLabel, showReset } = content[type];
 
   return (
-    <div className="flex flex-col items-center justify-center text-center py-12 px-4 space-y-6 bg-white dark:bg-zinc-900/70 border border-zinc-100 dark:border-zinc-800 rounded-lg">
+    <div className="flex flex-col items-center justify-center text-center py-12 px-4 space-y-6 bg-white dark:bg-transparent border-zinc-100 dark:border-zinc-800 rounded-lg">
+
       <div className="bg-zinc-100 dark:bg-zinc-800 rounded-2xl p-4 flex items-center justify-center min-h-[120px] min-w-[120px]">
         {animation || iconFallback}
       </div>

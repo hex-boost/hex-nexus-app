@@ -27,7 +27,7 @@ export default function SubscriptionStatus({ className, subscription }: Subscrip
 
   return (
     <div className={cn('w-full', className)}>
-      <div className="bg-zinc-50 dark:bg-zinc-800/30 rounded-xl p-5 mb-4">
+      <div className="bg-zinc-50 dark:bg-white/[0.01] rounded-xl p-5 mb-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
             <Shield className="w-4 h-4 text-blue-600 dark:text-blue-400" />

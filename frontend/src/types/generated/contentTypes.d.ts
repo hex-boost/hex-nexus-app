@@ -414,7 +414,7 @@ export interface ApiAccountAccount extends Struct.CollectionTypeSchema {
       ['NA1', 'EUW1', 'EUNE1', 'OCE1', 'BR1']
     >;
     tagline: Schema.Attribute.String & Schema.Attribute.Private;
-    type: Schema.Attribute.Enumeration<['public', 'boostroyal']>;
+    type: Schema.Attribute.Enumeration<['nexus', 'boostroyal']>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -441,7 +441,8 @@ export interface ApiActionAction extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    expirationTime: Schema.Attribute.DateTime;
+    expirationDate: Schema.Attribute.DateTime;
+    gameEnum: Schema.Attribute.Enumeration<['league', 'valorant']>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -1060,9 +1061,9 @@ export interface PluginUsersPermissionsUser
     accountPermissions: Schema.Attribute.JSON &
       Schema.Attribute.CustomField<
         'plugin::multi-select.multi-select',
-        ['public:public', 'boostroyal:boostroyal']
+        ['nexus:nexus', 'boostroyal:boostroyal']
       > &
-      Schema.Attribute.DefaultTo<'["public"]'>;
+      Schema.Attribute.DefaultTo<'["nexus"]'>;
     actions: Schema.Attribute.Relation<'oneToMany', 'api::action.action'>;
     avatar: Schema.Attribute.Media<'images' | 'files' | 'videos' | 'audios'>;
     blocked: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;

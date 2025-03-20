@@ -59,7 +59,7 @@ export default function AccountDetails({ account, price, onAccountChange, dropRe
   // Function to get rank info from rankings array
   // const {} = useMapping();
 
-  const { mutate: handleDropAccount, isPending: isDropPending } = useMutation<{ message: string }, StrapiError, any>({
+  const { mutate: handleDropAccount, isPending: isDropPending } = useMutation<{ message: string }, StrapiError>({
     mutationKey: ['accounts', 'drop', account.documentId],
     mutationFn: async () => {
       return await strapiClient.request<{ message: string }>('post', `accounts/${account.documentId}/drop`);
@@ -161,8 +161,8 @@ export default function AccountDetails({ account, price, onAccountChange, dropRe
               game="lol"
               status={account.user ? 'Rented' : 'Available'}
               leaverBusterStatus="None"
-              soloQueueRank={getSoloQueueRank()}
-              flexQueueRank={getFlexQueueRank()}
+              soloQueueRank={getSoloQueueRank() as any}
+              flexQueueRank={getFlexQueueRank() as any}
               // previousSeasonRank={'unknown'}
               // valorantRank={'unknown'}
             />
@@ -255,18 +255,18 @@ export default function AccountDetails({ account, price, onAccountChange, dropRe
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
                 {filteredChampions.map(champion => (
                   <div
-                    key={champion.id}
+                    key={champion?.id}
                     className="scale-110 rounded-md overflow-hidden flex flex-col items-center"
                   >
                     <img
-                      src={champion.imageUrl}
-                      alt={champion.name}
+                      src={champion?.imageUrl}
+                      alt={champion?.name}
                       className="w-full h-auto object-cover"
                       style={{ height: '50px', width: '50px' }}
                     />
                     <div className="p-1 text-center w-full">
                       <p className="text-xs font-medium text-zinc-900 dark:text-zinc-50 truncate w-full">
-                        {champion.name}
+                        {champion?.name}
                       </p>
                     </div>
                   </div>

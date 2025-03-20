@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 import { useVirtualizer } from '@tanstack/react-virtual';
 // Third-party component imports
 import { Check, ChevronsUpDown, X } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { cloneElement, useCallback, useEffect, useState } from 'react';
 
 /**
  * Base interface for option items in the multi-select combobox
@@ -70,6 +70,7 @@ export const MultiSelectCombobox = <T extends BaseOption>({
   // State for controlling popover visibility
   const [open, setOpen] = useState(false);
   const [renderLoading, setRenderLoading] = useState(false);
+  const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
 
   // Handle virtualization for large datasets
   const parentRef = React.useRef<HTMLDivElement>(null);
@@ -77,7 +78,8 @@ export const MultiSelectCombobox = <T extends BaseOption>({
     count: options.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 36, // Estimated height of each row
-    overscan: 5,
+    overscan: 100,
+
   });
   /**
    * Handles the selection/deselection of an option
@@ -86,6 +88,44 @@ export const MultiSelectCombobox = <T extends BaseOption>({
   const handleChange = (currentValue: string) => {
     onChange(value.includes(currentValue) ? value.filter(val => val !== currentValue) : [...value, currentValue]);
   };
+
+  const handleImageLoad = useCallback((id: string) => {
+    setLoadedImages(prev => ({ ...prev, [id]: true }));
+  }, []);
+
+  const preloadImages = useCallback((visibleOptions: T[]) => {
+    visibleOptions.forEach((option) => {
+      if (!loadedImages[option.value]) {
+        const img = new Image();
+        // Find image URL from your rendered component if possible
+        const avatarUrl = option.avatar || ''; // Assuming avatar property exists
+        if (avatarUrl) {
+          img.onload = () => handleImageLoad(option.value);
+          img.src = avatarUrl;
+        }
+      }
+    });
+  }, [loadedImages, handleImageLoad]);
+
+  useEffect(() => {
+    if (open && options.length > 0) {
+      const visibleIndices = rowVirtualizer.getVirtualItems();
+      const visibleOptions = visibleIndices.map(vi => options[vi.index]);
+      preloadImages(visibleOptions);
+    }
+  }, [open, options, rowVirtualizer.getVirtualItems(), preloadImages]);
+  const renderItemWithImageHandling = useCallback((option: T) => {
+    // Create a wrapper that passes proper props to the image component
+    return (
+      <div className="flex items-center w-full">
+        {React.isValidElement(renderItem(option))
+          ? cloneElement(renderItem(option) as React.ReactElement, {
+              onLoad: () => handleImageLoad(option.value),
+            })
+          : renderItem(option)}
+      </div>
+    );
+  }, [renderItem, handleImageLoad]);
   useEffect(() => {
     if (open) {
       setRenderLoading(true);
@@ -160,9 +200,9 @@ export const MultiSelectCombobox = <T extends BaseOption>({
                 <div className="flex flex-col items-center justify-center p-2 space-y-2 w-[348px] bg-card-bg ">
                   {
                     Array.from({ length: 9 }).map((_, index) => (
-                      <div className="flex w-full items-center gap-4">
-                        <Skeleton key={index} className="rounded-full w-7 h-7" />
-                        <Skeleton key={index} className="rounded-md w-32 h-6" />
+                      <div key={index} className="flex w-full items-center gap-4">
+                        <Skeleton className="rounded-full w-7 h-7" />
+                        <Skeleton className="rounded-md w-32 h-6" />
 
                       </div>
                     ))
@@ -185,7 +225,8 @@ export const MultiSelectCombobox = <T extends BaseOption>({
                         const option = options[virtualItem.index];
                         return (
                           <CommandItem
-                            key={option.value}
+                            key={`${option.value}-${virtualItem.index}`} // More stable key
+
                             value={option.label}
                             onSelect={() => handleChange(option.value)}
                             aria-selected={value.includes(option.value)}
@@ -198,7 +239,7 @@ export const MultiSelectCombobox = <T extends BaseOption>({
                               transform: `translateY(${virtualItem.start}px)`,
                             }}
                           >
-                            {renderItem(option)}
+                            {renderItemWithImageHandling(option)}
                             <Check
                               className={cn('ml-auto h-4 w-4', value.includes(option.value) ? 'opacity-100' : 'opacity-0')}
                               aria-hidden="true"

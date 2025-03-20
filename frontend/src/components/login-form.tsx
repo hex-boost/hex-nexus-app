@@ -6,11 +6,11 @@ import { Label } from '@/components/ui/label';
 import { userAuth } from '@/lib/strapi';
 import { cn } from '@/lib/utils';
 import { useUserStore } from '@/stores/useUserStore';
-import { StartDiscordOAuth } from '@main';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@radix-ui/react-tabs';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { useState } from 'react';
+import { StartDiscordOAuth } from '../../wailsjs/go/app/app';
 import { FlickeringGrid } from './magicui/flickering-grid';
 import Globe from './magicui/globe';
 
@@ -106,13 +106,10 @@ export function LoginForm({
       mutationFn:
         async () => {
           const result = await StartDiscordOAuth();
-          console.log(result);
           return { ...result };
         },
       onSuccess: (data) => {
         login(data.user, data.jwt);
-
-        console.log('Login com Discord concluído com sucesso!');
       },
       onError: (error) => {
         console.error('Erro no login:', error);
@@ -294,29 +291,29 @@ export function LoginForm({
                 <TabsList className="text-center text-sm">
                   {activeTab === 'login'
                     ? (
-                      <>
-                        Não tem uma conta?
-                        {' '}
-                        <TabsTrigger
-                          value="register"
-                          className="underline underline-offset-4 cursor-pointer"
-                        >
-                          Cadastre-se
-                        </TabsTrigger>
-                      </>
-                    )
+                        <>
+                          Não tem uma conta?
+                          {' '}
+                          <TabsTrigger
+                            value="register"
+                            className="underline underline-offset-4 cursor-pointer"
+                          >
+                            Cadastre-se
+                          </TabsTrigger>
+                        </>
+                      )
                     : (
-                      <>
-                        Já tem uma conta?
-                        {' '}
-                        <TabsTrigger
-                          value="login"
-                          className="underline underline-offset-4 cursor-pointer"
-                        >
-                          Faça login
-                        </TabsTrigger>
-                      </>
-                    )}
+                        <>
+                          Já tem uma conta?
+                          {' '}
+                          <TabsTrigger
+                            value="login"
+                            className="underline underline-offset-4 cursor-pointer"
+                          >
+                            Faça login
+                          </TabsTrigger>
+                        </>
+                      )}
                 </TabsList>
 
               </form>

@@ -70,7 +70,7 @@ export function ChampionsSkinsTab({ tabs, tabLabel, activeTab, onTabChangeAction
             {tabs.map((_, index) => (
               <div
                 key={index}
-                ref={el => (tabRefs.current[index] = el)}
+                ref={el => (tabRefs.current[index] = el) as any}
                 className={`px-3 w-full py-2 cursor-pointer transition-colors duration-300 h-[30px] ${index === activeIndex ? 'text-muted-foreground dark:text-white' : 'text-[#0e0f1199] dark:text-muted-foreground'}`}
                 role="button"
                 tabIndex={0}

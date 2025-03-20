@@ -44,16 +44,11 @@ function AccountByID() {
   // Fetch refund data if needed
   const {
     data: refundData,
-    isLoading: isRefundLoading,
-    error: refundError,
   } = useQuery({
     queryKey: ['accounts', id, 'refund'],
     queryFn: () => strapiClient.find<{ amount: number }>(`accounts/${id}/refund`).then(res => res.data),
     enabled: !!id,
   });
-  console.log('ID param:', id);
-  console.log('Refund data:', refundData);
-  console.log('Refund error:', refundError);
   // Function to refetch both available and rented accounts data
   const refetchAccount = () => {
     // Invalidate queries to trigger refetching
