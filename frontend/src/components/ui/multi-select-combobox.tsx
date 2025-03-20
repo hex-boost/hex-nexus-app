@@ -98,6 +98,7 @@ export const MultiSelectCombobox = <T extends BaseOption>({
       if (!loadedImages[option.value]) {
         const img = new Image();
         // Find image URL from your rendered component if possible
+        // @ts-expect-error avatar existignores
         const avatarUrl = option.avatar || ''; // Assuming avatar property exists
         if (avatarUrl) {
           img.onload = () => handleImageLoad(option.value);
@@ -120,7 +121,8 @@ export const MultiSelectCombobox = <T extends BaseOption>({
       <div className="flex items-center w-full">
         {React.isValidElement(renderItem(option))
           ? cloneElement(renderItem(option) as React.ReactElement, {
-              onLoad: () => handleImageLoad(option.value),
+
+              // "on-load": () => handleImageLoad(option.value),
             })
           : renderItem(option)}
       </div>

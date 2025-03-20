@@ -24,6 +24,7 @@ import { useAllDataDragon } from '@/hooks/useDataDragon.ts';
 import { strapiClient } from '@/lib/strapi.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
 import { cn } from '@/lib/utils';
+import { useUserStore } from '@/stores/useUserStore.ts';
 import { useMutation } from '@tanstack/react-query';
 import { ArrowDownToLine, Check, CircleCheckBig, Clock, LogIn, Search, Shield, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -33,7 +34,33 @@ import AccountInfoDisplay from './account-info-display';
 // Types
 
 // Rental options
+function getFormattedTimeRemaining(expirationDateString: string): string {
+  const expiryDate = new Date(expirationDateString);
+  const now = new Date();
+  const diffMs = expiryDate.getTime() - now.getTime();
 
+  if (diffMs <= 0) {
+    return 'Expired';
+  }
+
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+  const diffSeconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+
+  if (diffHours > 0) {
+    return `${diffHours}h ${diffMinutes}m remaining`;
+  } else if (diffMinutes > 0) {
+    return `${diffMinutes}m remaining`;
+  } else {
+    return `${diffSeconds}s remaining`;
+  }
+}
+function calculateTimeRemaining(account: AccountType): string {
+  const mostRecentAction = account.actionHistory?.reduce((latest, current) =>
+    new Date(latest.createdAt) > new Date(current.createdAt) ? latest : current,
+  );
+  return getFormattedTimeRemaining(mostRecentAction?.expirationDate.toString());
+}
 export default function AccountDetails({ account, price, onAccountChange, dropRefund }: {
   onAccountChange: () => void;
   price: Price;
@@ -58,7 +85,7 @@ export default function AccountDetails({ account, price, onAccountChange, dropRe
 
   // Function to get rank info from rankings array
   // const {} = useMapping();
-
+  const { user } = useUserStore();
   const { mutate: handleDropAccount, isPending: isDropPending } = useMutation<{ message: string }, StrapiError>({
     mutationKey: ['accounts', 'drop', account.documentId],
     mutationFn: async () => {
@@ -163,8 +190,8 @@ export default function AccountDetails({ account, price, onAccountChange, dropRe
               leaverBusterStatus="None"
               soloQueueRank={getSoloQueueRank() as any}
               flexQueueRank={getFlexQueueRank() as any}
-              // previousSeasonRank={'unknown'}
-              // valorantRank={'unknown'}
+            // previousSeasonRank={'unknown'}
+            // valorantRank={'unknown'}
             />
 
             {/* Stats */}
@@ -207,7 +234,7 @@ export default function AccountDetails({ account, price, onAccountChange, dropRe
 
               <div className="flex items-center gap-3 bg-orange-50 dark:bg-yellow-900/20 border border-yellow-300/20 p-3 rounded-lg">
                 <div className="w-10 h-10">
-                  <img src="https://wiki.leagueoflegends.com/en-us/images/RP_icon.png?1fb01" />
+                  <img src="https://static.wikia.nocookie.net/leagueoflegends/images/0/00/RP_icon.png/revision/latest?cb=20241201161019" />
                 </div>
                 <div>
                   <p className="text-sm text-zinc-600 dark:text-zinc-400">Riot Points</p>
@@ -285,7 +312,7 @@ export default function AccountDetails({ account, price, onAccountChange, dropRe
             </div>
           )}
 
-          { activeTab === 1 && (
+          {activeTab === 1 && (
             <div className="space-y-4">
               <div className="relative">
                 <Search
@@ -351,174 +378,180 @@ export default function AccountDetails({ account, price, onAccountChange, dropRe
 
       {/* Right column - Rental options */}
       <div className="space-y-6 col-span-2">
-        {account.user ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>Rented Account</CardTitle>
-              <CardDescription>This account is currently rented by you</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Time remaining */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs">
-                  <span className="text-zinc-600 dark:text-zinc-400 flex items-center gap-1">
-                    <Clock className="h-3.5 w-3.5" />
-                    Expires on
-                  </span>
-                  {/* <span className="font-medium">{new Date(account.expiresAt!).toLocaleString()}</span> */}
-                </div>
-              </div>
+        {account.user && account.user.id === user!.id
+          ? (
 
-              <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-sm text-zinc-600 dark:text-zinc-400">Refundable Amount</span>
-                  <div
-                    className="flex items-center gap-1 text-lg font-semibold text-zinc-900 dark:text-zinc-50"
-                  >
-                    <CoinIcon className="w-4 h-4 text-amber-500 dark:text-amber-400" />
-                    {dropRefund
-                      ? <>{dropRefund.toLocaleString()}</>
-                      : <Skeleton className="w-6 h-4"></Skeleton>}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Rented Account</CardTitle>
+                  <CardDescription>This account is currently rented by you</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Time remaining */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-zinc-600 dark:text-zinc-400 flex items-center gap-1">
+                        <Clock className="h-3.5 w-3.5" />
+                        Remaining time:
+                      </span>
 
-                    {' '}
-                    coins
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="flex gap-3">
-              <Button
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                onClick={handleLoginToAccount}
-              >
-                <LogIn className="mr-2 h-4 w-4" />
-                Login to
-                {' '}
-                {'lol' === 'lol' ? 'LoL' : 'Valorant'}
-              </Button>
+                      <span className="font-medium">
+                        {calculateTimeRemaining(account)}
 
-              <Dialog open={isDropDialogOpen} onOpenChange={setIsDropDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="flex items-center gap-1">
-                    <ArrowDownToLine className="h-4 w-4" />
-                    Drop
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Drop Account & Refund</DialogTitle>
-                    <DialogDescription>
-                      Are you sure you want to drop this account? You will be refunded
-                      {' '}
-                      {/* {account.refundableAmount} */}
-                      {' '}
-                      coins.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div
-                    className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md p-3 text-sm text-amber-800 dark:text-amber-300"
-                  >
-                    <p>
-                      This action cannot be undone. The account will be immediately returned to
-                      the available pool.
-                    </p>
-                  </div>
-                  <DialogFooter className="flex gap-3 sm:justify-end">
-                    <Button variant="outline" onClick={() => setIsDropDialogOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      loading={isDropPending}
-                      disabled={isDropPending}
-                      onClick={() => handleDropAccount()}
-                      className="flex items-center gap-1"
-                    >
-                      <ArrowDownToLine className="h-4 w-4" />
-                      Drop & Refund
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </CardFooter>
-          </Card>
-        ) : (/* Rental Card */
-          <Card>
-            <CardHeader>
-              <CardTitle>Rent This Account</CardTitle>
-              <CardDescription>Choose your preferred rental duration</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                {price.timeMultipliers.map((option, index) => (
-                  <div
-                    key={index}
-                    className={cn('border rounded-lg p-3 cursor-pointer transition-all', selectedRentalOptionIndex === index ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700')}
-                    onClick={() => setSelectedRentalOptionIndex(index)}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
-                        <span className="font-medium text-zinc-900 dark:text-zinc-50">
-                          {option}
-                          {' '}
-                          {option === 0 ? 'minute' : 'minutes'}
-                        </span>
-                      </div>
-                      {selectedRentalOptionIndex === index && (
-                        <div className="bg-blue-500 rounded-full p-0.5">
-                          <Check className="w-3 h-3 text-white" />
-                        </div>
-                      )}
+                      </span>
                     </div>
-                    <div
-                      className="flex items-center gap-1 text-sm font-medium text-zinc-900 dark:text-zinc-50"
-                    >
-                      <CoinIcon className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
-                      {rentalOptionsWithPrice[index]?.price.toLocaleString() || 0}
-                      {' '}
-                      coins
-                    </div>
-                    {option === 24 && (
-                      <Badge
-                        variant="outline"
-                        className="mt-2 text-xs bg-blue-50 dark:bg-blue-900/20"
+                  </div>
+
+                  <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                    <div className="flex justify-between items-center mb-4">
+                      <span className="text-sm text-zinc-600 dark:text-zinc-400">Refundable Amount</span>
+                      <div
+                        className="flex items-center gap-1 text-lg font-semibold text-zinc-900 dark:text-zinc-50"
                       >
-                        Best Value
-                      </Badge>
-                    )}
-                  </div>
-                ))}
-              </div>
+                        <CoinIcon className="w-4 h-4 text-amber-500 dark:text-amber-400" />
+                        {dropRefund
+                          ? <>{dropRefund.toLocaleString()}</>
+                          : <Skeleton className="w-6 h-4"></Skeleton>}
 
-              <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-sm text-zinc-600 dark:text-zinc-400">Total Price</span>
-                  <div
-                    className="flex items-center gap-1 text-lg font-semibold text-zinc-900 dark:text-zinc-50"
-                  >
-                    <CoinIcon className="w-4 h-4 text-amber-500 dark:text-amber-400" />
-                    {(() => {
-                      // Make sure we have a valid selected option and price
-                      const selectedOption = rentalOptionsWithPrice[selectedRentalOptionIndex];
-                      return selectedOption ? selectedOption.price.toLocaleString() : '0';
-                    })()}
-                    {' '}
-                    coins
+                        {' '}
+                        coins
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <Button
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                  disabled={!rentalOptionsWithPrice[selectedRentalOptionIndex] || isRentPending}
-                  loading={isRentPending}
-                  onClick={() => handleRentAccount(selectedRentalOptionIndex)}
-                >
-                  Rent Now
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                </CardContent>
+                <CardFooter className="flex gap-3">
+                  <Button
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                    onClick={handleLoginToAccount}
+                  >
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Login to
+                    {' '}
+                    {'lol' === 'lol' ? 'LoL' : 'Valorant'}
+                  </Button>
+
+                  <Dialog open={isDropDialogOpen} onOpenChange={setIsDropDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" className="flex items-center gap-1">
+                        <ArrowDownToLine className="h-4 w-4" />
+                        Drop
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Drop Account & Refund</DialogTitle>
+                        <DialogDescription>
+                          Are you sure you want to drop this account? You will be refunded
+                          {' '}
+                          {/* {account.refundableAmount} */}
+                          {' '}
+                          coins.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div
+                        className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md p-3 text-sm text-amber-800 dark:text-amber-300"
+                      >
+                        <p>
+                          This action cannot be undone. The account will be immediately returned to
+                          the available pool.
+                        </p>
+                      </div>
+                      <DialogFooter className="flex gap-3 sm:justify-end">
+                        <Button variant="outline" onClick={() => setIsDropDialogOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          loading={isDropPending}
+                          disabled={isDropPending}
+                          onClick={() => handleDropAccount()}
+                          className="flex items-center gap-1"
+                        >
+                          <ArrowDownToLine className="h-4 w-4" />
+                          Drop & Refund
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </CardFooter>
+              </Card>
+            ) : (/* Rental Card */
+              <Card>
+                <CardHeader>
+                  <CardTitle>Rent This Account</CardTitle>
+                  <CardDescription>Choose your preferred rental duration</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    {price.timeMultipliers.map((option, index) => (
+                      <div
+                        key={index}
+                        className={cn('border rounded-lg p-3 cursor-pointer transition-all', selectedRentalOptionIndex === index ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700')}
+                        onClick={() => setSelectedRentalOptionIndex(index)}
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
+                            <span className="font-medium text-zinc-900 dark:text-zinc-50">
+                              {option}
+                              {' '}
+                              {option === 0 ? 'minute' : 'minutes'}
+                            </span>
+                          </div>
+                          {selectedRentalOptionIndex === index && (
+                            <div className="bg-blue-500 rounded-full p-0.5">
+                              <Check className="w-3 h-3 text-white" />
+                            </div>
+                          )}
+                        </div>
+                        <div
+                          className="flex items-center gap-1 text-sm font-medium text-zinc-900 dark:text-zinc-50"
+                        >
+                          <CoinIcon className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
+                          {rentalOptionsWithPrice[index]?.price.toLocaleString() || 0}
+                          {' '}
+                          coins
+                        </div>
+                        {option === 24 && (
+                          <Badge
+                            variant="outline"
+                            className="mt-2 text-xs bg-blue-50 dark:bg-blue-900/20"
+                          >
+                            Best Value
+                          </Badge>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                    <div className="flex justify-between items-center mb-4">
+                      <span className="text-sm text-zinc-600 dark:text-zinc-400">Total Price</span>
+                      <div
+                        className="flex items-center gap-1 text-lg font-semibold text-zinc-900 dark:text-zinc-50"
+                      >
+                        <CoinIcon className="w-4 h-4 text-amber-500 dark:text-amber-400" />
+                        {(() => {
+                        // Make sure we have a valid selected option and price
+                          const selectedOption = rentalOptionsWithPrice[selectedRentalOptionIndex];
+                          return selectedOption ? selectedOption.price.toLocaleString() : '0';
+                        })()}
+                        {' '}
+                        coins
+                      </div>
+                    </div>
+                    <Button
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                      disabled={!rentalOptionsWithPrice[selectedRentalOptionIndex] || isRentPending}
+                      loading={isRentPending}
+                      onClick={() => handleRentAccount(selectedRentalOptionIndex)}
+                    >
+                      Rent Now
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
         {/* Account security card */}
         <Card>

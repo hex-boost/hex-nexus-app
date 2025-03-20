@@ -3,6 +3,8 @@ package wails
 import (
 	"embed"
 	"github.com/hex-boost/hex-nexus-app/backend/app"
+	"github.com/hex-boost/hex-nexus-app/backend/riot"
+	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/logger"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -43,6 +45,7 @@ func Run(assets embed.FS) {
 		WindowStartState: options.Normal,
 		Bind: []interface{}{
 			app.App(),
+			riot.NewRiotClient(utils.NewConsoleLogger("Riot")),
 		},
 		// Windows platform specific options
 		Windows: &windows.Options{

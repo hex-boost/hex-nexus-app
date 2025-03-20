@@ -6,6 +6,7 @@ toolchain go1.24.1
 
 require (
 	github.com/go-resty/resty/v2 v2.16.5
+	github.com/mitchellh/go-ps v1.0.0
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/wailsapp/wails/v2 v2.10.1
 	go.uber.org/zap v1.27.0

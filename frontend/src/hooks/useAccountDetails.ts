@@ -6,6 +6,7 @@ import { strapiClient } from '@/lib/strapi.ts';
 import { useMutation } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import {} from 'wailsjs/go/riot/Client.js';
 
 export function useAccountDetails({
   account,
@@ -45,7 +46,6 @@ export function useAccountDetails({
     return { elo: flexRank?.elo, points: flexRank?.points, division: flexRank?.division };
   };
   const handleLoginToAccount = useCallback(() => {
-
   }, [account.id]);
   const { mutate: handleRentAccount, isPending: isRentPending } = useMutation<
     { message: string },
@@ -62,7 +62,6 @@ export function useAccountDetails({
       });
     },
     onSuccess: (data) => {
-      console.log(data);
       toast.success(data.message);
       onAccountChange();
     },

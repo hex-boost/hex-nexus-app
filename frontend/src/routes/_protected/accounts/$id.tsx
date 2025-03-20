@@ -4,6 +4,7 @@ import AccountDetails from '@/components/account-details.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { usePrice } from '@/hooks/usePrice.ts';
 import { strapiClient } from '@/lib/strapi.ts';
+import { useUserStore } from '@/stores/useUserStore';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, useParams } from '@tanstack/react-router';
 import { ArrowLeftIcon } from 'lucide-react';
@@ -42,13 +43,6 @@ function AccountByID() {
   });
 
   // Fetch refund data if needed
-  const {
-    data: refundData,
-  } = useQuery({
-    queryKey: ['accounts', id, 'refund'],
-    queryFn: () => strapiClient.find<{ amount: number }>(`accounts/${id}/refund`).then(res => res.data),
-    enabled: !!id,
-  });
   // Function to refetch both available and rented accounts data
   const refetchAccount = () => {
     // Invalidate queries to trigger refetching
@@ -61,6 +55,16 @@ function AccountByID() {
     || rentedAccounts?.find(acc => acc.documentId === id)
     || null;
 
+  const { user } = useUserStore();
+
+  const {
+    data: refundData,
+  } = useQuery({
+    queryKey: ['accounts', 'refund', id],
+    queryFn: () => strapiClient.find<{ amount: number }>(`accounts/${id}/refund`).then(res => res.data),
+    enabled: !!account?.user && !!user && account.user.documentId === user.documentId,
+    staleTime: 0,
+  });
   const isLoading = isAvailableLoading || isRentedLoading || isPriceLoading;
 
   if (isLoading) {
