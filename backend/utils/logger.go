@@ -4,6 +4,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"os"
+	"path/filepath"
 )
 
 // Logger wraps zap logger functionality
@@ -11,27 +12,65 @@ type Logger struct {
 	*zap.SugaredLogger
 }
 
-// NewConsoleLogger creates a logger that outputs to the console
-func NewConsoleLogger(prefix string) *Logger {
+// NewLogger creates a logger that outputs to the console
+func NewLogger(prefix string) *Logger {
 	// Create encoder config
 	encoderConfig := zap.NewProductionEncoderConfig()
 	encoderConfig.TimeKey = "time"
 	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
 
-	// Create core
-	core := zapcore.NewCore(
+	// Create console core
+	consoleCore := zapcore.NewCore(
 		zapcore.NewConsoleEncoder(encoderConfig),
 		zapcore.AddSync(os.Stdout),
 		zap.NewAtomicLevelAt(zap.InfoLevel),
 	)
 
-	// Create logger with prefix as initial fields
-	logger := zap.New(
-		core,
-		zap.AddCaller(),
-		zap.AddCallerSkip(1),
+	// Ensure logs directory exists
+	logsDir := "logs"
+	if err := os.MkdirAll(logsDir, os.ModePerm); err != nil {
+		panic(err)
+	}
+
+	// Define log file paths
+	infoLogPath := filepath.Join(logsDir, "app.log")
+	debugLogPath := filepath.Join(logsDir, "debug.log")
+
+	// Delete debug log file if it exists
+	if _, err := os.Stat(debugLogPath); err == nil {
+		if err := os.Remove(debugLogPath); err != nil {
+			panic(err)
+		}
+	}
+
+	// Create file cores
+	infoFile, err := os.OpenFile(infoLogPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
+	debugFile, err := os.OpenFile(debugLogPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
+
+	infoCore := zapcore.NewCore(
+		zapcore.NewJSONEncoder(encoderConfig),
+		zapcore.AddSync(infoFile),
+		zap.NewAtomicLevelAt(zap.InfoLevel),
 	)
+
+	debugCore := zapcore.NewCore(
+		zapcore.NewJSONEncoder(encoderConfig),
+		zapcore.AddSync(debugFile),
+		zap.NewAtomicLevelAt(zap.DebugLevel),
+	)
+
+	// Combine cores
+	core := zapcore.NewTee(consoleCore, infoCore, debugCore)
+
+	// Create logger with prefix as initial fields
+	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
 
 	// Add prefix if provided
 	if prefix != "" {
@@ -78,9 +117,6 @@ func NewFileLogger(prefix string, file *os.File) *Logger {
 	}
 }
 
-// Helper methods to provide additional functionality
-
-// WithField adds a field to the logger
 func (l *Logger) WithField(key string, value interface{}) *Logger {
 	return &Logger{
 		SugaredLogger: l.SugaredLogger.With(key, value),

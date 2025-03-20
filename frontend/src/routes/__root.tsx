@@ -29,7 +29,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
             )
           : (
 
-              <div className=" min-h-screen  flex items-center justify-center  bg-background ">
+              <div className=" flex items-center justify-center  bg-background ">
                 <LoginForm />
               </div>
 

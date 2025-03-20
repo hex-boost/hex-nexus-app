@@ -3,10 +3,10 @@ import type { AccountType } from '@/types/types.ts';
 
 import type { StrapiError } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
 import { strapiClient } from '@/lib/strapi.ts';
+import { AuthenticateWithCaptcha } from '@riot';
 import { useMutation } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import {} from 'wailsjs/go/riot/Client.js';
 
 export function useAccountDetails({
   account,
@@ -45,8 +45,19 @@ export function useAccountDetails({
     const flexRank = account.rankings?.find(r => r.queueType === 'flex');
     return { elo: flexRank?.elo, points: flexRank?.points, division: flexRank?.division };
   };
-  const handleLoginToAccount = useCallback(() => {
-  }, [account.id]);
+  const { mutate: handleLoginToAccount, isPending: isLoginPending } = useMutation<any, string>({
+    mutationKey: ['account', 'login', account.id],
+    mutationFn: async () => {
+      await AuthenticateWithCaptcha(account.username, account.password);
+    },
+    onError: (error) => {
+      toast.error('Error logging in to account');
+    },
+    onSuccess: () => {
+      toast.success('Successfully logged in to account');
+    },
+  },
+  );
   const { mutate: handleRentAccount, isPending: isRentPending } = useMutation<
     { message: string },
     StrapiError,

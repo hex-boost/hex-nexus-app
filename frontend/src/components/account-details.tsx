@@ -145,7 +145,7 @@ export default function AccountDetails({ account, price, onAccountChange, dropRe
   const { getCompanyIcon, getGameIcon } = useMapping();
   const soloQueueRank = getSoloQueueRank();
   const baseElo = soloQueueRank?.elo || 'default';
-  const baseEloUpperCase = baseElo.charAt(0).toUpperCase() + baseElo.slice(1);
+  const baseEloUpperCase = baseElo.charAt(0).toUpperCase() + baseElo.slice(1).toLowerCase();
   const basePrice = price.league[baseEloUpperCase] || 666;
   const rentalOptionsWithPrice = price.timeMultipliers.map(percentage => ({
     hours: percentage,

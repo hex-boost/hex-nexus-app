@@ -6,6 +6,7 @@ toolchain go1.24.1
 
 require (
 	github.com/go-resty/resty/v2 v2.16.5
+	github.com/inkeliz/gowebview v1.0.1
 	github.com/mitchellh/go-ps v1.0.0
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/wailsapp/wails/v2 v2.10.1
@@ -13,11 +14,13 @@ require (
 )
 
 require (
+	git.wow.st/gmp/jni v0.0.0-20200827154156-014cd5c7c4c0 // indirect
 	github.com/bep/debounce v1.2.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/inkeliz/w32 v1.0.2 // indirect
 	github.com/jchv/go-winloader v0.0.0-20210711035445-715c2860da7e // indirect
 	github.com/labstack/echo/v4 v4.13.3 // indirect
 	github.com/labstack/gommon v0.4.2 // indirect

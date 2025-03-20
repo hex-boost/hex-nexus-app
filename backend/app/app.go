@@ -18,7 +18,8 @@ type app struct {
 func App() *app {
 	_app.once.Do(
 		func() {
-			_app.log = NewConsoleLogger()
+			_app.log = NewLogger()
+			_app.ctx = context.Background()
 			_app.oauthState = ""
 			_app.stateMutex = sync.Mutex{}
 

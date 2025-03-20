@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/hex-boost/hex-nexus-app/backend"
-	types2 "github.com/hex-boost/hex-nexus-app/backend/types"
+	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"github.com/pkg/browser"
 	"html/template"
 	"io"
@@ -115,7 +115,7 @@ func (a *app) StartDiscordOAuth() (map[string]interface{}, error) {
 	}
 }
 
-func fetchUserInfo(url, accessToken string) (*types2.DiscordUser, error) {
+func fetchUserInfo(url, accessToken string) (*types.DiscordUser, error) {
 	client := resty.New()
 
 	resp, err := client.R().
@@ -129,7 +129,7 @@ func fetchUserInfo(url, accessToken string) (*types2.DiscordUser, error) {
 		return nil, fmt.Errorf("failed to fetch Discord user info: status %d", resp.StatusCode())
 	}
 
-	var user types2.DiscordUser
+	var user types.DiscordUser
 	if err := json.Unmarshal(resp.Body(), &user); err != nil {
 		return nil, fmt.Errorf("failed to parse response: %v", err)
 	}
@@ -189,7 +189,7 @@ func (a *app) HandleDiscordCallback(callback func(token string, err error)) {
 	go srv.ListenAndServe()
 }
 
-func (a *app) authenticateWithStrapiAndProcessAvatar(code string) (string, *types2.User, error) {
+func (a *app) authenticateWithStrapiAndProcessAvatar(code string) (string, *types.User, error) {
 	// Chamar endpoint do Strapi para autenticação
 	resp, err := http.Get(fmt.Sprintf("http://localhost:1337/api/auth/discord/callback?access_token=%s", code))
 	if err != nil {
@@ -198,8 +198,8 @@ func (a *app) authenticateWithStrapiAndProcessAvatar(code string) (string, *type
 	defer resp.Body.Close()
 
 	var result struct {
-		JWT  string      `json:"jwt"`
-		User types2.User `json:"user"`
+		JWT  string     `json:"jwt"`
+		User types.User `json:"user"`
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {

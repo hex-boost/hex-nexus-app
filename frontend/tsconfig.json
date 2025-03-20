@@ -35,6 +35,10 @@
       "@main": [
         "wailsjs/go/main/App"
       ],
+
+      "@riot": [
+        "wailsjs/go/riot/Client"
+      ]
     }
   },
   "include": [

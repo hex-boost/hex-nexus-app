@@ -109,7 +109,7 @@ function Accounts() {
                     Rank
                   </Label>
                   <Select value={filters.division} onValueChange={value => setFilters({ ...filters, division: value })}>
-                    <SelectTrigger id="tier" className="w-full">
+                    <SelectTrigger champion="tier" className="w-full">
                       <SelectValue placeholder="Any rank" />
                     </SelectTrigger>
                     <SelectContent>
@@ -132,7 +132,7 @@ function Accounts() {
                     onValueChange={value => setFilters({ ...filters, rank: value })}
                     disabled={['Master', 'Grandmaster', 'Challenger', 'Radiant'].includes(filters.division)}
                   >
-                    <SelectTrigger id="rank" className="w-full">
+                    <SelectTrigger champion="rank" className="w-full">
                       <SelectValue placeholder="Any division" />
                     </SelectTrigger>
                     <SelectContent>
@@ -151,7 +151,7 @@ function Accounts() {
                     Server
                   </Label>
                   <Select defaultValue="any" value={filters.region} onValueChange={value => setFilters({ ...filters, region: value })}>
-                    <SelectTrigger id="region" className="w-full">
+                    <SelectTrigger champion="region" className="w-full">
                       <SelectValue placeholder="Any Server" />
                     </SelectTrigger>
                     <SelectContent>
@@ -186,7 +186,7 @@ function Accounts() {
                     isLoading={isDataDragonLoading}
                     options={allChampions.map(champion => ({
                       label: champion.name,
-                      value: champion.id,
+                      value: champion.champion,
                       avatar: champion.imageUrl,
                     }))}
                     value={selectedChampionIds}
@@ -202,10 +202,10 @@ function Accounts() {
                     )}
                     renderSelectedItem={selectedValues => (
                       <div className="flex -space-x-2">
-                        {selectedValues.map((id) => {
-                          const champion = allChampions.find(c => c.id === id);
+                        {selectedValues.map((champion) => {
+                          const champion = allChampions.find(c => c.champion === champion);
                           return (
-                            <Avatar key={id} className="h-6 w-6 border-2 border-background">
+                            <Avatar key={champion} className="h-6 w-6 border-2 border-background">
                               <AvatarImage src={champion?.imageUrl} />
                               <AvatarFallback>{champion?.name?.[0] || 'C'}</AvatarFallback>
                             </Avatar>
@@ -224,7 +224,7 @@ function Accounts() {
                       .filter(skin => skin.name !== 'default') // Remove default skins
                       .map(skin => ({
                         label: skin.name,
-                        value: skin.id.toString(),
+                        value: skin.champion.toString(),
                         avatar: skin.imageAvatarUrl,
                       }))}
                     value={selectedSkinIds}
@@ -250,11 +250,11 @@ function Accounts() {
                     )}
                     renderSelectedItem={selectedValues => (
                       <div className="flex -space-x-2">
-                        {selectedValues.map((id) => {
+                        {selectedValues.map((champion) => {
                           // Use skin data instead of champion data
-                          const skin = allSkins.find(s => s.id.toString() === id);
+                          const skin = allSkins.find(s => s.champion.toString() === champion);
                           return (
-                            <Avatar key={id} className="h-6 w-6 border-2 border-background">
+                            <Avatar key={champion} className="h-6 w-6 border-2 border-background">
                               <AvatarImage src={skin?.imageAvatarUrl} alt={skin?.name} />
                               <AvatarFallback>{skin?.name?.[0] || 'S'}</AvatarFallback>
                             </Avatar>
@@ -373,7 +373,7 @@ function Accounts() {
 
                 return (
                   <tr
-                    key={account.id}
+                    key={account.champion}
                     className="border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/30 cursor-pointer"
                     onClick={() => handleViewAccountDetails(account.documentId)}
                   >
