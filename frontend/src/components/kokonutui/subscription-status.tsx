@@ -8,10 +8,6 @@ type SubscriptionStatusProps = {
 };
 
 export default function SubscriptionStatus({ className, subscription }: SubscriptionStatusProps) {
-  // Example subscription data
-  // const subscription = {
-  //   tier: 'Premium',
-  //   status: 'active',
   const features = ['Unlimited account rentals', 'Priority customer support', 'Exclusive high-tier accounts', 'Discounted rental rates'];
 
   const expiryDate = new Date(subscription.expiresAt);

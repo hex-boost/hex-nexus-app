@@ -51,9 +51,6 @@ function Accounts() {
   const [selectedSkinIds, setSelectedSkinIds] = useState<string[]>([]);
   const { price, isPriceLoading } = usePrice();
   const isLoading = isPriceLoading || isAccountLoading;
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
 
   if ((accounts && accounts.length === 0) || !accounts) {
     return <div>No accounts found.</div>;
