@@ -99,20 +99,27 @@ export function useAccounts() {
 
   const filteredAccounts = useMemo(() => {
     return sortedAccounts.filter((account) => {
+      // Get the soloqueue ranking specifically
+      const soloqueueRanking = account.rankings.find(ranking => ranking.queueType === 'soloqueue' && !ranking.isPrevious);
+
+      // For search query, keep the existing logic
       if (searchQuery && !account.documentId.toString().includes(searchQuery.toLowerCase())) {
         return false;
       }
 
+      // Check division filter against soloqueue ranking only
       if (filters.division && filters.division !== 'any'
-        && !account.rankings.some(ranking => ranking.division === filters.division)) {
+        && (!soloqueueRanking || soloqueueRanking.division !== filters.division)) {
         return false;
       }
 
+      // Check rank filter against soloqueue ranking only
       if (filters.rank && filters.rank !== 'any'
-        && !account.rankings.some(ranking => ranking.elo?.toLowerCase() === filters.rank.toLowerCase())) {
+        && (!soloqueueRanking || soloqueueRanking.elo?.toLowerCase() !== filters.rank.toLowerCase())) {
         return false;
       }
 
+      // Keep the rest of the filters as they are
       if (filters.region && filters.region !== 'any' && account.server !== filters.region) {
         return false;
       }
@@ -120,10 +127,10 @@ export function useAccounts() {
       if (filters.company && filters.company !== 'any' && account.type !== filters.company) {
         return false;
       }
+
       return true;
     });
   }, [sortedAccounts, searchQuery, filters]);
-
   const resetFilters = () => {
     setFilters({
       game: '',
