@@ -109,7 +109,7 @@ function Accounts() {
                     Rank
                   </Label>
                   <Select value={filters.division} onValueChange={value => setFilters({ ...filters, division: value })}>
-                    <SelectTrigger champion="tier" className="w-full">
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Any rank" />
                     </SelectTrigger>
                     <SelectContent>
@@ -132,7 +132,7 @@ function Accounts() {
                     onValueChange={value => setFilters({ ...filters, rank: value })}
                     disabled={['Master', 'Grandmaster', 'Challenger', 'Radiant'].includes(filters.division)}
                   >
-                    <SelectTrigger champion="rank" className="w-full">
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Any division" />
                     </SelectTrigger>
                     <SelectContent>
@@ -151,7 +151,7 @@ function Accounts() {
                     Server
                   </Label>
                   <Select defaultValue="any" value={filters.region} onValueChange={value => setFilters({ ...filters, region: value })}>
-                    <SelectTrigger champion="region" className="w-full">
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Any Server" />
                     </SelectTrigger>
                     <SelectContent>
@@ -186,7 +186,7 @@ function Accounts() {
                     isLoading={isDataDragonLoading}
                     options={allChampions.map(champion => ({
                       label: champion.name,
-                      value: champion.champion,
+                      value: champion.id,
                       avatar: champion.imageUrl,
                     }))}
                     value={selectedChampionIds}
@@ -202,10 +202,10 @@ function Accounts() {
                     )}
                     renderSelectedItem={selectedValues => (
                       <div className="flex -space-x-2">
-                        {selectedValues.map((champion) => {
-                          const champion = allChampions.find(c => c.champion === champion);
+                        {selectedValues.map((value) => {
+                          const champion = allChampions.find(c => c.id === value);
                           return (
-                            <Avatar key={champion} className="h-6 w-6 border-2 border-background">
+                            <Avatar key={champion!.id} className="h-6 w-6 border-2 border-background">
                               <AvatarImage src={champion?.imageUrl} />
                               <AvatarFallback>{champion?.name?.[0] || 'C'}</AvatarFallback>
                             </Avatar>
@@ -373,7 +373,7 @@ function Accounts() {
 
                 return (
                   <tr
-                    key={account.champion}
+                    key={account.id}
                     className="border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/30 cursor-pointer"
                     onClick={() => handleViewAccountDetails(account.documentId)}
                   >

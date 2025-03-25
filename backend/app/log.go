@@ -6,6 +6,7 @@ import (
 
 const (
 	LogPrefixLeague   = "LOL"
+	LogPrefixRepo     = "REPO"
 	LogPrefixRiot     = "RIOT"
 	LogPrefixWails    = "WLS"
 	LogPrefixWeb      = "WEB"
@@ -17,11 +18,13 @@ type log struct {
 	riot     *utils.Logger
 	wails    *utils.Logger
 	web      *utils.Logger
+	repo     *utils.Logger
 	services *utils.Logger
 }
 
 func NewLogger() *log {
 	return &log{
+		repo:     utils.NewLogger(LogPrefixRepo),
 		league:   utils.NewLogger(LogPrefixLeague),
 		riot:     utils.NewLogger(LogPrefixRiot),
 		wails:    utils.NewLogger(LogPrefixWails),
@@ -32,6 +35,9 @@ func NewLogger() *log {
 
 func (l *log) League() *utils.Logger {
 	return l.league
+}
+func (l *log) Repo() *utils.Logger {
+	return l.repo
 }
 
 func (l *log) Riot() *utils.Logger {

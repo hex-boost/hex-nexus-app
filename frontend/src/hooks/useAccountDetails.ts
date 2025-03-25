@@ -3,10 +3,16 @@ import type { AccountType } from '@/types/types.ts';
 
 import type { StrapiError } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
 import { strapiClient } from '@/lib/strapi.ts';
+import { useUserStore } from '@/stores/useUserStore.ts';
+
 import { AuthenticateWithCaptcha } from '@riot';
 import { useMutation } from '@tanstack/react-query';
+
 import { useCallback, useMemo, useState } from 'react';
+
 import { toast } from 'sonner';
+import { InitializeConnection, WaitInventoryIsReady, WaitUntilReady } from '../../wailsjs/go/league/LCUConnection.js';
+import { UpdateSummonerFromLCU } from '../../wailsjs/go/league/Service.js';
 
 export function useAccountDetails({
   account,
@@ -21,7 +27,7 @@ export function useAccountDetails({
 
   const [championsSearch, setChampionsSearch] = useState('');
   const [skinsSearch, setSkinsSearch] = useState('');
-
+  const { jwt } = useUserStore();
   // Filtered data with memoization for performance
   const filteredChampions = useMemo(() =>
     account.LCUchampions.filter(champion =>
@@ -45,16 +51,34 @@ export function useAccountDetails({
     const flexRank = account.rankings?.find(r => r.queueType === 'flex');
     return { elo: flexRank?.elo, points: flexRank?.points, division: flexRank?.division };
   };
-  const { mutate: handleLoginToAccount, isPending: isLoginPending } = useMutation<any, string>({
+  const { mutate: handleSummonerUpdate } = useMutation<any, string>({
+    mutationKey: ['summoner', 'update', account.id],
+    mutationFn: async () => {
+      await WaitUntilReady();
+      await InitializeConnection();
+      await WaitInventoryIsReady();
+      await UpdateSummonerFromLCU(account.username, account.password, jwt!);
+    },
+    onError: (error) => {
+      console.error(error);
+    },
+    onSuccess: async () => {
+      console.log('Summoner updated');
+    },
+  });
+
+  const { mutate: handleLoginToAccount, isPending: _ } = useMutation<any, string>({
     mutationKey: ['account', 'login', account.id],
     mutationFn: async () => {
       await AuthenticateWithCaptcha(account.username, account.password);
     },
     onError: (error) => {
       toast.error('Error logging in to account');
+      console.error('error logging', error);
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success('Successfully logged in to account');
+      handleSummonerUpdate();
     },
   },
   );

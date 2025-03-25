@@ -22,7 +22,7 @@ func NewLogger(prefix string) *Logger {
 
 	// Create console core
 	consoleCore := zapcore.NewCore(
-		zapcore.NewConsoleEncoder(encoderConfig),
+		zapcore.NewJSONEncoder(encoderConfig),
 		zapcore.AddSync(os.Stdout),
 		zap.NewAtomicLevelAt(zap.InfoLevel),
 	)
@@ -37,19 +37,20 @@ func NewLogger(prefix string) *Logger {
 	infoLogPath := filepath.Join(logsDir, "app.log")
 	debugLogPath := filepath.Join(logsDir, "debug.log")
 
-	// Delete debug log file if it exists
+	// Try to delete log files, but continue if they're in use
+	if _, err := os.Stat(infoLogPath); err == nil {
+		os.Remove(infoLogPath) // Ignore errors
+	}
 	if _, err := os.Stat(debugLogPath); err == nil {
-		if err := os.Remove(debugLogPath); err != nil {
-			panic(err)
-		}
+		os.Remove(debugLogPath) // Ignore errors
 	}
 
-	// Create file cores
-	infoFile, err := os.OpenFile(infoLogPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	// Create file cores with truncation flag to clear contents if we couldn't delete
+	infoFile, err := os.OpenFile(infoLogPath, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		panic(err)
 	}
-	debugFile, err := os.OpenFile(debugLogPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	debugFile, err := os.OpenFile(debugLogPath, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		panic(err)
 	}

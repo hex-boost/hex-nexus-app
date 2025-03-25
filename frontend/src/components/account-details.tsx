@@ -422,7 +422,7 @@ export default function AccountDetails({ account, price, onAccountChange, dropRe
                 <CardFooter className="flex gap-3">
                   <Button
                     className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                    onClick={handleLoginToAccount}
+                    onClick={() => handleLoginToAccount()}
                   >
                     <LogIn className="mr-2 h-4 w-4" />
                     Login to

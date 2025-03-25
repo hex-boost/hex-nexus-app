@@ -3,6 +3,7 @@ package league
 import (
 	"context"
 	"crypto/tls"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"github.com/go-resty/resty/v2"
@@ -10,7 +11,7 @@ import (
 	"go.uber.org/zap"
 	"os/exec"
 	"regexp"
-	"runtime"
+	"time"
 )
 
 // LCUConnection handles the connection to the League of Legends client
@@ -18,9 +19,6 @@ type LCUConnection struct {
 	client *resty.Client
 	logger *utils.Logger
 	ctx    context.Context
-	port   string
-	token  string
-	pid    string
 }
 
 // NewLCUConnection creates a new League client connection
@@ -33,47 +31,45 @@ func NewLCUConnection(logger *utils.Logger) *LCUConnection {
 }
 
 // InitializeConnection finds and connects to the League client
-func (c *LCUConnection) InitializeConnection(username string) error {
-	c.logger.Info("Initializing League client connection", zap.String("username", username))
+func (c *LCUConnection) InitializeConnection() error {
+	c.logger.Info("Initializing League client connection")
 
 	// Find League client process and get connection details
-	if err := c.findLeagueClient(); err != nil {
+	port, token, _, err := c.getLeagueCredentials()
+	if err != nil {
 		return err
 	}
+	encodedAuth := base64.StdEncoding.EncodeToString([]byte("riot:" + token))
 
-	// Initialize HTTP client
 	client := resty.New().
-		SetBaseURL(fmt.Sprintf("https://127.0.0.1:%s", c.port)).
+		SetBaseURL(fmt.Sprintf("https://127.0.0.1:%s", port)).
 		SetHeader("Accept", "application/json").
-		SetBasicAuth("riot", c.token)
+		SetHeader("Authorization", "Basic "+encodedAuth)
 
 	// League client uses self-signed cert
 	client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 
 	c.client = client
+	c.logger.Info("Client connection initialized successfully")
+
 	return nil
 }
-
-// findLeagueClient locates the League client process and extracts connection details
-func (c *LCUConnection) findLeagueClient() error {
-	var cmd *exec.Cmd
-	var output []byte
-	var err error
+func (c *LCUConnection) getProcessCommandLine() ([]byte, error) {
 
 	c.logger.Debug("Looking for League client process")
 
-	if runtime.GOOS == "windows" {
-		cmd = exec.Command("wmic", "process", "where", "name='LeagueClientUx.exe'", "get", "commandline")
-		output, err = cmd.Output()
-	} else {
-		cmd = exec.Command("ps", "-A", "-o", "command")
-		output, err = cmd.Output()
-	}
+	cmd := exec.Command("wmic", "process", "where", "name='LeagueClientUx.exe'", "get", "commandline")
+	output, err := cmd.Output()
 
 	if err != nil {
-		return fmt.Errorf("failed to execute process command: %w", err)
+		return nil, err
 	}
+	return output, nil
+}
 
+// getLeagueCredentials locates the League client process and extracts connection details
+func (c *LCUConnection) getLeagueCredentials() (port, token, pid string, err error) {
+	output, err := c.getProcessCommandLine()
 	// Extract port and auth token using regex
 	portRegex := regexp.MustCompile(`--app-port=(\d+)`)
 	tokenRegex := regexp.MustCompile(`--remoting-auth-token=([\w-]+)`)
@@ -84,16 +80,99 @@ func (c *LCUConnection) findLeagueClient() error {
 	pidMatches := pidRegex.FindStringSubmatch(string(output))
 
 	if len(portMatches) < 2 || len(tokenMatches) < 2 || len(pidMatches) < 2 {
-		return errors.New("league client not found or missing required parameters")
+		return "", "", "", errors.New("league client not found or missing required parameters")
+	}
+	if portMatches[1] == "" {
+		return "", "", "", errors.New("league client port parameter is empty")
+	}
+	if tokenMatches[1] == "" {
+		return "", "", "", errors.New("league client auth token parameter is empty")
+	}
+	if pidMatches[1] == "" {
+		return "", "", "", errors.New("league client pid parameter is empty")
 	}
 
-	c.port = portMatches[1]
-	c.token = tokenMatches[1]
-	c.pid = pidMatches[1]
+	port = portMatches[1]
+	token = tokenMatches[1]
+	pid = pidMatches[1]
 
 	c.logger.Info("Found League client",
-		zap.String("port", c.port),
-		zap.String("pid", c.pid))
+		zap.String("port", port),
+		zap.String("pid", pid))
 
-	return nil
+	return port, token, pid, nil
+}
+func (c *LCUConnection) WaitInventoryIsReady() {
+	c.logger.Info("Waiting for inventory system to be ready")
+
+	attempts := 0
+	for {
+		if c.isInventoryReady() {
+			c.logger.Info("Inventory system is ready", zap.Int("attempts", attempts))
+			return
+		}
+
+		attempts++
+		if attempts%10 == 0 {
+			c.logger.Debug("Still waiting for inventory system to be ready", zap.Int("attempts", attempts))
+		}
+
+		// Sleep to avoid hammering the client
+		time.Sleep(1 * time.Second)
+	}
+}
+
+// isInventoryReady checks if the League client is ready to accept API requests
+func (c *LCUConnection) isInventoryReady() bool {
+	// Check if client is properly initialized
+	if c.client == nil {
+		c.logger.Debug("LCU client not initialized")
+		return false
+	}
+
+	var result bool
+	resp, err := c.client.R().SetResult(&result).Get("/lol-inventory/v1/initial-configuration-complete")
+
+	if err != nil {
+		c.logger.Debug("LCU client connection test failed", zap.Error(err))
+		return false
+	}
+
+	// Check if we got a successful response
+	if resp.IsError() {
+		c.logger.Debug("LCU client ready and accepting API requests")
+		return false
+	}
+	c.logger.Debug("LCU client not ready", zap.Int("statusCode", resp.StatusCode()))
+	return result
+}
+
+// WaitUntilReady waits for the League client to be ready with a timeout
+func (c *LCUConnection) WaitUntilReady() error {
+	timeout := 60 * time.Second
+	c.logger.Info("Waiting for League client to be ready", zap.Duration("timeout", timeout))
+
+	ctx, cancel := context.WithTimeout(c.ctx, timeout)
+	defer cancel()
+
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+
+	attempts := 0
+	for {
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("timeout waiting for League client to be ready after attempts")
+		case <-ticker.C:
+			attempts++
+			if _, _, _, err := c.getLeagueCredentials(); err == nil {
+				c.logger.Info("League client process is ready", zap.Int("attempts", attempts))
+				return nil
+			}
+			if attempts%10 == 0 {
+				c.logger.Debug("Still waiting for League client to be ready", zap.Int("attempts", attempts))
+			}
+
+		}
+	}
 }

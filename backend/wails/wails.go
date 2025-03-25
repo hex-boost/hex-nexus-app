@@ -4,6 +4,7 @@ import (
 	"embed"
 	"github.com/hex-boost/hex-nexus-app/backend/app"
 	"github.com/hex-boost/hex-nexus-app/backend/league"
+	"github.com/hex-boost/hex-nexus-app/backend/repository"
 	"github.com/hex-boost/hex-nexus-app/backend/riot"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/logger"
@@ -15,7 +16,9 @@ import (
 //var icon []byte
 
 func Run(assets embed.FS) {
-
+	lcuConn := league.NewLCUConnection(app.App().Log().League())
+	leagueRepo := repository.NewLeagueRepository(app.App().Log().Repo())
+	leagueService := league.NewService(league.NewSummonerClient(lcuConn, app.App().Log().League()), leagueRepo, app.App().Log().League())
 	// Create application with options
 	opts := &options.App{
 		Title:         "hex-nexus-app",
@@ -25,8 +28,8 @@ func Run(assets embed.FS) {
 		Fullscreen:    false,
 		Frameless:     false,
 		StartHidden:   false,
-		Debug: options.Debug{
-			OpenInspectorOnStartup: true,
+		Debug:         options.Debug{
+			//OpenInspectorOnStartup: true,
 		},
 		HideWindowOnClose:  false,
 		BackgroundColour:   &options.RGBA{R: 255, G: 255, B: 255, A: 255},
@@ -44,7 +47,8 @@ func Run(assets embed.FS) {
 		Bind: []interface{}{
 			app.App(),
 			riot.NewRiotClient(app.App().Log().Riot()),
-			league.NewLeagueClient(app.App().Log().League()),
+			lcuConn,
+			leagueService,
 		},
 		// Windows platform specific options
 		Windows: &windows.Options{

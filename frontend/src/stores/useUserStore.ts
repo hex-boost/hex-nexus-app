@@ -11,7 +11,7 @@ type AuthState = {
 
 export const useUserStore = create<AuthState>((set, get) => ({
   user: JSON.parse(localStorage.getItem('user') || 'null'),
-  jwt: localStorage.getItem('jwt') || '',
+  jwt: localStorage.getItem('authToken') || '',
   login: (user: UserType, jwt: string) => {
     localStorage.setItem('user', JSON.stringify(user));
     localStorage.setItem('authToken', jwt);

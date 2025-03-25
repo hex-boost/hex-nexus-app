@@ -9,6 +9,7 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"go.uber.org/zap"
 	"net/http"
+	"strconv"
 )
 
 // SummonerClient provides methods for interacting with the League of Legends.lcu.client
@@ -20,9 +21,9 @@ type SummonerClient struct {
 }
 
 // NewSummonerClient creates a new League client
-func NewSummonerClient(logger *utils.Logger) *SummonerClient {
+func NewSummonerClient(lcu *LCUConnection, logger *utils.Logger) *SummonerClient {
 	return &SummonerClient{
-		lcu:    nil, // Will be initialized when connecting
+		lcu:    lcu, // Will be initialized when connecting
 		logger: logger,
 		ctx:    context.Background(),
 	}
@@ -77,13 +78,47 @@ func (s *SummonerClient) GetCurrentSummoner() (*types.CurrentSummoner, error) {
 }
 func (s *SummonerClient) getAssetsIds(assets []interface{}) ([]int, error) {
 	var result []int
-	for _, asset := range assets {
+
+	s.logger.Debug("Processing assets", zap.Int("count", len(assets)))
+
+	for i, asset := range assets {
+		s.logger.Debug("Asset structure", zap.Int("index", i), zap.Any("asset", asset))
+
+		// Try to handle as direct numeric value first
+		switch v := asset.(type) {
+		case float64:
+			result = append(result, int(v))
+			continue
+		case int:
+			result = append(result, v)
+			continue
+		case int64:
+			result = append(result, int(v))
+			continue
+		}
+
+		// If not a direct number, try as map with id field
 		if championMap, ok := asset.(map[string]interface{}); ok {
-			if idFloat, ok := championMap["id"].(float64); ok {
-				result = append(result, int(idFloat))
+			if idVal, ok := championMap["id"]; ok {
+				switch v := idVal.(type) {
+				case float64:
+					result = append(result, int(v))
+				case int:
+					result = append(result, v)
+				case int64:
+					result = append(result, int(v))
+				case string:
+					if id, err := strconv.Atoi(v); err == nil {
+						result = append(result, id)
+					}
+				}
+			} else if itemId, ok := championMap["itemId"].(float64); ok {
+				result = append(result, int(itemId))
 			}
 		}
 	}
+
+	s.logger.Debug("Extracted IDs", zap.Int("count", len(result)), zap.Any("ids", result))
 	return result, nil
 }
 
@@ -125,15 +160,15 @@ func (s *SummonerClient) GetSkins() ([]int, error) {
 	s.logger.Debug("Fetching owned champions")
 	var encodedData string
 	resp, err := s.lcu.client.R().SetResult(&encodedData).
-		Get("/lol-inventory/v1/signedInventory/simple?inventoryTypes=%5B%22CHAMPION%22%5D")
+		Get("/lol-inventory/v1/signedInventory/simple?inventoryTypes=%5B%22CHAMPION_SKIN%22%5D")
 
 	if err != nil {
-		s.logger.Error("Error fetching champion data", zap.Error(err))
+		s.logger.Error("Error fetching skins data", zap.Error(err))
 		return nil, err
 	}
 
 	if resp.StatusCode() != http.StatusOK {
-		errMsg := fmt.Sprintf("Failed to get champions status: %d", resp.StatusCode())
+		errMsg := fmt.Sprintf("Failed to get skins status: %d", resp.StatusCode())
 		s.logger.Warn(errMsg)
 		return nil, errors.New(errMsg)
 	}
