@@ -1,5 +1,8 @@
+import { Toaster } from '@/components/ui/sonner.tsx';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { createRouter, RouterProvider } from '@tanstack/react-router';
+import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import WebFont from 'webfontloader';
@@ -40,6 +43,9 @@ const router = createRouter({
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
 
+    <Toaster />
+    <ReactQueryDevtools client={queryClient} />
+    <TanStackRouterDevtools router={router} />
     {/* <ReactQueryDevtoolsPanel client={queryClient} /> */}
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />

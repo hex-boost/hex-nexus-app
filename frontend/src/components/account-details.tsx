@@ -2,10 +2,10 @@
 
 import type { Price } from '@/types/price.ts';
 import type { AccountType } from '@/types/types.ts';
-import type { StrapiError } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
 import { ChampionsSkinsTab } from '@/components/ChampionsSkinsTab.tsx';
 import { CoinIcon } from '@/components/coin-icon.tsx';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/components/ui/badge.tsx';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -16,134 +16,39 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from '@/components/ui/dialog.tsx';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
-import { useAccountDetails } from '@/hooks/useAccountDetails.ts';
-import { useAllDataDragon } from '@/hooks/useDataDragon.ts';
-import { strapiClient } from '@/lib/strapi.ts';
+import { useAccountActions } from '@/hooks/useAccountActions.ts';
+import { useAccountAuthentication } from '@/hooks/useAccountAuthentication.ts';
+import { useAccountFilters } from '@/hooks/useAccountFilters.ts';
+import { useDateTime } from '@/hooks/useDateTime.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
-import { useMutation } from '@tanstack/react-query';
 import { ArrowDownToLine, Check, CircleCheckBig, Clock, LogIn, Search, Shield, X } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { toast } from 'sonner';
+import { useState } from 'react';
 import AccountInfoDisplay from './account-info-display';
 
 // Types
 
 // Rental options
-function getFormattedTimeRemaining(expirationDateString: string): string {
-  const expiryDate = new Date(expirationDateString);
-  const now = new Date();
-  const diffMs = expiryDate.getTime() - now.getTime();
-
-  if (diffMs <= 0) {
-    return 'Expired';
-  }
-
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-  const diffSeconds = Math.floor((diffMs % (1000 * 60)) / 1000);
-
-  if (diffHours > 0) {
-    return `${diffHours}h ${diffMinutes}m remaining`;
-  } else if (diffMinutes > 0) {
-    return `${diffMinutes}m remaining`;
-  } else {
-    return `${diffSeconds}s remaining`;
-  }
-}
-function calculateTimeRemaining(account: AccountType): string {
-  const mostRecentAction = account.actionHistory?.reduce((latest, current) =>
-    new Date(latest.createdAt) > new Date(current.createdAt) ? latest : current,
-  );
-  return getFormattedTimeRemaining(mostRecentAction?.expirationDate.toString());
-}
 export default function AccountDetails({ account, price, onAccountChange, dropRefund }: {
   onAccountChange: () => void;
   price: Price;
   dropRefund?: number;
   account: AccountType;
 }) {
-  const {
-    championsSearch,
-    setChampionsSearch,
-    skinsSearch,
-    setSkinsSearch,
-    handleLoginToAccount,
-    handleRentAccount,
-    getFlexQueueRank,
-    getSoloQueueRank,
-    setSelectedRentalOptionIndex,
-    selectedRentalOptionIndex,
-    isRentPending,
-    isDropDialogOpen,
-    setIsDropDialogOpen,
-  } = useAccountDetails({ account, price, onAccountChange });
-
-  // Function to get rank info from rankings array
-  // const {} = useMapping();
-  const { user } = useUserStore();
-  const { mutate: handleDropAccount, isPending: isDropPending } = useMutation<{ message: string }, StrapiError>({
-    mutationKey: ['accounts', 'drop', account.documentId],
-    mutationFn: async () => {
-      return await strapiClient.request<{ message: string }>('post', `accounts/${account.documentId}/drop`);
-    },
-    onSuccess: (data) => {
-      toast.success(data.message);
-      onAccountChange();
-    },
-    onError: (error) => {
-      toast.error(error.error.message);
-      onAccountChange();
-    },
-  });
-  const {
-    allChampions,
-    rawChampionsData,
-    isLoading,
-    allSkins,
-
-  } = useAllDataDragon();
-
-  const filteredSkins = useMemo(() => {
-    if (isLoading || !allSkins.length || !account.LCUskins.length) {
-      return [];
-    }
-
-    // Filter skins from all skins based on account's skin IDs
-    const accountSkins = allSkins.filter(skin =>
-      account.LCUskins.includes(skin.id),
-    );
-
-    // Apply search filter
-    return accountSkins.filter(skin =>
-      skin && (
-        skin.name.toLowerCase().includes(skinsSearch.toLowerCase())
-        || skin.champion.toLowerCase().includes(skinsSearch.toLowerCase())
-      ),
-    );
-  }, [account.LCUskins, skinsSearch, allSkins, isLoading]);
-  const filteredChampions = useMemo(() => {
-    if (isLoading || !rawChampionsData || !allChampions.length) {
-      return [];
-    }
-
-    return account.LCUchampions
-      .map((championId) => {
-        // Find champion by ID from all champions
-        return allChampions.find(c => c.id === championId.toString());
-      })
-      .filter(champion =>
-        champion && champion.name.toLowerCase().includes(championsSearch.toLowerCase()),
-      );
-  }, [account.LCUchampions, championsSearch, allChampions, isLoading, rawChampionsData]);
-
+  const { jwt } = useUserStore();
+  const { championsSearch, setChampionsSearch, skinsSearch, setSkinsSearch, filteredChampions, filteredSkins } = useAccountFilters({ account });
+  const { isLoginPending, handleLoginToAccount } = useAccountAuthentication({ account, jwt });
+  const { selectedRentalOptionIndex, setSelectedRentalOptionIndex, handleDropAccount, isRentPending, isDropPending, setIsDropDialogOpen, handleRentAccount, isDropDialogOpen } = useAccountActions({ account, onAccountChange, price });
   const [activeTab, setActiveTab] = useState(0);
   const { getCompanyIcon, getGameIcon } = useMapping();
-  const soloQueueRank = getSoloQueueRank();
+
+  const soloQueueRank = account.rankings?.find(r => r.queueType === 'soloqueue');
+  const flexQueueRank = account.rankings?.find(r => r.queueType === 'flex');
+  const { calculateTimeRemaining } = useDateTime();
   const baseElo = soloQueueRank?.elo || 'default';
   const baseEloUpperCase = baseElo.charAt(0).toUpperCase() + baseElo.slice(1).toLowerCase();
   const basePrice = price.league[baseEloUpperCase] || 666;
@@ -151,10 +56,9 @@ export default function AccountDetails({ account, price, onAccountChange, dropRe
     hours: percentage,
     price: percentage === 0 ? basePrice : basePrice * (1 + percentage / 100),
   }));
+  const { user } = useUserStore();
   return (
-
-    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-      {/* Left column - Account details */}
+    <>
       <div className="lg:col-span-3 space-y-6">
         {/* Account info card */}
         <Card>
@@ -181,20 +85,18 @@ export default function AccountDetails({ account, price, onAccountChange, dropRe
               </div>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Account Info Display Component */}
+          <CardContent className="space-y-4 ">
             <AccountInfoDisplay
               accountId={account.documentId}
               game="lol"
               status={account.user ? 'Rented' : 'Available'}
               leaverBusterStatus="None"
-              soloQueueRank={getSoloQueueRank() as any}
-              flexQueueRank={getFlexQueueRank() as any}
-            // previousSeasonRank={'unknown'}
-            // valorantRank={'unknown'}
+              soloQueueRank={soloQueueRank}
+              flexQueueRank={flexQueueRank}
+              // previousSeasonRank={'unknown'}
+              // valorantRank={'unknown'}
             />
 
-            {/* Stats */}
             <div className="grid grid-cols-2  md:grid-cols-3 gap-4">
               <div className="border p-3 dark:bg-white/[0.01] rounded-lg">
                 <p className="text-sm text-zinc-600 dark:text-zinc-400">Champions</p>
@@ -210,13 +112,8 @@ export default function AccountDetails({ account, price, onAccountChange, dropRe
                 <p className="text-sm text-zinc-600 dark:text-zinc-400">Server</p>
                 <p className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">{account.server.slice(0, account.server.length - 1)}</p>
               </div>
-              {/* <div className="bg-zinc-50 dark:bg-zinc-800/30 p-3 rounded-lg"> */}
-              {/*  <p className="text-sm text-zinc-600 dark:text-zinc-400">Last Played</p> */}
-              {/*  <p className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">{ACCOUNT.lastPlayed}</p> */}
-              {/* </div> */}
 
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-center gap-3 bg-blue-50 border border-blue-300/20 dark:bg-blue-900/20 p-3 rounded-lg">
                 <div className="w-10 h-10 ">
@@ -227,7 +124,7 @@ export default function AccountDetails({ account, price, onAccountChange, dropRe
                 <div>
                   <p className="text-sm text-zinc-600 dark:text-zinc-400">Blue Essence</p>
                   <p className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
-                    {account.blueEssence}
+                    {account.blueEssence || 0}
                   </p>
                 </div>
               </div>
@@ -239,17 +136,18 @@ export default function AccountDetails({ account, price, onAccountChange, dropRe
                 <div>
                   <p className="text-sm text-zinc-600 dark:text-zinc-400">Riot Points</p>
                   <p className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
-                    {account.riotPoints}
+                    {account.riotPoints || 0}
                   </p>
                 </div>
               </div>
             </div>
+
           </CardContent>
         </Card>
 
         <div className="w-full bg-card p-6 min-h-[50vh] border rounded-lg">
           <ChampionsSkinsTab
-            tabLabel={[`Champions (${account.LCUchampions.length})`, `Skins (${account.LCUskins.length})`]}
+            tabLabel={[`Champions (${account?.LCUchampions?.length})`, `Skins (${account?.LCUskins?.length})`]}
             activeTab={activeTab}
             onTabChangeAction={setActiveTab}
             tabs={['Champions', 'Skins']}
@@ -257,7 +155,7 @@ export default function AccountDetails({ account, price, onAccountChange, dropRe
 
           {activeTab === 0 && (
             <div className="space-y-4 ">
-              <div className="relative">
+              <div className="relative ">
                 <Search
                   className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-500 dark:text-zinc-400"
                 />
@@ -279,7 +177,7 @@ export default function AccountDetails({ account, price, onAccountChange, dropRe
                 )}
               </div>
 
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 overflow-y-auto overflow-x-hidden max-h-[60vh] ">
                 {filteredChampions.map(champion => (
                   <div
                     key={champion?.id}
@@ -336,7 +234,7 @@ export default function AccountDetails({ account, price, onAccountChange, dropRe
                 )}
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 overflow-y-auto max-h-[60vh]">
                 {filteredSkins.map(skin => (
                   <div
                     key={skin.id}
@@ -403,7 +301,7 @@ export default function AccountDetails({ account, price, onAccountChange, dropRe
                   </div>
 
                   <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                    <div className="flex justify-between items-center mb-4">
+                    <div className="flex justify-between items-center ">
                       <span className="text-sm text-zinc-600 dark:text-zinc-400">Refundable Amount</span>
                       <div
                         className="flex items-center gap-1 text-lg font-semibold text-zinc-900 dark:text-zinc-50"
@@ -421,6 +319,8 @@ export default function AccountDetails({ account, price, onAccountChange, dropRe
                 </CardContent>
                 <CardFooter className="flex gap-3">
                   <Button
+                    disabled={isLoginPending}
+                    loading={isLoginPending}
                     className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
                     onClick={() => handleLoginToAccount()}
                   >
@@ -475,7 +375,8 @@ export default function AccountDetails({ account, price, onAccountChange, dropRe
                   </Dialog>
                 </CardFooter>
               </Card>
-            ) : (/* Rental Card */
+            )
+          : (
               <Card>
                 <CardHeader>
                   <CardTitle>Rent This Account</CardTitle>
@@ -532,7 +433,7 @@ export default function AccountDetails({ account, price, onAccountChange, dropRe
                       >
                         <CoinIcon className="w-4 h-4 text-amber-500 dark:text-amber-400" />
                         {(() => {
-                        // Make sure we have a valid selected option and price
+                          // Make sure we have a valid selected option and price
                           const selectedOption = rentalOptionsWithPrice[selectedRentalOptionIndex];
                           return selectedOption ? selectedOption.price.toLocaleString() : '0';
                         })()}
@@ -595,6 +496,6 @@ export default function AccountDetails({ account, price, onAccountChange, dropRe
           </CardContent>
         </Card>
       </div>
-    </div>
+    </>
   );
 }

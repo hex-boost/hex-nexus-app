@@ -2,6 +2,8 @@ import type { AccountType } from '@/types/types.ts';
 
 import AccountDetails from '@/components/account-details.tsx';
 import { Button } from '@/components/ui/button.tsx';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { usePrice } from '@/hooks/usePrice.ts';
 import { strapiClient } from '@/lib/strapi.ts';
 import { useUserStore } from '@/stores/useUserStore';
@@ -67,20 +69,12 @@ function AccountByID() {
   });
   const isLoading = isAvailableLoading || isRentedLoading || isPriceLoading;
 
-  if (isLoading) {
-    return <div>Loading account details...</div>;
-  }
-
-  if (!account) {
-    return <div>Account not found</div>;
-  }
-
-  if (!price) {
-    return <div>Price not found</div>;
-  }
+  // if (!account && !isLoading) {
+  //   return <div>Account not found</div>;
+  // }
 
   return (
-    <div className="p-4">
+    <>
       <div className="mb-4">
         <Link to="/accounts" className="text-white hover:underline">
           <Button variant="outline" className="space-x-2">
@@ -92,13 +86,91 @@ function AccountByID() {
       </div>
 
       <div className="space-y-8">
-        <AccountDetails
-          dropRefund={refundData?.amount}
-          price={price}
-          account={account}
-          onAccountChange={refetchAccount}
-        />
+        {isLoading || !account ? (
+          <div className="grid grid-cols-5 gap-6">
+            <div className="col-span-3 grid grid-flow-row w-full space-y-6">
+              <Card>
+                <CardHeader>
+                  <div className="w-full flex justify-between gap-4">
+                    <Skeleton className="h-14 w-40" />
+                    <Skeleton className="h-14 w-14" />
+                  </div>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-4 ">
+                  <div className="flex gap-4">
+                    <Skeleton className="h-32 w-full" />
+                    <Skeleton className="h-32 w-full" />
+                  </div>
+
+                  <div className="flex gap-4">
+                    <Skeleton className="h-20 w-full" />
+                    <Skeleton className="h-20 w-full" />
+                    <Skeleton className="h-20 w-full" />
+                  </div>
+                  <div className="flex gap-4">
+                    <Skeleton className="h-20 w-full" />
+                    <Skeleton className="h-20 w-full" />
+                  </div>
+
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <div className="w-full flex justify-between gap-6">
+                    <Skeleton className="h-8 w-full" />
+                    <Skeleton className="h-8 w-full" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+
+                  <Skeleton className="h-10 w-full mb-6" />
+                  <div className="grid grid-cols-7 gap-4 ">
+                    {
+                      Array.from({ length: 21 }).map((_, i) => (
+                        <Skeleton key={i} className="h-12  w-12" />
+                      ))
+                    }
+                  </div>
+
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="col-span-2 space-y-6">
+              {/* Security panel skeleton */}
+              <Card>
+                <CardHeader>
+                  <Skeleton className="h-14 w-60" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Skeleton className="h-6 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-14 w-full" />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <Skeleton className="h-6 w-40" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className="h-16 w-full" />
+                </CardContent>
+              </Card>
+
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+            <AccountDetails
+              price={price}
+              account={account}
+              onAccountChange={refetchAccount}
+            />
+          </div>
+        )}
       </div>
-    </div>
+    </>
   );
 }

@@ -49,19 +49,18 @@ export default function CurrentlyRentedAccounts({ accounts, className }: Current
               const currentRanking = account.rankings.find(ranking => !ranking.isPrevious)!;
               const rankColor = getRankColor(currentRanking?.elo?.toLowerCase());
               return (
-                <div
+                <Link
+                  to={`accounts/${account.documentId}`}
                   key={account.id}
                   className={cn(
                     'group flex items-center justify-between',
-                    'p-2 rounded-lg',
-                    'hover:bg-zinc-100 dark:hover:bg-zinc-800/50',
+                    'px-4 py-3 rounded-lg',
+                    'hover:bg-zinc-100 dark:hover:bg-primary/10 cursor-pointer',
                     'transition-all duration-200',
                   )}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800">
-                      <AccountGameIcon game="lol" />
-                    </div>
+                    <AccountGameIcon size={32} game="lol" />
                     <div>
                       <h3 className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
                         {account.id}
@@ -102,7 +101,7 @@ export default function CurrentlyRentedAccounts({ accounts, className }: Current
                       View Account
                     </Link>
                   </div>
-                </div>
+                </Link>
               );
             })
           : (

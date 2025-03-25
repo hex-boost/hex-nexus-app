@@ -5,7 +5,7 @@ export function HomeDashboard() {
   const { user } = useUserStore();
   return (
     <>
-      <h1 className="text-4xl font-semibold pt-12 pb-6">
+      <h1 className="text-3xl font-semibold pb-6">
         Welcome
         {' '}
 

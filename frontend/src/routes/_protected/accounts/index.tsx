@@ -60,7 +60,7 @@ function Accounts() {
   }
   return (
     <>
-      <h1 className="text-4xl font-semibold pb-6 pt-12">Accounts Available</h1>
+      <h1 className="text-3xl font-semibold pb-6 ">Accounts Available</h1>
 
       <div className="space-y-6">
         {/* Header with search and view toggle */}

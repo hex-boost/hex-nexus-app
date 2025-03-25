@@ -1,3 +1,4 @@
+import type { RankingType } from '@/types/types.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
 import { cn } from '@/lib/utils';
 
@@ -7,16 +8,8 @@ type AccountInfoDisplayProps = {
   status: 'Available' | 'Rented' | 'Reserved' | 'Maintenance';
   gameName?: string;
   leaverBusterStatus?: 'None' | 'Low' | 'Medium' | 'High';
-  soloQueueRank: {
-    elo: string;
-    division: string;
-    points: number;
-  };
-  flexQueueRank?: {
-    elo: string;
-    division: string;
-    points: number;
-  };
+  soloQueueRank?: RankingType;
+  flexQueueRank?: RankingType;
   previousSeasonRank?: {
     tier: string;
     rank: string;
@@ -83,7 +76,7 @@ function RankDisplay({
                 <div className="flex gap-1 items-end">
 
                   <p className={`text-sm capitalize font-medium `}>
-                    {rank.elo}
+                    {rank.elo || 'Unranked'}
                     {' '}
                     {rank.division}
                   </p>
