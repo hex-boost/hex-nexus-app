@@ -8,9 +8,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-resty/resty/v2"
+	gowebview "github.com/webview/webview_go"
+
 	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
-	"github.com/inkeliz/gowebview"
 	"github.com/mitchellh/go-ps"
 	"go.uber.org/zap"
 	"os"
@@ -364,14 +365,8 @@ func (c *Client) getAuthorization() (map[string]interface{}, error) {
 	return authResult, nil
 }
 func (c *Client) getWebView() (gowebview.WebView, error) {
-	config := gowebview.Config{
-		URL:   "http://127.0.0.1:6969/index.html",
-		Debug: true,
-	}
-	webview, err := gowebview.New(&config)
-	if err != nil {
-		return nil, err
-	}
+	webview := gowebview.New(false)
+	webview.Navigate("http://127.0.0.1:6969/index.html")
 
 	return webview, nil
 }

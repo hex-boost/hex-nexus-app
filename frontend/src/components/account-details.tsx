@@ -234,7 +234,7 @@ export default function AccountDetails({ account, price, onAccountChange, dropRe
 
               <div className="flex items-center gap-3 bg-orange-50 dark:bg-yellow-900/20 border border-yellow-300/20 p-3 rounded-lg">
                 <div className="w-10 h-10">
-                  <img src="https://static.wikia.nocookie.net/leagueoflegends/images/0/00/RP_icon.png/revision/latest?cb=20241201161019" />
+                  <img src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/icon-rp-72.png" />
                 </div>
                 <div>
                   <p className="text-sm text-zinc-600 dark:text-zinc-400">Riot Points</p>

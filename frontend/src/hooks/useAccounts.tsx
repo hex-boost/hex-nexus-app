@@ -34,7 +34,28 @@ export function useAccounts() {
     queryKey: ['accounts'],
     queryFn: async () => {
       const res = await strapiClient.find<AccountType[]>('accounts/available');
-      return res.data;
+      return res.data.filter((account) => {
+        if (!account.ban?.restrictions) {
+          return true;
+        }
+
+        const restrictions = account.ban.restrictions;
+
+        // Filter out accounts with invalid credentials or MFA required
+        const hasInvalidCredentials = restrictions.some(r =>
+          r.type === 'INVALID_CREDENTIALS' || r.type === 'MFA_REQUIRED',
+        );
+        if (hasInvalidCredentials) {
+          return false;
+        }
+
+        // Filter out accounts with permanent bans
+        const hasPermanentBan = restrictions.some(r =>
+          r.type === 'PERMANENT_BAN'
+          && (r.scope === 'riot' || r.scope === 'lol' || !r.scope),
+        );
+        return !hasPermanentBan;
+      });
     },
   });
 
@@ -88,7 +109,7 @@ export function useAccounts() {
       }
 
       if (filters.rank && filters.rank !== 'any'
-        && account.rankings.some(ranking => ranking.elo !== filters.rank)) {
+        && !account.rankings.some(ranking => ranking.elo?.toLowerCase() === filters.rank.toLowerCase())) {
         return false;
       }
 
@@ -131,7 +152,6 @@ export function useAccounts() {
   const handleViewAccountDetails = (accountId: string) => {
     router.navigate({ to: `/accounts/${accountId}` });
   };
-
   return {
     // State
     searchQuery,

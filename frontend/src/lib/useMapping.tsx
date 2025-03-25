@@ -1,12 +1,14 @@
 import bronzeIcon from '@/assets/league_of_legends_bronze.svg';
 import challengerIcon from '@/assets/league_of_legends_challenger.svg';
 import diamondIcon from '@/assets/league_of_legends_diamond.svg';
+import emeraldIcon from '@/assets/league_of_legends_emerald.svg';
 import goldIcon from '@/assets/league_of_legends_gold.svg';
 import grandmasterIcon from '@/assets/league_of_legends_grandmaster.svg';
 import ironIcon from '@/assets/league_of_legends_iron.svg';
 import masterIcon from '@/assets/league_of_legends_master.svg';
 import platinumIcon from '@/assets/league_of_legends_platinum.svg';
 import silverIcon from '@/assets/league_of_legends_silver.svg';
+import unrankedIcon from '@/assets/league_of_legends_unranked.svg';
 import nexusIcon from '@/assets/logo-hex-boost.svg';
 import { LolIcon, ValorantIcon } from './icons';
 
@@ -48,14 +50,16 @@ export function useMapping() {
       bronze: bronzeIcon,
       silver: silverIcon,
       gold: goldIcon,
+      emerald: emeraldIcon,
       platinum: platinumIcon,
       diamond: diamondIcon,
       master: masterIcon,
       grandmaster: grandmasterIcon,
       challenger: challengerIcon,
+      unranked: unrankedIcon,
     };
 
-    return icons[rank.toLowerCase()] || ironIcon; // Default to iron if not found
+    return icons[rank.toLowerCase()] || unrankedIcon; // Default to iron if not found
   }
 
   const getSkinRarityColor = (rarity: string) => {
@@ -139,7 +143,15 @@ export function useMapping() {
         );
       default:
         return (
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill-rule="evenodd" clip-rule="evenodd" d="M23.98 4C12.94 4 4 12.96 4 24s8.94 20 19.98 20C35.04 44 44 35.04 44 24S35.04 4 23.98 4Zm13.86 12h-5.9c-.64-2.5-1.56-4.9-2.76-7.12A16.06 16.06 0 0 1 37.84 16ZM24 8.08c1.66 2.4 2.96 5.06 3.82 7.92h-7.64c.86-2.86 2.16-5.52 3.82-7.92ZM8.52 28C8.2 26.72 8 25.38 8 24s.2-2.72.52-4h6.76c-.16 1.32-.28 2.64-.28 4 0 1.36.12 2.68.28 4H8.52Zm1.64 4h5.9c.64 2.5 1.56 4.9 2.76 7.12-3.68-1.26-6.74-3.8-8.66-7.12Zm5.9-16h-5.9c1.92-3.32 4.98-5.86 8.66-7.12-1.2 2.22-2.12 4.62-2.76 7.12ZM24 39.92c-1.66-2.4-2.96-5.06-3.82-7.92h7.64c-.86 2.86-2.16 5.52-3.82 7.92ZM28.68 28h-9.36c-.18-1.32-.32-2.64-.32-4 0-1.36.14-2.7.32-4h9.36c.18 1.3.32 2.64.32 4 0 1.36-.14 2.68-.32 4Zm.5 11.12c1.2-2.22 2.12-4.62 2.76-7.12h5.9a16.06 16.06 0 0 1-8.66 7.12ZM32.72 28c.16-1.32.28-2.64.28-4 0-1.36-.12-2.68-.28-4h6.76c.32 1.28.52 2.62.52 4s-.2 2.72-.52 4h-6.76Z"></path></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+            <path
+              fill-rule="evenodd"
+              className="fill-foreground"
+              clip-rule="evenodd"
+              d="M23.98 4C12.94 4 4 12.96 4 24s8.94 20 19.98 20C35.04 44 44 35.04 44 24S35.04 4 23.98 4Zm13.86 12h-5.9c-.64-2.5-1.56-4.9-2.76-7.12A16.06 16.06 0 0 1 37.84 16ZM24 8.08c1.66 2.4 2.96 5.06 3.82 7.92h-7.64c.86-2.86 2.16-5.52 3.82-7.92ZM8.52 28C8.2 26.72 8 25.38 8 24s.2-2.72.52-4h6.76c-.16 1.32-.28 2.64-.28 4 0 1.36.12 2.68.28 4H8.52Zm1.64 4h5.9c.64 2.5 1.56 4.9 2.76 7.12-3.68-1.26-6.74-3.8-8.66-7.12Zm5.9-16h-5.9c1.92-3.32 4.98-5.86 8.66-7.12-1.2 2.22-2.12 4.62-2.76 7.12ZM24 39.92c-1.66-2.4-2.96-5.06-3.82-7.92h7.64c-.86 2.86-2.16 5.52-3.82 7.92ZM28.68 28h-9.36c-.18-1.32-.32-2.64-.32-4 0-1.36.14-2.7.32-4h9.36c.18 1.3.32 2.64.32 4 0 1.36-.14 2.68-.32 4Zm.5 11.12c1.2-2.22 2.12-4.62 2.76-7.12h5.9a16.06 16.06 0 0 1-8.66 7.12ZM32.72 28c.16-1.32.28-2.64.28-4 0-1.36-.12-2.68-.28-4h6.76c.32 1.28.52 2.62.52 4s-.2 2.72-.52 4h-6.76Z"
+            >
+            </path>
+          </svg>
         );
     }
   };

@@ -1,4 +1,4 @@
-import { COMPANIES, LOL_TIERS, RANKS, REGIONS, VALORANT_TIERS } from '@/components/accountsMock';
+import { COMPANIES, DIVISIONS, LOL_TIERS, REGIONS, VALORANT_TIERS } from '@/components/accountsMock';
 import { CoinIcon } from '@/components/coin-icon';
 import { AccountGameIcon } from '@/components/GameComponents';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
@@ -15,13 +15,7 @@ import { usePrice } from '@/hooks/usePrice.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
 import { cn } from '@/lib/utils';
 import { createFileRoute } from '@tanstack/react-router';
-import {
-  Check,
-  ChevronDown,
-  Filter,
-  MoreHorizontal,
-  Search,
-} from 'lucide-react';
+import { Check, ChevronDown, Filter, MoreHorizontal, Search } from 'lucide-react';
 import { useState } from 'react';
 
 // Helper function to get company icon
@@ -30,7 +24,24 @@ export const Route = createFileRoute('/_protected/accounts/')({
 });
 
 function Accounts() {
-  const { isLoading: isAccountLoading, accounts, filteredAccounts, filters, setFilters, showFilters, setShowFilters, searchQuery, setSearchQuery, requestSort, resetFilters, SortIndicator, handleViewAccountDetails, getRankColor, getEloIcon, getRegionIcon } = useAccounts();
+  const {
+    isLoading: isAccountLoading,
+    accounts,
+    filteredAccounts,
+    filters,
+    setFilters,
+    showFilters,
+    setShowFilters,
+    searchQuery,
+    setSearchQuery,
+    requestSort,
+    resetFilters,
+    SortIndicator,
+    handleViewAccountDetails,
+    getRankColor,
+    getEloIcon,
+    getRegionIcon,
+  } = useAccounts();
 
   const { getCompanyIcon } = useMapping();
   const [loadDragonData, setLoadDragonData] = useState(false);
@@ -55,7 +66,9 @@ function Accounts() {
         {/* Header with search and view toggle */}
         <div className="flex flex-col sm:flex-row gap-4 justify-between">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-500 dark:text-zinc-400" />
+            <Search
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-500 dark:text-zinc-400"
+            />
             <Input
               placeholder="Search by account ID..."
               value={searchQuery}
@@ -73,7 +86,9 @@ function Accounts() {
             >
               <Filter className="h-4 w-4" />
               Filters
-              <ChevronDown className={cn('h-4 w-4 transition-transform', showFilters && 'transform rotate-180')} />
+              <ChevronDown
+                className={cn('h-4 w-4 transition-transform', showFilters && 'transform rotate-180')}
+              />
             </Button>
 
             {/* <div className="flex border rounded-md overflow-hidden"> */}
@@ -99,7 +114,9 @@ function Accounts() {
 
         {/* Filters */}
         {showFilters && (
-          <div className="bg-white dark:bg-black/20 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 space-y-6">
+          <div
+            className="bg-white dark:bg-black/20 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 space-y-6"
+          >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Game, Tier and Rank */}
               <div className="space-y-4">
@@ -108,15 +125,18 @@ function Accounts() {
                   <Label htmlFor="tier" className="text-sm font-medium mb-1.5 block">
                     Rank
                   </Label>
-                  <Select value={filters.division} onValueChange={value => setFilters({ ...filters, division: value })}>
+                  <Select
+                    value={filters.rank}
+                    onValueChange={value => setFilters({ ...filters, rank: value })}
+                  >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Any rank" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="any">Any rank</SelectItem>
-                      {(filters.game === 'Valorant' ? VALORANT_TIERS : LOL_TIERS).map(tier => (
-                        <SelectItem key={tier} value={tier}>
-                          {tier}
+                      {(filters.game === 'Valorant' ? VALORANT_TIERS : LOL_TIERS).map(rank => (
+                        <SelectItem key={rank} value={rank}>
+                          {rank}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -128,8 +148,8 @@ function Accounts() {
                     Division
                   </Label>
                   <Select
-                    value={filters.rank}
-                    onValueChange={value => setFilters({ ...filters, rank: value })}
+                    value={filters.division}
+                    onValueChange={value => setFilters({ ...filters, division: value })}
                     disabled={['Master', 'Grandmaster', 'Challenger', 'Radiant'].includes(filters.division)}
                   >
                     <SelectTrigger className="w-full">
@@ -137,9 +157,9 @@ function Accounts() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="any">Any division</SelectItem>
-                      {RANKS.map(rank => (
-                        <SelectItem key={rank} value={rank}>
-                          {rank}
+                      {DIVISIONS.map(division => (
+                        <SelectItem key={division} value={division}>
+                          {division}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -150,13 +170,21 @@ function Accounts() {
                   <Label htmlFor="region" className="text-sm font-medium mb-1.5 block">
                     Server
                   </Label>
-                  <Select defaultValue="any" value={filters.region} onValueChange={value => setFilters({ ...filters, region: value })}>
+                  <Select
+                    defaultValue="any"
+                    value={filters.region}
+                    onValueChange={value => setFilters({ ...filters, region: value })}
+                  >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Any Server" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem className="flex items-center" value="any">
-                        <div className="w-6 flex items-center justify-center h-6">{getRegionIcon('any')}</div>
+                        <div
+                          className="w-6 flex items-center justify-center h-6"
+                        >
+                          {getRegionIcon('any')}
+                        </div>
                         <span>
                           Any region
                         </span>
@@ -164,7 +192,11 @@ function Accounts() {
                       {REGIONS.map(region => (
                         <SelectItem className="flex items-center" key={region} value={region}>
 
-                          <div className="w-6 h-6 flex items-center justify-center ">{getRegionIcon(region as any)}</div>
+                          <div
+                            className="w-6 h-6 flex items-center justify-center "
+                          >
+                            {getRegionIcon(region as any)}
+                          </div>
                           <span className="text-sm">
                             {' '}
                             {region.slice(0, region.length - 1)}
@@ -205,7 +237,10 @@ function Accounts() {
                         {selectedValues.map((value) => {
                           const champion = allChampions.find(c => c.id === value);
                           return (
-                            <Avatar key={champion!.id} className="h-6 w-6 border-2 border-background">
+                            <Avatar
+                              key={champion!.id}
+                              className="h-6 w-6 border-2 border-background"
+                            >
                               <AvatarImage src={champion?.imageUrl} />
                               <AvatarFallback>{champion?.name?.[0] || 'C'}</AvatarFallback>
                             </Avatar>
@@ -254,7 +289,10 @@ function Accounts() {
                           // Use skin data instead of champion data
                           const skin = allSkins.find(s => s.champion.toString() === champion);
                           return (
-                            <Avatar key={champion} className="h-6 w-6 border-2 border-background">
+                            <Avatar
+                              key={champion}
+                              className="h-6 w-6 border-2 border-background"
+                            >
                               <AvatarImage src={skin?.imageAvatarUrl} alt={skin?.name} />
                               <AvatarFallback>{skin?.name?.[0] || 'S'}</AvatarFallback>
                             </Avatar>
@@ -293,7 +331,9 @@ function Accounts() {
                             className="w-8 h-8 rounded-md"
                           />
                           {filters.company === company && (
-                            <div className="absolute top-2 right-2 bg-blue-500 rounded-full p-0.5">
+                            <div
+                              className="absolute top-2 right-2 bg-blue-500 rounded-full p-0.5"
+                            >
                               <Check className="w-3 h-3 text-white" />
                             </div>
                           )}
@@ -363,12 +403,12 @@ function Accounts() {
                     <SortIndicator column="coin_price" />
                   </div>
                 </th>
-                <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Actions</th>
+                <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400"></th>
               </tr>
             </thead>
             <tbody>
               {filteredAccounts.map((account) => {
-              // Move variable declaration inside the function body
+                // Move variable declaration inside the function body
                 const ranking = account.rankings.find(ranking => ranking.queueType === 'soloqueue')!;
 
                 return (
@@ -385,7 +425,9 @@ function Accounts() {
                     <td className="p-3">
                       <div className="flex items-center gap-2">
                         <img className="w-6 h-6" alt={ranking.elo} src={getEloIcon(ranking.elo)} />
-                        <span className={`text-sm capitalize font-medium ${getRankColor(ranking?.elo)}`}>
+                        <span
+                          className={`text-sm capitalize font-medium ${getRankColor(ranking?.elo)}`}
+                        >
                           {' '}
                           {ranking?.division || ranking.division}
                         </span>
@@ -399,7 +441,11 @@ function Accounts() {
                         {/*  alt={account.server} */}
                         {/*  className="w-5 h-5" */}
                         {/* /> */}
-                        <span className="text-sm text-zinc-600 dark:text-zinc-400">{account.server.slice(0, account.server.length - 1)}</span>
+                        <span
+                          className="text-sm text-zinc-600 dark:text-zinc-400"
+                        >
+                          {account.server.slice(0, account.server.length - 1)}
+                        </span>
                       </div>
                     </td>
                     <td className="p-3 text-sm text-zinc-600 dark:text-zinc-400">
@@ -413,7 +459,11 @@ function Accounts() {
                           alt={account.type}
                           className="w-5 h-5 rounded-md"
                         />
-                        <span className="text-sm text-zinc-600 dark:text-zinc-400">{account.type}</span>
+                        {/* <span */}
+                        {/*  className="text-sm text-zinc-600 dark:text-zinc-400" */}
+                        {/* > */}
+                        {/*  {account.type} */}
+                        {/* </span> */}
                       </div>
                     </td>
                     <td className="p-3">
@@ -431,7 +481,9 @@ function Accounts() {
                       </span>
                     </td>
                     <td className="p-3">
-                      <div className="flex items-center gap-1 text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                      <div
+                        className="flex items-center gap-1 text-sm font-medium text-zinc-900 dark:text-zinc-100"
+                      >
                         <CoinIcon className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
                         {isPriceLoading
 
@@ -444,7 +496,7 @@ function Accounts() {
                       </div>
                     </td>
 
-                    <td className="p-3" onClick={e => e.stopPropagation()}>
+                    <td className="p-3 text-center" onClick={e => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -452,7 +504,9 @@ function Accounts() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleViewAccountDetails(account.documentId)}>
+                          <DropdownMenuItem
+                            onClick={() => handleViewAccountDetails(account.documentId)}
+                          >
                             View
                             Details
                           </DropdownMenuItem>

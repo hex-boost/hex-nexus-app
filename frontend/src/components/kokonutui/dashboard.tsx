@@ -3,14 +3,16 @@ import type { StrapiError } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
 import { strapiClient } from '@/lib/strapi';
 import { useUserStore } from '@/stores/useUserStore';
 import { useQuery } from '@tanstack/react-query';
-import { redirect } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { Activity, Shield } from 'lucide-react';
+import { useEffect } from 'react';
 import CurrentlyRentedAccounts from './currently-rented-accounts';
 import LastRentedAccount from './last-rented-account';
 import SubscriptionStatus from './subscription-status';
 
 export default function Dashboard() {
   const { logout } = useUserStore();
+  const navigate = useNavigate();
 
   const { data: user, isLoading, isError, error } = useQuery<UserType, StrapiError>({
     queryKey: ['users', 'me'],
@@ -19,18 +21,19 @@ export default function Dashboard() {
 
   });
 
-  if (isError) {
-    if ([401, 403].includes(error.error.status)) {
+  useEffect(() => {
+    if (isError && [401, 403].includes(error.error.status)) {
       logout();
-      redirect({ to: '/login' });
-      return;
+      navigate({ to: '/login' });
     }
-  }
+  }, [isError, error, logout, navigate]);
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
+
   if (!user) {
-    throw new Error('User not found');
+    return <div>User not found</div>;
   }
   return (
     <div className="space-y-6">
@@ -42,7 +45,9 @@ export default function Dashboard() {
           </h2>
           <SubscriptionStatus subscription={user.premium} />
         </div>
-        <div className="bg-white dark:bg-black/20 flex flex-col items-start rounded-xl p-6 border border-gray-200 dark:border-[#1F1F23]">
+        <div
+          className="bg-white dark:bg-black/20 flex flex-col items-start rounded-xl p-6 border border-gray-200 dark:border-[#1F1F23]"
+        >
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 text-left flex items-center gap-2">
             <Activity className="w-4 h-4 text-zinc-900 dark:text-zinc-50" />
             Currently Rented Accounts

@@ -9,6 +9,5 @@ import (
 var assets embed.FS
 
 func main() {
-
 	wails.Run(assets)
 }
