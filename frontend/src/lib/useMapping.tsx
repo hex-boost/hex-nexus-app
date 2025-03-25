@@ -1,3 +1,4 @@
+import type { Server } from '@/types/types.ts';
 import bronzeIcon from '@/assets/league_of_legends_bronze.svg';
 import challengerIcon from '@/assets/league_of_legends_challenger.svg';
 import diamondIcon from '@/assets/league_of_legends_diamond.svg';
@@ -78,7 +79,7 @@ export function useMapping() {
         return 'bg-zinc-100 dark:bg-zinc-900/30 text-zinc-600 dark:text-zinc-400';
     }
   };
-  const getRegionIcon = (region: 'NA1' | 'EUW1' | 'EUNE1' | 'OCE1' | 'BR1' | 'any') => {
+  const getRegionIcon = (region: Server | 'any') => {
     switch (region) {
       case 'any':
         return (
@@ -115,7 +116,7 @@ export function useMapping() {
             />
           </svg>
         );
-      case 'OCE1':
+      case 'OC1':
         return (
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
             <path
@@ -128,7 +129,7 @@ export function useMapping() {
             />
           </svg>
         );
-      case 'EUNE1':
+      case 'EUN1':
         return (
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
             <path

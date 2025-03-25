@@ -27,6 +27,7 @@ import type { Entity } from './conversion';
 
 export type UserType = Entity<PluginUsersPermissionsUser>;
 export type AccountType = Entity<ApiAccountAccount>;
+export type Server = AccountType['server'];
 export type AccountPermissions = Entity<PluginUsersPermissionsUser>['accountPermissions'];
 export type ApiTokenType = Entity<AdminApiToken>;
 export type ApiTokenPermissionType = Entity<AdminApiTokenPermission>;
