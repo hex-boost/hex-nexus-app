@@ -69,7 +69,7 @@ export default function SubscriptionStatus({ className, subscription }: Subscrip
         </div>
       </div>
 
-      <div className="space-y-2 mb-4">
+      <div className="space-y-2 ">
         <p className="text-xs font-medium text-zinc-900 dark:text-zinc-100">Plan Features:</p>
         <ul className="space-y-1">
           {features.map((feature, index) => (

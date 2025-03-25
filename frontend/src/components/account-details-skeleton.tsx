@@ -71,19 +71,3 @@ export function RentalOptionsSkeleton() {
     </div>
   );
 }
-
-export function SecuritySkeleton() {
-  return (
-    <div className="space-y-4">
-      {[...Array.from({ length: 3 })].map((_, i) => (
-        <div key={i} className="flex items-center gap-3 p-3 rounded-lg border">
-          <Skeleton className="h-5 w-5 rounded-full" />
-          <div>
-            <Skeleton className="h-4 w-32 mb-2" />
-            <Skeleton className="h-3 w-48" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}

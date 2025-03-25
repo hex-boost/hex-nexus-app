@@ -107,7 +107,9 @@ function DashboardLayout() {
                     {
                       isLoading
                         ? <Skeleton></Skeleton>
-                        : <UserProfile updateAction={refetchUser} user={user!} logoutAction={logout} />
+                        : (
+                            <UserProfile updateAction={refetchUser} user={user!} logoutAction={logout} />
+                          )
                     }
                   </DropdownMenuContent>
                 </DropdownMenu>

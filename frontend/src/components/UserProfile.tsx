@@ -1,14 +1,13 @@
 import type { UserType } from '@/types/types.ts';
 import type React from 'react';
 import type { Crop } from 'react-image-crop';
-import type { UploadImageRes } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
 import { Separator } from '@/components/ui/separator.tsx';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip.tsx';
 import { strapiClient } from '@/lib/strapi.ts';
 import { useMutation } from '@tanstack/react-query';
 import { Link, useRouter } from '@tanstack/react-router';
-import { Check, HelpCircle, Layers, LogOut, MoveUpRight, Pencil, Trophy, X } from 'lucide-react';
+import { Check, HelpCircle, LogOut, MoveUpRight, Pencil, Trophy, X } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import ReactCrop from 'react-image-crop';
@@ -70,29 +69,57 @@ export function UserProfile({
       }
     },
   });
+  type Image = {
+    id: number;
+    name: string;
+    documentId: string;
+    alternativeText: any;
+    caption: any;
+    width: number;
+    height: number;
+    formats: any;
+    hash: string;
+    ext: string;
+    mime: string;
+    size: number;
+    url: string;
+    previewUrl: any;
+    provider: string;
+    provider_metadata: any;
+    createdAt: string;
+    updatedAt: string;
+  };
 
   const handleCancel = () => {
     setPreviewAvatar(null);
   };
 
   async function updateUserAvatarFromBase64(base64Image: string) {
-    const userId = user?.id;
+    // Convert base64 to blob
     const base64Data = base64Image.split(',')[1] as string;
     const byteCharacters = atob(base64Data);
     const byteNumbers = Array.from({ length: byteCharacters.length }, (_, i) => byteCharacters.charCodeAt(i));
     const byteArray = new Uint8Array(byteNumbers);
     const blob = new Blob([byteArray], { type: 'image/png' });
+
+    // Create form data for upload
     const formData = new FormData();
-    formData.append('files', blob, `avatar-${userId}.png`);
-    const uploadResponse = await strapiClient.axios.post<UploadImageRes>('/upload', formData, {
+    formData.append('files', blob, `avatar.png`);
+
+    // 1. First upload the image to media library
+    const uploadResponse = await strapiClient.axios.post('/api/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
-    const uploadedAvatar = uploadResponse.data[0];
-    const res = await strapiClient.axios.put<UserType>(`/users/${userId}?populate=avatar`, {
-      avatar: uploadedAvatar.id,
+
+    const uploadedFileId = uploadResponse.data[0].id;
+
+    // 2. Then update your profile using /me endpoint
+    const res = await strapiClient.axios.put(`/api/users/${user.id}`, {
+      avatar: uploadedFileId,
     });
+
     updateAction();
     return res.data;
   }
@@ -100,9 +127,9 @@ export function UserProfile({
     mutationKey: ['update-avatar'],
     mutationFn: async () => {
       return toast.promise(updateUserAvatarFromBase64(previewAvatar!), {
-        loading: 'Atualizando avatar...',
-        success: 'Avatar atualizado com sucesso!',
-        error: 'Ocorreu um erro ao atualizar o avatar.',
+        loading: 'Updating avatar',
+        success: 'Avatar updated succesfully',
+        error: 'An unexpected error occurred',
       });
     },
     onSuccess: async () => {
@@ -165,16 +192,15 @@ export function UserProfile({
     }
   };
   const menuItems: MenuItem[] = [
-    { label: 'Ordens', href: '/dashboard/orders', icon: <Layers className="w-4 h-4" /> },
     {
-      label: 'Booster Tier',
-      value: 'Mestre',
+      label: 'Membership',
+      value: 'Free Trial',
       href: '#',
       icon: <Trophy className="w-4 h-4" />,
       external: false,
     },
     {
-      label: 'Ajuda',
+      label: 'Help',
       href: '#',
       icon: <HelpCircle className="w-4 h-4" />,
     },
@@ -183,7 +209,7 @@ export function UserProfile({
   return (
     <>
       <div className="w-full max-w-sm mx-auto">
-        <div className="relative overflow-hidden rounded-2xl border ">
+        <div className="relative rounded-2xl border ">
           <div className="relative pt-8 pb-6">
             <div className="flex px-6 items-center gap-4 mb-8">
               <div className="relative shrink-0 " {...getRootProps()}>
@@ -301,7 +327,7 @@ export function UserProfile({
               )}
               <button
                 onClick={async () => {
-                  await logoutAction();
+                  logoutAction();
                   router.navigate({ to: '/' });
                 }}
                 type="button"
@@ -309,7 +335,7 @@ export function UserProfile({
               >
                 <div className="flex items-center gap-2">
                   <LogOut className="w-4 h-4" />
-                  <span className="text-sm font-medium ">Sair</span>
+                  <span className="text-sm font-medium ">Logout</span>
                 </div>
               </button>
             </div>

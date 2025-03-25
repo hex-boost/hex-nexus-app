@@ -77,8 +77,8 @@ function AccountByID() {
     <>
       <div className="mb-4">
         <Link to="/accounts" className="text-white hover:underline">
-          <Button variant="outline" className="space-x-2">
-            <ArrowLeftIcon />
+          <Button variant="link" className="space-x-2">
+            <ArrowLeftIcon className="w-4 h-4 " />
             {' '}
             <span>Back to Accounts</span>
           </Button>
