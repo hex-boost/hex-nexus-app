@@ -7,19 +7,20 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/go-resty/resty/v2"
-	gowebview "github.com/webview/webview_go"
-
-	"github.com/hex-boost/hex-nexus-app/backend/types"
-	"github.com/hex-boost/hex-nexus-app/backend/utils"
-	"github.com/mitchellh/go-ps"
-	"go.uber.org/zap"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/go-resty/resty/v2"
+	gowebview "github.com/inkeliz/gowebview"
+
+	"github.com/hex-boost/hex-nexus-app/backend/types"
+	"github.com/hex-boost/hex-nexus-app/backend/utils"
+	"github.com/mitchellh/go-ps"
+	"go.uber.org/zap"
 )
 
 // RiotClient provides methods for interacting with Riot authentication services
@@ -33,7 +34,6 @@ type Client struct {
 
 // NewRiotClient creates a new Riot client for authentication
 func NewRiotClient(logger *utils.Logger) *Client {
-
 	return &Client{
 		client:           nil, // Will be initialized during authentication
 		logger:           logger,
@@ -41,6 +41,7 @@ func NewRiotClient(logger *utils.Logger) *Client {
 		hcaptchaResponse: make(chan string),
 	}
 }
+
 func (c *Client) getRiotProcess() (pid int, err error) {
 	processes, err := ps.Processes()
 	if err != nil {
@@ -59,7 +60,6 @@ func (c *Client) getRiotProcess() (pid int, err error) {
 }
 
 func (c *Client) getClientCredentials(riotClientPid int) (port string, authToken string, err error) {
-
 	var cmdLine string
 
 	cmd := exec.Command("wmic", "process", "where", fmt.Sprintf("ProcessId=%d", riotClientPid), "get", "CommandLine", "/format:list")
@@ -108,7 +108,6 @@ func (c *Client) loginWithCaptcha(username, password, captchaToken string) (stri
 		SetBody(authPayload).
 		SetResult(&loginResult).
 		Put("/rso-authenticator/v1/authentication")
-
 	if err != nil {
 		c.logger.Error("Authentication with captcha failed", zap.Error(err))
 		return "", fmt.Errorf("authentication request failed: %w", err)
@@ -144,7 +143,6 @@ func (c *Client) getCaptchaData() (string, error) {
 		SetBody(getRiotIdentityStartPayload()).
 		SetResult(&startAuthResult).
 		Post("/rso-authenticator/v1/authentication/riot-identity/start")
-
 	if err != nil {
 		c.logger.Error("Error in authentication start request", zap.Error(err))
 		return "", err
@@ -257,6 +255,7 @@ func (c *Client) launchRiotClient() error {
 	}
 	return nil
 }
+
 func (c *Client) IsRunning() bool {
 	processes, err := ps.Processes()
 	if err != nil {
@@ -323,7 +322,6 @@ func (c *Client) completeAuthentication(loginToken string) error {
 		}).
 		SetResult(&loginTokenResp).
 		Put("/rso-auth/v1/session/login-token")
-
 	if err != nil {
 		c.logger.Error("Error sending login token", zap.Error(err))
 		return err
@@ -350,7 +348,6 @@ func (c *Client) getAuthorization() (map[string]interface{}, error) {
 		SetBody(getAuthorizationRequestPayload()).
 		SetResult(&authResult).
 		Post("/rso-auth/v2/authorizations/riot-client")
-
 	if err != nil {
 		c.logger.Error("Authorization request failed", zap.Error(err))
 		return nil, err
@@ -364,9 +361,12 @@ func (c *Client) getAuthorization() (map[string]interface{}, error) {
 	c.logger.Info("Authorization successful")
 	return authResult, nil
 }
+
 func (c *Client) getWebView() (gowebview.WebView, error) {
-	webview := gowebview.New(false)
-	webview.Navigate("http://127.0.0.1:6969/index.html")
+	webview, err := gowebview.New(&gowebview.Config{URL: "http://127.0.0.1:6969/index.html"})
+	if err != nil {
+		return nil, err
+	}
 
 	return webview, nil
 }
@@ -375,7 +375,6 @@ func (c *Client) getWebView() (gowebview.WebView, error) {
 func (c *Client) AuthenticateWithCaptcha(username string, password string) error {
 	// Initialize the client
 	if err := c.initializeClient(); err != nil {
-
 		return err
 	}
 	err := c.handleCaptcha()
