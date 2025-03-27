@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import Dashboard from './kokonutui/dashboard';
 
 export function HomeDashboard() {
-  const { data: updatedUser, isLoading } = useQuery({
+  const { data: updatedUser } = useQuery({
     queryKey: ['users', 'me'],
     queryFn: () => strapiClient.find<UserType>('users/me').then(res => res.data),
   });
@@ -17,7 +17,7 @@ export function HomeDashboard() {
         {updatedUser?.username}
       </h1>
 
-      <Dashboard user={updatedUser} />
+      <Dashboard user={updatedUser!} />
     </>
   );
 }
