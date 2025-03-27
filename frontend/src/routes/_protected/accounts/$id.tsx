@@ -60,7 +60,7 @@ function AccountByID() {
   const { user } = useUserStore();
 
   const {
-    data: refundData,
+    data: _,
   } = useQuery({
     queryKey: ['accounts', 'refund', id],
     queryFn: () => strapiClient.find<{ amount: number }>(`accounts/${id}/refund`).then(res => res.data),
@@ -164,7 +164,7 @@ function AccountByID() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
             <AccountDetails
-              price={price}
+              price={price!}
               account={account}
               onAccountChange={refetchAccount}
             />

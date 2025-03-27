@@ -107,7 +107,7 @@ export function UserProfile({
     formData.append('files', blob, `avatar.png`);
 
     // 1. First upload the image to media library
-    const uploadResponse = await strapiClient.axios.post('/api/upload', formData, {
+    const uploadResponse = await strapiClient.axios.post<Image>('/api/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },

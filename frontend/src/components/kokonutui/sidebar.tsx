@@ -2,8 +2,9 @@
 
 import type React from 'react';
 
-import { Link } from '@tanstack/react-router';
+import { CoinIcon } from '@/components/coin-icon.tsx';
 
+import { Link } from '@tanstack/react-router';
 import {
   BarChart2,
   Clock,
@@ -19,7 +20,6 @@ import {
   User,
 } from 'lucide-react';
 import { useState } from 'react';
-import CoinIcon from './coin-icon';
 
 export default function Sidebar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);

@@ -18,7 +18,7 @@ import { UpdateSummonerFromLCU } from '../../wailsjs/go/league/Service.js';
 export function useAccountDetails({
   account,
   onAccountChange,
-  price,
+
 }: {
   onAccountChange: () => void;
   account: AccountType;
@@ -163,10 +163,7 @@ export function useAccountDetails({
     // Derived data
     filteredChampions,
     filteredSkins,
-    soloQueueRank,
-    flexQueueRank,
     isDropPending,
     handleLoginToAccount,
-    rentalOptionsWithPrice,
   };
 }

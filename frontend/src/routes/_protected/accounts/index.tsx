@@ -133,10 +133,6 @@ function AccountActionsMenu({ accountId, onViewDetails }: AccountActionsMenuProp
 }
 
 // 6. TableHeaderRow component
-type TableHeaderProps = {
-  requestSort: (column: string) => void;
-  SortIndicator: React.FC<{ column: string }>;
-};
 
 // 7. AccountRow component - handles display of account data and loading state
 type AccountRowProps = {
