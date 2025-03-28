@@ -35,6 +35,9 @@ export function useAccounts() {
     queryFn: async () => {
       const res = await strapiClient.find<AccountType[]>('accounts/available');
       return res.data.filter((account) => {
+        if (account.user) {
+          return false;
+        }
         if (!account.ban?.restrictions) {
           return true;
         }

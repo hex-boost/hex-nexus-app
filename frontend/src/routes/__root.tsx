@@ -32,10 +32,19 @@ function DashboardLayout() {
   const { navigate } = useRouter();
   const { isAuthenticated, logout, setUser } = useUserStore();
 
-  const { data: user, isLoading: isUserLoading, isError, error, refetch: refetchUser } = useQuery<UserType, StrapiError>({
+  const {
+    data: user,
+    isLoading: isUserLoading,
+    isError,
+    error,
+    refetch: refetchUser,
+  } = useQuery<UserType, StrapiError>({
     queryKey: ['users', 'me'],
     queryFn: async () => {
       const user = await strapiClient.request<UserType>('get', 'users/me');
+      user.hwid;
+
+      logout();
       setUser(user);
       return user;
     },
@@ -51,9 +60,11 @@ function DashboardLayout() {
   );
 
   // Handle authentication errors
-  if (isError && [401, 403].includes(error.error?.status)) {
-    logout();
-    navigate({ to: '/login' });
+  if (isError) {
+    if ([401, 403].includes(error.error?.status)) {
+      logout();
+      navigate({ to: '/login' });
+    }
   }
   const isLoading = isAuthenticated() && isUserLoading;
   const userAvatar = import.meta.env.VITE_BACKEND_URL + user?.avatar.url;
@@ -93,7 +104,11 @@ function DashboardLayout() {
                           : (
                               <Avatar className="h-8 w-8 rounded-full p-0">
                                 <AvatarImage src={userAvatar} alt={user?.username} />
-                                <AvatarFallback className="rounded-full">{user?.username.slice(0, 2)}</AvatarFallback>
+                                <AvatarFallback
+                                  className="rounded-full"
+                                >
+                                  {user?.username.slice(0, 2)}
+                                </AvatarFallback>
                               </Avatar>
                             )
                       }
