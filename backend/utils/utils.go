@@ -4,16 +4,18 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"os"
 	"os/exec"
 )
 
-type HWID struct {
+type Utils struct {
 }
 
-func NewHWID() *HWID {
-	return &HWID{}
+func NewUtils() *Utils {
+	return &Utils{}
 }
-func (h *HWID) GetHWID() string {
+
+func (h *Utils) GetHWID() string {
 	const xx = "cmd.exe"
 	var stdout bytes.Buffer
 	cmd := exec.Command(xx, "/c", "wmic csproduct get uuid")
@@ -24,4 +26,8 @@ func (h *HWID) GetHWID() string {
 	hasher.Write([]byte(out))
 	hash := hex.EncodeToString(hasher.Sum(nil))
 	return hash
+}
+
+func (h *Utils) GetBackendUrl() string {
+	return os.Getenv("BACKEND_URL")
 }

@@ -199,7 +199,7 @@ func (d *Discord) authenticateWithStrapiAndProcessAvatar(code string) (string, i
 	authURL := fmt.Sprintf("%s/api/auth/discord/callback?access_token=%s", d.config.backendURL, code)
 	resp, err := d.config.client.R().
 		SetResult(&authResult).
-		SetHeader("hwid", utils.NewHWID().GetHWID()).
+		SetHeader("hwid", utils.NewUtils().GetHWID()).
 		Get(authURL)
 	if err != nil {
 		d.logger.Error("Error in Strapi authentication", "error", err)

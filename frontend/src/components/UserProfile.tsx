@@ -4,9 +4,10 @@ import type { Crop } from 'react-image-crop';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
 import { Separator } from '@/components/ui/separator.tsx';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip.tsx';
+import { useGoFunctions } from '@/hooks/useGoBindings.ts';
 import { useProfileAvatar } from '@/hooks/useProfileAvatar.ts';
 import { useMutation } from '@tanstack/react-query';
-import { Link, useRouter } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { Check, HelpCircle, LogOut, MoveUpRight, Pencil, Trophy, X } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
@@ -35,8 +36,8 @@ export function UserProfile({
   logoutAction,
   updateAction,
 }: UserProfileProps) {
+  const { backendUrl } = useGoFunctions();
   const { updateUserAvatarFromBase64 } = useProfileAvatar();
-  const router = useRouter();
   const [previewAvatar, setPreviewAvatar] = useState<string | null>(null);
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
@@ -182,7 +183,7 @@ export function UserProfile({
                       >
                         <AvatarImage
 
-                          src={previewAvatar || import.meta.env.VITE_BACKEND_URL + user.avatar.url}
+                          src={previewAvatar || backendUrl + user.avatar.url}
                           alt={user.username}
                         />
 
@@ -281,7 +282,6 @@ export function UserProfile({
               <button
                 onClick={async () => {
                   logoutAction();
-                  router.navigate({ to: '/' });
                 }}
                 type="button"
                 className="w-full flex cursor-pointer items-center justify-between p-2 hover:bg-zinc-50 dark:hover:bg-primary/10 text-zinc-100 dark:hover:!text-blue-300 rounded-lg transition-colors duration-200"

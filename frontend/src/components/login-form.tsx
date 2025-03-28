@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator.tsx';
+import { useGoFunctions } from '@/hooks/useGoBindings.ts';
 import { useProfileAvatar } from '@/hooks/useProfileAvatar.ts';
 import { userAuth } from '@/lib/strapi';
 import { cn } from '@/lib/utils';
@@ -15,8 +16,6 @@ import { Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { StartDiscordOAuth } from '../../wailsjs/go/discord/discord';
-import { GetHWID } from '../../wailsjs/go/utils/hwid';
-
 import { FlickeringGrid } from './magicui/flickering-grid';
 import Globe from './magicui/globe';
 
@@ -51,9 +50,10 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<'div'>) {
+  const { HWID } = useGoFunctions();
+  const router = useRouter();
   const { getDefaultBase64Avatar, uploadImageFromBase64 } = useProfileAvatar();
   const [activeTab, setActiveTab] = useState('login');
-  const router = useRouter();
   const { login } = useUserStore();
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
@@ -73,6 +73,7 @@ export function LoginForm({
         },
       onSuccess: (data) => {
         login(data.user, data.jwt);
+        router.navigate({ to: '/' });
       },
       onError: (error) => {
         // @ts-expect-error ts is dumb
@@ -91,12 +92,13 @@ export function LoginForm({
             email: formData.email,
             password: formData.password,
             avatar: uploadedAvatar.data[0].id,
-            hwid: await GetHWID(),
+            hwid: HWID,
           } as any;
           return await userAuth.register(registerPayload);
         },
       onSuccess: (data) => {
         login(data.user, data.jwt);
+        router.navigate({ to: '/' });
       },
       onError: (error) => {
         // @ts-expect-error ts is dumb
@@ -121,6 +123,7 @@ export function LoginForm({
         },
       onSuccess: (data) => {
         login(data.user, data.jwt);
+        router.navigate({ to: '/' });
       },
       onError: (error) => {
         console.error('Erro no login:', error);

@@ -9,14 +9,12 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/compon
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 
 import { UserProfile } from '@/components/UserProfile.tsx';
+import { useGoFunctions } from '@/hooks/useGoBindings.ts';
 import { strapiClient } from '@/lib/strapi.ts';
 import { useUserStore } from '@/stores/useUserStore';
 import { useQuery } from '@tanstack/react-query';
-import { createRootRouteWithContext, Outlet, useRouter } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { createRootRouteWithContext, Outlet } from '@tanstack/react-router';
 import { toast } from 'sonner';
-import { GetCurrentVersion } from '../../wailsjs/go/updater/updater';
-import { GetHWID } from '../../wailsjs/go/utils/hwid';
 
 export type RouterContext = {
   auth: {
@@ -34,23 +32,9 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 });
 
 function DashboardLayout() {
-  const { navigate } = useRouter();
   const { isAuthenticated, logout, setUser } = useUserStore();
 
-  const [version, setVersion] = useState<string>('');
-
-  useEffect(() => {
-    const fetchVersion = async () => {
-      try {
-        const versionData = await GetCurrentVersion();
-        setVersion(versionData);
-      } catch (error) {
-        console.error('Failed to get version:', error);
-      }
-    };
-
-    fetchVersion();
-  }, []);
+  const { HWID } = useGoFunctions();
   const {
     data: user,
     isLoading: isUserLoading,
@@ -61,11 +45,9 @@ function DashboardLayout() {
     queryKey: ['users', 'me'],
     queryFn: async () => {
       const user = await strapiClient.request<UserType>('get', 'users/me');
-      const clientHWID = await GetHWID();
-      if (user?.hwid !== clientHWID) {
+      if (user?.hwid !== HWID) {
         toast.error('The HWID of this client does not match the HWID of the user account. Please contact support if you think this is a mistake.');
         logout();
-        navigate({ to: '/login' });
       }
       logout();
       setUser(user);
@@ -79,7 +61,6 @@ function DashboardLayout() {
   if (isError) {
     if ([401, 403].includes(error.error?.status)) {
       logout();
-      navigate({ to: '/' });
     }
   }
   const isLoading = isAuthenticated() && isUserLoading;
@@ -87,8 +68,7 @@ function DashboardLayout() {
   return (
     <>
 
-      <span>{version}</span>
-      {isAuthenticated()
+      {isAuthenticated() && user
         ? (
             <AdminPanelLayout>
               <div className="px-6 gap-6 py-4 bg-black/20 border-b w-full flex justify-end">
@@ -103,7 +83,7 @@ function DashboardLayout() {
                         )
                       : (
                           <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                            {user!.coins.toLocaleString()}
+                            {user.coins.toLocaleString()}
                             {' '}
                             coins
                           </span>
