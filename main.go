@@ -8,6 +8,7 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
+// a
 func main() {
 	wails.Run(assets)
 }
