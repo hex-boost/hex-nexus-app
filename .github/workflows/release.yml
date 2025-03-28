@@ -36,24 +36,15 @@ jobs:
         env:
           APP_VERSION: ${{ env.VERSION }}
         run: |
-          wails build -platform windows/amd64 -ldflags "-X https://github.com/hex-boost/hex-nexus-app/backend/updater.Version=${{ env.VERSION }}"
+          wails build -ldflags "-X github.com/hex-boost/hex-nexus-app/backend/updater.Version=${{ env.VERSION }}"
 
       - name: Upload para o servidor de atualização
         env:
           API_KEY: ${{ secrets.UPDATE_API_KEY }}
           API_URL: ${{ secrets.UPDATE_API_URL }}
         run: |
-          curl -X POST "$env:API_URL/api/admin/upload" `
-            -H "X-API-Key: $env:API_KEY" `
-            -F "version=${{ env.VERSION }}" `
-            -F "required=false" `
-            -F "file=@build/bin/nexus.exe"
-
-      - name: Criar GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: build/bin/nexus.exe
-          name: Nexus v${{ env.VERSION }}
-          draft: false
-          prerelease: false
-          generate_release_notes: true
+          curl -vX POST "${{ env.API_URL }}/api/admin/upload" \
+            -H "X-API-Key: ${{ env.API_KEY }}" \
+            -F "version=${{ env.VERSION }}" \
+            -F "required=false" \
+            -F "file=@build/bin/nexus.exe" -L
