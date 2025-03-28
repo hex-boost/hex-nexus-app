@@ -2,6 +2,8 @@ package wails
 
 import (
 	"embed"
+	"github.com/hex-boost/hex-nexus-app/backend/discord"
+	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/joho/godotenv"
 	"log"
 
@@ -27,9 +29,11 @@ func Init() {
 }
 func Run(assets embed.FS) {
 	Init()
+	hwid := utils.NewHWID()
 	lcuConn := league.NewLCUConnection(app.App().Log().League())
 	leagueRepo := repository.NewLeagueRepository(app.App().Log().Repo())
 	leagueService := league.NewService(league.NewSummonerClient(lcuConn, app.App().Log().League()), leagueRepo, app.App().Log().League())
+	discordService := discord.New(app.App().Log().Discord())
 	// Create application with options
 	opts := &options.App{
 		Title:              "Nexus",
@@ -57,6 +61,8 @@ func Run(assets embed.FS) {
 			riot.NewRiotClient(app.App().Log().Riot()),
 			lcuConn,
 			leagueService,
+			discordService,
+			hwid,
 			updater.NewUpdater(), // Add the updater
 
 		},

@@ -15,8 +15,8 @@ import { useQuery } from '@tanstack/react-query';
 import { createRootRouteWithContext, Outlet, useRouter } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { GetHWID } from '../../wailsjs/go/app/app';
 import { GetCurrentVersion } from '../../wailsjs/go/updater/updater';
+import { GetHWID } from '../../wailsjs/go/utils/hwid';
 
 export type RouterContext = {
   auth: {

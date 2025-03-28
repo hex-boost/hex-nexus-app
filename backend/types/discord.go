@@ -7,7 +7,7 @@ type DiscordUser struct {
 	Username             string          `json:"username"`
 	Discriminator        string          `json:"discriminator"`
 	GlobalName           *string         `json:"global_name,omitempty"`
-	Avatar               *string         `json:"avatar,omitempty"`
+	Avatar               string          `json:"avatar,omitempty"`
 	Bot                  *bool           `json:"bot,omitempty"`
 	System               *bool           `json:"system,omitempty"`
 	MfaEnabled           *bool           `json:"mfa_enabled,omitempty"`

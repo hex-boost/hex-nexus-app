@@ -6,22 +6,10 @@ export function Ctx() {
   return window['go']['app']['app']['Ctx']();
 }
 
-export function GetHWID() {
-  return window['go']['app']['app']['GetHWID']();
-}
-
-export function HandleDiscordCallback(arg1) {
-  return window['go']['app']['app']['HandleDiscordCallback'](arg1);
-}
-
 export function Log() {
   return window['go']['app']['app']['Log']();
 }
 
 export function SetCtx(arg1) {
   return window['go']['app']['app']['SetCtx'](arg1);
-}
-
-export function StartDiscordOAuth() {
-  return window['go']['app']['app']['StartDiscordOAuth']();
 }

@@ -5,12 +5,6 @@ import {app} from '../models';
 
 export function Ctx():Promise<context.Context>;
 
-export function GetHWID():Promise<string>;
-
-export function HandleDiscordCallback(arg1:any):Promise<void>;
-
 export function Log():Promise<app.log>;
 
 export function SetCtx(arg1:context.Context):Promise<app.app>;
-
-export function StartDiscordOAuth():Promise<Record<string, any>>;

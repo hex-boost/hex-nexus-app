@@ -22,7 +22,7 @@ func NewLogger(prefix string) *Logger {
 
 	// Create console core
 	consoleCore := zapcore.NewCore(
-		zapcore.NewJSONEncoder(encoderConfig),
+		zapcore.NewConsoleEncoder(encoderConfig),
 		zapcore.AddSync(os.Stdout),
 		zap.NewAtomicLevelAt(zap.InfoLevel),
 	)

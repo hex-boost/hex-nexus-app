@@ -14,7 +14,9 @@ import { useRouter } from '@tanstack/react-router';
 import { Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { GetHWID, StartDiscordOAuth } from '../../wailsjs/go/app/app';
+import { StartDiscordOAuth } from '../../wailsjs/go/discord/discord';
+import { GetHWID } from '../../wailsjs/go/utils/hwid';
+
 import { FlickeringGrid } from './magicui/flickering-grid';
 import Globe from './magicui/globe';
 
