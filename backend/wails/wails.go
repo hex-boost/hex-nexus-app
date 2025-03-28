@@ -32,7 +32,7 @@ func Run(assets embed.FS) {
 	leagueService := league.NewService(league.NewSummonerClient(lcuConn, app.App().Log().League()), leagueRepo, app.App().Log().League())
 	// Create application with options
 	opts := &options.App{
-		Title:              "hex-nexus-app",
+		Title:              "Nexus",
 		Width:              1280,
 		Height:             720,
 		DisableResize:      true,
@@ -64,6 +64,7 @@ func Run(assets embed.FS) {
 			WebviewIsTransparent: false,
 			WindowIsTranslucent:  false,
 			DisableWindowIcon:    false,
+			WindowClassName:      "Nexus",
 			WebviewUserDataPath:  "",
 			ZoomFactor:           1.0,
 		},
