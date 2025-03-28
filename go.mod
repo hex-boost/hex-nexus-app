@@ -8,6 +8,7 @@ require (
 	github.com/fynelabs/selfupdate v0.2.0
 	github.com/go-resty/resty/v2 v2.16.5
 	github.com/inkeliz/gowebview v1.0.1
+	github.com/joho/godotenv v1.5.1
 	github.com/mitchellh/go-ps v1.0.0
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/wailsapp/wails/v2 v2.10.1

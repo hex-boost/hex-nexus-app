@@ -34,7 +34,7 @@ func renderTemplate(w http.ResponseWriter, tmplName string) error {
 func (a *app) StartDiscordOAuth() (map[string]interface{}, error) {
 	port := 45986
 	strapiAuthURL := fmt.Sprintf(
-		"http://localhost:1337/api/connect/discord",
+		os.Getenv("BACKEND_URL") + "/api/connect/discord",
 	)
 
 	// Abrir o navegador com a URL de autenticação

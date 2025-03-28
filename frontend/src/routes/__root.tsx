@@ -13,10 +13,10 @@ import { strapiClient } from '@/lib/strapi.ts';
 import { useUserStore } from '@/stores/useUserStore';
 import { useQuery } from '@tanstack/react-query';
 import { createRootRouteWithContext, Outlet, useRouter } from '@tanstack/react-router';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { GetHWID } from '../../wailsjs/go/app/app';
-import { useEffect, useState } from 'react';
-import { GetVersion } from '../../wailsjs/go/app/app';
+import { GetCurrentVersion } from '../../wailsjs/go/updater/updater';
 
 export type RouterContext = {
   auth: {
@@ -42,7 +42,7 @@ function DashboardLayout() {
   useEffect(() => {
     const fetchVersion = async () => {
       try {
-        const versionData = await GetVersion();
+        const versionData = await GetCurrentVersion();
         setVersion(versionData);
       } catch (error) {
         console.error('Failed to get version:', error);

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator.tsx';
 import { useProfileAvatar } from '@/hooks/useProfileAvatar.ts';
 import { userAuth } from '@/lib/strapi';
 import { cn } from '@/lib/utils';
@@ -146,7 +147,7 @@ export function LoginForm({
                     height={64}
                     className="object-cover z-10 mb-4"
                   />
-                  <h1 className="text-4xl font-bold mb-2">Hex Nexus</h1>
+                  <h1 className="text-4xl font-bold mb-2">Nexus</h1>
                   <p className="text-base text-muted-foreground font-medium text-center mb-1">
                     The number one place to find your account.
                     <br />
@@ -233,7 +234,7 @@ export function LoginForm({
                   <div className="flex flex-col items-center text-center">
                     <h1 className="text-2xl font-bold">Create Account</h1>
                     <p className="text-balance text-muted-foreground">
-                      Start using Hex Nexus
+                      Start using Nexus
                     </p>
                   </div>
                   <div className="grid gap-2">
@@ -289,10 +290,10 @@ export function LoginForm({
                     ? isLoading ? 'Signing in...' : 'Sign in'
                     : isLoading ? 'Registering...' : 'Register'}
                 </Button>
-                <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
-                  <span className="relative z-10 bg-background px-2 text-muted-foreground">
-                    Or continue with
-                  </span>
+                <div className="flex items-center  gap-4 w-full">
+                  <Separator className="flex-1 w-full" />
+                  <span className="text-muted-foreground text-xs">OR</span>
+                  <Separator className="w-full flex-1" />
                 </div>
                 <Button
                   type="button"
