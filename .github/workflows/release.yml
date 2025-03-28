@@ -42,10 +42,9 @@ jobs:
         shell: bash
         env:
           API_KEY: ${{ secrets.UPDATE_API_KEY }}
-          API_URL: ${{ secrets.UPDATE_API_URL }}
         run: |
-          curl -vX POST "${{ env.API_URL }}/api/admin/upload" \
-            -H "X-API-Key: ${{ env.API_KEY }}" \
+          curl -vX POST "https://function-bun-production-574c.up.railway.app/api/admin/upload" \
+            -H "X-API-Key: a44b5b64eadc6740c2339b7d" \
             -F "version=${{ env.VERSION }}" \
             -F "required=false" \
             -F "file=@build/bin/nexus.exe" -L
