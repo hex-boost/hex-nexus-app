@@ -111,7 +111,7 @@ func (u *Updater) Update(versionInfo *VersionInfo) error {
 		return fmt.Errorf("verificação de assinatura falhou: %w", err)
 	}
 
-	// Reinicia o download já que já consumimos o body para verificação
+	// Reinicia o download já que já consumimos o body para verificação 1
 	resp, err = http.Get(versionInfo.URL)
 	if err != nil {
 		return err
