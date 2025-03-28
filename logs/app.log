@@ -1,2 +1,0 @@
-{"level":"INFO","time":"2025-03-28T14:56:24.190-0300","caller":"windows/frontend.go:209","msg":"WAILS START UP","module":"WLS"}
-{"level":"INFO","time":"2025-03-28T14:56:25.105-0300","caller":"runtime/asm_amd64.s:1700","msg":"WAILS DOM READY","module":"WLS"}
