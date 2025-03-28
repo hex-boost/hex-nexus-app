@@ -36,7 +36,7 @@ jobs:
         env:
           APP_VERSION: ${{ env.VERSION }}
         run: |
-          wails build -platform windows/amd64 -ldflags "-X github.com/seu-usuario/seu-repo/backend/updater.Version=${{ env.VERSION }}"
+          wails build -platform windows/amd64 -ldflags "-X https://github.com/hex-boost/hex-nexus-app/backend/updater.Version=${{ env.VERSION }}"
 
       - name: Gerar assinatura
         env:

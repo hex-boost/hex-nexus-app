@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"time"
 
 	"github.com/fynelabs/selfupdate"
 )
@@ -48,19 +49,19 @@ func (u *Updater) GetCurrentVersion() string {
 }
 
 func (u *Updater) CheckForUpdates(apiURL string) (*VersionInfo, error) {
-	// Adiciona token de autenticação para proteger sua API
+	// Criar requisição para a API
 	req, err := http.NewRequest("GET", apiURL, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	// Adiciona headers de autenticação e informações do cliente
+	// Adicionar headers necessários
 	req.Header.Set("Authorization", "Bearer "+os.Getenv("UPDATE_API_KEY"))
 	req.Header.Set("X-Client-Version", u.CurrentVersion)
 	req.Header.Set("X-Client-OS", runtime.GOOS)
 	req.Header.Set("X-Client-Arch", runtime.GOARCH)
 
-	client := &http.Client{}
+	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -71,14 +72,21 @@ func (u *Updater) CheckForUpdates(apiURL string) (*VersionInfo, error) {
 		return nil, fmt.Errorf("API retornou status: %d", resp.StatusCode)
 	}
 
-	var versionInfo VersionInfo
-	if err := json.NewDecoder(resp.Body).Decode(&versionInfo); err != nil {
+	var response struct {
+		NeedsUpdate bool        `json:"needsUpdate"`
+		VersionInfo VersionInfo `json:",inline"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
 	}
 
-	return &versionInfo, nil
-}
+	if !response.NeedsUpdate {
+		return nil, nil
+	}
 
+	return &response.VersionInfo, nil
+}
 func (u *Updater) Update(versionInfo *VersionInfo) error {
 	// Backup do executável atual
 	execPath, err := os.Executable()
