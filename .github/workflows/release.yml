@@ -47,7 +47,6 @@ jobs:
             -H "X-API-Key: $env:API_KEY" `
             -F "version=${{ env.VERSION }}" `
             -F "required=false" `
-            -F "signature=$signature" `
             -F "file=@build/bin/nexus.exe"
 
       - name: Criar GitHub Release
