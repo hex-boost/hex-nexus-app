@@ -38,21 +38,11 @@ jobs:
         run: |
           wails build -platform windows/amd64 -ldflags "-X https://github.com/hex-boost/hex-nexus-app/backend/updater.Version=${{ env.VERSION }}"
 
-      - name: Gerar assinatura
-        env:
-          ED25519_PRIVATE_KEY: ${{ secrets.ED25519_PRIVATE_KEY }}
-        run: |
-          $privateKeyFile = "private.key"
-          [System.IO.File]::WriteAllText($privateKeyFile, $env:ED25519_PRIVATE_KEY)
-          openssl pkey -inform PEM -in $privateKeyFile -out converted.key
-          openssl dgst -sha256 -sign converted.key -hex -out signature.hex seu_arquivo_para_assinar
-
       - name: Upload para o servidor de atualização
         env:
           API_KEY: ${{ secrets.UPDATE_API_KEY }}
           API_URL: ${{ secrets.UPDATE_API_URL }}
         run: |
-          $signature = Get-Content -Path signature.hex -Raw
           curl -X POST "$env:API_URL/api/admin/upload" `
             -H "X-API-Key: $env:API_KEY" `
             -F "version=${{ env.VERSION }}" `

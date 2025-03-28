@@ -1,10 +1,7 @@
 package updater
 
 import (
-	"crypto/ed25519"
-	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -22,7 +19,6 @@ var Version = "development"
 type Updater struct {
 	CurrentVersion  string
 	BackupDirectory string
-	PublicKeyHex    string // Chave pública para verificação
 }
 
 type VersionInfo struct {
@@ -30,7 +26,6 @@ type VersionInfo struct {
 	URL         string `json:"url"`
 	ReleaseDate string `json:"releaseDate"`
 	Required    bool   `json:"required"` // Se a atualização é obrigatória
-	Signature   string `json:"signature"`
 }
 
 func NewUpdater() *Updater {
@@ -40,7 +35,6 @@ func NewUpdater() *Updater {
 	return &Updater{
 		CurrentVersion:  Version,
 		BackupDirectory: backupDir,
-		PublicKeyHex:    os.Getenv("UPDATE_PUBLIC_KEY"), // Definido nas variáveis de ambiente
 	}
 }
 
@@ -106,19 +100,6 @@ func (u *Updater) Update(versionInfo *VersionInfo) error {
 	}
 	defer resp.Body.Close()
 
-	// Verifica assinatura digital
-	if err := u.verifySignature(resp.Body, versionInfo.Signature); err != nil {
-		return fmt.Errorf("verificação de assinatura falhou: %w", err)
-	}
-
-	// Reinicia o download já que já consumimos o body para verificação 1
-	resp, err = http.Get(versionInfo.URL)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	// Aplica a atualização
 	err = selfupdate.Apply(resp.Body, selfupdate.Options{})
 	if err != nil {
 		// Tenta restaurar a versão anterior em caso de falha
@@ -144,32 +125,6 @@ func (u *Updater) backupCurrentBinary(execPath, backupPath string) error {
 
 	_, err = io.Copy(dst, src)
 	return err
-}
-
-func (u *Updater) verifySignature(binary io.Reader, signatureHex string) error {
-	// Lê todo o binário
-	binaryData, err := io.ReadAll(binary)
-	if err != nil {
-		return err
-	}
-
-	// Decodifica a assinatura e chave pública
-	signature, err := hex.DecodeString(signatureHex)
-	if err != nil {
-		return err
-	}
-
-	publicKey, err := hex.DecodeString(u.PublicKeyHex)
-	if err != nil {
-		return err
-	}
-
-	// Verifica a assinatura
-	if !ed25519.Verify(publicKey, binaryData, signature) {
-		return errors.New("assinatura inválida - este binário pode ter sido adulterado")
-	}
-
-	return nil
 }
 
 func (u *Updater) rollbackUpdate(backupPath string) error {
