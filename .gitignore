@@ -2,3 +2,7 @@
 node_modules
 *.env
 *.log
+/build/bin/Build.exe
+/build/bin/Debug_EXE.exe
+/hex-nexus-app.exe
+/build/bin/hex-nexus-app-dev.exe
