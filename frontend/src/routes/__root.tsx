@@ -51,7 +51,7 @@ function DashboardLayout() {
   );
 
   // Handle authentication errors
-  if (isError && [401, 403].includes(error.error.status)) {
+  if (isError && [401, 403].includes(error.error?.status)) {
     logout();
     navigate({ to: '/login' });
   }

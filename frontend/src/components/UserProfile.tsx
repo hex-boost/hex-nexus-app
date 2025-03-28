@@ -4,7 +4,7 @@ import type { Crop } from 'react-image-crop';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
 import { Separator } from '@/components/ui/separator.tsx';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip.tsx';
-import { strapiClient } from '@/lib/strapi.ts';
+import { useProfileAvatar } from '@/hooks/useProfileAvatar.ts';
 import { useMutation } from '@tanstack/react-query';
 import { Link, useRouter } from '@tanstack/react-router';
 import { Check, HelpCircle, LogOut, MoveUpRight, Pencil, Trophy, X } from 'lucide-react';
@@ -35,6 +35,7 @@ export function UserProfile({
   logoutAction,
   updateAction,
 }: UserProfileProps) {
+  const { updateUserAvatarFromBase64 } = useProfileAvatar();
   const router = useRouter();
   const [previewAvatar, setPreviewAvatar] = useState<string | null>(null);
   const [cropModalOpen, setCropModalOpen] = useState(false);
@@ -69,64 +70,15 @@ export function UserProfile({
       }
     },
   });
-  type Image = {
-    id: number;
-    name: string;
-    documentId: string;
-    alternativeText: any;
-    caption: any;
-    width: number;
-    height: number;
-    formats: any;
-    hash: string;
-    ext: string;
-    mime: string;
-    size: number;
-    url: string;
-    previewUrl: any;
-    provider: string;
-    provider_metadata: any;
-    createdAt: string;
-    updatedAt: string;
-  };
 
   const handleCancel = () => {
     setPreviewAvatar(null);
   };
 
-  async function updateUserAvatarFromBase64(base64Image: string) {
-    // Convert base64 to blob
-    const base64Data = base64Image.split(',')[1] as string;
-    const byteCharacters = atob(base64Data);
-    const byteNumbers = Array.from({ length: byteCharacters.length }, (_, i) => byteCharacters.charCodeAt(i));
-    const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], { type: 'image/png' });
-
-    // Create form data for upload
-    const formData = new FormData();
-    formData.append('files', blob, `avatar.png`);
-
-    // 1. First upload the image to media library
-    const uploadResponse = await strapiClient.axios.post<Image>('/api/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-
-    const uploadedFileId = uploadResponse.data[0].id;
-
-    // 2. Then update your profile using /me endpoint
-    const res = await strapiClient.axios.put(`/api/users/${user.id}`, {
-      avatar: uploadedFileId,
-    });
-
-    updateAction();
-    return res.data;
-  }
   const { mutate: handleChangeAvatar } = useMutation({
-    mutationKey: ['update-avatar'],
+    mutationKey: ['update-avatar', user.id],
     mutationFn: async () => {
-      return toast.promise(updateUserAvatarFromBase64(previewAvatar!), {
+      return toast.promise(updateUserAvatarFromBase64(previewAvatar!, user.id), {
         loading: 'Updating avatar',
         success: 'Avatar updated succesfully',
         error: 'An unexpected error occurred',
@@ -134,6 +86,7 @@ export function UserProfile({
     },
     onSuccess: async () => {
       setTimeout(handleCancel, 2000);
+      updateAction();
     },
   });
   const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {

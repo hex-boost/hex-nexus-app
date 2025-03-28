@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useProfileAvatar } from '@/hooks/useProfileAvatar.ts';
 import { userAuth } from '@/lib/strapi';
 import { cn } from '@/lib/utils';
 import { useUserStore } from '@/stores/useUserStore';
@@ -46,6 +47,7 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<'div'>) {
+  const { getDefaultBase64Avatar, uploadImageFromBase64 } = useProfileAvatar();
   const [activeTab, setActiveTab] = useState('login');
   const router = useRouter();
   const { login } = useUserStore();
@@ -73,20 +75,22 @@ export function LoginForm({
       onError: error => console.error('Erro na autenticação:', error),
     },
   );
-
   const registerMutation = useMutation(
     {
       mutationFn:
         async () => {
-          return await userAuth.register({
+          const base64Avatar = await getDefaultBase64Avatar(formData.username);
+          const uploadedAvatar = await uploadImageFromBase64(base64Avatar);
+          const registerPayload = {
             username: formData.username,
             email: formData.email,
             password: formData.password,
-          });
+            avatar: uploadedAvatar.data[0].id,
+          } as any;
+          return await userAuth.register(registerPayload);
         },
       onSuccess: (data) => {
         login(data.user, data.jwt);
-
         router.navigate({ to: '/' });
       },
       onError: error => console.error('Erro no registro:', error),
