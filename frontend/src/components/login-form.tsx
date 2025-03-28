@@ -73,7 +73,6 @@ export function LoginForm({
         },
       onSuccess: (data) => {
         login(data.user, data.jwt);
-        router.navigate({ to: '/' });
       },
       onError: (error) => {
         // @ts-expect-error ts is dumb
@@ -98,7 +97,6 @@ export function LoginForm({
         },
       onSuccess: (data) => {
         login(data.user, data.jwt);
-        router.navigate({ to: '/' });
       },
       onError: (error) => {
         // @ts-expect-error ts is dumb

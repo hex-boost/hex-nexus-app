@@ -65,7 +65,7 @@ function DashboardLayout() {
       if (user?.hwid !== clientHWID) {
         toast.error('The HWID of this client does not match the HWID of the user account. Please contact support if you think this is a mistake.');
         logout();
-        navigate({ to: '/' });
+        navigate({ to: '/login' });
       }
       logout();
       setUser(user);
