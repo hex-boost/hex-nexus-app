@@ -5,6 +5,8 @@ import {app} from '../models';
 
 export function Ctx():Promise<context.Context>;
 
+export function GetHWID():Promise<string>;
+
 export function HandleDiscordCallback(arg1:any):Promise<void>;
 
 export function Log():Promise<app.log>;

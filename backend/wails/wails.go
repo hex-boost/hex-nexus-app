@@ -19,18 +19,15 @@ func Run(assets embed.FS) {
 	lcuConn := league.NewLCUConnection(app.App().Log().League())
 	leagueRepo := repository.NewLeagueRepository(app.App().Log().Repo())
 	leagueService := league.NewService(league.NewSummonerClient(lcuConn, app.App().Log().League()), leagueRepo, app.App().Log().League())
-	// Create application with options
 	opts := &options.App{
-		Title:         "hex-nexus-app",
-		Width:         1280,
-		Height:        720,
-		DisableResize: true,
-		Fullscreen:    false,
-		Frameless:     false,
-		StartHidden:   false,
-		Debug:         options.Debug{
-			//OpenInspectorOnStartup: true,
-		},
+		Title:              "hex-nexus-app",
+		Width:              1280,
+		Height:             720,
+		DisableResize:      true,
+		Fullscreen:         false,
+		Frameless:          false,
+		StartHidden:        false,
+		Debug:              options.Debug{},
 		HideWindowOnClose:  false,
 		BackgroundColour:   &options.RGBA{R: 255, G: 255, B: 255, A: 255},
 		LogLevel:           logger.INFO,
@@ -42,7 +39,6 @@ func Run(assets embed.FS) {
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
-
 		WindowStartState: options.Normal,
 		Bind: []interface{}{
 			app.App(),
@@ -50,16 +46,13 @@ func Run(assets embed.FS) {
 			lcuConn,
 			leagueService,
 		},
-		// Windows platform specific options
 		Windows: &windows.Options{
 			WebviewIsTransparent: false,
 			WindowIsTranslucent:  false,
 			DisableWindowIcon:    false,
-			// DisableFramelessWindowDecorations: false,
-			WebviewUserDataPath: "",
-			ZoomFactor:          1.0,
+			WebviewUserDataPath:  "",
+			ZoomFactor:           1.0,
 		},
-		// Mac platform specific options
 	}
 	err := wails.Run(opts)
 	if err != nil {

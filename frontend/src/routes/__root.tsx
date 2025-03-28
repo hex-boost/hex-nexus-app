@@ -12,6 +12,8 @@ import { strapiClient } from '@/lib/strapi.ts';
 import { useUserStore } from '@/stores/useUserStore';
 import { useQuery } from '@tanstack/react-query';
 import { createRootRouteWithContext, Outlet, useRouter } from '@tanstack/react-router';
+import { toast } from 'sonner';
+import { GetHWID } from '../../wailsjs/go/app/app';
 
 export type RouterContext = {
   auth: {
@@ -42,28 +44,25 @@ function DashboardLayout() {
     queryKey: ['users', 'me'],
     queryFn: async () => {
       const user = await strapiClient.request<UserType>('get', 'users/me');
-      user.hwid;
-
+      const clientHWID = await GetHWID();
+      if (user?.hwid !== clientHWID) {
+        toast.error('The HWID of this client does not match the HWID of the user account. Please contact support if you think this is a mistake.');
+        logout();
+        navigate({ to: '/' });
+      }
       logout();
       setUser(user);
       return user;
     },
-
-    // Refresh user data when component mounts
     refetchOnMount: true,
-    // Refresh user data when window regains focus
     refetchOnWindowFocus: true,
-    // Only fetch if user is authenticated
     enabled: isAuthenticated(),
-
   },
   );
-
-  // Handle authentication errors
   if (isError) {
     if ([401, 403].includes(error.error?.status)) {
       logout();
-      navigate({ to: '/login' });
+      navigate({ to: '/' });
     }
   }
   const isLoading = isAuthenticated() && isUserLoading;

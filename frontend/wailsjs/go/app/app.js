@@ -6,6 +6,10 @@ export function Ctx() {
   return window['go']['app']['app']['Ctx']();
 }
 
+export function GetHWID() {
+  return window['go']['app']['app']['GetHWID']();
+}
+
 export function HandleDiscordCallback(arg1) {
   return window['go']['app']['app']['HandleDiscordCallback'](arg1);
 }

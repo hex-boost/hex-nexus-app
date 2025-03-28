@@ -1,7 +1,11 @@
 package app
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"os/exec"
 	"sync"
 )
 
@@ -9,10 +13,10 @@ var _app = &app{}
 
 type app struct {
 	once       sync.Once
-	log        *log // loggers for whole application
+	log        *log
 	ctx        context.Context
 	oauthState string
-	stateMutex sync.Mutex //
+	stateMutex sync.Mutex
 }
 
 func App() *app {
@@ -28,6 +32,19 @@ func App() *app {
 }
 func (a *app) Log() *log {
 	return a.log
+}
+
+func (a *app) GetHWID() string {
+	const xx = "cmd.exe"
+	var stdout bytes.Buffer
+	cmd := exec.Command(xx, "/c", "wmic csproduct get uuid")
+	cmd.Stdout = &stdout
+	cmd.Run()
+	out := stdout.String()
+	hasher := sha256.New()
+	hasher.Write([]byte(out))
+	hash := hex.EncodeToString(hasher.Sum(nil))
+	return hash
 }
 
 func (a *app) Ctx() context.Context {
