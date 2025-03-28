@@ -39,6 +39,7 @@ jobs:
           wails build -ldflags "-X github.com/hex-boost/hex-nexus-app/backend/updater.Version=${{ env.VERSION }}"
 
       - name: Upload para o servidor de atualização
+        shell: bash
         env:
           API_KEY: ${{ secrets.UPDATE_API_KEY }}
           API_URL: ${{ secrets.UPDATE_API_URL }}
