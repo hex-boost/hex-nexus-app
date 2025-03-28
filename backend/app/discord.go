@@ -15,6 +15,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -137,7 +138,7 @@ func fetchUserInfo(url, accessToken string) (*types.DiscordUser, error) {
 }
 
 func (a *app) authenticateWithStrapi(code string) (string, map[string]interface{}, error) {
-	resp, err := http.Get(fmt.Sprintf("http://localhost:1337/api/auth/discord/callback?access_token=%s", code))
+	resp, err := http.Get(fmt.Sprintf(os.Getenv("BACKEND_URL")+"/api/auth/discord/callback?access_token=%s", code))
 	if err != nil {
 		return "", nil, err
 	}

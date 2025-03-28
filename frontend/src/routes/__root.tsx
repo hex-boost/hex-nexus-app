@@ -7,6 +7,7 @@ import { LoginForm } from '@/components/login-form';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
+
 import { UserProfile } from '@/components/UserProfile.tsx';
 import { strapiClient } from '@/lib/strapi.ts';
 import { useUserStore } from '@/stores/useUserStore';
@@ -14,6 +15,8 @@ import { useQuery } from '@tanstack/react-query';
 import { createRootRouteWithContext, Outlet, useRouter } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { GetHWID } from '../../wailsjs/go/app/app';
+import { useEffect, useState } from 'react';
+import { GetVersion } from '../../wailsjs/go/app/app';
 
 export type RouterContext = {
   auth: {
@@ -34,6 +37,20 @@ function DashboardLayout() {
   const { navigate } = useRouter();
   const { isAuthenticated, logout, setUser } = useUserStore();
 
+  const [version, setVersion] = useState<string>('');
+
+  useEffect(() => {
+    const fetchVersion = async () => {
+      try {
+        const versionData = await GetVersion();
+        setVersion(versionData);
+      } catch (error) {
+        console.error('Failed to get version:', error);
+      }
+    };
+
+    fetchVersion();
+  }, []);
   const {
     data: user,
     isLoading: isUserLoading,
@@ -69,6 +86,8 @@ function DashboardLayout() {
   const userAvatar = import.meta.env.VITE_BACKEND_URL + user?.avatar.url;
   return (
     <>
+
+      <span>{version}</span>
       {isAuthenticated()
         ? (
             <AdminPanelLayout>
