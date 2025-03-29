@@ -22,30 +22,17 @@ import (
 //var icon []byte
 
 func Init() {
-	// Load .env file
 	if err := godotenv.Load(); err != nil {
 		log.Println("Warning: Error loading .env file:", err)
 	}
 }
 func Run(assets embed.FS) {
 	Init()
-	updaterService := updater.NewUpdater()
-	response, err := updaterService.CheckForUpdates()
-	if err != nil {
-		panic(err)
-	}
-	if response.NeedsUpdate {
-		err := updaterService.Update()
-		if err != nil {
-			panic(err)
-		}
-	}
 	utilsBind := utils.NewUtils()
 	lcuConn := league.NewLCUConnection(app.App().Log().League())
 	leagueRepo := repository.NewLeagueRepository(app.App().Log().Repo())
 	leagueService := league.NewService(league.NewSummonerClient(lcuConn, app.App().Log().League()), leagueRepo, app.App().Log().League())
 	discordService := discord.New(app.App().Log().Discord())
-	// Create application with options
 	opts := &options.App{
 		Title:              fmt.Sprintf("Nexus %s", updater.Version),
 		Width:              1280,
@@ -74,8 +61,7 @@ func Run(assets embed.FS) {
 			leagueService,
 			discordService,
 			utilsBind,
-			updater.NewUpdater(), // Add the updater
-
+			updater.NewUpdater(),
 		},
 		Windows: &windows.Options{
 			WebviewIsTransparent: false,
@@ -86,7 +72,7 @@ func Run(assets embed.FS) {
 			ZoomFactor:           1.0,
 		},
 	}
-	err = wails.Run(opts)
+	err := wails.Run(opts)
 	if err != nil {
 		panic(err)
 	}

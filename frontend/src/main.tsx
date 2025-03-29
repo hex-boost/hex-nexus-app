@@ -20,8 +20,8 @@ WebFont.load({
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 30000, // dados ficam frescos por 1 minuto
-      refetchOnWindowFocus: true, // não refaz a consulta ao focar na janela
+      staleTime: 30000,
+      refetchOnWindowFocus: true,
     },
   },
 });

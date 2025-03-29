@@ -1,10 +1,11 @@
 package updater
 
 import (
+	"context"
 	"fmt"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"io"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -12,8 +13,11 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-// Version é definido durante a compilação usando ldflags
-var Version = "development"
+var (
+	Version    = "development"
+	BackendURL = "http://localhost:1337"
+	APIToken   = "b632ef87c3cbdda0975786fc85c1f452083bf07ef0977170400562577c627d2309949ba4e9b74a2c4c30d9ac575521ba97e3a61fac31f635390629a102674ac860c4935fcf98c8934a7af1052141d30cc31060939d1074ec3a055b9f1589c4c2fab46f6cbcee61bc06a5bceb3102d13d860c15106cd9a306248f890f31c2bfbff"
+)
 
 type Updater struct {
 	CurrentVersion  string
@@ -36,29 +40,28 @@ type Response struct {
 }
 
 func (u *Updater) CheckForUpdates() (*Response, error) {
-	// Criar cliente resty
 	client := resty.New().
 		SetTimeout(10 * time.Second)
 	var result Response
+	strapiURL := fmt.Sprintf("%s/api/versions/update", BackendURL)
+	fmt.Printf("apitoken: " + APIToken + "\nbackendurl: " + BackendURL + "\n")
 	resp, err := client.R().
 		SetHeader("x-client-version", u.CurrentVersion).
+		SetAuthToken("Bearer " + APIToken).
 		SetResult(&result).
-		Get(os.Getenv("BACKEND_URL") + "/api/versions/update")
-
+		Get(strapiURL)
 	if err != nil {
 		return nil, err
 	}
-
 	if resp.IsError() {
-		return nil, fmt.Errorf("API retornou status: %d", resp.StatusCode())
+		return nil, fmt.Errorf("API returned status: %d", resp.StatusCode())
 	}
-
 	return &result, nil
 }
 
 type VersionResponse struct {
 	LatestVersion struct {
-		ID          int     `json:"id"` // Alterado de string para int
+		ID          int     `json:"id"`
 		DocumentID  string  `json:"documentId"`
 		Version     string  `json:"version"`
 		CreatedAt   string  `json:"createdAt"`
@@ -66,7 +69,7 @@ type VersionResponse struct {
 		PublishedAt string  `json:"publishedAt"`
 		Locale      *string `json:"locale"`
 		File        struct {
-			ID               int     `json:"id"` // Alterado de string para int
+			ID               int     `json:"id"`
 			DocumentID       string  `json:"documentId"`
 			Name             string  `json:"name"`
 			AlternativeText  *string `json:"alternativeText"`
@@ -91,113 +94,50 @@ type VersionResponse struct {
 	} `json:"latestVersion"`
 }
 
-func (u *Updater) Update() error {
-	// Backup do executável atual
-	execPath, err := os.Executable()
+func (u *Updater) Update(ctx context.Context) error {
+	_, err := os.Executable()
+	strapiLatestVersionURL := fmt.Sprintf("%s/api/versions/latest", BackendURL)
 	if err != nil {
 		return err
 	}
-
-	backupPath := filepath.Join(u.BackupDirectory, fmt.Sprintf("backup-%s", u.CurrentVersion))
-	if err := u.backupCurrentBinary(execPath, backupPath); err != nil {
-		return err
-	}
-
-	// Obter metadados da versão mais recente
 	var response VersionResponse
 	client := resty.New()
 	resp, err := client.R().
-		SetResult(&response).SetAuthToken("Bearer " + os.Getenv("STRAPI_API_TOKEN")).
-		Get(os.Getenv("BACKEND_URL") + "/api/versions/latest")
-
+		SetResult(&response).SetAuthToken("Bearer " + APIToken).
+		Get(strapiLatestVersionURL)
 	if err != nil {
 		return err
 	}
 	if resp.IsError() {
-		return fmt.Errorf("API retornou status: %d", resp.StatusCode())
-
+		return fmt.Errorf("API returned status: %d", resp.StatusCode())
 	}
-
-	// Obter URL do arquivo binário
 	fileURL := response.LatestVersion.File.URL
-
-	// Se a URL for relativa, combinar com o BACKEND_URL
-	if !strings.HasPrefix(fileURL, "http") {
-		fileURL = os.Getenv("BACKEND_URL") + fileURL
+	if fileURL == "" {
+		return fmt.Errorf("no file URL found in response")
 	}
-
-	// Baixar o arquivo binário
+	if !strings.HasPrefix(fileURL, "http") {
+		fileURL = BackendURL + fileURL
+	}
 	resp, err = client.R().
 		SetDoNotParseResponse(true).
 		Get(fileURL)
-
 	if err != nil {
 		return err
 	}
-
-	// Converter o corpo da resposta em um io.Reader
 	binReader := resp.RawBody()
-	defer binReader.Close()
-
-	// Aplicar a atualização
+	defer func(binReader io.ReadCloser) {
+		err := binReader.Close()
+		if err != nil {
+			fmt.Printf("Error closing binary reader: %v\n", err)
+		}
+	}(binReader)
 	err = selfupdate.Apply(binReader, selfupdate.Options{})
 	if err != nil {
-		// Tenta restaurar a versão anterior em caso de falha
-		u.rollbackUpdate(backupPath)
-		return err
-	}
-
-	return nil
-}
-func (u *Updater) backupCurrentBinary(execPath, backupPath string) error {
-	src, err := os.Open(execPath)
-	if err != nil {
-		return err
-	}
-	defer src.Close()
-
-	dst, err := os.OpenFile(backupPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
-	if err != nil {
-		return err
-	}
-	defer dst.Close()
-
-	_, err = io.Copy(dst, src)
-	return err
-}
-
-func (u *Updater) rollbackUpdate(backupPath string) error {
-	_, err := os.Executable()
-	if err != nil {
-		return err
-	}
-
-	backupFile, err := os.Open(backupPath)
-	if err != nil {
-		return fmt.Errorf("falha ao abrir arquivo de backup: %w", err)
-	}
-	defer backupFile.Close()
-
-	err = selfupdate.Apply(backupFile, selfupdate.Options{})
-	if err != nil {
-		return fmt.Errorf("falha no rollback: %w", err)
-	}
-
-	return nil
-}
-
-func (u *Updater) ListAvailableVersions() ([]string, error) {
-	files, err := os.ReadDir(u.BackupDirectory)
-	if err != nil {
-		return nil, err
-	}
-
-	var versions []string
-	for _, file := range files {
-		if !file.IsDir() && filepath.Ext(file.Name()) == "" {
-			versions = append(versions, file.Name())
+		if err != nil {
+			return err
 		}
+		return err
 	}
-
-	return versions, nil
+	runtime.Quit(ctx)
+	return nil
 }

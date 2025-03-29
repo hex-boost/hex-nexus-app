@@ -3,10 +3,23 @@ package wails
 import (
 	"context"
 	"github.com/hex-boost/hex-nexus-app/backend/app"
+	"github.com/hex-boost/hex-nexus-app/backend/updater"
 )
 
 func startup(ctx context.Context) {
 	app.App().SetCtx(ctx).Log().Wails().Infoln("WAILS START UP")
+	updaterService := updater.NewUpdater()
+	response, err := updaterService.CheckForUpdates()
+	if err != nil {
+		app.App().Log().Wails().Infoln(err)
+		panic(err)
+	}
+	if response.NeedsUpdate {
+		err := updaterService.Update(ctx)
+		if err != nil {
+			panic(err)
+		}
+	}
 }
 
 func domReady(ctx context.Context) {

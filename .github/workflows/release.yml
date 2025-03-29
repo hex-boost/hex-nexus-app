@@ -27,7 +27,7 @@ jobs:
       - name: Install Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
-      - name: Obter versão da tag
+      - name: Get Tag Version
         id: get_version
         shell: bash
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
@@ -36,9 +36,9 @@ jobs:
         env:
           APP_VERSION: ${{ env.VERSION }}
         run: |
-          wails build -ldflags "-X github.com/hex-boost/hex-nexus-app/backend/updater.Version=${{ env.VERSION }}"
+          wails build -ldflags "-X github.com/hex-boost/hex-nexus-app/backend/updater.Version=${{ env.VERSION }} -X github.com/hex-boost/hex-nexus-app/backend/updater.BackendURL=${{ secrets.API_URL }} -X github.com/hex-boost/hex-nexus-app/backend/updater.APIToken=${{ secrets.API_KEY }}"
 
-      - name: Upload para o servidor de atualização
+      - name: Upload to Update Server
         shell: bash
         env:
           API_KEY: ${{ secrets.API_KEY }}

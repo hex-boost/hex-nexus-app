@@ -152,7 +152,7 @@ export function LoginForm({
                   />
                   <h1 className="text-4xl font-bold mb-2">Nexus</h1>
                   <p className="text-base text-muted-foreground font-medium text-center mb-1">
-                    The number one place to find your account.
+                    The number one place to find your account FODASEs.
                     <br />
                     <strong className="font-medium text-white">Never waste your time </strong>
                     {' '}
