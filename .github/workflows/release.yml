@@ -33,8 +33,6 @@ jobs:
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
       - name: Build Wails
-        env:
-          APP_VERSION: ${{ env.VERSION }}
         run: |
           wails build -ldflags "-X github.com/hex-boost/hex-nexus-app/backend/updater.Version=${{ env.VERSION }} -X github.com/hex-boost/hex-nexus-app/backend/updater.BackendURL=${{ secrets.API_URL }} -X github.com/hex-boost/hex-nexus-app/backend/updater.APIToken=${{ secrets.API_KEY }}"
 
@@ -44,17 +42,9 @@ jobs:
           API_KEY: ${{ secrets.API_KEY }}
           API_URL: ${{ secrets.API_URL }}
         run: |
-          curl -X POST ${{ env.API_URL }}/api/versions" \
-          -H "Authentication: Bearer ${{ env.API_KEY }}" \
-          -H "Content-Type: application/json" \
-          -d "{\"data\":{\"version\":\"${{ env.VERSION }}\"}}" \
-          -o response.json
-          VERSION_ID=$(cat response.json | jq -r '.data.id')
-          cp build/bin/nexus.exe "build/bin/nexus-${{ env.VERSION }}.exe"
-          curl -X POST "https://nexus-back.up.railway.app/api/upload" \
-          -H "Authentication: Bearer ${{ env.API_KEY }}" \
-          -F "files=@build/bin/nexus-${{ env.VERSION }}.exe" \
-          -F "refId=$VERSION_ID" \
-          -F "ref=api::version.version" \
-          -F "field=file" \
-          -L
+          VERSION_ID=$(curl -s -X POST "${{env.API_URL}}/api/versions"
+          -H "Authorization: Bearer ${{ env.API_KEY }}" \
+          -H "Content-Type: application/json"
+          -d "{\"data\":{\"version\":\"${{ env.VERSION }}\"}}" | grep -o '"id":[0-9]*' | head -1 | sed 's/"id"://')
+
+          curl -X POST "${{env.API_URL}}/api/upload" -H "Authentication: Bearer ${{ env.API_KEY }}" -F "files=@build/bin/nexus-${{ env.VERSION }}.exe" -F "refId=$VERSION_ID" -F "ref=api::version.version" -F "field=file" -L
