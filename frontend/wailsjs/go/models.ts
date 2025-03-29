@@ -34,7 +34,6 @@ export namespace updater {
 	    url: string;
 	    releaseDate: string;
 	    required: boolean;
-	    signature: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new VersionInfo(source);
@@ -46,7 +45,6 @@ export namespace updater {
 	        this.url = source["url"];
 	        this.releaseDate = source["releaseDate"];
 	        this.required = source["required"];
-	        this.signature = source["signature"];
 	    }
 	}
 

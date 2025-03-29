@@ -3,22 +3,20 @@ package wails
 import (
 	"embed"
 	"fmt"
-	"github.com/hex-boost/hex-nexus-app/backend/discord"
-	"github.com/hex-boost/hex-nexus-app/backend/utils"
-	"github.com/joho/godotenv"
-	"log"
-	"os"
-
 	"github.com/hex-boost/hex-nexus-app/backend/app"
+	"github.com/hex-boost/hex-nexus-app/backend/discord"
 	"github.com/hex-boost/hex-nexus-app/backend/league"
 	"github.com/hex-boost/hex-nexus-app/backend/repository"
 	"github.com/hex-boost/hex-nexus-app/backend/riot"
 	"github.com/hex-boost/hex-nexus-app/backend/updater"
+	"github.com/hex-boost/hex-nexus-app/backend/utils"
+	"github.com/joho/godotenv"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/logger"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/options/windows"
+	"log"
 )
 
 //var icon []byte
@@ -38,7 +36,7 @@ func Run(assets embed.FS) {
 	discordService := discord.New(app.App().Log().Discord())
 	// Create application with options
 	opts := &options.App{
-		Title:              fmt.Sprintf("Nexus %s", os.Getenv("APP_VERSION")),
+		Title:              fmt.Sprintf("Nexus %s", updater.Version),
 		Width:              1280,
 		Height:             720,
 		DisableResize:      true,
