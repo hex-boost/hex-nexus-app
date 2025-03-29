@@ -41,10 +41,20 @@ jobs:
       - name: Upload para o servidor de atualização
         shell: bash
         env:
-          API_KEY: ${{ secrets.UPDATE_API_KEY }}
+          API_KEY: ${{ secrets.API_KEY }}
+          API_URL: ${{ secrets.API_URL }}
         run: |
-          curl -vX POST "https://function-bun-production-574c.up.railway.app/api/admin/upload" \
-            -H "X-API-Key: a44b5b64eadc6740c2339b7d" \
-            -F "version=${{ env.VERSION }}" \
-            -F "required=false" \
-            -F "file=@build/bin/nexus.exe" -L
+          curl -X POST ${{ env.API_URL }}/api/versions" \
+          -H "Authentication: Bearer ${{ env.API_KEY }}" \
+          -H "Content-Type: application/json" \
+          -d "{\"data\":{\"version\":\"${{ env.VERSION }}\"}}" \
+          -o response.json
+          VERSION_ID=$(cat response.json | jq -r '.data.id')
+          cp build/bin/nexus.exe "build/bin/nexus-${{ env.VERSION }}.exe"
+          curl -X POST "https://nexus-back.up.railway.app/api/upload" \
+          -H "Authentication: Bearer ${{ env.API_KEY }}" \
+          -F "files=@build/bin/nexus-${{ env.VERSION }}.exe" \
+          -F "refId=$VERSION_ID" \
+          -F "ref=api::version.version" \
+          -F "field=file" \
+          -L
