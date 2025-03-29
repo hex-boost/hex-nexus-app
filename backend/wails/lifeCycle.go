@@ -9,6 +9,9 @@ import (
 func startup(ctx context.Context) {
 	app.App().SetCtx(ctx).Log().Wails().Infoln("WAILS START UP")
 	updaterService := updater.NewUpdater()
+	if updaterService.CurrentVersion == "development" {
+		return
+	}
 	response, err := updaterService.CheckForUpdates()
 	if err != nil {
 		app.App().Log().Wails().Infoln(err)

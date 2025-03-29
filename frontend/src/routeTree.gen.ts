@@ -13,8 +13,8 @@
 import { Route as rootRoute } from './routes/__root'
 import { Route as LoginImport } from './routes/login'
 import { Route as ProtectedIndexImport } from './routes/_protected/index'
+import { Route as ProtectedSubscriptionIndexImport } from './routes/_protected/subscription/index'
 import { Route as ProtectedAccountsIndexImport } from './routes/_protected/accounts/index'
-import { Route as ProtectedSubscriptionSubscriptionImport } from './routes/_protected/subscription/subscription'
 import { Route as ProtectedAccountsIdImport } from './routes/_protected/accounts/$id'
 
 // Create/Update Routes
@@ -31,18 +31,19 @@ const ProtectedIndexRoute = ProtectedIndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const ProtectedSubscriptionIndexRoute = ProtectedSubscriptionIndexImport.update(
+  {
+    id: '/_protected/subscription/',
+    path: '/subscription/',
+    getParentRoute: () => rootRoute,
+  } as any,
+)
+
 const ProtectedAccountsIndexRoute = ProtectedAccountsIndexImport.update({
   id: '/_protected/accounts/',
   path: '/accounts/',
   getParentRoute: () => rootRoute,
 } as any)
-
-const ProtectedSubscriptionSubscriptionRoute =
-  ProtectedSubscriptionSubscriptionImport.update({
-    id: '/_protected/subscription/subscription',
-    path: '/subscription/subscription',
-    getParentRoute: () => rootRoute,
-  } as any)
 
 const ProtectedAccountsIdRoute = ProtectedAccountsIdImport.update({
   id: '/_protected/accounts/$id',
@@ -75,18 +76,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedAccountsIdImport
       parentRoute: typeof rootRoute
     }
-    '/_protected/subscription/subscription': {
-      id: '/_protected/subscription/subscription'
-      path: '/subscription/subscription'
-      fullPath: '/subscription/subscription'
-      preLoaderRoute: typeof ProtectedSubscriptionSubscriptionImport
-      parentRoute: typeof rootRoute
-    }
     '/_protected/accounts/': {
       id: '/_protected/accounts/'
       path: '/accounts'
       fullPath: '/accounts'
       preLoaderRoute: typeof ProtectedAccountsIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/_protected/subscription/': {
+      id: '/_protected/subscription/'
+      path: '/subscription'
+      fullPath: '/subscription'
+      preLoaderRoute: typeof ProtectedSubscriptionIndexImport
       parentRoute: typeof rootRoute
     }
   }
@@ -98,16 +99,16 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/': typeof ProtectedIndexRoute
   '/accounts/$id': typeof ProtectedAccountsIdRoute
-  '/subscription/subscription': typeof ProtectedSubscriptionSubscriptionRoute
   '/accounts': typeof ProtectedAccountsIndexRoute
+  '/subscription': typeof ProtectedSubscriptionIndexRoute
 }
 
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/': typeof ProtectedIndexRoute
   '/accounts/$id': typeof ProtectedAccountsIdRoute
-  '/subscription/subscription': typeof ProtectedSubscriptionSubscriptionRoute
   '/accounts': typeof ProtectedAccountsIndexRoute
+  '/subscription': typeof ProtectedSubscriptionIndexRoute
 }
 
 export interface FileRoutesById {
@@ -115,32 +116,22 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_protected/': typeof ProtectedIndexRoute
   '/_protected/accounts/$id': typeof ProtectedAccountsIdRoute
-  '/_protected/subscription/subscription': typeof ProtectedSubscriptionSubscriptionRoute
   '/_protected/accounts/': typeof ProtectedAccountsIndexRoute
+  '/_protected/subscription/': typeof ProtectedSubscriptionIndexRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/login'
-    | '/'
-    | '/accounts/$id'
-    | '/subscription/subscription'
-    | '/accounts'
+  fullPaths: '/login' | '/' | '/accounts/$id' | '/accounts' | '/subscription'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/login'
-    | '/'
-    | '/accounts/$id'
-    | '/subscription/subscription'
-    | '/accounts'
+  to: '/login' | '/' | '/accounts/$id' | '/accounts' | '/subscription'
   id:
     | '__root__'
     | '/login'
     | '/_protected/'
     | '/_protected/accounts/$id'
-    | '/_protected/subscription/subscription'
     | '/_protected/accounts/'
+    | '/_protected/subscription/'
   fileRoutesById: FileRoutesById
 }
 
@@ -148,17 +139,16 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ProtectedIndexRoute: typeof ProtectedIndexRoute
   ProtectedAccountsIdRoute: typeof ProtectedAccountsIdRoute
-  ProtectedSubscriptionSubscriptionRoute: typeof ProtectedSubscriptionSubscriptionRoute
   ProtectedAccountsIndexRoute: typeof ProtectedAccountsIndexRoute
+  ProtectedSubscriptionIndexRoute: typeof ProtectedSubscriptionIndexRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ProtectedIndexRoute: ProtectedIndexRoute,
   ProtectedAccountsIdRoute: ProtectedAccountsIdRoute,
-  ProtectedSubscriptionSubscriptionRoute:
-    ProtectedSubscriptionSubscriptionRoute,
   ProtectedAccountsIndexRoute: ProtectedAccountsIndexRoute,
+  ProtectedSubscriptionIndexRoute: ProtectedSubscriptionIndexRoute,
 }
 
 export const routeTree = rootRoute
@@ -174,8 +164,8 @@ export const routeTree = rootRoute
         "/login",
         "/_protected/",
         "/_protected/accounts/$id",
-        "/_protected/subscription/subscription",
-        "/_protected/accounts/"
+        "/_protected/accounts/",
+        "/_protected/subscription/"
       ]
     },
     "/login": {
@@ -187,11 +177,11 @@ export const routeTree = rootRoute
     "/_protected/accounts/$id": {
       "filePath": "_protected/accounts/$id.tsx"
     },
-    "/_protected/subscription/subscription": {
-      "filePath": "_protected/subscription/subscription.tsx"
-    },
     "/_protected/accounts/": {
       "filePath": "_protected/accounts/index.tsx"
+    },
+    "/_protected/subscription/": {
+      "filePath": "_protected/subscription/index.tsx"
     }
   }
 }
