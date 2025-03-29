@@ -29,6 +29,17 @@ func Init() {
 }
 func Run(assets embed.FS) {
 	Init()
+	updaterService := updater.NewUpdater()
+	response, err := updaterService.CheckForUpdates()
+	if err != nil {
+		panic(err)
+	}
+	if response.NeedsUpdate {
+		err := updaterService.Update()
+		if err != nil {
+			panic(err)
+		}
+	}
 	utilsBind := utils.NewUtils()
 	lcuConn := league.NewLCUConnection(app.App().Log().League())
 	leagueRepo := repository.NewLeagueRepository(app.App().Log().Repo())
@@ -75,7 +86,7 @@ func Run(assets embed.FS) {
 			ZoomFactor:           1.0,
 		},
 	}
-	err := wails.Run(opts)
+	err = wails.Run(opts)
 	if err != nil {
 		panic(err)
 	}

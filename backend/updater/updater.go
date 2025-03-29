@@ -1,16 +1,15 @@
 package updater
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"path/filepath"
-	"runtime"
+	"strings"
 	"time"
 
 	"github.com/fynelabs/selfupdate"
+	"github.com/go-resty/resty/v2"
 )
 
 // Version é definido durante a compilação usando ldflags
@@ -21,20 +20,9 @@ type Updater struct {
 	BackupDirectory string
 }
 
-type VersionInfo struct {
-	Version     string `json:"version"`
-	URL         string `json:"url"`
-	ReleaseDate string `json:"releaseDate"`
-	Required    bool   `json:"required"` // Se a atualização é obrigatória
-}
-
 func NewUpdater() *Updater {
-	backupDir := filepath.Join(os.TempDir(), "nexus-backups")
-	os.MkdirAll(backupDir, 0755)
-
 	return &Updater{
-		CurrentVersion:  Version,
-		BackupDirectory: backupDir,
+		CurrentVersion: Version,
 	}
 }
 
@@ -42,46 +30,68 @@ func (u *Updater) GetCurrentVersion() string {
 	return u.CurrentVersion
 }
 
-func (u *Updater) CheckForUpdates(apiURL string) (*VersionInfo, error) {
-	// Criar requisição para a API
-	req, err := http.NewRequest("GET", apiURL, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	// Adicionar headers necessários
-	req.Header.Set("Authorization", "Bearer "+os.Getenv("UPDATE_API_KEY"))
-	req.Header.Set("X-Client-Version", u.CurrentVersion)
-	req.Header.Set("X-Client-OS", runtime.GOOS)
-	req.Header.Set("X-Client-Arch", runtime.GOARCH)
-
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("API retornou status: %d", resp.StatusCode)
-	}
-
-	var response struct {
-		NeedsUpdate bool        `json:"needsUpdate"`
-		VersionInfo VersionInfo `json:",inline"`
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return nil, err
-	}
-
-	if !response.NeedsUpdate {
-		return nil, nil
-	}
-
-	return &response.VersionInfo, nil
+type Response struct {
+	NeedsUpdate bool   `json:"needsUpdate"`
+	Version     string `json:"version"`
 }
-func (u *Updater) Update(versionInfo *VersionInfo) error {
+
+func (u *Updater) CheckForUpdates() (*Response, error) {
+	// Criar cliente resty
+	client := resty.New().
+		SetTimeout(10 * time.Second)
+	var result Response
+	resp, err := client.R().
+		SetHeader("x-client-version", u.CurrentVersion).
+		SetResult(&result).
+		Get(os.Getenv("BACKEND_URL") + "/api/versions/update")
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.IsError() {
+		return nil, fmt.Errorf("API retornou status: %d", resp.StatusCode())
+	}
+
+	return &result, nil
+}
+
+type VersionResponse struct {
+	LatestVersion struct {
+		ID          int     `json:"id"` // Alterado de string para int
+		DocumentID  string  `json:"documentId"`
+		Version     string  `json:"version"`
+		CreatedAt   string  `json:"createdAt"`
+		UpdatedAt   string  `json:"updatedAt"`
+		PublishedAt string  `json:"publishedAt"`
+		Locale      *string `json:"locale"`
+		File        struct {
+			ID               int     `json:"id"` // Alterado de string para int
+			DocumentID       string  `json:"documentId"`
+			Name             string  `json:"name"`
+			AlternativeText  *string `json:"alternativeText"`
+			Caption          *string `json:"caption"`
+			Width            *int    `json:"width"`
+			Height           *int    `json:"height"`
+			Formats          *string `json:"formats"`
+			Hash             string  `json:"hash"`
+			Ext              string  `json:"ext"`
+			Mime             string  `json:"mime"`
+			Size             float64 `json:"size"`
+			URL              string  `json:"url"`
+			PreviewURL       *string `json:"previewUrl"`
+			Provider         string  `json:"provider"`
+			ProviderMetadata *string `json:"provider_metadata"`
+			FolderPath       string  `json:"folderPath"`
+			CreatedAt        string  `json:"createdAt"`
+			UpdatedAt        string  `json:"updatedAt"`
+			PublishedAt      string  `json:"publishedAt"`
+			Locale           *string `json:"locale"`
+		} `json:"file"`
+	} `json:"latestVersion"`
+}
+
+func (u *Updater) Update() error {
 	// Backup do executável atual
 	execPath, err := os.Executable()
 	if err != nil {
@@ -93,14 +103,44 @@ func (u *Updater) Update(versionInfo *VersionInfo) error {
 		return err
 	}
 
-	// Download da nova versão
-	resp, err := http.Get(versionInfo.URL)
+	// Obter metadados da versão mais recente
+	var response VersionResponse
+	client := resty.New()
+	resp, err := client.R().
+		SetResult(&response).SetAuthToken("Bearer " + os.Getenv("STRAPI_API_TOKEN")).
+		Get(os.Getenv("BACKEND_URL") + "/api/versions/latest")
+
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	if resp.IsError() {
+		return fmt.Errorf("API retornou status: %d", resp.StatusCode())
 
-	err = selfupdate.Apply(resp.Body, selfupdate.Options{})
+	}
+
+	// Obter URL do arquivo binário
+	fileURL := response.LatestVersion.File.URL
+
+	// Se a URL for relativa, combinar com o BACKEND_URL
+	if !strings.HasPrefix(fileURL, "http") {
+		fileURL = os.Getenv("BACKEND_URL") + fileURL
+	}
+
+	// Baixar o arquivo binário
+	resp, err = client.R().
+		SetDoNotParseResponse(true).
+		Get(fileURL)
+
+	if err != nil {
+		return err
+	}
+
+	// Converter o corpo da resposta em um io.Reader
+	binReader := resp.RawBody()
+	defer binReader.Close()
+
+	// Aplicar a atualização
+	err = selfupdate.Apply(binReader, selfupdate.Options{})
 	if err != nil {
 		// Tenta restaurar a versão anterior em caso de falha
 		u.rollbackUpdate(backupPath)
@@ -109,7 +149,6 @@ func (u *Updater) Update(versionInfo *VersionInfo) error {
 
 	return nil
 }
-
 func (u *Updater) backupCurrentBinary(execPath, backupPath string) error {
 	src, err := os.Open(execPath)
 	if err != nil {
@@ -133,14 +172,12 @@ func (u *Updater) rollbackUpdate(backupPath string) error {
 		return err
 	}
 
-	// Abrir arquivo de backup
 	backupFile, err := os.Open(backupPath)
 	if err != nil {
 		return fmt.Errorf("falha ao abrir arquivo de backup: %w", err)
 	}
 	defer backupFile.Close()
 
-	// Usar a função Apply do selfupdate para restaurar o backup
 	err = selfupdate.Apply(backupFile, selfupdate.Options{})
 	if err != nil {
 		return fmt.Errorf("falha no rollback: %w", err)
@@ -150,7 +187,6 @@ func (u *Updater) rollbackUpdate(backupPath string) error {
 }
 
 func (u *Updater) ListAvailableVersions() ([]string, error) {
-	// Lista as versões de backup disponíveis
 	files, err := os.ReadDir(u.BackupDirectory)
 	if err != nil {
 		return nil, err
