@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Discord Authentication Failed</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --bg-color: #11101D;
+            --discord-blue: #5865F2;
+            --discord-red: #ED4245;
+            --text-primary: rgba(255, 255, 255, 0.95);
+            --text-muted: rgba(255, 255, 255, 0.6);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Whitney', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            text-align: center;
+            overflow: hidden;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 3rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            max-width: 90%;
+            width: 450px;
+            position: relative;
+            z-index: 1;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: shakeError 0.6s ease-out;
+        }
+
+        .error-circle {
+            width: 80px;
+            height: 80px;
+            position: relative;
+            margin: 0 auto 1.5rem;
+            background-color: var(--discord-red);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: pulseError 2s infinite;
+        }
+
+        .error-x {
+            position: relative;
+            width: 40px;
+            height: 40px;
+        }
+
+        .error-x:before,
+        .error-x:after {
+            content: '';
+            position: absolute;
+            width: 40px;
+            height: 4px;
+            background-color: white;
+            top: 18px;
+            left: 0;
+            border-radius: 2px;
+        }
+
+        .error-x:before {
+            transform: rotate(45deg);
+            animation: drawX1 0.5s ease-out forwards;
+        }
+
+        .error-x:after {
+            transform: rotate(-45deg);
+            animation: drawX2 0.5s ease-out forwards;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+            color: var(--discord-red);
+        }
+
+        p {
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+
+        .muted-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 1.5rem;
+        }
+
+        .button-container {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+
+        .try-again-btn {
+            background: var(--discord-blue);
+            color: white;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 0.25rem;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .close-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 0.25rem;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .try-again-btn:hover {
+            background: #4752c4;
+            transform: translateY(-2px);
+        }
+
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .try-again-btn:active,
+        .close-btn:active {
+            transform: translateY(0);
+        }
+
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            background-color: var(--discord-red);
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: float 15s infinite linear;
+        }
+
+        @keyframes shakeError {
+            0%, 100% {
+                transform: translateX(0);
+            }
+            10%, 30%, 50%, 70%, 90% {
+                transform: translateX(-5px);
+            }
+            20%, 40%, 60%, 80% {
+                transform: translateX(5px);
+            }
+        }
+
+        @keyframes pulseError {
+            0% {
+                box-shadow: 0 0 0 0 rgba(237, 66, 69, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(237, 66, 69, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(237, 66, 69, 0);
+            }
+        }
+
+        @keyframes drawX1 {
+            0% {
+                transform: rotate(45deg) scaleX(0);
+                opacity: 0;
+            }
+            100% {
+                transform: rotate(45deg) scaleX(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes drawX2 {
+            0% {
+                transform: rotate(-45deg) scaleX(0);
+                opacity: 0;
+            }
+            100% {
+                transform: rotate(-45deg) scaleX(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0) translateX(0) rotate(0deg);
+            }
+            100% {
+                transform: translateY(-100vh) translateX(100vw) rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="particles" asset="particles"></div>
+    <div class="container">
+        <div class="error-circle">
+            <div class="error-x"></div>
+        </div>
+        <h1>Authentication Failed</h1>
+        <p>We couldn't connect your Discord account.</p>
+        <p class="muted-text">If the problem persists, please contact support</p>
+    </div>
+
+    <script>
+        // Create floating particles in the background
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 20;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // Random size between 5px and 20px
+                const size = Math.random() * 15 + 5;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                
+                // Random position
+                particle.style.left = `${Math.random() * 100}vw`;
+                particle.style.top = `${Math.random() * 100}vh`;
+                
+                // Random opacity
+                particle.style.opacity = (Math.random() * 0.3 + 0.1).toString();
+                
+                // Random animation duration
+                const duration = Math.random() * 20 + 10;
+                particle.style.animationDuration = `${duration}s`;
+                
+                // Random animation delay
+                particle.style.animationDelay = `${Math.random() * 5}s`;
+                
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Function to retry authentication
+        function retryAuth() {
+            // In a real implementation, this would redirect to the Discord OAuth flow
+            // For this demo, we'll just reload the page
+            const button = document.querySelector('.try-again-btn');
+            button.textContent = 'Redirecting...';
+            button.disabled = true;
+            
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        }
+
+        // Initialize particles when the page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            createParticles();
+        });
+    </script>
+</body>
+</html>
