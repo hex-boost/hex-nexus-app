@@ -177,3 +177,18 @@
 .animate-slide-out-to-top-portal {
   animation: slide-out-to-top-portal 0.3s ease-in-out forwards;
 }
+/* Adicione este CSS ao seu arquivo de estilos */
+@keyframes minimizeAnimation {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+}
+
+.minimize-animation {
+    animation: minimizeAnimation 0.5s forwards;
+}

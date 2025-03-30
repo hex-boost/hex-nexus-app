@@ -141,7 +141,7 @@ export function LoginForm({
           className={cn('flex justify-center h-full items-center  flex-col gap-6', className)}
           {...props}
         >
-          <Card className="border-none overflow-hidden w-full h-full">
+          <Card className="border-none rounded-none overflow-hidden w-full h-full">
             <CardContent className="grid  w-full h-full p-0 md:grid-cols-2">
               <div className="relative h-full hidden  md:block">
                 <div className="absolute inset-0  flex items-start pt-6 h-full justify-center">

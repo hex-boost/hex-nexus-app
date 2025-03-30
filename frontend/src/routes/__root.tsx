@@ -51,7 +51,7 @@ function RootLayout() {
       <div className="flex flex-col h-screen">
 
         <div
-          className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 "
+          className=" bg-card border-b"
           style={{ '--wails-draggable': 'drag' } as React.CSSProperties}
         >
           <WindowControls className="px-4 py-2" />
