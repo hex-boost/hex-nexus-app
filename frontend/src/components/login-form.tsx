@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import { useUserStore } from '@/stores/useUserStore';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@radix-ui/react-tabs';
 import { useMutation } from '@tanstack/react-query';
-import { useRouter } from '@tanstack/react-router';
+// import { useRouter } from '@tanstack/react-router';
 import { Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -51,7 +51,7 @@ export function LoginForm({
   ...props
 }: React.ComponentProps<'div'>) {
   const { HWID } = useGoFunctions();
-  const router = useRouter();
+  // const router = useRouter();
   const { getDefaultBase64Avatar, uploadImageFromBase64 } = useProfileAvatar();
   const [activeTab, setActiveTab] = useState('login');
   const { login } = useUserStore();
@@ -73,7 +73,7 @@ export function LoginForm({
         },
       onSuccess: (data) => {
         login(data.user, data.jwt);
-        router.navigate({ to: '/' });
+        window.location.reload();
       },
       onError: (error) => {
         // @ts-expect-error ts is dumb
@@ -98,7 +98,7 @@ export function LoginForm({
         },
       onSuccess: (data) => {
         login(data.user, data.jwt);
-        router.navigate({ to: '/' });
+        window.location.reload();
       },
       onError: (error) => {
         // @ts-expect-error ts is dumb
@@ -123,7 +123,7 @@ export function LoginForm({
         },
       onSuccess: (data) => {
         login(data.user, data.jwt);
-        router.navigate({ to: '/' });
+        window.location.reload();
       },
       onError: (error) => {
         console.error('Erro no login:', error);

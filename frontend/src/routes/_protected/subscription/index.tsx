@@ -1,84 +1,146 @@
 import type { PricingPlan } from '@/types/membership.ts';
+import { mockCheckoutSession } from '@/components/accountsMock.ts';
+import { Badge } from '@/components/ui/badge';
 import { Pricing } from '@/components/ui/pricing-cards.tsx';
+import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
+import { useMutation } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { MoveRight, PhoneCall } from 'lucide-react';
+import { MoveRight } from 'lucide-react';
+import { OpenBrowser } from '../../../../wailsjs/go/utils/utils';
 
 export const Route = createFileRoute('/_protected/subscription/')({
   component: RouteComponent,
 });
 
 function RouteComponent() {
+  // Obter o contexto de autenticação para verificar o plano atual do usuário
+  const { user } = useCommonFetch();
+  const mapTierToDisplayName = (tier: string | undefined): string => {
+    switch (tier) {
+      case 'tier 1': return 'Basic';
+      case 'tier 2': return 'Premium';
+      case 'tier 3': return 'Professional';
+      default: return 'Free Trial';
+    }
+  };
+  const currentPlanTier = mapTierToDisplayName(user?.premium?.tier);
+
+  const { mutate: selectPlan, isPending } = useMutation({
+    mutationKey: ['subscription'],
+    mutationFn: async (tier: string) => {
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      console.warn(tier);
+      return mockCheckoutSession;
+      // const response = await strapiClient.create('/stripe/subscription', {
+      //   tier,
+      // });
+    },
+    onSuccess: () => {
+      OpenBrowser(mockCheckoutSession.url as string);
+    },
+  });
+
   const pricingPlans: PricingPlan[] = [
     {
-      tier: 'Tier 3',
-      description: 'Nossa meta é simplificar o comércio de PMEs, tornando-o mais fácil e rápido para todos e em todos os lugares.',
+      tier: 'Free Trial',
+      description: 'Try our service with limited features to see if it fits your boosting needs.',
+      price: 0,
+      period: 'month',
+      benefits: [
+        {
+          title: 'Accounts up to Platinum',
+          description: '',
+        },
+        {
+          title: 'Wins 300 coins bonus',
+          description: '',
+        },
+      ],
+      buttonText: currentPlanTier === 'Free Trial' ? 'Current Plan' : 'Get started for free',
+      buttonVariant: 'outline',
+      buttonIcon: <MoveRight className="w-4 h-4" />,
+      highlighted: currentPlanTier === 'Free Trial',
+    },
+    {
+      tier: 'Basic',
+      description: 'Perfect for part-time boosters looking to grow their business.',
       price: 10,
       benefits: [
         {
-          title: 'Rápido e confiável',
-          description: 'Fizemos isso rápido e confiável.',
+          title: 'Instantly earns 3000 coins',
+          description: '',
         },
         {
-          title: 'Rápido e confiável',
-          description: 'Fizemos isso rápido e confiável.',
-        },
-        {
-          title: 'Rápido e confiável',
-          description: 'Fizemos isso rápido e confiável.',
+          title: 'Accounts up to Emerald',
+          description: '',
         },
       ],
-      buttonText: 'Inscreva-se hoje',
+      buttonText: currentPlanTier === 'Basic' ? 'Current Plan' : 'Choose Basic',
       buttonVariant: 'outline',
       buttonIcon: <MoveRight className="w-4 h-4" />,
+      highlighted: currentPlanTier === 'Basic',
     },
     {
-      tier: 'Tier 2',
-      description: 'Nossa meta é simplificar o comércio de PMEs, tornando-o mais fácil e rápido para todos e em todos os lugares.',
+      tier: 'Premium',
+      description: 'The ideal solution for serious boosters who accounts.',
       price: 20,
       benefits: [
         {
-          title: 'Rápido e confiável',
-          description: 'Fizemos isso rápido e confiável.',
+          title: 'Instantly earns 10000 coins',
+          description: '',
         },
         {
-          title: 'Rápido e confiável',
-          description: 'Fizemos isso rápido e confiável.',
-        },
-        {
-          title: 'Rápido e confiável',
-          description: 'Fizemos isso rápido e confiável.',
+          title: 'Accounts up to Diamond',
+          description: '',
         },
       ],
-      buttonText: 'Inscreva-se hoje',
-      highlighted: true,
+      buttonText: currentPlanTier === 'Premium' ? 'Current Plan' : 'Choose Premium',
+      highlighted: currentPlanTier === 'Premium' || (!currentPlanTier && true),
     },
     {
-      tier: 'Enterprise',
-      description: 'Nossa meta é simplificar o comércio de PMEs, tornando-o mais fácil e rápido para todos e em todos os lugares.',
+      tier: 'Professional',
+      description: 'For full-time professional boosters',
       price: 30,
       benefits: [
         {
-          title: 'Rápido e confiável',
-          description: 'Fizemos isso rápido e confiável.',
+          title: 'Unlimited coins & accounts',
+          description: '',
         },
         {
-          title: 'Rápido e confiável',
-          description: 'Fizemos isso rápido e confiável.',
-        },
-        {
-          title: 'Rápido e confiável',
-          description: 'Fizemos isso rápido e confiável.',
+          title: 'All ranks available',
+          description: '',
         },
       ],
-      buttonText: 'Agendar reunião',
+      buttonText: currentPlanTier === 'Professional' ? 'Current Plan' : 'Choose Professional',
       buttonVariant: 'outline',
-      buttonIcon: <PhoneCall className="w-4 h-4" />,
+      highlighted: currentPlanTier === 'Professional',
     },
   ];
+
   return (
     <div>
-      <Pricing title="fodase" subtitle="fodase" plans={pricingPlans} />
-
+      <div className="w-full">
+        <div className="">
+          <div className="flex text-center justify-center items-center gap-4 flex-col">
+            <div className="flex gap-2 flex-col">
+              <h2 className="text-3xl tracking-tighter max-w-xl text-center font-semibold">
+                Choose Your Boosting Experience
+              </h2>
+              <p className="leading-relaxed tracking-tight text-muted-foreground max-w-xl text-center">
+                Access premium LoL accounts for your boosting services with flexible plans
+              </p>
+              <p className="text-center">
+                <Badge variant="outline" className="text-primary">
+                  Current Plan:
+                  {' '}
+                  {currentPlanTier}
+                </Badge>
+              </p>
+            </div>
+            <Pricing isPending={isPending} onPlanSelect={selectPlan} plans={pricingPlans} />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

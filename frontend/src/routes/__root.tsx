@@ -1,6 +1,3 @@
-import type { UserType } from '@/types/types.ts';
-import type { StrapiError } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
-
 import AdminPanelLayout from '@/components/admin-panel/admin-panel-layout';
 import { CoinIcon } from '@/components/coin-icon.tsx';
 import { LoginForm } from '@/components/login-form';
@@ -9,12 +6,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/compon
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 
 import { UserProfile } from '@/components/UserProfile.tsx';
-import { useGoFunctions } from '@/hooks/useGoBindings.ts';
-import { strapiClient } from '@/lib/strapi.ts';
+import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
 import { useUserStore } from '@/stores/useUserStore';
-import { useQuery } from '@tanstack/react-query';
 import { createRootRouteWithContext, Outlet } from '@tanstack/react-router';
-import { toast } from 'sonner';
 
 export type RouterContext = {
   auth: {
@@ -32,37 +26,9 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 });
 
 function DashboardLayout() {
-  const { isAuthenticated, logout, setUser } = useUserStore();
+  const { isAuthenticated, logout } = useUserStore();
+  const { user, refetchUser, isUserLoading } = useCommonFetch();
 
-  const { HWID } = useGoFunctions();
-  const {
-    data: user,
-    isLoading: isUserLoading,
-    isError,
-    error,
-    refetch: refetchUser,
-  } = useQuery<UserType, StrapiError>({
-    queryKey: ['users', 'me'],
-    queryFn: async () => {
-      const user = await strapiClient.request<UserType>('get', 'users/me');
-      if (user?.hwid !== HWID) {
-        toast.error('The HWID of this client does not match the HWID of the user account. Please contact support if you think this is a mistake.');
-        logout();
-      }
-      logout();
-      setUser(user);
-      return user;
-    },
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
-    enabled: isAuthenticated(),
-  },
-  );
-  if (isError) {
-    if ([401, 403].includes(error.error?.status)) {
-      logout();
-    }
-  }
   const isLoading = isAuthenticated() && isUserLoading;
   const userAvatar = import.meta.env.VITE_BACKEND_URL + user?.avatar.url;
   return (

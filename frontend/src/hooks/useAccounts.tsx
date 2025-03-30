@@ -3,8 +3,7 @@ import { strapiClient } from '@/lib/strapi.ts';
 import { useMapping } from '@/lib/useMapping';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
-import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
-// hooks/useAccounts.ts
+import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react'; // hooks/useAccounts.ts
 import { useMemo, useState } from 'react';
 
 export function useAccounts() {
@@ -38,9 +37,9 @@ export function useAccounts() {
         if (account.user) {
           return false;
         }
-        if (!account.ban?.restrictions) {
-          return true;
-        }
+        // if (!account.ban?.restrictions) {
+        //   return true;
+        // }
 
         const restrictions = account.ban.restrictions;
 

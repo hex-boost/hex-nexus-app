@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"github.com/pkg/browser"
 	"os"
 	"os/exec"
 )
@@ -30,4 +31,7 @@ func (h *Utils) GetHWID() string {
 
 func (h *Utils) GetBackendUrl() string {
 	return os.Getenv("BACKEND_URL")
+}
+func (h *Utils) OpenBrowser(url string) error {
+	return browser.OpenURL(url)
 }
