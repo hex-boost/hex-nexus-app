@@ -1,36 +1,35 @@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
 import { cn } from '@/lib/utils';
-import { Quit, WindowMaximise, WindowMinimise, WindowUnmaximise } from '@runtime';
+import { Quit, WindowIsMaximised, WindowMinimise, WindowToggleMaximise } from '@runtime';
 import { Maximize, Minus, Square, X } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
-type WindowControlsProps = {
-  className?: string;
-};
-
-export function WindowControls({ className }: WindowControlsProps) {
+export function WindowControls({ className }: { className?: string }) {
   const [isMaximized, setIsMaximized] = useState(false);
 
+  // Buscar o estado inicial e configurar um efeito para atualizá-lo
+  useEffect(() => {
+    const updateMaximizeState = async () => {
+      const maximized = await WindowIsMaximised();
+      setIsMaximized(maximized);
+    };
+
+    updateMaximizeState();
+  }, []);
+
   // Função para alternar entre maximizado e normal
-  const toggleMaximize = () => {
-    if (isMaximized) {
-      WindowUnmaximise();
-      setIsMaximized(false);
-    } else {
-      WindowMaximise();
-      setIsMaximized(true);
-    }
+  const toggleMaximize = async () => {
+    WindowToggleMaximise();
+    // Atualizar o estado após alternar
+    const maximized = await WindowIsMaximised();
+    setIsMaximized(maximized);
   };
 
-  // Classes comuns para os botões de controle
   const controlButtonClass = 'h-8 w-8 flex items-center justify-center rounded-md hover:bg-white/[0.1] transition-colors';
 
   return (
-    <div
-      className={cn('flex b items-center gap-2', className)}
-      style={{ '--wails-draggable': 'drag' } as React.CSSProperties}
-
-    >
+    <div className={cn('flex items-center gap-2', className)}>
       <TooltipProvider>
         {/* Área arrastável */}
         <div className="flex-grow h-8" />
@@ -42,13 +41,12 @@ export function WindowControls({ className }: WindowControlsProps) {
               onClick={() => WindowMinimise()}
               className={controlButtonClass}
               style={{ '--wails-draggable': 'no-drag' } as React.CSSProperties}
-
             >
-              <Minus className="h-4 w-4" />
+              <Minus strokeWidth={2} className="h-5 w-5 " />
             </button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Minimizar</p>
+            <p>Minimize</p>
           </TooltipContent>
         </Tooltip>
 
@@ -59,13 +57,12 @@ export function WindowControls({ className }: WindowControlsProps) {
               onClick={toggleMaximize}
               className={controlButtonClass}
               style={{ '--wails-draggable': 'no-drag' } as React.CSSProperties}
-
             >
-              {isMaximized ? <Square className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+              {isMaximized ? <Square strokeWidth={2} className="h-5 w-5 " /> : <Maximize strokeWidth={2} className="h-5 w-5 " />}
             </button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>{isMaximized ? 'Restaurar' : 'Maximizar'}</p>
+            <p>{isMaximized ? 'Restore' : 'Maximize'}</p>
           </TooltipContent>
         </Tooltip>
 
@@ -73,18 +70,16 @@ export function WindowControls({ className }: WindowControlsProps) {
         <Tooltip delayDuration={300}>
           <TooltipTrigger asChild>
             <button
-              onClick={() => Quit()}
-              className={cn(
-                controlButtonClass,
-              )}
-              style={{ '--wails-draggable': 'no-drag' } as any}
 
+              onClick={() => Quit()}
+              className={cn(controlButtonClass, 'hover:bg-red-300/10')}
+              style={{ '--wails-draggable': 'no-drag' } as React.CSSProperties}
             >
-              <X className="h-4 w-4" />
+              <X strokeWidth={2} className="h-5 w-5 " />
             </button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Fechar</p>
+            <p>Minimize to tray</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>

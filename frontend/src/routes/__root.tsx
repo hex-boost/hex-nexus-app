@@ -5,6 +5,7 @@ import { Route as DashboardRoute } from '@/routes/_protected/dashboard/index.tsx
 import { useUserStore } from '@/stores/useUserStore';
 import { createRootRouteWithContext, Outlet, redirect } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
+import React from 'react';
 
 export type RouterContext = {
   auth: {
@@ -46,9 +47,13 @@ function RootLayout() {
   // sem elementos visuais adicionais
   return (
     <>
+
       <div className="flex flex-col h-screen">
 
-        <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div
+          className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 "
+          style={{ '--wails-draggable': 'drag' } as React.CSSProperties}
+        >
           <WindowControls className="px-4 py-2" />
         </div>
         <Outlet />

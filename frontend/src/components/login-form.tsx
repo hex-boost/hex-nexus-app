@@ -211,6 +211,7 @@ export function LoginForm({
                       </div>
                       <div className="relative">
                         <Input
+                          placeholder="**********"
                           id="password"
                           autoComplete="current-password"
                           type={showLoginPassword ? 'text' : 'password'}
@@ -239,12 +240,13 @@ export function LoginForm({
                     <div className="flex flex-col items-center text-center">
                       <h1 className="text-2xl font-bold">Create Account</h1>
                       <p className="text-balance text-muted-foreground">
-                        Start using Nexus
+                        Register to start your journey
                       </p>
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="username">Username</Label>
                       <Input
+                        placeholder="Your username"
                         autoComplete="username"
                         id="username"
                         required
@@ -267,6 +269,8 @@ export function LoginForm({
                       <Label htmlFor="password">Password</Label>
                       <div className="relative">
                         <Input
+
+                          placeholder="**********"
                           id="password"
                           type={showRegisterPassword ? 'text' : 'password'}
                           autoComplete="new-password"

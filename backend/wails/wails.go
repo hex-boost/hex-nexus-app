@@ -48,7 +48,6 @@ func Run(assets embed.FS) {
 		Fullscreen:         false,
 		Frameless:          true,
 		Debug:              options.Debug{},
-		HideWindowOnClose:  true,
 		LogLevel:           logger.DEBUG,
 		LogLevelProduction: logger.DEBUG,
 		OnStartup:          startup,
