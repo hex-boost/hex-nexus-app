@@ -1,8 +1,10 @@
 import { ErrorPage } from '@/components/error-page.tsx';
+import { WindowControls } from '@/components/WindowControls.tsx';
+
 import { Route as DashboardRoute } from '@/routes/_protected/dashboard/index.tsx';
 import { useUserStore } from '@/stores/useUserStore';
 import { createRootRouteWithContext, Outlet, redirect } from '@tanstack/react-router';
-import { TanStackRouterDevtools } from '@tanstack/router-devtools';
+import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 
 export type RouterContext = {
   auth: {
@@ -44,8 +46,13 @@ function RootLayout() {
   // sem elementos visuais adicionais
   return (
     <>
+      <div className="flex flex-col h-screen">
 
-      <Outlet />
+        <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <WindowControls className="px-4 py-2" />
+        </div>
+        <Outlet />
+      </div>
       <TanStackRouterDevtools />
     </>
   );

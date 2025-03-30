@@ -31,7 +31,7 @@ export default function SubscriptionStatus({ className, subscription }: Subscrip
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
             <Shield className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            {subscription?.tier || 'Free Tier'}
+            {subscription?.tier || 'Free Trial'}
           </h3>
           <div
             className={cn('px-3 py-1 rounded-full text-xs font-medium', subscription?.isActive ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400')}

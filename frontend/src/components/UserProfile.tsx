@@ -252,7 +252,7 @@ export function UserProfile({
               </div>
               <div className="flex-1">
                 <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">{user.username}</h2>
-                <p className="text-zinc-600 dark:text-zinc-400">Free Trial</p>
+                <p className="text-zinc-600 dark:text-zinc-400">{user.premium.tier || 'Free Trial'}</p>
               </div>
             </div>
             <Separator className="mb-6" />

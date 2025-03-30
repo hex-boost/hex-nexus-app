@@ -33,19 +33,24 @@ func Run(assets embed.FS) {
 	leagueRepo := repository.NewLeagueRepository(app.App().Log().Repo())
 	leagueService := league.NewService(league.NewSummonerClient(lcuConn, app.App().Log().League()), leagueRepo, app.App().Log().League())
 	discordService := discord.New(app.App().Log().Discord())
+
 	opts := &options.App{
-		Title:              fmt.Sprintf("Nexus %s", updater.Version),
-		Width:              1280,
-		Height:             720,
-		DisableResize:      true,
+
+		Title:     fmt.Sprintf("Nexus %s", updater.Version),
+		MinHeight: 720,
+		MinWidth:  1280,
+		Width:     1600,
+		Height:    900,
+
+		MaxHeight:          900,
+		MaxWidth:           1600,
+		BackgroundColour:   &options.RGBA{R: 0, G: 0, B: 0, A: 0}, // A: 0 para transparência total
 		Fullscreen:         false,
-		Frameless:          false,
-		StartHidden:        false,
+		Frameless:          true,
 		Debug:              options.Debug{},
-		HideWindowOnClose:  false,
-		BackgroundColour:   &options.RGBA{R: 255, G: 255, B: 255, A: 255},
-		LogLevel:           logger.INFO,
-		LogLevelProduction: logger.ERROR,
+		HideWindowOnClose:  true,
+		LogLevel:           logger.DEBUG,
+		LogLevelProduction: logger.DEBUG,
 		OnStartup:          startup,
 		OnDomReady:         domReady,
 		OnBeforeClose:      beforeClose,
@@ -64,8 +69,8 @@ func Run(assets embed.FS) {
 			updater.NewUpdater(),
 		},
 		Windows: &windows.Options{
-			WebviewIsTransparent: false,
-			WindowIsTranslucent:  false,
+			WebviewIsTransparent: true,
+			WindowIsTranslucent:  true,
 			DisableWindowIcon:    false,
 			WindowClassName:      "Nexus",
 			WebviewUserDataPath:  "",

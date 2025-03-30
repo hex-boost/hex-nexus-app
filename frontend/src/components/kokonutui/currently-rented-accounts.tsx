@@ -50,7 +50,7 @@ export default function CurrentlyRentedAccounts({ accounts, className }: Current
               const rankColor = getRankColor(currentRanking?.elo?.toLowerCase());
               return (
                 <Link
-                  to={`accounts/${account.documentId}`}
+                  to={`/accounts/${account.documentId}`}
                   key={account.id}
                   className={cn(
                     'group flex items-center justify-between',

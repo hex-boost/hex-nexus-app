@@ -15,6 +15,8 @@ export function useGoFunctions() {
 
   return {
     backendUrl,
+    GetBackendUrl,
+    GetHWID,
     HWID,
   };
 }

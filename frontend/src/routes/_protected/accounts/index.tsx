@@ -262,7 +262,7 @@ function AccountRow({
 function AccountTableSkeleton() {
   return (
     <>
-      {[...Array.from({ length: 5 })].map((_, index) => (
+      {[...Array.from({ length: 10 })].map((_, index) => (
         <tr key={index} className="border-b border-zinc-100 dark:border-zinc-800">
           <td className="p-3"><Skeleton className="h-5 w-16" /></td>
           <td className="p-3"><Skeleton className="h-6 w-6 rounded-full" /></td>

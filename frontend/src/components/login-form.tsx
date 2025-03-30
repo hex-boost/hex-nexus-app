@@ -19,8 +19,6 @@ import { Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { StartDiscordOAuth } from '../../wailsjs/go/discord/discord';
-import { FlickeringGrid } from './magicui/flickering-grid';
-import Globe from './magicui/globe';
 
 function DiscordSvg() {
   return (
@@ -137,10 +135,10 @@ export function LoginForm({
   const isLoading = activeTab === 'login' ? loginMutation.isPending : registerMutation.isPending;
   return (
 
-    <div className="flex items-center justify-center bg-background">
-      <div className="min-h-screen flex items-center justify-center bg-background ">
+    <div className="flex h-screen w-screen   bg-background">
+      <div className="w-full h-full  bg-background ">
         <div
-          className={cn('flex justify-center items-center w-[1280px] h-[720px] flex-col gap-6', className)}
+          className={cn('flex justify-center h-full items-center  flex-col gap-6', className)}
           {...props}
         >
           <Card className="border-none overflow-hidden w-full h-full">
@@ -164,16 +162,15 @@ export function LoginForm({
                       searching for accounts again.
                     </p>
                   </div>
-                  <FlickeringGrid
-                    className="absolute opacity-50 inset-0 z-0 size-full"
-                    squareSize={4}
-                    gridGap={6}
-                    color="#4552B8"
-                    width={1280}
-                    maxOpacity={0.2}
-                    flickerChance={0.1}
-                  />
-                  <Globe />
+                  {/* <FlickeringGrid */}
+                  {/*  className="absolute h-full opacity-50 inset-0 z-0 w-screen" */}
+                  {/*  squareSize={4} */}
+                  {/*  gridGap={6} */}
+                  {/*  color="#4552B8" */}
+                  {/*  maxOpacity={0.2} */}
+                  {/*  flickerChance={0.1} */}
+                  {/* /> */}
+                  {/* <Globe /> */}
                 </div>
               </div>
               <Tabs
@@ -315,31 +312,15 @@ export function LoginForm({
                     <p>Continue with Discord</p>
                   </Button>
                   <TabsList className="text-center text-sm">
-                    {activeTab === 'login'
-                      ? (
-                          <>
-                            Don't have an account?
-                            {' '}
-                            <TabsTrigger
-                              value="register"
-                              className="underline underline-offset-4 cursor-pointer"
-                            >
-                              Sign up
-                            </TabsTrigger>
-                          </>
-                        )
-                      : (
-                          <>
-                            Already have an account?
-                            {' '}
-                            <TabsTrigger
-                              value="login"
-                              className="underline underline-offset-4 cursor-pointer"
-                            >
-                              Log in
-                            </TabsTrigger>
-                          </>
-                        )}
+                    <span>
+                      {activeTab === 'login' ? 'Don\'t have an account? ' : 'Already have an account? '}
+                    </span>
+                    <TabsTrigger
+                      value={activeTab === 'login' ? 'register' : 'login'}
+                      className="underline underline-offset-4 cursor-pointer"
+                    >
+                      {activeTab === 'login' ? 'Sign up' : 'Log in'}
+                    </TabsTrigger>
                   </TabsList>
                 </form>
               </Tabs>

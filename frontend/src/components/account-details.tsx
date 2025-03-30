@@ -63,7 +63,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
   } = useQuery({
     queryKey: ['accounts', 'refund', account.id],
     queryFn: () => strapiClient.find<{ amount: number }>(`accounts/${account?.documentId}/refund`).then(res => res.data),
-    enabled: account.user.documentId === user?.documentId,
+    enabled: account.user?.documentId === user?.documentId,
     staleTime: 0,
   });
   return (
