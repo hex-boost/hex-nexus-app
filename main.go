@@ -8,7 +8,11 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
-// a
+//go:embed build/appicon16x16.png
+var iconFS embed.FS
+
 func main() {
-	wails.Run(assets)
+	iconBytes, _ := iconFS.ReadFile("build/appicon16x16.png")
+
+	wails.Run(assets, iconBytes)
 }

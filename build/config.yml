@@ -6,7 +6,17 @@ info:
   copyright: "(c) 2024, My Company" # Copyright text
   comments: "Some Product Comments" # Comments
   version: "v0.0.1" # The application version  copyright: Copyright © 2024
-
+app:
+  name: Nexus
+  info:
+    productName: Nexus
+    companyName: Hex Boost
+    productVersion: 1.0.0
+    copyright: Copyright © 2024
+  windows:
+    executableName: nexus
+    fileDescription: Nexus Application
+    iconPath: path/to/icon.ico
 dev_mode:
   root_path: .
   log_level: warn

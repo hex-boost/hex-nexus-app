@@ -59,7 +59,7 @@ export function WindowControls({ className }: { className?: string }) {
         await window.SetSize(previousSize.width, previousSize.height);
         await window.SetPosition(previousPosition.x, previousPosition.y);
       }
-    }, 100); // Aumentei um pouco o timeout para dar mais tempo
+    }, 250); // Aumentei um pouco o timeout para dar mais tempo
   };
 
   const minimizeToTray = () => {
@@ -114,7 +114,7 @@ export function WindowControls({ className }: { className?: string }) {
           <TooltipTrigger asChild>
             <button
               onClick={minimizeToTray}
-              className={cn(controlButtonClass, 'hover:bg-red-300/10')}
+              className={cn(controlButtonClass, 'hover:bg-red-500/40')}
               style={{ '--wails-draggable': 'no-drag' } as React.CSSProperties}
             >
               <X strokeWidth={2} className="h-5 w-5 " />
