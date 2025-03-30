@@ -6,7 +6,7 @@ import { Separator } from '@/components/ui/separator.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip.tsx';
 import { useProfileAvatar } from '@/hooks/useProfileAvatar.ts';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { Check, HelpCircle, LogOut, MoveUpRight, Pencil, Trophy, X } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
@@ -34,8 +34,8 @@ export type UserProfileProps = {
 export function UserProfile({
   user,
   logoutAction,
-  updateAction,
 }: UserProfileProps) {
+  const queryClient = useQueryClient();
   const { updateUserAvatarFromBase64 } = useProfileAvatar();
   const [previewAvatar, setPreviewAvatar] = useState<string | null>(null);
   const [cropModalOpen, setCropModalOpen] = useState(false);
@@ -80,10 +80,12 @@ export function UserProfile({
     mutationFn: async () => {
       return toast.promise(updateUserAvatarFromBase64(previewAvatar!, user.id), {
         loading: 'Updating avatar',
-        success: 'Avatar updated succesfully',
+        success: 'Avatar updated successfully',
         error: 'An unexpected error occurred',
         finally: () => {
-          updateAction();
+          queryClient.invalidateQueries({
+            queryKey: ['users', 'me'],
+          });
         },
       });
     },
@@ -146,15 +148,15 @@ export function UserProfile({
   const menuItems: MenuItem[] = [
     {
       label: 'Membership',
-      value: 'Free Trial',
+      value: user.premium.tier || 'Free Trial',
       href: '#',
       icon: <Trophy className="w-4 h-4" />,
-      external: false,
     },
     {
       label: 'Help',
       href: '#',
       icon: <HelpCircle className="w-4 h-4" />,
+      external: false,
     },
   ];
 
@@ -189,7 +191,7 @@ export function UserProfile({
                       </Avatar>
                       {isDragActive && (
                         <div className="absolute inset-0 bg-primary/20 rounded-full flex items-center justify-center">
-                          <p className="text-white font-medium text-sm">Solte a imagem aqui</p>
+                          <p className="text-white font-medium text-sm">Drop image here</p>
                         </div>
                       )}
                     </div>
@@ -207,7 +209,7 @@ export function UserProfile({
                                 </button>
                               </TooltipTrigger>
                               <TooltipContent side="right" className="px-2 py-1 text-sm">
-                                Editar avatar
+                                Edit avatar
                               </TooltipContent>
                             </Tooltip>
                           )
@@ -224,7 +226,7 @@ export function UserProfile({
                                   </button>
                                 </TooltipTrigger>
                                 <TooltipContent side="left" className="px-2 py-1 text-white text-sm">
-                                  Confirmar
+                                  Confirm
                                 </TooltipContent>
                               </Tooltip>
                               <Tooltip>
@@ -238,7 +240,7 @@ export function UserProfile({
                                   </button>
                                 </TooltipTrigger>
                                 <TooltipContent side="right" className="px-2 py-1 text-sm">
-                                  Cancelar
+                                  Cancel
                                 </TooltipContent>
                               </Tooltip>
                             </>
@@ -296,7 +298,7 @@ export function UserProfile({
       <Dialog open={cropModalOpen} onOpenChange={setCropModalOpen}>
         <DialogContent className="sm:max-w-[90vw] md:max-w-[70vw] lg:max-w-[600px] overflow-hidden">
           <DialogHeader>
-            <DialogTitle>Ajustar Imagem</DialogTitle>
+            <DialogTitle>Adjust Image</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center gap-4">
             <div className="w-full" style={{ display: 'flex', justifyContent: 'center' }}>
@@ -332,9 +334,9 @@ export function UserProfile({
                   setImageToCrop(null);
                 }}
               >
-                Cancelar
+                Cancel
               </Button>
-              <Button className="text-white" onClick={handleCropComplete}>Confirmar</Button>
+              <Button className="text-white" onClick={handleCropComplete}>Confirm</Button>
             </div>
           </div>
         </DialogContent>

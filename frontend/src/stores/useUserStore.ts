@@ -8,6 +8,7 @@ type AuthState = {
   login: (user: any, jwt: string) => void;
   logout: () => void;
   isAuthenticated: () => boolean;
+  setAuthToken: (jwt: string) => void;
 };
 
 export const useUserStore = create<AuthState>((set, get) => ({
@@ -16,6 +17,9 @@ export const useUserStore = create<AuthState>((set, get) => ({
   setUser: (user: UserType) => {
     set({ user });
     localStorage.setItem('user', JSON.stringify(user));
+  },
+  setAuthToken: (jwt: string) => {
+    set({ jwt });
   },
   login: (user: UserType, jwt: string) => {
     localStorage.setItem('user', JSON.stringify(user));

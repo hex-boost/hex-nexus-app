@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
-	gowebview "github.com/inkeliz/gowebview"
+	"github.com/inkeliz/gowebview"
 
 	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
@@ -286,6 +286,7 @@ func (c *Client) initializeClient() error {
 			c.logger.Error("Failed to wait for Riot client to be ready", zap.Error(err))
 			return err
 		}
+
 	}
 
 	riotClientPid, err := c.getRiotProcess()
@@ -371,10 +372,44 @@ func (c *Client) getWebView() (gowebview.WebView, error) {
 	return webview, nil
 }
 
+// waitForReadyState verifica repetidamente o estado de prontidão da API
+func (c *Client) waitForReadyState(timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	interval := 200 * time.Millisecond
+
+	c.logger.Info("Verificando disponibilidade do serviço de autenticação", zap.Duration("timeout", timeout))
+
+	for time.Now().Before(deadline) {
+		resp, err := c.client.R().Get("/rso-auth/configuration/v3/ready-state")
+
+		if err == nil && resp.StatusCode() == 200 {
+			c.logger.Info("Serviço de autenticação está pronto")
+			return nil
+		}
+
+		// Registra o status da tentativa
+		status := "erro"
+		if err != nil {
+			status = err.Error()
+		} else {
+			status = fmt.Sprintf("status %d", resp.StatusCode())
+		}
+		c.logger.Debug("Aguardando serviço ficar pronto", zap.String("status", status))
+
+		// Aguarda antes da próxima tentativa
+		time.Sleep(interval)
+	}
+
+	return errors.New("timeout ao aguardar serviço de autenticação ficar pronto")
+}
+
 // AuthenticateWithCaptcha handles the complete captcha authentication flow
 func (c *Client) AuthenticateWithCaptcha(username string, password string) error {
 	// Initialize the client
 	if err := c.initializeClient(); err != nil {
+		return err
+	}
+	if err := c.waitForReadyState(20 * time.Second); err != nil {
 		return err
 	}
 	err := c.handleCaptcha()

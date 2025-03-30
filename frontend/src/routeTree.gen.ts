@@ -11,6 +11,7 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as ProtectedrootImport } from './routes/_protected/__root'
 import { Route as LoginImport } from './routes/login'
 import { Route as ProtectedIndexImport } from './routes/_protected/index'
 import { Route as ProtectedSubscriptionIndexImport } from './routes/_protected/subscription/index'
@@ -18,6 +19,11 @@ import { Route as ProtectedAccountsIndexImport } from './routes/_protected/accou
 import { Route as ProtectedAccountsIdImport } from './routes/_protected/accounts/$id'
 
 // Create/Update Routes
+
+const ProtectedrootRoute = ProtectedrootImport.update({
+  id: '/_protected/__root',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const LoginRoute = LoginImport.update({
   id: '/login',
@@ -62,6 +68,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginImport
       parentRoute: typeof rootRoute
     }
+    '/_protected/__root': {
+      id: '/_protected/__root'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof ProtectedrootImport
+      parentRoute: typeof rootRoute
+    }
     '/_protected/': {
       id: '/_protected/'
       path: '/'
@@ -97,6 +110,7 @@ declare module '@tanstack/react-router' {
 
 export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
+  '': typeof ProtectedrootRoute
   '/': typeof ProtectedIndexRoute
   '/accounts/$id': typeof ProtectedAccountsIdRoute
   '/accounts': typeof ProtectedAccountsIndexRoute
@@ -105,6 +119,7 @@ export interface FileRoutesByFullPath {
 
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
+  '': typeof ProtectedrootRoute
   '/': typeof ProtectedIndexRoute
   '/accounts/$id': typeof ProtectedAccountsIdRoute
   '/accounts': typeof ProtectedAccountsIndexRoute
@@ -114,6 +129,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/login': typeof LoginRoute
+  '/_protected/__root': typeof ProtectedrootRoute
   '/_protected/': typeof ProtectedIndexRoute
   '/_protected/accounts/$id': typeof ProtectedAccountsIdRoute
   '/_protected/accounts/': typeof ProtectedAccountsIndexRoute
@@ -122,12 +138,19 @@ export interface FileRoutesById {
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/login' | '/' | '/accounts/$id' | '/accounts' | '/subscription'
+  fullPaths:
+    | '/login'
+    | ''
+    | '/'
+    | '/accounts/$id'
+    | '/accounts'
+    | '/subscription'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/' | '/accounts/$id' | '/accounts' | '/subscription'
+  to: '/login' | '' | '/' | '/accounts/$id' | '/accounts' | '/subscription'
   id:
     | '__root__'
     | '/login'
+    | '/_protected/__root'
     | '/_protected/'
     | '/_protected/accounts/$id'
     | '/_protected/accounts/'
@@ -137,6 +160,7 @@ export interface FileRouteTypes {
 
 export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
+  ProtectedrootRoute: typeof ProtectedrootRoute
   ProtectedIndexRoute: typeof ProtectedIndexRoute
   ProtectedAccountsIdRoute: typeof ProtectedAccountsIdRoute
   ProtectedAccountsIndexRoute: typeof ProtectedAccountsIndexRoute
@@ -145,6 +169,7 @@ export interface RootRouteChildren {
 
 const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
+  ProtectedrootRoute: ProtectedrootRoute,
   ProtectedIndexRoute: ProtectedIndexRoute,
   ProtectedAccountsIdRoute: ProtectedAccountsIdRoute,
   ProtectedAccountsIndexRoute: ProtectedAccountsIndexRoute,
@@ -162,6 +187,7 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/login",
+        "/_protected/__root",
         "/_protected/",
         "/_protected/accounts/$id",
         "/_protected/accounts/",
@@ -170,6 +196,9 @@ export const routeTree = rootRoute
     },
     "/login": {
       "filePath": "login.tsx"
+    },
+    "/_protected/__root": {
+      "filePath": "_protected/__root.tsx"
     },
     "/_protected/": {
       "filePath": "_protected/index.tsx"

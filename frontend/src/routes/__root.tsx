@@ -1,14 +1,7 @@
-import AdminPanelLayout from '@/components/admin-panel/admin-panel-layout';
-import { CoinIcon } from '@/components/coin-icon.tsx';
-import { LoginForm } from '@/components/login-form';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu.tsx';
-import { Skeleton } from '@/components/ui/skeleton.tsx';
-
-import { UserProfile } from '@/components/UserProfile.tsx';
-import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
+import { ErrorPage } from '@/components/error-page.tsx';
+import { Route as DashboardRoute } from '@/routes/_protected/index.tsx';
 import { useUserStore } from '@/stores/useUserStore';
-import { createRootRouteWithContext, Outlet } from '@tanstack/react-router';
+import { createRootRouteWithContext, Outlet, redirect } from '@tanstack/react-router';
 
 export type RouterContext = {
   auth: {
@@ -17,92 +10,35 @@ export type RouterContext = {
 };
 
 export const Route = createRootRouteWithContext<RouterContext>()({
-  component: DashboardLayout,
-  beforeLoad: async ({ context }) => {
-    // Check authentication status before route loads
-    const isAuthenticated = context.auth.isAuthenticated();
+  component: RootLayout,
+  errorComponent: ErrorPage, // Adicionando o componente de erro
+  notFoundComponent: () => {
+    return <div>Page not found</div>;
+  },
+  beforeLoad: async ({ location }) => {
+    const isAuthenticated = useUserStore.getState().isAuthenticated();
+    const isLoginRoute = location.pathname === '/login';
+
+    // Se não estiver autenticado e tentar acessar qualquer rota exceto login
+    if (!isAuthenticated && !isLoginRoute) {
+      throw redirect({
+        to: '/login',
+      });
+    }
+
+    // Se estiver autenticado e tentar acessar login
+    if (isAuthenticated && isLoginRoute) {
+      throw redirect({
+        to: DashboardRoute.fullPath,
+      });
+    }
+
     return { isAuthenticated };
   },
 });
 
-function DashboardLayout() {
-  const { isAuthenticated, logout, user } = useUserStore();
-  const { refetchUser, isUserLoading } = useCommonFetch();
-
-  const isLoading = isAuthenticated() && isUserLoading;
-  const userAvatar = import.meta.env.VITE_BACKEND_URL + user?.avatar.url;
-  return (
-    <>
-
-      {isAuthenticated()
-        ? (
-            <AdminPanelLayout>
-              <div className="px-6 gap-6 py-4 bg-black/20 border-b w-full flex justify-end">
-                <div
-                  className="hidden sm:flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-full"
-                >
-                  <CoinIcon className="h-4 w-4 text-amber-500 dark:text-amber-400" />
-                  {
-                    isLoading
-                      ? (
-                          <Skeleton className="w-12 h-4.5"></Skeleton>
-                        )
-                      : (
-                          <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                            {user?.coins.toLocaleString()}
-                            {' '}
-                            coins
-                          </span>
-                        )
-                  }
-                </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger className="focus:outline-none">
-                    <div
-                      className="flex gap-2  rounded-full cursor-pointer"
-                    >
-                      {
-
-                        isLoading
-                          ? <Skeleton className="h-8 w-8 rounded-full p-0"></Skeleton>
-                          : (
-                              <Avatar className="h-8 w-8 rounded-full p-0">
-                                <AvatarImage src={userAvatar} alt={user?.username} />
-                                <AvatarFallback
-                                  className="rounded-full"
-                                >
-                                  {user?.username.slice(0, 2)}
-                                </AvatarFallback>
-                              </Avatar>
-                            )
-                      }
-                    </div>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="end"
-                    sideOffset={8}
-                    className="w-[280px] sm:w-96 border-none p-0 backdrop-blur-xl bg-card rounded-2xl shadow-lg"
-                  >
-                    {
-                      isAuthenticated() && isLoading
-                        ? <Skeleton></Skeleton>
-                        : (
-                            <UserProfile updateAction={refetchUser} user={user!} logoutAction={logout} />
-                          )
-                    }
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-              <div className="p-6 ">
-                <Outlet />
-              </div>
-            </AdminPanelLayout>
-          )
-        : (
-            <div className="flex items-center justify-center bg-background">
-              <LoginForm />
-            </div>
-          )}
-    </>
-  );
+function RootLayout() {
+  // Este é seu layout base, que apenas renderiza o conteúdo
+  // sem elementos visuais adicionais
+  return <Outlet />;
 }

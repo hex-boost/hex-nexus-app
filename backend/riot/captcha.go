@@ -65,7 +65,6 @@ func (c *Client) startCaptchaServer() {
     </script>
 </head>
 <body>
-fodase
 <div id="fds">not selected</div>
 <form action="/" method="POST" id="hcaptcha-form">
     <div id="hcaptcha-container"></div>
