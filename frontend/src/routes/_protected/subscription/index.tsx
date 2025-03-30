@@ -4,9 +4,9 @@ import { Badge } from '@/components/ui/badge';
 import { Pricing } from '@/components/ui/pricing-cards.tsx';
 import { useMutation } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
+import { Browser } from '@wailsio/runtime';
 import { MoveRight } from 'lucide-react';
 import { useState } from 'react';
-import { OpenBrowser } from '../../../../wailsjs/go/utils/utils';
 
 export const Route = createFileRoute('/_protected/subscription/')({
   component: RouteComponent,
@@ -38,8 +38,8 @@ function RouteComponent() {
       console.warn(tier);
       return mockCheckoutSession;
     },
-    onSuccess: () => {
-      OpenBrowser(mockCheckoutSession.url as string);
+    onSuccess: async () => {
+      await Browser.OpenURL(mockCheckoutSession.url as string);
       setPendingPlanTier(null);
     },
     onError: () => {

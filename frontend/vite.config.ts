@@ -20,10 +20,13 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
 
-      '@runtime': path.resolve(__dirname, 'wailsjs', 'runtime', 'runtime.js'),
-      '@main': path.resolve(__dirname, 'wailsjs', 'go', 'main', 'App.js'),
-      '@riot': path.resolve(__dirname, 'wailsjs', 'go', 'riot', 'Client.js'),
-
+      '@app': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/app'),
+      '@discord': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/discord'),
+      '@league': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/league'),
+      '@riot': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/riot'),
+      '@repository': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/repository'),
+      '@updater': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/updater'),
+      '@utils': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/utils'),
     },
 
   },

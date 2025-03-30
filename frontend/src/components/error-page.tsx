@@ -21,7 +21,9 @@ export function ErrorPage() {
   }, []);
 
   return (
+
     <div className="flex min-h-screen flex-col items-center justify-center p-6 bg-zinc-50 dark:bg-background">
+
       <div className="w-full max-w-md mx-auto text-center space-y-8">
         {/* Animated icon */}
         <div className="flex justify-center">

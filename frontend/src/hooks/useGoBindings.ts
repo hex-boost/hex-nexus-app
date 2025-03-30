@@ -1,5 +1,5 @@
+import { Utils } from '@utils';
 import { useEffect, useState } from 'react';
-import { GetBackendUrl, GetHWID } from '../../wailsjs/go/utils/utils';
 
 export function useGoFunctions() {
   const [backendUrl, setBackendUrl] = useState('');
@@ -7,16 +7,15 @@ export function useGoFunctions() {
 
   useEffect(() => {
     const fetchData = async () => {
-      setBackendUrl(await GetBackendUrl());
-      setHWID(await GetHWID());
+      setBackendUrl(await Utils.GetBackendUrl());
+      setHWID(await Utils.GetHWID());
     };
     fetchData();
   }, []);
 
   return {
     backendUrl,
-    GetBackendUrl,
-    GetHWID,
+    Utils,
     HWID,
   };
 }

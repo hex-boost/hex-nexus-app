@@ -3,7 +3,6 @@ package updater
 import (
 	"context"
 	"fmt"
-	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"io"
 	"os"
 	"strings"
@@ -138,6 +137,6 @@ func (u *Updater) Update(ctx context.Context) error {
 		}
 		return err
 	}
-	runtime.Quit(ctx)
+	//runtime.Quit(ctx)
 	return nil
 }

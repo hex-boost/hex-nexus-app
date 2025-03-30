@@ -1,32 +1,33 @@
+// @ts-expect-error aaa
+import type { Size } from '@wailsio/runtime/types/screens';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import {
-  Hide,
-  WindowGetPosition,
-  WindowGetSize,
-  WindowIsMaximised,
-  WindowMinimise,
-  WindowSetPosition,
-  WindowSetSize,
-  WindowToggleMaximise,
-} from '@runtime';
+import { Window } from '@wailsio/runtime';
 import { Maximize, Minus, Square, X } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
+type Position = {
+  /** The horizontal position of the window. */
+  x: number;
+  /** The vertical position of the window. */
+  y: number;
+};
 export function WindowControls({ className }: { className?: string }) {
+  const window = Window;
   const [isMaximized, setIsMaximized] = useState(false);
-  const [previousSize, setPreviousSize] = useState<{ w: number; h: number } | null>(null);
-  const [previousPosition, setPreviousPosition] = useState<{ x: number; y: number } | null>(null);
+  const [previousSize, setPreviousSize] = useState<Size | null>(null);
+  const [previousPosition, setPreviousPosition] = useState<Position | null>();
 
   useEffect(() => {
     const updateMaximizeState = async () => {
-      const maximized = await WindowIsMaximised();
+      console.error(await window.Name());
+      const maximized = await window.IsMaximised();
       setIsMaximized(maximized);
 
       // Se não for maximizada, armazenar a posição e tamanho iniciais
       if (!maximized) {
-        const size = await WindowGetSize();
-        const position = await WindowGetPosition();
+        const size = await window.Size();
+        const position = await window.Position();
         setPreviousSize(size);
         setPreviousPosition(position);
       }
@@ -38,30 +39,31 @@ export function WindowControls({ className }: { className?: string }) {
   const toggleMaximize = async () => {
     if (!isMaximized) {
       // Salvar posição e tamanho atuais antes de maximizar
-      const size = await WindowGetSize();
-      const position = await WindowGetPosition();
+      const size = await window.Size();
+      const position = await window.Position();
       setPreviousSize(size);
       setPreviousPosition(position);
     }
 
     // Alternar o estado de maximização
-    WindowToggleMaximise();
+    await window.ToggleMaximise();
 
     // Esperar um pouco e verificar o novo estado
     setTimeout(async () => {
-      const newMaximized = await WindowIsMaximised();
+      const newMaximized = await window.IsMaximised();
       setIsMaximized(newMaximized);
 
       // Se acabou de ser restaurada de maximizada, precisamos restaurar posição e tamanho
       if (!newMaximized && previousSize && previousPosition) {
-        WindowSetSize(previousSize.w, previousSize.h);
-        WindowSetPosition(previousPosition.x, previousPosition.y);
+        // Substituir Restore() por chamadas explícitas para definir tamanho e posição
+        await window.SetSize(previousSize.width, previousSize.height);
+        await window.SetPosition(previousPosition.x, previousPosition.y);
       }
-    }, 50);
+    }, 100); // Aumentei um pouco o timeout para dar mais tempo
   };
 
   const minimizeToTray = () => {
-    Hide();
+    window.Hide();
   };
 
   const controlButtonClass = 'h-8 w-8 flex items-center justify-center rounded-md hover:bg-white/[0.1] transition-colors';
@@ -79,7 +81,7 @@ export function WindowControls({ className }: { className?: string }) {
         <Tooltip delayDuration={300}>
           <TooltipTrigger asChild>
             <button
-              onClick={() => WindowMinimise()}
+              onClick={() => window.Minimise()}
               className={controlButtonClass}
               style={{ '--wails-draggable': 'no-drag' } as React.CSSProperties}
             >

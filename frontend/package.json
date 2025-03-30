@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "build:dev": "vite build --minify false --mode development",
     "build": "tsc && vite build",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0 --fix",
     "preview": "vite preview"
@@ -33,6 +34,7 @@
     "@tanstack/react-query-devtools": "^5.69.0",
     "@tanstack/react-router": "^1.114.17",
     "@tanstack/react-virtual": "^3.13.4",
+    "@wailsio/runtime": "^3.0.0-alpha.66",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",

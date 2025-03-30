@@ -94,12 +94,11 @@ export default function CurrentlyRentedAccounts({ accounts, className }: Current
                         {getFormattedTimeRemaining(mostRecentAction.expirationDate.toString())}
                       </span>
                     </div>
-                    <Link
-                      to={`/accounts/${account.documentId}`}
+                    <p
                       className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline"
                     >
                       View Account
-                    </Link>
+                    </p>
                   </div>
                 </Link>
               );

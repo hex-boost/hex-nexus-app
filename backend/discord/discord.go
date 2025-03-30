@@ -65,7 +65,7 @@ func (d *Discord) renderErrorTemplate(w http.ResponseWriter, err error) {
 	return
 }
 
-func (d *Discord) StartDiscordOAuth() (map[string]interface{}, error) {
+func (d *Discord) StartOAuth() (map[string]interface{}, error) {
 	strapiAuthURL := fmt.Sprintf("%s/api/connect/discord", d.config.backendURL)
 	d.logger.Info("Starting OAuth authentication with Discord", "url", strapiAuthURL)
 	if err := browser.OpenURL(strapiAuthURL); err != nil {

@@ -11,14 +11,13 @@ import { userAuth } from '@/lib/strapi';
 import { cn } from '@/lib/utils';
 import { Route } from '@/routes/_protected/dashboard/index.tsx';
 import { useUserStore } from '@/stores/useUserStore';
+import { Discord } from '@discord';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@radix-ui/react-tabs';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
-// import { useRouter } from '@tanstack/react-router';
 import { Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { StartDiscordOAuth } from '../../wailsjs/go/discord/discord';
 
 function DiscordSvg() {
   return (
@@ -121,7 +120,7 @@ export function LoginForm({
     {
       mutationFn:
         async () => {
-          const result = await StartDiscordOAuth();
+          const result = await Discord.StartOAuth();
           return { ...result };
         },
       onSuccess: (_) => {

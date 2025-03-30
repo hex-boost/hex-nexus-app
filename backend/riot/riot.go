@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/go-resty/resty/v2"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,7 +15,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-resty/resty/v2"
 	"github.com/inkeliz/gowebview"
 
 	"github.com/hex-boost/hex-nexus-app/backend/types"
@@ -404,7 +404,7 @@ func (c *Client) waitForReadyState(timeout time.Duration) error {
 }
 
 // AuthenticateWithCaptcha handles the complete captcha authentication flow
-func (c *Client) AuthenticateWithCaptcha(username string, password string) error {
+func (c *Client) Authenticate(username string, password string) error {
 	// Initialize the client
 	if err := c.initializeClient(); err != nil {
 		return err
