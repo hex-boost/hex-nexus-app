@@ -1,5 +1,6 @@
 import type { AccountType } from '@/types/types';
 import type { StrapiError } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
+import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
 import { strapiClient } from '@/lib/strapi';
 import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -12,6 +13,7 @@ export function useAccountActions({
   account: AccountType;
   onAccountChange: () => void;
 }) {
+  const { refetchUser } = useCommonFetch();
   const [selectedRentalOptionIndex, setSelectedRentalOptionIndex] = useState<number>(1);
   const [isDropDialogOpen, setIsDropDialogOpen] = useState(false);
 
@@ -25,6 +27,7 @@ export function useAccountActions({
     },
     onSuccess: (data) => {
       toast.success(data.message);
+      refetchUser();
       onAccountChange();
     },
     onError: (error) => {
@@ -50,6 +53,7 @@ export function useAccountActions({
     },
     onSuccess: (data) => {
       toast.success(data.message);
+      refetchUser();
       onAccountChange();
     },
     onError: (error) => {

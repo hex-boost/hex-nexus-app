@@ -1,5 +1,5 @@
 import type { Price } from '@/types/price.ts';
-import type { RankingType } from '@/types/types.ts';
+import type { AccountType, RankingType } from '@/types/types.ts';
 import { COMPANIES, DIVISIONS, LOL_TIERS, REGIONS, VALORANT_TIERS } from '@/components/accountsMock.ts';
 import { CoinIcon } from '@/components/coin-icon';
 import { AccountGameIcon } from '@/components/GameComponents';
@@ -102,7 +102,7 @@ function PriceDisplay({ isPriceLoading, price, ranking }: PriceDisplayProps) {
             <Skeleton className="h-5 w-12" />
           )
         : (
-            price?.league[ranking.elo.charAt(0).toUpperCase() + ranking.elo.slice(1).toLowerCase()]
+            price?.league[(ranking.elo.charAt(0).toUpperCase() + ranking.elo.slice(1).toLowerCase()) || 'Unranked']
           )}
       <span className="text-[10px] text-muted-foreground">/1h</span>
     </div>
@@ -136,7 +136,7 @@ function AccountActionsMenu({ accountId, onViewDetails }: AccountActionsMenuProp
 
 // 7. AccountRow component - handles display of account data and loading state
 type AccountRowProps = {
-  account: any;
+  account: AccountType;
   isPriceLoading: boolean;
   price: any;
   onViewDetails: (id: string) => void;
@@ -157,6 +157,10 @@ function AccountRow({
   getRankColor,
 }: AccountRowProps) {
   const ranking = account.rankings.find(ranking => ranking.queueType === 'soloqueue')!;
+  const alternativeRanking = account.rankings.find(ranking => ranking.queueType === 'flex')!;
+  console.log(
+    JSON.stringify(alternativeRanking.elo, null, 2),
+  );
 
   return (
     <tr
@@ -184,6 +188,36 @@ function AccountRow({
             {account.server.slice(0, account.server.length - 1)}
           </span>
         </div>
+      </td>
+
+      <td className="p-3">
+        {(() => {
+          const totalGames = ranking.wins + ranking.losses;
+          const winRate = totalGames > 0 ? Math.round((ranking.wins / totalGames) * 100) : 0;
+
+          // Definindo a cor baseada no valor do winrate
+          let winRateColorClass = 'text-zinc-600 dark:text-muted-foreground'; // cor padrão (média)
+          if (winRate >= 65) {
+            winRateColorClass = 'text-blue-600 dark:text-blue-300 font-medium'; // alta taxa de vitórias
+          } else if (winRate < 40 && winRate > 0) {
+            winRateColorClass = 'text-red-600 dark:text-red-300'; // baixa taxa de vitórias
+          }
+
+          return (
+            <span className="text-sm text-muted-foreground">
+              {ranking.wins}
+              W/
+              {ranking.losses}
+              L
+              {' '}
+              <span className={`font-medium text-xs ${winRateColorClass}`}>
+                (
+                {winRate}
+                %)
+              </span>
+            </span>
+          );
+        })()}
       </td>
       <td className="p-3 text-sm text-zinc-600 dark:text-zinc-400">
         {account.LCUchampions.length}
@@ -306,6 +340,7 @@ function AccountsTable({
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Game</th>
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Rank</th>
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Region</th>
+            <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Winrate</th>
             <th
               className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400 cursor-pointer"
               onClick={() => requestSort('LCUchampions')}
@@ -653,6 +688,7 @@ function Accounts() {
           price={price}
           requestSort={requestSort}
           SortIndicator={SortIndicator}
+
           handleViewAccountDetails={handleViewAccountDetails}
           getEloIcon={getEloIcon}
           getRegionIcon={getRegionIcon}

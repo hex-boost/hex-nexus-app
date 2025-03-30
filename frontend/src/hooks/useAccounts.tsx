@@ -37,10 +37,13 @@ export function useAccounts() {
         if (account.user) {
           return false;
         }
-        // if (!account.ban?.restrictions) {
-        //   return true;
-        // }
+        if (account.ban === null) {
+          return true;
+        }
 
+        if (!account.ban.restrictions || account.ban.restrictions.length === 0) {
+          return true;
+        }
         const restrictions = account.ban.restrictions;
 
         // Filter out accounts with invalid credentials or MFA required
@@ -51,7 +54,6 @@ export function useAccounts() {
           return false;
         }
 
-        // Filter out accounts with permanent bans
         const hasPermanentBan = restrictions.some(r =>
           r.type === 'PERMANENT_BAN'
           && (r.scope === 'riot' || r.scope === 'lol' || !r.scope),
@@ -101,7 +103,6 @@ export function useAccounts() {
 
   const filteredAccounts = useMemo(() => {
     return sortedAccounts.filter((account) => {
-      // Get the soloqueue ranking specifically
       const soloqueueRanking = account.rankings.find(ranking => ranking.queueType === 'soloqueue' && !ranking.isPrevious);
 
       // For search query, keep the existing logic

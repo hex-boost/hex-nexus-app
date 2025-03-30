@@ -86,7 +86,7 @@ export function useProfileAvatar() {
     const uploadedFileId = uploadResponse.data[0].id;
 
     // 2. Then update your profile using /me endpoint
-    const res = await strapiClient.axios.put(`/api/users/${userId}`, {
+    const res = await strapiClient.axios.put(`/users/${userId}`, {
       avatar: uploadedFileId,
     });
 

@@ -3,8 +3,8 @@ import type React from 'react';
 import type { Crop } from 'react-image-crop';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
 import { Separator } from '@/components/ui/separator.tsx';
+import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip.tsx';
-import { useGoFunctions } from '@/hooks/useGoBindings.ts';
 import { useProfileAvatar } from '@/hooks/useProfileAvatar.ts';
 import { useMutation } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
@@ -36,7 +36,6 @@ export function UserProfile({
   logoutAction,
   updateAction,
 }: UserProfileProps) {
-  const { backendUrl } = useGoFunctions();
   const { updateUserAvatarFromBase64 } = useProfileAvatar();
   const [previewAvatar, setPreviewAvatar] = useState<string | null>(null);
   const [cropModalOpen, setCropModalOpen] = useState(false);
@@ -83,11 +82,10 @@ export function UserProfile({
         loading: 'Updating avatar',
         success: 'Avatar updated succesfully',
         error: 'An unexpected error occurred',
+        finally: () => {
+          updateAction();
+        },
       });
-    },
-    onSuccess: async () => {
-      setTimeout(handleCancel, 2000);
-      updateAction();
     },
   });
   const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -183,11 +181,11 @@ export function UserProfile({
                       >
                         <AvatarImage
 
-                          src={previewAvatar || backendUrl + user.avatar.url}
+                          src={previewAvatar || import.meta.env.VITE_BACKEND_URL + user.avatar.url}
                           alt={user.username}
                         />
 
-                        <AvatarFallback>{user.username.slice(0, 2)}</AvatarFallback>
+                        <AvatarFallback><Skeleton className="w-[72px] h-[72px]" /></AvatarFallback>
                       </Avatar>
                       {isDragActive && (
                         <div className="absolute inset-0 bg-primary/20 rounded-full flex items-center justify-center">

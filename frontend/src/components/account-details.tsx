@@ -23,9 +23,11 @@ import { useAccountActions } from '@/hooks/useAccountActions.ts';
 import { useAccountAuthentication } from '@/hooks/useAccountAuthentication.ts';
 import { useAccountFilters } from '@/hooks/useAccountFilters.ts';
 import { useDateTime } from '@/hooks/useDateTime.ts';
+import { strapiClient } from '@/lib/strapi.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
 import { cn } from '@/lib/utils.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
+import { useQuery } from '@tanstack/react-query';
 import { ArrowDownToLine, Check, CircleCheckBig, Clock, LogIn, Search, Shield, X } from 'lucide-react';
 import { useState } from 'react';
 import AccountInfoDisplay from './account-info-display';
@@ -33,13 +35,12 @@ import AccountInfoDisplay from './account-info-display';
 // Types
 
 // Rental options
-export default function AccountDetails({ account, price, onAccountChange, dropRefund }: {
+export default function AccountDetails({ account, price, onAccountChange }: {
   onAccountChange: () => void;
   price: Price;
-  dropRefund?: number;
   account: AccountType;
 }) {
-  const { jwt } = useUserStore();
+  const { user, jwt } = useUserStore();
   const { championsSearch, setChampionsSearch, skinsSearch, setSkinsSearch, filteredChampions, filteredSkins } = useAccountFilters({ account });
   const { isLoginPending, handleLoginToAccount } = useAccountAuthentication({ account, jwt });
   const { selectedRentalOptionIndex, setSelectedRentalOptionIndex, handleDropAccount, isRentPending, isDropPending, setIsDropDialogOpen, handleRentAccount, isDropDialogOpen } = useAccountActions({ account, onAccountChange });
@@ -56,7 +57,15 @@ export default function AccountDetails({ account, price, onAccountChange, dropRe
     hours: percentage,
     price: percentage === 0 ? basePrice : basePrice * (1 + percentage / 100),
   }));
-  const { user } = useUserStore();
+
+  const {
+    data: dropRefund,
+  } = useQuery({
+    queryKey: ['accounts', 'refund', account.id],
+    queryFn: () => strapiClient.find<{ amount: number }>(`accounts/${account?.documentId}/refund`).then(res => res.data),
+    enabled: account.user.documentId === user?.documentId,
+    staleTime: 0,
+  });
   return (
     <>
       <div className="lg:col-span-3 space-y-6">
@@ -71,7 +80,12 @@ export default function AccountDetails({ account, price, onAccountChange, dropRe
                     <span>
                       {account.documentId.slice(0, 10)}
                     </span>
-                    <span className="text-sm text-muted-foreground blur-[2px] select-none transition-all duration-200">Summoner Name</span>
+                    {
+                      account.gamename
+
+                        ? <span className="text-sm text-muted-foreground   transition-all duration-200">{`${account.gamename}#${account.tagline}`}</span>
+                        : <span className="text-sm text-muted-foreground blur-[2px] select-none transition-all duration-200">Summoner Name</span>
+                    }
                   </div>
                 </div>
               </div>
@@ -308,7 +322,7 @@ export default function AccountDetails({ account, price, onAccountChange, dropRe
                       >
                         <CoinIcon className="w-4 h-4 text-amber-500 dark:text-amber-400" />
                         {dropRefund
-                          ? <>{dropRefund.toLocaleString()}</>
+                          ? <>{dropRefund.amount.toLocaleString()}</>
                           : <Skeleton className="w-6 h-4"></Skeleton>}
 
                         {' '}

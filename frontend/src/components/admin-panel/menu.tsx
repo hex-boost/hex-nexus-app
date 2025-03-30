@@ -1,17 +1,11 @@
 import { CollapseMenuButton } from '@/components/admin-panel/collapse-menu-button';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { getMenuList } from '@/lib/menu-list';
 import { cn } from '@/lib/utils';
 import { Link, useLocation } from '@tanstack/react-router';
 import clsx from 'clsx';
-import { LogOut } from 'lucide-react';
 
 type MenuProps = {
   isOpen: boolean | undefined;
@@ -82,33 +76,9 @@ export function Menu({ isOpen }: MenuProps) {
             )}
           </li>
         ))}
-        <li className="w-full grow flex items-end">
-          <TooltipProvider disableHoverableContent>
-            <Tooltip delayDuration={100}>
-              <TooltipTrigger asChild>
-                <Button
-                  onClick={() => { }}
-                  variant="outline"
-                  className="w-full justify-center h-10 mt-5"
-                >
-                  <span className={cn(isOpen === false ? '' : 'mr-4')}>
-                    <LogOut size={18} />
-                  </span>
-                  <p
-                    className={cn(
-                      'whitespace-nowrap',
-                      isOpen === false ? 'opacity-0 hidden' : 'opacity-100',
-                    )}
-                  >
-                    Sign out
-                  </p>
-                </Button>
-              </TooltipTrigger>
-              {isOpen === false && (
-                <TooltipContent side="right">Sign out</TooltipContent>
-              )}
-            </Tooltip>
-          </TooltipProvider>
+        <li className="w-full grow flex items-end justify-center pb-4">
+          <span className="font-medium text-muted-foreground text-sm">v1.0.2</span>
+          {/* {GetCurrentVersion()} */}
         </li>
       </ul>
     </nav>

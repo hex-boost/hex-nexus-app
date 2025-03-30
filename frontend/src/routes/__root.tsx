@@ -26,15 +26,15 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 });
 
 function DashboardLayout() {
-  const { isAuthenticated, logout } = useUserStore();
-  const { user, refetchUser, isUserLoading } = useCommonFetch();
+  const { isAuthenticated, logout, user } = useUserStore();
+  const { refetchUser, isUserLoading } = useCommonFetch();
 
   const isLoading = isAuthenticated() && isUserLoading;
   const userAvatar = import.meta.env.VITE_BACKEND_URL + user?.avatar.url;
   return (
     <>
 
-      {isAuthenticated() && user
+      {isAuthenticated()
         ? (
             <AdminPanelLayout>
               <div className="px-6 gap-6 py-4 bg-black/20 border-b w-full flex justify-end">
@@ -49,7 +49,7 @@ function DashboardLayout() {
                         )
                       : (
                           <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                            {user.coins.toLocaleString()}
+                            {user?.coins.toLocaleString()}
                             {' '}
                             coins
                           </span>
@@ -84,7 +84,7 @@ function DashboardLayout() {
                     className="w-[280px] sm:w-96 border-none p-0 backdrop-blur-xl bg-card rounded-2xl shadow-lg"
                   >
                     {
-                      isLoading
+                      isAuthenticated() && isLoading
                         ? <Skeleton></Skeleton>
                         : (
                             <UserProfile updateAction={refetchUser} user={user!} logoutAction={logout} />

@@ -2,10 +2,10 @@ import type { PricingPlan } from '@/types/membership.ts';
 import { mockCheckoutSession } from '@/components/accountsMock.ts';
 import { Badge } from '@/components/ui/badge';
 import { Pricing } from '@/components/ui/pricing-cards.tsx';
-import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
 import { useMutation } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { MoveRight } from 'lucide-react';
+import { useState } from 'react';
 import { OpenBrowser } from '../../../../wailsjs/go/utils/utils';
 
 export const Route = createFileRoute('/_protected/subscription/')({
@@ -13,8 +13,11 @@ export const Route = createFileRoute('/_protected/subscription/')({
 });
 
 function RouteComponent() {
-  // Obter o contexto de autenticação para verificar o plano atual do usuário
-  const { user } = useCommonFetch();
+  // Simular o tier atual do usuário vindo da API
+  const [currentApiTier] = useState<string | undefined>('tier 2');
+  const [pendingPlanTier, setPendingPlanTier] = useState<string | null>(null);
+
+  // Converter o tier da API para o nome de exibição
   const mapTierToDisplayName = (tier: string | undefined): string => {
     switch (tier) {
       case 'tier 1': return 'Basic';
@@ -23,27 +26,35 @@ function RouteComponent() {
       default: return 'Free Trial';
     }
   };
-  const currentPlanTier = mapTierToDisplayName(user?.premium?.tier);
 
-  const { mutate: selectPlan, isPending } = useMutation({
+  // Obter o nome de exibição atual
+  const currentPlanTier = mapTierToDisplayName(currentApiTier);
+
+  const { mutate: selectPlan } = useMutation({
     mutationKey: ['subscription'],
     mutationFn: async (tier: string) => {
+      setPendingPlanTier(tier);
       await new Promise(resolve => setTimeout(resolve, 3000));
       console.warn(tier);
       return mockCheckoutSession;
-      // const response = await strapiClient.create('/stripe/subscription', {
-      //   tier,
-      // });
     },
     onSuccess: () => {
       OpenBrowser(mockCheckoutSession.url as string);
+      setPendingPlanTier(null);
+    },
+    onError: () => {
+      setPendingPlanTier(null);
+    },
+    onSettled: () => {
+      // Opcional: resetar o estado pendente quando a mutação terminar
+      // setPendingPlanTier(null);
     },
   });
 
   const pricingPlans: PricingPlan[] = [
     {
       tier: 'Free Trial',
-      description: 'Try our service with limited features to see if it fits your boosting needs.',
+      description: 'Try our service to see if it fits your boosting needs.',
       price: 0,
       period: 'month',
       benefits: [
@@ -63,7 +74,7 @@ function RouteComponent() {
     },
     {
       tier: 'Basic',
-      description: 'Perfect for part-time boosters looking to grow their business.',
+      description: 'Perfect for part-time boosters ',
       price: 10,
       benefits: [
         {
@@ -95,7 +106,7 @@ function RouteComponent() {
         },
       ],
       buttonText: currentPlanTier === 'Premium' ? 'Current Plan' : 'Choose Premium',
-      highlighted: currentPlanTier === 'Premium' || (!currentPlanTier && true),
+      highlighted: currentPlanTier === 'Premium',
     },
     {
       tier: 'Professional',
@@ -137,7 +148,7 @@ function RouteComponent() {
                 </Badge>
               </p>
             </div>
-            <Pricing isPending={isPending} onPlanSelect={selectPlan} plans={pricingPlans} />
+            <Pricing pendingPlanTier={pendingPlanTier} onPlanSelect={selectPlan} plans={pricingPlans} />
           </div>
         </div>
       </div>
