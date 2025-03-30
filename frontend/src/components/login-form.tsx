@@ -9,7 +9,7 @@ import { useGoFunctions } from '@/hooks/useGoBindings.ts';
 import { useProfileAvatar } from '@/hooks/useProfileAvatar.ts';
 import { userAuth } from '@/lib/strapi';
 import { cn } from '@/lib/utils';
-import { Route } from '@/routes/_protected';
+import { Route } from '@/routes/_protected/dashboard/index.tsx';
 import { useUserStore } from '@/stores/useUserStore';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@radix-ui/react-tabs';
 import { useMutation } from '@tanstack/react-query';
