@@ -1,7 +1,8 @@
 import { ErrorPage } from '@/components/error-page.tsx';
-import { Route as DashboardRoute } from '@/routes/_protected/index.tsx';
+import { Route as DashboardRoute } from '@/routes/_protected/dashboard/index.tsx';
 import { useUserStore } from '@/stores/useUserStore';
 import { createRootRouteWithContext, Outlet, redirect } from '@tanstack/react-router';
+import { TanStackRouterDevtools } from '@tanstack/router-devtools';
 
 export type RouterContext = {
   auth: {
@@ -15,6 +16,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
   notFoundComponent: () => {
     return <div>Page not found</div>;
   },
+
   beforeLoad: async ({ location }) => {
     const isAuthenticated = useUserStore.getState().isAuthenticated();
     const isLoginRoute = location.pathname === '/login';
@@ -40,5 +42,11 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 function RootLayout() {
   // Este é seu layout base, que apenas renderiza o conteúdo
   // sem elementos visuais adicionais
-  return <Outlet />;
+  return (
+    <>
+
+      <Outlet />
+      <TanStackRouterDevtools />
+    </>
+  );
 }

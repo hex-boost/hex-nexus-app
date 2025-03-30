@@ -44,7 +44,6 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
 
     <Toaster />
     <ReactQueryDevtools client={queryClient} />
-    {/* <TanStackRouterDevtools router={router} /> */}
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
     </QueryClientProvider>
