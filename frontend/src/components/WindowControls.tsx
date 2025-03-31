@@ -38,28 +38,28 @@ export function WindowControls({ className }: { className?: string }) {
 
   const toggleMaximize = async () => {
     if (!isMaximized) {
-      // Salvar posição e tamanho atuais antes de maximizar
       const size = await window.Size();
       const position = await window.Position();
       setPreviousSize(size);
       setPreviousPosition(position);
     }
 
-    // Alternar o estado de maximização
     await window.ToggleMaximise();
 
-    // Esperar um pouco e verificar o novo estado
     setTimeout(async () => {
       const newMaximized = await window.IsMaximised();
       setIsMaximized(newMaximized);
 
-      // Se acabou de ser restaurada de maximizada, precisamos restaurar posição e tamanho
       if (!newMaximized && previousSize && previousPosition) {
-        // Substituir Restore() por chamadas explícitas para definir tamanho e posição
         await window.SetSize(previousSize.width, previousSize.height);
         await window.SetPosition(previousPosition.x, previousPosition.y);
+      } else if (newMaximized) {
+        // Defina o tamanho máximo permitido aqui
+        const maxWidth = 1600; // Substitua pelo valor desejado
+        const maxHeight = 900; // Substitua pelo valor desejado
+        await window.SetSize(maxWidth, maxHeight);
       }
-    }, 250); // Aumentei um pouco o timeout para dar mais tempo
+    }, 250);
   };
 
   const minimizeToTray = () => {

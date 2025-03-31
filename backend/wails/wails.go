@@ -2,6 +2,7 @@ package wails
 
 import (
 	"embed"
+	"fmt"
 	"github.com/hex-boost/hex-nexus-app/backend/app"
 	"github.com/hex-boost/hex-nexus-app/backend/discord"
 	"github.com/hex-boost/hex-nexus-app/backend/league"
@@ -9,9 +10,10 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/riot"
 	"github.com/hex-boost/hex-nexus-app/backend/updater"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
+	"github.com/wailsapp/wails/v3/pkg/events"
+
 	"github.com/joho/godotenv"
 	"github.com/wailsapp/wails/v3/pkg/application"
-	"github.com/wailsapp/wails/v3/pkg/events"
 	"log"
 	"time"
 )
@@ -21,54 +23,156 @@ func Init() {
 		log.Println("Warning: Error loading .env file:", err)
 	}
 }
+func NewTooltipWindow(app *application.App) *application.WebviewWindow {
+	tooltip := app.NewWebviewWindowWithOptions(application.WebviewWindowOptions{
+		Name:           "tooltip",
+		Width:          300,
+		Height:         150,
+		Frameless:      true,
+		AlwaysOnTop:    true,
+		DisableResize:  true,
+		BackgroundType: 2,
+		BackgroundColour: application.RGBA{
+			Red:   50,
+			Green: 50,
+			Blue:  50,
+			Alpha: 230,
+		},
+		DefaultContextMenuDisabled: true,
+		Windows: application.WindowsWindow{
+			BackdropType:                      0,
+			DisableIcon:                       false,
+			Theme:                             0,
+			CustomTheme:                       nil,
+			DisableFramelessWindowDecorations: false,
+			WindowMask:                        nil,
+			WindowMaskDraggable:               false,
+			ResizeDebounceMS:                  0,
+			WindowDidMoveDebounceMS:           0,
+			DisableMenu:                       false,
+			EventMapping:                      nil,
+			HiddenOnTaskbar:                   false,
+			EnableSwipeGestures:               false,
+			Menu:                              nil,
+			OnEnterEffect:                     0,
+			OnOverEffect:                      0,
+			Permissions:                       nil,
+			ExStyle:                           0,
+			GeneralAutofillEnabled:            false,
+			PasswordAutosaveEnabled:           false,
+			EnabledFeatures:                   nil,
+			DisabledFeatures:                  nil,
+		},
+	})
+
+	// HTML base para o tooltip
+	tooltipHTML := `
+    <html>
+        <head>
+            <style>
+                body {
+                    font-family: system-ui, -apple-system, sans-serif;
+                    margin: 0;
+                    padding: 10px;
+                    background-color: rgba(50, 50, 50, 0.95);
+                    border-radius: 6px;
+                    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+                    color: #fff;
+                    user-select: none;
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    font-size: 14px;
+                }
+            </style>
+            <script>
+                window.onload = function() {
+                    document.body.addEventListener('mouseenter', function() {
+                        window.runtime.EventsEmit('tooltip-mouseenter');
+                    });
+                    
+                    document.body.addEventListener('mouseleave', function() {
+                        window.runtime.EventsEmit('tooltip-mouseleave');
+                    });
+                }
+
+                function setContent(content) {
+                    document.body.innerHTML = content;
+                }
+            </script>
+        </head>
+        <body>
+            Tooltip
+        </body>
+    </html>
+    `
+	tooltip.SetHtml(tooltipHTML)
+
+	tw := &TooltipWindow{
+		window: tooltip,
+		app:    app,
+	}
+
+	// Registrar eventos
+	app.On("tooltip-mouseenter", func(data ...interface{}) {
+		tw.mouseInTooltip = true
+		if tw.hideTimer != nil {
+			tw.hideTimer.Stop()
+		}
+	})
+
+	app.On("tooltip-mouseleave", func(data ...interface{}) {
+		tw.mouseInTooltip = false
+		tw.scheduleHide(200 * time.Millisecond)
+	})
+
+	return tw
+}
 func SetupSystemTray(app *application.App, window *application.WebviewWindow, icon []byte) *application.SystemTray {
 	// Cria a instância do system tray
 	systray := app.NewSystemTray()
 
-	// Configura o menu
+	// Exemplo de criação de MenuItem com diferentes valores
+
 	menu := application.NewMenu()
+	titleItem := menu.Add("Nexus")
+	titleItem.SetBitmap(icon) // To
+	menu.AddSeparator()
 
-	menu.AddRadio("Status", true)
+	sairItem := menu.Add("Exit Nexus")
+	sairItem.OnClick(func(ctx *application.Context) {
+		app.Quit()
+	})
 
-	// Separador
-	//menu.AddSeparator()
-
-	// Ações principais
-	//menu.AddText("Abrir Nexus", func(data *application.MenuItemEventData) {
-	//	window.Show().Focus()
-	//})
-
-	// Separador
-	//menu.AddSeparator()
-
-	// Itens de configuração
-	//menu.AddText("Configurações", func(data *application.MenuItemEventData) {
-	//	window.Show().Focus()
-	//	// Aqui poderia emitir um evento para navegar para configurações
-	//	window.Emit("navegarPara", map[string]interface{}{"rota": "/configuracoes"})
-	//})
-
-	//menu.AddText("Verificar atualizações", func(data *application.MenuItemEventData) {
-	//	// Lógica para verificar atualizações
-	//	window.Emit("verificarAtualizacoes", nil)
-	//})
-
-	// Separador
-	//menu.AddSeparator()
-	//
-	//// Sair
-	//menu.AddText("Sair", func(data *application.MenuItemEventData) {
-	//	app.Quit()
-	//})
-
-	// Configura propriedades do system tray
 	systray.SetLabel("Nexus")
 	systray.SetIcon(icon)
+	systray.OnMouseEnter(func() {
+		fmt.Println("Mouse entered the system tray")
+	})
+	systray.OnClick(func() {
+		if !window.IsVisible() {
+			window.Show()
+			window.Focus()
+		}
+	})
 	systray.SetDarkModeIcon(icon)
 	systray.SetMenu(menu)
 
-	// Anexa a janela ao system tray com offset de 5px
-	systray.AttachWindow(window).WindowOffset(5)
+	trayWindow := app.NewWebviewWindowWithOptions(
+		application.WebviewWindowOptions{
+
+			Name:  "Main",
+			Title: "Nexus",
+
+			Width:         200,
+			Height:        200,
+			AlwaysOnTop:   true,
+			DisableResize: true,
+
+			Frameless: true,
+
+			DefaultContextMenuDisabled: true,
+		},
+	)
+	systray.AttachWindow(trayWindow).WindowOffset(80)
 
 	return systray
 }
@@ -96,11 +200,13 @@ func Run(assets embed.FS, icon []byte) {
 					mainWindow.Focus()
 				}
 			},
+
 			AdditionalData: map[string]string{
 				"appVersion": updater.Version,
 				"launchTime": time.Now().Format(time.RFC3339),
 			},
 		},
+
 		Services: []application.Service{
 
 			application.NewService(app.App()),
@@ -128,15 +234,40 @@ func Run(assets embed.FS, icon []byte) {
 			Height:        900,
 			AlwaysOnTop:   false,
 			URL:           "",
-			DisableResize: true,
+			DisableResize: false,
 
 			Frameless: true,
 			MinWidth:  1280,
 			MinHeight: 720,
 			MaxWidth:  1600,
 			MaxHeight: 900,
+			Windows: application.WindowsWindow{
+				BackdropType:                      0,
+				DisableIcon:                       false,
+				Theme:                             1,
+				CustomTheme:                       nil,
+				DisableFramelessWindowDecorations: false,
+				WindowMask:                        nil,
+				WindowMaskDraggable:               false,
+				ResizeDebounceMS:                  0,
+				WindowDidMoveDebounceMS:           0,
+				DisableMenu:                       false,
+				EventMapping:                      nil,
+				HiddenOnTaskbar:                   false,
+				EnableSwipeGestures:               false,
+				Menu:                              nil,
+				OnEnterEffect:                     0,
+				OnOverEffect:                      0,
+				Permissions:                       nil,
+				ExStyle:                           0,
+				GeneralAutofillEnabled:            true,
+				PasswordAutosaveEnabled:           false,
+				EnabledFeatures:                   nil,
+				DisabledFeatures:                  nil,
+			},
 
-			BackgroundType: 2,
+			BackgroundType:  2,
+			InitialPosition: 0,
 			BackgroundColour: application.RGBA{
 				Red:   0,
 				Green: 0,
@@ -147,43 +278,10 @@ func Run(assets embed.FS, icon []byte) {
 			DefaultContextMenuDisabled: true,
 		},
 	)
+	mainWindow.RegisterHook(application.WindowMinimise, func(event *application.WindowEvent) {
+		mainWindow.Minimise() // Isto força o comportamento padrão de minimizar
+		event.Cancel()
 
-	var (
-		isMaximizing      bool
-		lastKnownPosition struct{ x, y int }
-	)
-
-	mainWindow.OnWindowEvent(events.Common.WindowMaximise, func(e *application.WindowEvent) {
-		x, y := mainWindow.Position()
-		lastKnownPosition.x = x
-		lastKnownPosition.y = y
-		isMaximizing = true
-	})
-
-	mainWindow.OnWindowEvent(events.Common.WindowUnMaximise, func(e *application.WindowEvent) {
-		x, y := mainWindow.Position()
-		lastKnownPosition.x = x
-		lastKnownPosition.y = y
-		isMaximizing = true
-	})
-
-	//mainWindow.OnWindowEvent(events.Common.WindowMinimise, func(e *application.WindowEvent) {
-	//	mainWindow.SetPosition(lastKnownPosition.x, lastKnownPosition.y)
-	//	isMaximizing = false
-	//})
-
-	mainWindow.OnWindowEvent(events.Common.WindowDidResize, func(e *application.WindowEvent) {
-		// Não interfira com a posição durante maximização/restauração
-		if !isMaximizing {
-			x, y := mainWindow.Position()
-			mainWindow.SetMaxSize(1600, 900)
-			mainWindow.SetMinSize(1280, 720)
-			mainWindow.SetPosition(x, y)
-		} else {
-			// Apenas ajusta os limites de tamanho
-			mainWindow.SetMaxSize(1600, 900)
-			mainWindow.SetMinSize(1280, 720)
-		}
 	})
 	mainWindow.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
 		// Hide the window
