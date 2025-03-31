@@ -26,6 +26,7 @@ export default defineConfig({
       '@riot': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/riot'),
       '@repository': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/repository'),
       '@updater': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/updater'),
+      '@events': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/events'),
       '@utils': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/utils'),
     },
 

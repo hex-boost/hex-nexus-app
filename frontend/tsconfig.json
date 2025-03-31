@@ -9,10 +9,6 @@
     ],
     "baseUrl": ".",
     "module": "ESNext",
-    "skipDefaultLibCheck": true,
-    "allowJs": true,
-    "checkJs": false,
-    "noImplicitAny": false,
     "skipLibCheck": true,
     /* Bundler mode */
     "moduleResolution": "bundler",
@@ -50,6 +46,10 @@
       ],
       "@updater": [
         "bindings/github.com/hex-boost/hex-nexus-app/backend/updater"
+      ],
+
+      "@events": [
+        "bindings/github.com/hex-boost/hex-nexus-app/backend/events"
       ],
       "@utils": [
         "bindings/github.com/hex-boost/hex-nexus-app/backend/utils"

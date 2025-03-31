@@ -2,7 +2,10 @@ package riot
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/hex-boost/hex-nexus-app/backend/types"
+	"github.com/inkeliz/gowebview"
 	"go.uber.org/zap"
 	"net/http"
 )
@@ -127,4 +130,64 @@ func (c *Client) startCaptchaServer() {
 			c.logger.Error("Failed to start captcha server", zap.Error(err))
 		}
 	}()
+}
+
+func (c *Client) getWebView() (gowebview.WebView, error) {
+	webview, err := gowebview.New(&gowebview.Config{URL: "http://127.0.0.1:6969/index.html"})
+	if err != nil {
+		return nil, err
+	}
+
+	return webview, nil
+}
+func (c *Client) handleCaptcha() error {
+	c.logger.Info("Starting captcha handling")
+
+	// Get captcha data
+	captchaData, err := c.getCaptchaData()
+	if err != nil {
+		c.logger.Error("Failed to get captcha data", zap.Error(err))
+		return err
+	}
+
+	c.captchaData = captchaData
+
+	// Return captcha data so it can be rendered
+	return nil
+}
+
+func (c *Client) getCaptchaData() (string, error) {
+	var getCurrentAuthResult types.RiotIdentityResponse
+
+	_, err := c.client.R().SetResult(&getCurrentAuthResult).Get("/rso-authenticator/v1/authentication")
+	if err != nil {
+		return "", err
+	}
+	if getCurrentAuthResult.Type == "auth" && getCurrentAuthResult.Captcha.Hcaptcha.Data != "" {
+		return getCurrentAuthResult.Captcha.Hcaptcha.Data, nil
+	}
+
+	var startAuthResult types.RiotIdentityResponse
+	startAuthRes, err := c.client.R().
+		SetBody(getRiotIdentityStartPayload()).
+		SetResult(&startAuthResult).
+		Post("/rso-authenticator/v1/authentication/riot-identity/start")
+	if err != nil {
+		c.logger.Error("Error in authentication start request", zap.Error(err))
+		return "", err
+	}
+
+	if startAuthRes.IsError() {
+		var errorResponse types.ErrorResponse
+		if err := json.Unmarshal(startAuthRes.Body(), &errorResponse); err != nil {
+			c.logger.Error("Failed to parse error response", zap.Error(err))
+		}
+		c.logger.Error("Authentication failed", zap.String("message", errorResponse.Message))
+		return "", errors.New(errorResponse.Message)
+	}
+
+	if startAuthResult.Captcha.Hcaptcha.Data == "" {
+		return "", errors.New("no captcha data")
+	}
+	return startAuthResult.Captcha.Hcaptcha.Data, nil
 }

@@ -41,6 +41,7 @@
     "cobe": "^0.6.3",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "framer-motion": "^12.5.0",
+    "idb": "^8.0.2",
     "immer": "^10.1.1",
     "lucide-react": "^0.479.0",
     "motion": "^12.5.0",

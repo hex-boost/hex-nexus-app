@@ -1,11 +1,10 @@
-'use client';
-
 import type { Price } from '@/types/price.ts';
 import type { AccountType } from '@/types/types.ts';
 import { ChampionsSkinsTab } from '@/components/ChampionsSkinsTab.tsx';
 import { CoinIcon } from '@/components/coin-icon.tsx';
-import { Badge } from '@/components/ui/badge.tsx';
+import { RentedAccountButton } from '@/components/RentedAccountAction.tsx';
 
+import { Badge } from '@/components/ui/badge.tsx';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -23,12 +22,13 @@ import { useAccountActions } from '@/hooks/useAccountActions.ts';
 import { useAccountAuthentication } from '@/hooks/useAccountAuthentication.ts';
 import { useAccountFilters } from '@/hooks/useAccountFilters.ts';
 import { useDateTime } from '@/hooks/useDateTime.ts';
+import { useLeagueEvents } from '@/hooks/useLeagueEvents.ts';
 import { strapiClient } from '@/lib/strapi.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
 import { cn } from '@/lib/utils.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowDownToLine, Check, CircleCheckBig, Clock, LogIn, Search, Shield, X } from 'lucide-react';
+import { ArrowDownToLine, Check, CircleCheckBig, Clock, Search, Shield, X } from 'lucide-react';
 import { useState } from 'react';
 import AccountInfoDisplay from './account-info-display';
 
@@ -66,6 +66,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
     enabled: account.user?.documentId === user?.documentId,
     staleTime: 0,
   });
+  const { loading: _ } = useLeagueEvents();
   return (
     <>
       <div className="lg:col-span-3 space-y-6">
@@ -332,17 +333,18 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                   </div>
                 </CardContent>
                 <CardFooter className="flex gap-3">
-                  <Button
-                    disabled={isLoginPending}
-                    loading={isLoginPending}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                    onClick={() => handleLoginToAccount()}
-                  >
-                    <LogIn className="mr-2 h-4 w-4" />
-                    Login to
-                    {' '}
-                    {'lol' === 'lol' ? 'LoL' : 'Valorant'}
-                  </Button>
+                  <RentedAccountButton />
+                  {/* <Button */}
+                  {/*  disabled={isLoginPending} */}
+                  {/*  loading={isLoginPending} */}
+                  {/*  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white" */}
+                  {/*  onClick={() => handleLoginToAccount()} */}
+                  {/* > */}
+                  {/*  <LogIn className="mr-2 h-4 w-4" /> */}
+                  {/*  Login to */}
+                  {/*  {' '} */}
+                  {/*  {'lol' === 'lol' ? 'LoL' : 'Valorant'} */}
+                  {/* </Button> */}
 
                   <Dialog open={isDropDialogOpen} onOpenChange={setIsDropDialogOpen}>
                     <DialogTrigger asChild>

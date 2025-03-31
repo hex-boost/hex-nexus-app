@@ -1,35 +1,171 @@
 import type { ChampionById, DDragonChampionsData } from '@/types/ddragon.ts';
 import { useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { openDB } from 'idb';
+import { useEffect, useMemo } from 'react';
+
+const CACHE_DB_NAME = 'nexus_ddragon_cache';
+const CACHE_STORE_NAME = 'cache_store';
+const CACHE_VERSION = 1;
+
+// Interface para os objetos no cache
+type CachedItem<T> = {
+  data: T;
+  version: string;
+};
+
+async function getDB() {
+  return openDB(CACHE_DB_NAME, CACHE_VERSION, {
+    upgrade(db) {
+      db.createObjectStore(CACHE_STORE_NAME);
+    },
+  });
+}
+
+async function saveToCache<T>(key: string, data: T, version: string) {
+  const db = await getDB();
+  const tx = db.transaction(CACHE_STORE_NAME, 'readwrite');
+  tx.store.put({ data, version }, key);
+  await tx.done;
+}
+
+async function getFromCache<T>(key: string, currentVersion: string): Promise<T | null> {
+  const db = await getDB();
+  const tx = db.transaction(CACHE_STORE_NAME, 'readonly');
+  const cached = await tx.store.get(key) as CachedItem<T> | undefined;
+
+  if (cached && cached.version === currentVersion) {
+    return cached.data;
+  }
+
+  return null;
+}
+
+async function clearCache() {
+  const db = await getDB();
+  const tx = db.transaction(CACHE_STORE_NAME, 'readwrite');
+  await tx.store.clear();
+  await tx.done;
+}
 
 export function useAllDataDragon(enabled = true) {
-  // Get latest Data Dragon version
   const versionQuery = useQuery({
     queryKey: ['ddragon-version'],
     queryFn: async () => {
+      // Sempre buscar a versão mais recente
       const response = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
       const versions = await response.json() as string[];
-      return versions[0]; // Latest version
+      const latestVersion = versions[0];
+
+      // Verificar se a versão mudou e limpar cache se necessário
+      const db = await getDB();
+      const tx = db.transaction(CACHE_STORE_NAME, 'readonly');
+      const cachedVersionItem = await tx.store.get('cached_version');
+      const cachedVersion = cachedVersionItem?.version;
+
+      if (cachedVersion && cachedVersion !== latestVersion) {
+        // Versão mudou, limpar cache
+        await clearCache();
+      }
+
+      // Salvar a nova versão
+      await saveToCache('cached_version', null, latestVersion);
+
+      return latestVersion;
     },
+    staleTime: 60 * 60 * 1000, // 1 hora para verificar atualizações de versão
     enabled,
   });
 
-  // Get champions data
   const championsQuery = useQuery({
     queryKey: ['champions', versionQuery.data],
     queryFn: async () => {
+      if (!versionQuery.data) {
+        return null;
+      }
+
+      const currentVersion = versionQuery.data;
+
+      // Tentar obter do cache com a versão atual
+      const cachedData = await getFromCache<Record<string, any>>('champions', currentVersion);
+      if (cachedData) {
+        return cachedData;
+      }
+
+      // Buscar dados atualizados
       const response = await fetch(
-        `https://ddragon.leagueoflegends.com/cdn/${versionQuery.data}/data/en_US/champion.json`,
+        `https://ddragon.leagueoflegends.com/cdn/${currentVersion}/data/en_US/champion.json`,
       );
       const data = await response.json() as DDragonChampionsData;
+
+      // Salvar no cache com a versão atual
+      await saveToCache('champions', data.data, currentVersion);
+
       return data.data;
     },
+    staleTime: Infinity, // Os dados só precisam ser revalidados quando a versão mudar
     enabled: !!versionQuery.data,
   });
 
-  // Get all champions processed data
+  const allChampionDetailsQuery = useQuery({
+    queryKey: ['all-champion-details', versionQuery.data],
+    queryFn: async () => {
+      if (!versionQuery.data || !championsQuery.data) {
+        return [];
+      }
+
+      const currentVersion = versionQuery.data;
+
+      // Tentar obter do cache com a versão atual
+      const cachedDetails = await getFromCache<any[]>('champion_details', currentVersion);
+      if (cachedDetails) {
+        return cachedDetails;
+      }
+
+      const championsData = championsQuery.data;
+      const championsArray = Object.values(championsData);
+
+      const detailPromises = championsArray.map(async (champion) => {
+        const response = await fetch(
+          `https://ddragon.leagueoflegends.com/cdn/${currentVersion}/data/en_US/champion/${champion.id}.json`,
+        );
+        const data = await response.json() as ChampionById;
+        return data.data[champion.id];
+      });
+
+      const allDetails = await Promise.all(detailPromises);
+
+      // Salvar no cache com a versão atual
+      await saveToCache('champion_details', allDetails, currentVersion);
+
+      return allDetails;
+    },
+    staleTime: Infinity, // Os dados só precisam ser revalidados quando a versão mudar
+    enabled: !!versionQuery.data && !!championsQuery.data,
+  });
+
+  useEffect(() => {
+    if (enabled && !versionQuery.data) {
+      versionQuery.refetch();
+    }
+  }, [enabled]);
+
+  // O resto do seu código permanece igual
+  const determineRarity = (skin: any): string => {
+    if (skin.name.includes('Ultimate')) {
+      return 'Ultimate';
+    }
+    if (skin.name.includes('Legendary')) {
+      return 'Legendary';
+    }
+    if (skin.name.includes('Epic')) {
+      return 'Epic';
+    }
+    return 'Common';
+  };
+
   const allChampions = useMemo(() => {
-    if (versionQuery.isLoading || championsQuery.isLoading || !championsQuery.data) {
+    // Seu código existente...
+    if (!versionQuery.data || !championsQuery.data) {
       return [];
     }
 
@@ -44,53 +180,14 @@ export function useAllDataDragon(enabled = true) {
     }));
   }, [versionQuery.data, championsQuery.data]);
 
-  // Fetch all champion details for complete skin data
-  const allChampionDetailsQuery = useQuery({
-    queryKey: ['all-champion-details', versionQuery.data],
-    queryFn: async () => {
-      if (!versionQuery.data || !championsQuery.data) {
-        return [];
-      }
-
-      const version = versionQuery.data;
-      const championsData = championsQuery.data;
-      const championsArray = Object.values(championsData);
-
-      // Fetch each champion's detailed data
-      const detailPromises = championsArray.map(async (champion) => {
-        const response = await fetch(
-          `https://ddragon.leagueoflegends.com/cdn/${version}/data/en_US/champion/${champion.id}.json`,
-        );
-        const data = await response.json() as ChampionById;
-        return data.data[champion.id];
-      });
-
-      return Promise.all(detailPromises);
-    },
-    enabled: !!versionQuery.data && !!championsQuery.data,
-  });
-
-  const determineRarity = (skin: any): string => {
-    if (skin.name.includes('Ultimate')) {
-      return 'Ultimate';
-    }
-    if (skin.name.includes('Legendary')) {
-      return 'Legendary';
-    }
-    if (skin.name.includes('Epic')) {
-      return 'Epic';
-    }
-    return 'Common';
-  };
-
-  // Get all skins
   const allSkins = useMemo(() => {
-    if (versionQuery.isLoading || !versionQuery.data || allChampionDetailsQuery.isLoading) {
+    // Seu código existente...
+    if (!versionQuery.data || !allChampionDetailsQuery.data) {
       return [];
     }
 
     const championDetails = allChampionDetailsQuery.data;
-    if (!championDetails) {
+    if (!championDetails || championDetails.length === 0) {
       return [];
     }
 

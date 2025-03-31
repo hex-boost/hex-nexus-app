@@ -15,8 +15,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inkeliz/gowebview"
-
 	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/mitchellh/go-ps"
@@ -126,86 +124,8 @@ func (c *Client) loginWithCaptcha(username, password, captchaToken string) (stri
 	return "", errors.New("authentication with captcha failed")
 }
 
-// getCaptchaData retrieves captcha data from the Riot authentication service
-func (c *Client) getCaptchaData() (string, error) {
-	var getCurrentAuthResult types.RiotIdentityResponse
-
-	_, err := c.client.R().SetResult(&getCurrentAuthResult).Get("/rso-authenticator/v1/authentication")
-	if err != nil {
-		return "", err
-	}
-	if getCurrentAuthResult.Type == "auth" && getCurrentAuthResult.Captcha.Hcaptcha.Data != "" {
-		return getCurrentAuthResult.Captcha.Hcaptcha.Data, nil
-	}
-
-	var startAuthResult types.RiotIdentityResponse
-	startAuthRes, err := c.client.R().
-		SetBody(getRiotIdentityStartPayload()).
-		SetResult(&startAuthResult).
-		Post("/rso-authenticator/v1/authentication/riot-identity/start")
-	if err != nil {
-		c.logger.Error("Error in authentication start request", zap.Error(err))
-		return "", err
-	}
-
-	if startAuthRes.IsError() {
-		var errorResponse types.ErrorResponse
-		if err := json.Unmarshal(startAuthRes.Body(), &errorResponse); err != nil {
-			c.logger.Error("Failed to parse error response", zap.Error(err))
-		}
-		c.logger.Error("Authentication failed", zap.String("message", errorResponse.Message))
-		return "", errors.New(errorResponse.Message)
-	}
-
-	if startAuthResult.Captcha.Hcaptcha.Data == "" {
-		return "", errors.New("no captcha data")
-	}
-	return startAuthResult.Captcha.Hcaptcha.Data, nil
-}
-
-// HandleCaptcha gets captcha data and waits for token submission
-func (c *Client) handleCaptcha() error {
-	c.logger.Info("Starting captcha handling")
-
-	// Get captcha data
-	captchaData, err := c.getCaptchaData()
-	if err != nil {
-		c.logger.Error("Failed to get captcha data", zap.Error(err))
-		return err
-	}
-
-	c.captchaData = captchaData
-
-	// Return captcha data so it can be rendered
-	return nil
-}
-
-func (c *Client) waitForClientReady(timeout time.Duration) error {
-	deadline := time.Now().Add(timeout)
-	checkInterval := 100 * time.Millisecond
-
-	for time.Now().Before(deadline) {
-		pid, err := c.getRiotProcess()
-		if err == nil {
-			// Found the process, now try to get credentials to verify it's ready
-			port, authToken, err := c.getClientCredentials(pid)
-			if err == nil && port != "" && authToken != "" {
-				c.logger.Info("Riot client is running and ready",
-					zap.Int("pid", pid),
-					zap.String("port", port))
-				return nil
-			}
-			// Process exists but not ready yet
-			c.logger.Debug("Riot client process found but not fully initialized")
-		}
-		time.Sleep(checkInterval)
-	}
-
-	return errors.New("timeout waiting for Riot client to initialize")
-}
-
-// launchRiotClient finds and launches the Riot client
-func (c *Client) launchRiotClient() error {
+// LaunchRiotClient finds and launches the Riot client
+func (c *Client) LaunchRiotClient() error {
 	c.logger.Info("Attempting to launch Riot client")
 
 	// Determine the path to RiotClientInstalls.json based on OS
@@ -236,10 +156,6 @@ func (c *Client) launchRiotClient() error {
 		return errors.New("could not find Riot client path in installs file")
 	}
 
-	// Default region and arguments
-
-	// Add appropriate arguments based on client type
-	// Add specific arguments regardless of client type
 	args := []string{"--launch-product=league_of_legends", "--launch-patchline=live"}
 
 	c.logger.Info("Launching Riot client",
@@ -256,29 +172,11 @@ func (c *Client) launchRiotClient() error {
 	return nil
 }
 
-func (c *Client) IsRunning() bool {
-	processes, err := ps.Processes()
-	if err != nil {
-		c.logger.Error("Failed to list processes", zap.Error(err))
-		return false
-	}
-
-	// Find the League Client or Riot Client process
-	for _, process := range processes {
-		exe := process.Executable()
-		if exe == "LeagueClient.exe" || exe == "LeagueClientUx.exe" || exe == "Riot Client.exe" {
-			return true
-		}
-	}
-
-	return false
-}
-
 // InitializeClient sets up the client with connection to the League Client
 func (c *Client) initializeClient() error {
 	if !c.IsRunning() {
 		c.logger.Info("Riot client not running, attempting to launch it")
-		if err := c.launchRiotClient(); err != nil {
+		if err := c.LaunchRiotClient(); err != nil {
 			return fmt.Errorf("failed to launch Riot client: %w", err)
 		}
 		err := c.waitForClientReady(30 * time.Second)
@@ -363,45 +261,7 @@ func (c *Client) getAuthorization() (map[string]interface{}, error) {
 	return authResult, nil
 }
 
-func (c *Client) getWebView() (gowebview.WebView, error) {
-	webview, err := gowebview.New(&gowebview.Config{URL: "http://127.0.0.1:6969/index.html"})
-	if err != nil {
-		return nil, err
-	}
-
-	return webview, nil
-}
-
 // waitForReadyState verifica repetidamente o estado de prontidão da API
-func (c *Client) waitForReadyState(timeout time.Duration) error {
-	deadline := time.Now().Add(timeout)
-	interval := 200 * time.Millisecond
-
-	c.logger.Info("Verificando disponibilidade do serviço de autenticação", zap.Duration("timeout", timeout))
-
-	for time.Now().Before(deadline) {
-		resp, err := c.client.R().Get("/rso-auth/configuration/v3/ready-state")
-
-		if err == nil && resp.StatusCode() == 200 {
-			c.logger.Info("Serviço de autenticação está pronto")
-			return nil
-		}
-
-		// Registra o status da tentativa
-		status := "erro"
-		if err != nil {
-			status = err.Error()
-		} else {
-			status = fmt.Sprintf("status %d", resp.StatusCode())
-		}
-		c.logger.Debug("Aguardando serviço ficar pronto", zap.String("status", status))
-
-		// Aguarda antes da próxima tentativa
-		time.Sleep(interval)
-	}
-
-	return errors.New("timeout ao aguardar serviço de autenticação ficar pronto")
-}
 
 // AuthenticateWithCaptcha handles the complete captcha authentication flow
 func (c *Client) Authenticate(username string, password string) error {
