@@ -1,3 +1,4 @@
+import type { AccountType } from '@/types/types.ts';
 import { Button } from '@/components/ui/button.tsx';
 import { useLeagueClient } from '@/hooks/useLeagueClient';
 import { LogIn } from 'lucide-react';
@@ -9,15 +10,18 @@ const CLIENT_STATES = {
   LOGGED_IN: 'league:client:loggedin',
   RENTED_ACCOUNT: 'league:account:rented',
 };
-
-export function RentedAccountButton() {
+type RentedAccountButtonProps = {
+  account: AccountType;
+  jwt: string;
+};
+export function RentedAccountButton({ account }: RentedAccountButtonProps) {
   const {
     clientState,
     accountInfo,
     isLoginPending,
     handleOpenLeagueClient,
     handleLoginToAccount,
-  } = useLeagueClient();
+  } = useLeagueClient(account);
 
   const renderButton = () => {
     switch (clientState) {
@@ -38,7 +42,7 @@ export function RentedAccountButton() {
             disabled={isLoginPending}
             loading={isLoginPending}
             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-            onClick={handleLoginToAccount}
+            onClick={() => handleLoginToAccount()}
           >
             <LogIn className="mr-2 h-4 w-4" />
             Login to LoL

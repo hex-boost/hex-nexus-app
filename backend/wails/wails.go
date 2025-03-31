@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/hex-boost/hex-nexus-app/backend/app"
 	"github.com/hex-boost/hex-nexus-app/backend/discord"
-	customEvents "github.com/hex-boost/hex-nexus-app/backend/events"
 	"github.com/hex-boost/hex-nexus-app/backend/league"
 	"github.com/hex-boost/hex-nexus-app/backend/repository"
 	"github.com/hex-boost/hex-nexus-app/backend/riot"
@@ -58,7 +57,7 @@ func Run(assets embed.FS, icon []byte) {
 	utilsBind := utils.NewUtils()
 	lcuConn := league.NewLCUConnection(app.App().Log().League())
 	leagueRepo := repository.NewLeagueRepository(app.App().Log().Repo())
-	leagueService := league.NewService(league.NewSummonerClient(lcuConn, app.App().Log().League()), leagueRepo, app.App().Log().League())
+	leagueService := league.NewSummonerService(league.NewSummonerClient(lcuConn, app.App().Log().League()), leagueRepo, app.App().Log().League())
 	discordService := discord.New(app.App().Log().Discord())
 	clientMonitor := league.NewClientMonitor(lcuConn)
 	app := application.New(application.Options{
@@ -85,12 +84,10 @@ func Run(assets embed.FS, icon []byte) {
 			},
 		},
 		Services: []application.Service{
-			application.NewBindings(),
 			application.NewService(app.App()),
 			application.NewService(riot.NewRiotClient(app.App().Log().Riot())),
 			application.NewService(discordService),
 			application.NewService(leagueService),
-			application.NewService(customEvents.NewLeagueEvents()),
 			application.NewService(clientMonitor),
 			application.NewService(lcuConn),
 			application.NewService(utilsBind),
@@ -159,6 +156,12 @@ func Run(assets embed.FS, icon []byte) {
 	//systray.AttachWindow(mainWindow).WindowOffset(5)
 	mainWindow.SetMaxSize(1600, 900)
 	mainWindow.SetMinSize(1280, 720)
+	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(e *application.WindowEvent) {
+		fmt.Println("Runtime ready")
+
+		mainWindow.ExecJS("console.log('executed')")
+
+	})
 
 	SetupSystemTray(app, mainWindow, icon)
 	clientMonitor.SetWindow(mainWindow)

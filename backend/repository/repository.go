@@ -10,6 +10,7 @@ import (
 type LeagueRepository struct {
 	client *resty.Client
 	logger *utils.Logger
+	jwt    string
 }
 
 func NewLeagueRepository(logger *utils.Logger) *LeagueRepository {
@@ -22,11 +23,14 @@ func NewLeagueRepository(logger *utils.Logger) *LeagueRepository {
 	return &LeagueRepository{
 		client: client,
 		logger: logger,
+		jwt:    "",
 	}
 }
-
-func (l *LeagueRepository) SaveSummoner(summoner types.Summoner, jwt string) error {
-	l.client.SetHeader("Authorization", "Bearer "+jwt)
+func (l *LeagueRepository) SetJWT(jwt string) {
+	l.jwt = jwt
+}
+func (l *LeagueRepository) SaveSummoner(summoner types.Summoner) error {
+	l.client.SetHeader("Authorization", "Bearer "+l.jwt)
 
 	// Create payload with data field containing summoner in an array
 	//payload := map[string]interface{}{

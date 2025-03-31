@@ -10,22 +10,22 @@ import (
 	"sync"
 )
 
-type Service struct {
+type SummonerService struct {
 	summonerClient *SummonerClient
 	repoClient     *repository.LeagueRepository
 
 	logger *utils.Logger
 }
 
-func NewService(summonerClient *SummonerClient, repoClient *repository.LeagueRepository, logger *utils.Logger) *Service {
-	return &Service{
+func NewSummonerService(summonerClient *SummonerClient, repoClient *repository.LeagueRepository, logger *utils.Logger) *SummonerService {
+	return &SummonerService{
 		summonerClient: summonerClient,
 		repoClient:     repoClient,
 		logger:         logger,
 	}
 }
 
-func (l *Service) UpdateSummonerFromLCU(username string, password string, jwt string) error {
+func (l *SummonerService) UpdateFromLCU(username string, password string) error {
 	var (
 		currentSummoner types.CurrentSummoner
 		champions       []int
@@ -171,7 +171,7 @@ func (l *Service) UpdateSummonerFromLCU(username string, password string, jwt st
 	} else {
 		l.logger.Debugf("Summoner object: %s", string(summonerJSON))
 	}
-	err = l.repoClient.SaveSummoner(summoner, jwt)
+	err = l.repoClient.SaveSummoner(summoner)
 	if err != nil {
 		l.logger.Error("Failed to save summoner")
 		return err

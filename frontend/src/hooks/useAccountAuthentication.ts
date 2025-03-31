@@ -1,5 +1,5 @@
 import type { AccountType } from '@/types/types';
-import { LCUConnection, Service } from '@league';
+import { LCUConnection, SummonerService } from '@league';
 import { Client } from '@riot';
 
 import { useMutation } from '@tanstack/react-query';
@@ -7,10 +7,8 @@ import { toast } from 'sonner';
 
 export function useAccountAuthentication({
   account,
-  jwt,
 }: {
   account: AccountType;
-  jwt: string | null;
 }) {
   const { mutate: handleSummonerUpdate } = useMutation<any, string>({
     mutationKey: ['summoner', 'update', account.id],
@@ -18,7 +16,7 @@ export function useAccountAuthentication({
       await LCUConnection.WaitUntilReady();
       await LCUConnection.InitializeConnection();
       await LCUConnection.WaitInventoryIsReady();
-      await Service.UpdateSummonerFromLCU(account.username, account.password, jwt!);
+      await SummonerService.UpdateFromLCU(account.username, account.password);
     },
     onError: (error) => {
       console.error(error);

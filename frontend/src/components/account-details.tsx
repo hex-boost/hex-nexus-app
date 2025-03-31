@@ -19,10 +19,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { useAccountActions } from '@/hooks/useAccountActions.ts';
-import { useAccountAuthentication } from '@/hooks/useAccountAuthentication.ts';
 import { useAccountFilters } from '@/hooks/useAccountFilters.ts';
 import { useDateTime } from '@/hooks/useDateTime.ts';
-import { useLeagueEvents } from '@/hooks/useLeagueEvents.ts';
 import { strapiClient } from '@/lib/strapi.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
 import { cn } from '@/lib/utils.ts';
@@ -42,7 +40,6 @@ export default function AccountDetails({ account, price, onAccountChange }: {
 }) {
   const { user, jwt } = useUserStore();
   const { championsSearch, setChampionsSearch, skinsSearch, setSkinsSearch, filteredChampions, filteredSkins } = useAccountFilters({ account });
-  const { isLoginPending, handleLoginToAccount } = useAccountAuthentication({ account, jwt });
   const { selectedRentalOptionIndex, setSelectedRentalOptionIndex, handleDropAccount, isRentPending, isDropPending, setIsDropDialogOpen, handleRentAccount, isDropDialogOpen } = useAccountActions({ account, onAccountChange });
   const [activeTab, setActiveTab] = useState(0);
   const { getCompanyIcon, getGameIcon } = useMapping();
@@ -66,7 +63,6 @@ export default function AccountDetails({ account, price, onAccountChange }: {
     enabled: account.user?.documentId === user?.documentId,
     staleTime: 0,
   });
-  const { loading: _ } = useLeagueEvents();
   return (
     <>
       <div className="lg:col-span-3 space-y-6">
@@ -333,7 +329,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                   </div>
                 </CardContent>
                 <CardFooter className="flex gap-3">
-                  <RentedAccountButton />
+                  <RentedAccountButton account={account} jwt={jwt} />
                   {/* <Button */}
                   {/*  disabled={isLoginPending} */}
                   {/*  loading={isLoginPending} */}
