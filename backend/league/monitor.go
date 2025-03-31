@@ -1,13 +1,13 @@
 package league
 
 import (
+	"fmt"
 	"github.com/hex-boost/hex-nexus-app/backend/riot"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"time"
 )
 
 const (
-	// Eventos
 	EventLeagueClientClosed     = "league:client:closed"
 	EventLeagueClientOpen       = "league:client:open"
 	EventLeagueClientLoggedIn   = "league:client:loggedin"
@@ -41,7 +41,7 @@ func (m *ClientMonitor) Start() {
 	}
 
 	m.isRunning = true
-	m.pollingTicker = time.NewTicker(100 * time.Millisecond)
+	m.pollingTicker = time.NewTicker(50 * time.Millisecond)
 
 	go func() {
 		for {
@@ -70,8 +70,18 @@ func (m *ClientMonitor) checkClientState() {
 	isLoginReady := false
 
 	if isRunning {
-		isLoggedIn = m.lcuConn.IsInventoryReady()
-		isLoginReady = m.riotClient.IsAuthenticationReady()
+		if !m.riotClient.IsClientInitialized() {
+			err := m.riotClient.InitializeRestyClient()
+			if err != nil {
+				fmt.Println("Error initializing client:", err)
+				return
+			}
+
+		}
+		_, userinfoErr := m.riotClient.GetUserinfo()
+		isLoggedIn = userinfoErr == nil
+		authError := m.riotClient.IsAuthStateValid()
+		isLoginReady = authError == nil
 	}
 
 	// Determina o estado atual

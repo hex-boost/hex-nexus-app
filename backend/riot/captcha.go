@@ -157,18 +157,24 @@ func (rc *RiotClient) handleCaptcha() error {
 	// Return captcha data so it can be rendered
 	return nil
 }
-
-func (rc *RiotClient) getCaptchaData() (string, error) {
+func (rc *RiotClient) IsAuthStateValid() error {
 	var getCurrentAuthResult types.RiotIdentityResponse
 
 	_, err := rc.client.R().SetResult(&getCurrentAuthResult).Get("/rso-authenticator/v1/authentication")
 	if err != nil {
-		return "", err
+		return err
 	}
 	if getCurrentAuthResult.Type != "auth" {
+		return errors.New("invalid authentication state")
+	}
+	return nil
+}
+func (rc *RiotClient) getCaptchaData() (string, error) {
+	err := rc.IsAuthStateValid()
 
-		rc.logger.Error("Invalid authentication state", zap.Any("authState", getCurrentAuthResult))
-		return "", errors.New("invalid authentication state")
+	if err != nil {
+		rc.logger.Error("Invalid authentication state", zap.Error(err))
+		return "", err
 	}
 	_, err = rc.client.R().
 		Delete("/rso-authenticator/v1/authentication")

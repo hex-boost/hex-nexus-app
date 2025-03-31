@@ -1,4 +1,6 @@
 import hexNexusAuthBg from '@/assets/logo-hex-boost.svg';
+import { FlickeringGrid } from '@/components/magicui/flickering-grid.tsx';
+import Globe from '@/components/magicui/globe.tsx';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -160,15 +162,15 @@ export function LoginForm({
                       searching for accounts again.
                     </p>
                   </div>
-                  {/* <FlickeringGrid */}
-                  {/*  className="absolute h-full opacity-50 inset-0 z-0 w-screen" */}
-                  {/*  squareSize={4} */}
-                  {/*  gridGap={6} */}
-                  {/*  color="#4552B8" */}
-                  {/*  maxOpacity={0.2} */}
-                  {/*  flickerChance={0.1} */}
-                  {/* /> */}
-                  {/* <Globe /> */}
+                  <FlickeringGrid
+                    className="absolute h-full opacity-50 inset-0 z-0 w-screen"
+                    squareSize={4}
+                    gridGap={6}
+                    color="#4552B8"
+                    maxOpacity={0.2}
+                    flickerChance={0.1}
+                  />
+                  <Globe />
                 </div>
               </div>
               <Tabs

@@ -13,10 +13,10 @@ export const CLIENT_STATES = {
 };
 
 export function useLeagueEvents() {
-  ClientMonitor.Start();
   const [clientState, setClientState] = useState(CLIENT_STATES.CHECKING);
 
   useEffect(() => {
+    ClientMonitor.Start();
     const removeClosedListener = Events.On(CLIENT_STATES.CLOSED, () => {
       setClientState(CLIENT_STATES.CLOSED);
     });

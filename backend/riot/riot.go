@@ -185,7 +185,7 @@ func (rc *RiotClient) Launch() error {
 }
 
 // InitializeClient sets up the client with connection to the League RiotClient
-func (rc *RiotClient) initialize() error {
+func (rc *RiotClient) InitializeRestyClient() error {
 
 	riotClientPid, err := rc.getProcess()
 	if err != nil {
@@ -208,9 +208,9 @@ func (rc *RiotClient) initialize() error {
 	rc.client = client
 	return nil
 }
-func (rc *RiotClient) Initialize() error {
+func (rc *RiotClient) InitializeCaptchaHandling() error {
 	// Inicializa o cliente
-	if err := rc.initialize(); err != nil {
+	if err := rc.InitializeRestyClient(); err != nil {
 		return err
 	}
 

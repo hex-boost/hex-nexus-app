@@ -29,20 +29,18 @@ export function useLeagueManager({
   const { mutate: handleOpenCaptchaWebview } = useMutation({
     mutationKey: ['account', 'solveCaptcha', account.id],
     mutationFn: async () => {
-      await RiotClient.Initialize();
+      setAuthenticationState('WAITING_CAPTCHA');
+      await RiotClient.InitializeCaptchaHandling();
       await RiotClient.GetWebView();
 
-      setAuthenticationState('WAITING_CAPTCHA');
       const captchaResponse = await RiotClient.WaitAndGetCaptchaResponse(Duration.Second * 120); // timeout de 2 minutos
       setAuthenticationState('WAITING_LOGIN');
       await RiotClient.LoginWithCaptcha(account.username, account.password, captchaResponse);
       await RiotClient.WaitUntilUserinfoIsReady(Duration.Second * 20);
-
-      // await RiotClient(Duration.Second * 20);
     },
     onSuccess: () => {
-      toast.success('Authenticated succesfully');
       setAuthenticationState('LOGIN_SUCCESS');
+      toast.success('Authenticated succesfully');
       // Continue o fluxo após resolver o captcha
       // handleLoginToAccount();
     },

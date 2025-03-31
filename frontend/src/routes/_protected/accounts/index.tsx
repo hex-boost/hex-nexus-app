@@ -157,10 +157,7 @@ function AccountRow({
   getRankColor,
 }: AccountRowProps) {
   const ranking = account.rankings.find(ranking => ranking.queueType === 'soloqueue')!;
-  const alternativeRanking = account.rankings.find(ranking => ranking.queueType === 'flex')!;
-  console.log(
-    JSON.stringify(alternativeRanking.elo, null, 2),
-  );
+  // const alternativeRanking = account.rankings.find(ranking => ranking.queueType === 'flex')!;
 
   return (
     <tr
@@ -175,17 +172,17 @@ function AccountRow({
       </td>
       <td className="p-3">
         <div className="flex items-center gap-2">
-          <img className="w-6 h-6" alt={ranking.elo} src={getEloIcon(ranking.elo)} />
-          <span className={`text-sm capitalize font-medium ${getRankColor(ranking?.elo)}`}>
-            {ranking?.division || ranking.division}
+          <div className="w-6 h-6">{getRegionIcon(account.server)}</div>
+          <span className="text-sm text-zinc-600 dark:text-zinc-400">
+            {account.server.slice(0, account.server.length - 1)}
           </span>
         </div>
       </td>
       <td className="p-3">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6">{getRegionIcon(account.server)}</div>
-          <span className="text-sm text-zinc-600 dark:text-zinc-400">
-            {account.server.slice(0, account.server.length - 1)}
+          <img className="w-6 h-6" alt={ranking.elo} src={getEloIcon(ranking.elo)} />
+          <span className={`text-sm capitalize font-medium ${getRankColor(ranking?.elo)}`}>
+            {ranking?.division || ranking.division}
           </span>
         </div>
       </td>
@@ -338,8 +335,8 @@ function AccountsTable({
           <tr className="bg-zinc-50 dark:bg-black/20">
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">ID</th>
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Game</th>
-            <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Rank</th>
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Region</th>
+            <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Rank</th>
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Winrate</th>
             <th
               className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400 cursor-pointer"

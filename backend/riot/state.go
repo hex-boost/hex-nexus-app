@@ -1,8 +1,10 @@
 package riot
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"go.uber.org/zap"
 	"time"
 )
@@ -80,6 +82,30 @@ func (rc *RiotClient) waitForReadyState(timeout time.Duration) error {
 
 	return errors.New("timeout ao aguardar serviço de autenticação ficar pronto")
 }
+func (rc *RiotClient) IsClientInitialized() bool {
+	return rc.client != nil
+}
+
+func (rc *RiotClient) GetUserinfo() (*types.UserInfo, error) {
+	var rawResponse types.RCUUserinfo
+	resp, err := rc.client.R().SetResult(&rawResponse).Get("/rso-auth/v1/authorization/userinfo")
+	if err != nil {
+		return nil, err
+	}
+	if resp.IsError() {
+		rc.logger.Debug("Erro ao obter informações do usuário", zap.Any("response", resp))
+		return nil, errors.New("erro ao obter informações do usuário")
+	}
+
+	// Decodificar a string JSON interna
+	var userInfoData types.UserInfo
+	if err := json.Unmarshal([]byte(rawResponse.UserInfo), &userInfoData); err != nil {
+		rc.logger.Debug("Erro ao decodificar dados do usuário", zap.Error(err))
+		return nil, fmt.Errorf("erro ao decodificar informações do usuário: %w", err)
+	}
+
+	return &userInfoData, nil
+}
 func (rc *RiotClient) WaitUntilUserinfoIsReady(timeout time.Duration) error {
 	deadline := time.Now().Add(timeout)
 	interval := 200 * time.Millisecond
@@ -87,25 +113,14 @@ func (rc *RiotClient) WaitUntilUserinfoIsReady(timeout time.Duration) error {
 	rc.logger.Info("Verificando disponibilidade das informações do usuário", zap.Duration("timeout", timeout))
 
 	for time.Now().Before(deadline) {
-		// Tenta obter informações do usuário do LCU
-		resp, err := rc.client.R().Get("/lol-summoner/v1/current-summoner")
-
-		if err == nil && resp.StatusCode() == 200 && len(resp.Body()) > 0 {
-			rc.logger.Info("Informações do usuário estão prontas")
-			return nil
-		}
-
-		// Registra o status da tentativa
-		status := "erro"
+		_, err := rc.GetUserinfo()
 		if err != nil {
-			status = err.Error()
-		} else {
-			status = fmt.Sprintf("status %d", resp.StatusCode())
+			time.Sleep(interval)
+			continue
 		}
-		rc.logger.Debug("Aguardando informações do usuário ficarem prontas", zap.String("status", status))
 
-		// Aguarda antes da próxima tentativa
-		time.Sleep(interval)
+		rc.logger.Info("Informações do usuário estão prontas")
+		return nil
 	}
 
 	return errors.New("timeout ao aguardar informações do usuário ficarem prontas")

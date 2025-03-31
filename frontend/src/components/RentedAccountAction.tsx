@@ -80,9 +80,10 @@ export function RentedAccountButton({ account }: RentedAccountButtonProps) {
         return (
           <Button
             disabled
-            className="flex-1 w-full bg-green-600 text-white cursor-default"
+            variant="ghost"
+            className="flex-1 w-full border  text-white cursor-default"
           >
-            Conectado ao LoL
+            Logged in
           </Button>
         );
 
@@ -92,7 +93,7 @@ export function RentedAccountButton({ account }: RentedAccountButtonProps) {
             loading
             variant="ghost"
             disabled
-            className="flex-1 w-full bg-gray-600 text-white cursor-default"
+            className="flex-1 w-full   cursor-none border "
           >
             Waiting client...
           </Button>

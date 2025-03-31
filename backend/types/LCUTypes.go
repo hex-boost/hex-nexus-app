@@ -250,3 +250,82 @@ type RankedDataV2 struct {
 	Seasons                           map[string]Season      `json:"seasons"`
 	SplitsProgress                    map[string]interface{} `json:"splitsProgress"`
 }
+
+type RCUUserinfo struct {
+	UserInfo string `json:"userInfo"`
+}
+
+type UserInfo struct {
+	Country             string      `json:"country"`
+	Sub                 string      `json:"sub"`
+	LOLAccount          LOLAccount  `json:"lol_account"`
+	EmailVerified       bool        `json:"email_verified"`
+	PlayerPLocale       string      `json:"player_plocale"`
+	CountryAt           interface{} `json:"country_at"`
+	PW                  Password    `json:"pw"`
+	LOL                 LOLInfo     `json:"lol"`
+	OriginalPlatformID  string      `json:"original_platform_id"`
+	OriginalAccountID   int         `json:"original_account_id"`
+	PhoneNumberVerified bool        `json:"phone_number_verified"`
+	Photo               string      `json:"photo"`
+	PreferredUsername   string      `json:"preferred_username"`
+	Ban                 Ban         `json:"ban"`
+	PPID                interface{} `json:"ppid"`
+	LOLRegion           []LOLInfo   `json:"lol_region"`
+	PlayerLocale        string      `json:"player_locale"`
+	PvpNetAccountID     int         `json:"pvpnet_account_id"`
+	Region              Region      `json:"region"`
+	Acct                Account     `json:"acct"`
+	JTI                 string      `json:"jti"`
+	Username            string      `json:"username"`
+}
+
+type LOLAccount struct {
+	SummonerID    int    `json:"summoner_id"`
+	ProfileIcon   int    `json:"profile_icon"`
+	SummonerLevel int    `json:"summoner_level"`
+	SummonerName  string `json:"summoner_name"`
+}
+
+type Password struct {
+	CngAt     int64 `json:"cng_at"`
+	Reset     bool  `json:"reset"`
+	MustReset bool  `json:"must_reset"`
+}
+
+type LOLInfo struct {
+	CUID    int     `json:"cuid"`
+	CPID    string  `json:"cpid"`
+	UID     int     `json:"uid"`
+	PID     string  `json:"pid"`
+	APID    *string `json:"apid"`
+	PLocale string  `json:"ploc,omitempty"`
+	LP      bool    `json:"lp"`
+	Active  bool    `json:"active"`
+}
+
+type Restriction struct {
+	Type   string                 `json:"type"`
+	Reason string                 `json:"reason"`
+	Scope  string                 `json:"scope"`
+	Data   map[string]interface{} `json:"dat"`
+}
+
+type Ban struct {
+	Restrictions []Restriction `json:"restrictions"`
+}
+
+type Region struct {
+	Locales []string `json:"locales"`
+	ID      string   `json:"id"`
+	Tag     string   `json:"tag"`
+}
+
+type Account struct {
+	Type      int    `json:"type"`
+	State     string `json:"state"`
+	Adm       bool   `json:"adm"`
+	GameName  string `json:"game_name"`
+	TagLine   string `json:"tag_line"`
+	CreatedAt int64  `json:"created_at"`
+}
