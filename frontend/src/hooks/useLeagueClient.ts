@@ -2,7 +2,7 @@ import type { AccountType } from '@/types/types';
 import { Client } from '@riot';
 import { Events } from '@wailsio/runtime';
 import { useEffect, useState } from 'react';
-import { useAccountAuthentication } from './useAccountAuthentication';
+import { useLeagueManager } from './useLeagueManager.ts';
 
 const CLIENT_STATES = {
   CLOSED: 'league:client:closed',
@@ -15,7 +15,7 @@ const CLIENT_STATES = {
 export function useLeagueClient(account: AccountType) {
   const [clientState, setClientState] = useState(CLIENT_STATES.CLOSED);
   const [accountInfo, setAccountInfo] = useState<any>(null);
-  const { handleLoginToAccount, isLoginPending } = useAccountAuthentication({ account });
+  const { handleLoginToAccount, isLoginPending } = useLeagueManager({ account });
 
   useEffect(() => {
     const removeClosedListener = Events.On(CLIENT_STATES.CLOSED, () => {
@@ -49,21 +49,15 @@ export function useLeagueClient(account: AccountType) {
       );
     };
   }, []);
-
-  const handleOpenLeagueClient = async () => {
-    try {
-      await Client.LaunchRiotClient();
-    } catch (error) {
-      console.error('Failed to open client:', error);
-    }
-  };
+  useMutation;
+  await Client.LaunchRiotClient();
 
   return {
     clientState,
     accountInfo,
     isLoginPending,
+
     setAccountInfo,
-    handleOpenLeagueClient,
     handleLoginToAccount,
   };
 }

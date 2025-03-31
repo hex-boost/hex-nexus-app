@@ -5,7 +5,7 @@ import { Client } from '@riot';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-export function useAccountAuthentication({
+export function useLeagueManager({
   account,
 }: {
   account: AccountType;

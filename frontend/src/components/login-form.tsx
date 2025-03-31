@@ -120,7 +120,7 @@ export function LoginForm({
     {
       mutationFn:
         async () => {
-          const result = await Discord.StartOAuth();
+          await Discord.StartOAuth();
         },
       onSuccess: (_) => {
         // login(data.user, data.jwt);

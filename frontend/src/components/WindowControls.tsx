@@ -93,38 +93,38 @@ export function WindowControls({ className }: { className?: string }) {
           </TooltipContent>
         </Tooltip>
 
-        {/* Botão de maximizar/restaurar */}
-        <Tooltip delayDuration={300}>
-          <TooltipTrigger asChild>
-            <button
-              onClick={toggleMaximize}
-              className={controlButtonClass}
-              style={{ '--wails-draggable': 'no-drag' } as React.CSSProperties}
-            >
-              {isMaximized ? <Square strokeWidth={2} className="h-5 w-5 " /> : <Maximize strokeWidth={2} className="h-5 w-5 " />}
-            </button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>{isMaximized ? 'Restore' : 'Maximize'}</p>
-          </TooltipContent>
-        </Tooltip>
+      {/*  /!* Botão de maximizar/restaurar *!/*/}
+      {/*  <Tooltip delayDuration={300}>*/}
+      {/*    <TooltipTrigger asChild>*/}
+      {/*      <button*/}
+      {/*        onClick={toggleMaximize}*/}
+      {/*        className={controlButtonClass}*/}
+      {/*        style={{ '--wails-draggable': 'no-drag' } as React.CSSProperties}*/}
+      {/*      >*/}
+      {/*        {isMaximized ? <Square strokeWidth={2} className="h-5 w-5 " /> : <Maximize strokeWidth={2} className="h-5 w-5 " />}*/}
+      {/*      </button>*/}
+      {/*    </TooltipTrigger>*/}
+      {/*    <TooltipContent>*/}
+      {/*      <p>{isMaximized ? 'Restore' : 'Maximize'}</p>*/}
+      {/*    </TooltipContent>*/}
+      {/*  </Tooltip>*/}
 
-        {/* Botão de fechar (minimiza para bandeja) */}
-        <Tooltip delayDuration={300}>
-          <TooltipTrigger asChild>
-            <button
-              onClick={minimizeToTray}
-              className={cn(controlButtonClass, 'hover:bg-red-500/40')}
-              style={{ '--wails-draggable': 'no-drag' } as React.CSSProperties}
-            >
-              <X strokeWidth={2} className="h-5 w-5 " />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Minimize to tray</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      {/*  /!* Botão de fechar (minimiza para bandeja) *!/*/}
+      {/*  <Tooltip delayDuration={300}>*/}
+      {/*    <TooltipTrigger asChild>*/}
+      {/*      <button*/}
+      {/*        onClick={minimizeToTray}*/}
+      {/*        className={cn(controlButtonClass, 'hover:bg-red-500/40')}*/}
+      {/*        style={{ '--wails-draggable': 'no-drag' } as React.CSSProperties}*/}
+      {/*      >*/}
+      {/*        <X strokeWidth={2} className="h-5 w-5 " />*/}
+      {/*      </button>*/}
+      {/*    </TooltipTrigger>*/}
+      {/*    <TooltipContent>*/}
+      {/*      <p>Minimize to tray</p>*/}
+      {/*    </TooltipContent>*/}
+      {/*  </Tooltip>*/}
+      {/*</TooltipProvider>*/}
     </div>
   );
 }

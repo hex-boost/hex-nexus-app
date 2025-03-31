@@ -12,7 +12,6 @@ const CLIENT_STATES = {
 };
 type RentedAccountButtonProps = {
   account: AccountType;
-  jwt: string;
 };
 export function RentedAccountButton({ account }: RentedAccountButtonProps) {
   const {

@@ -6,16 +6,20 @@ import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { UserProfile } from '@/components/UserProfile.tsx';
 import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
-import { createFileRoute, Outlet } from '@tanstack/react-router';
+import { createFileRoute, Outlet, useRouter } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_protected')({
   component: DashboardLayout,
 });
 
 function DashboardLayout() {
+  const router = useRouter();
   const { isAuthenticated, logout, user } = useUserStore();
   const { refetchUser, isUserLoading } = useCommonFetch();
-
+  function handleLogout() {
+    logout();
+    router.navigate({ to: '/login' });
+  }
   const isLoading = isAuthenticated() && isUserLoading;
   const userAvatar = import.meta.env.VITE_BACKEND_URL + user?.avatar.url;
   return (
@@ -72,7 +76,7 @@ function DashboardLayout() {
                 isAuthenticated() && isLoading
                   ? <Skeleton></Skeleton>
                   : (
-                      <UserProfile updateAction={refetchUser} user={user!} logoutAction={logout} />
+                      <UserProfile updateAction={refetchUser} user={user!} logoutAction={handleLogout} />
                     )
               }
             </DropdownMenuContent>

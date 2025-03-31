@@ -1,6 +1,7 @@
 package league
 
 import (
+	"github.com/hex-boost/hex-nexus-app/backend/riot"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"time"
 )
@@ -17,15 +18,17 @@ const (
 type ClientMonitor struct {
 	app           *application.WebviewWindow
 	lcuConn       *LCUConnection
+	riotClient    *riot.Client
 	isRunning     bool
 	pollingTicker *time.Ticker
 	previousState string
 }
 
-func NewClientMonitor(lcuConn *LCUConnection) *ClientMonitor {
+func NewClientMonitor(lcuConn *LCUConnection, riotClient *riot.Client) *ClientMonitor {
 	return &ClientMonitor{
 		app:           nil,
 		lcuConn:       lcuConn,
+		riotClient:    riotClient,
 		isRunning:     false,
 		previousState: "",
 	}
@@ -62,15 +65,15 @@ func (m *ClientMonitor) Stop() {
 
 func (m *ClientMonitor) checkClientState() {
 	// Verifica se o cliente League está em execução
-	isRunning := m.lcuConn.IsClientRunning()
+	isRunning := m.riotClient.IsRunning()
 
 	// Verifica se o cliente está logado (se estiver em execução)
 	isLoggedIn := false
 	isLoginReady := false
 
 	if isRunning {
-		isLoggedIn = m.lcuConn.IsLoggedIn()
-		isLoginReady = m.lcuConn.IsLoginScreenReady()
+		isLoggedIn = m.lcuConn.IsInventoryReady()
+		//isLoginReady = m.riotClient.()
 	}
 
 	// Determina o estado atual
@@ -93,11 +96,12 @@ func (m *ClientMonitor) checkClientState() {
 	}
 
 	// Sempre verifica se a conta atual é alugada
-	if m.IsCurrentAccountRented() {
-		m.app.EmitEvent(EventLeagueRentedAccount, m.GetRentedAccountInfo())
-	}
+	//if m.IsCurrentAccountRented() {
+	//	m.app.EmitEvent(EventLeagueRentedAccount, m.GetRentedAccountInfo())
+	//}
 }
 
 func (m *ClientMonitor) IsCurrentAccountRented() bool {
-	return m.lcuConn.IsLoggedIn() && m.lcuConn.GetCurrentAccount().IsRented
+	return true
+	//return m.lcuConn.IsLoggedIn() && m.lcuConn.GetCurrentAccount().IsRented
 }

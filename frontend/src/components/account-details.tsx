@@ -38,7 +38,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
   price: Price;
   account: AccountType;
 }) {
-  const { user, jwt } = useUserStore();
+  const { user } = useUserStore();
   const { championsSearch, setChampionsSearch, skinsSearch, setSkinsSearch, filteredChampions, filteredSkins } = useAccountFilters({ account });
   const { selectedRentalOptionIndex, setSelectedRentalOptionIndex, handleDropAccount, isRentPending, isDropPending, setIsDropDialogOpen, handleRentAccount, isDropDialogOpen } = useAccountActions({ account, onAccountChange });
   const [activeTab, setActiveTab] = useState(0);
@@ -329,7 +329,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                   </div>
                 </CardContent>
                 <CardFooter className="flex gap-3">
-                  <RentedAccountButton account={account} jwt={jwt} />
+                  <RentedAccountButton account={account} />
                   {/* <Button */}
                   {/*  disabled={isLoginPending} */}
                   {/*  loading={isLoginPending} */}

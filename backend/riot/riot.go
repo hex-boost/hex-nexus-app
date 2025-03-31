@@ -49,7 +49,7 @@ func (c *Client) getRiotProcess() (pid int, err error) {
 	// Find the League Client or Riot Client process ID
 	for _, process := range processes {
 		exe := process.Executable()
-		if exe == "LeagueClient.exe" || exe == "LeagueClientUx.exe" || exe == "Riot Client.exe" {
+		if exe == "Riot Client.exe" {
 			return process.Pid(), nil
 		}
 	}
@@ -91,7 +91,7 @@ func (c *Client) loginWithCaptcha(username, password, captchaToken string) (stri
 	authPayload := types.Authentication{
 		Campaign: nil,
 		Language: "pt_BR",
-		Remember: true,
+		Remember: false,
 		RiotIdentity: types.RiotIdentity{
 			Captcha:  fmt.Sprintf("hcaptcha %s", captchaToken),
 			Password: password,
@@ -260,8 +260,6 @@ func (c *Client) getAuthorization() (map[string]interface{}, error) {
 	c.logger.Info("Authorization successful")
 	return authResult, nil
 }
-
-// waitForReadyState verifica repetidamente o estado de prontidão da API
 
 // AuthenticateWithCaptcha handles the complete captcha authentication flow
 func (c *Client) Authenticate(username string, password string) error {

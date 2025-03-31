@@ -30,7 +30,6 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         to: '/login',
       });
     }
-
     // Se estiver autenticado e tentar acessar login
     if (isAuthenticated && isLoginRoute) {
       throw redirect({

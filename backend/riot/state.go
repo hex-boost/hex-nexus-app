@@ -3,29 +3,25 @@ package riot
 import (
 	"errors"
 	"fmt"
-	"github.com/mitchellh/go-ps"
 	"go.uber.org/zap"
 	"time"
 )
 
 func (c *Client) IsRunning() bool {
-	processes, err := ps.Processes()
+	_, err := c.getRiotProcess()
 	if err != nil {
-		c.logger.Error("Failed to list processes", zap.Error(err))
+		c.logger.Debug("Riot client not found")
 		return false
 	}
 
-	// Find the League Client or Riot Client process
-	for _, process := range processes {
-		exe := process.Executable()
-		if exe == "LeagueClient.exe" || exe == "LeagueClientUx.exe" || exe == "Riot Client.exe" {
-			return true
-		}
-	}
-
-	return false
+	return true
 }
+func (c *Client) isAuthenticationReady() bool {
+	return true
+	//var result
+	//c.client.R().Get()
 
+}
 func (c *Client) waitForClientReady(timeout time.Duration) error {
 	deadline := time.Now().Add(timeout)
 	checkInterval := 100 * time.Millisecond

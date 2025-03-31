@@ -58,8 +58,9 @@ func Run(assets embed.FS, icon []byte) {
 	lcuConn := league.NewLCUConnection(app.App().Log().League())
 	leagueRepo := repository.NewLeagueRepository(app.App().Log().Repo())
 	leagueService := league.NewSummonerService(league.NewSummonerClient(lcuConn, app.App().Log().League()), leagueRepo, app.App().Log().League())
+	riotClient := riot.NewRiotClient(app.App().Log().Riot())
 	discordService := discord.New(app.App().Log().Discord())
-	clientMonitor := league.NewClientMonitor(lcuConn)
+	clientMonitor := league.NewClientMonitor(lcuConn, riotClient)
 	app := application.New(application.Options{
 		Name:        "Nexus",
 		Description: "Nexus - Account Renting App",
@@ -85,7 +86,7 @@ func Run(assets embed.FS, icon []byte) {
 		},
 		Services: []application.Service{
 			application.NewService(app.App()),
-			application.NewService(riot.NewRiotClient(app.App().Log().Riot())),
+			application.NewService(riotClient),
 			application.NewService(discordService),
 			application.NewService(leagueService),
 			application.NewService(clientMonitor),
@@ -100,15 +101,14 @@ func Run(assets embed.FS, icon []byte) {
 	})
 	mainWindow = app.NewWebviewWindowWithOptions(
 		application.WebviewWindowOptions{
-
 			Name:  "Main",
 			Title: "Nexus",
 
-			Width:         1600,
+			Width:         1440,
 			Height:        900,
 			AlwaysOnTop:   false,
 			URL:           "",
-			DisableResize: false,
+			DisableResize: true,
 
 			Frameless: true,
 			MinWidth:  1280,
@@ -154,8 +154,6 @@ func Run(assets embed.FS, icon []byte) {
 
 	app.EmitEvent("app:main:window:ready", nil)
 	//systray.AttachWindow(mainWindow).WindowOffset(5)
-	mainWindow.SetMaxSize(1600, 900)
-	mainWindow.SetMinSize(1280, 720)
 	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(e *application.WindowEvent) {
 		fmt.Println("Runtime ready")
 

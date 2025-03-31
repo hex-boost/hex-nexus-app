@@ -39,7 +39,7 @@ func (c *LCUConnection) InitializeConnection() error {
 	if err != nil {
 		return err
 	}
-	encodedAuth := base64.StdEncoding.EncodeToString([]byte("riot:" + token))
+	encodedAuth := base64.StdEncoding.EncodeToString([]byte("riotClient:" + token))
 
 	client := resty.New().
 		SetBaseURL(fmt.Sprintf("https://127.0.0.1:%s", port)).
@@ -107,7 +107,7 @@ func (c *LCUConnection) WaitInventoryIsReady() {
 
 	attempts := 0
 	for {
-		if c.isInventoryReady() {
+		if c.IsInventoryReady() {
 			c.logger.Info("Inventory system is ready", zap.Int("attempts", attempts))
 			return
 		}
@@ -122,8 +122,8 @@ func (c *LCUConnection) WaitInventoryIsReady() {
 	}
 }
 
-// isInventoryReady checks if the League client is ready to accept API requests
-func (c *LCUConnection) isInventoryReady() bool {
+// IsInventoryReady checks if the League client is ready to accept API requests
+func (c *LCUConnection) IsInventoryReady() bool {
 	// Check if client is properly initialized
 	if c.client == nil {
 		c.logger.Debug("LCU client not initialized")
