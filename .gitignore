@@ -4,3 +4,4 @@ node_modules
 frontend/bindings
 /logs/*
 /build/bin/*
+bin/*
