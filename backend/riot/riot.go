@@ -89,7 +89,7 @@ func (rc *RiotClient) getCredentials(riotClientPid int) (port string, authToken 
 }
 
 // LoginWithCaptcha authenticates with a completed captcha token
-func (rc *RiotClient) loginWithCaptcha(username, password, captchaToken string) (string, error) {
+func (rc *RiotClient) LoginWithCaptcha(username, password, captchaToken string) error {
 	rc.logger.Info("Authenticating with captcha token", zap.String("token_length", fmt.Sprintf("%d", len(captchaToken))))
 
 	authPayload := types.Authentication{
@@ -112,20 +112,28 @@ func (rc *RiotClient) loginWithCaptcha(username, password, captchaToken string) 
 		Put("/rso-authenticator/v1/authentication")
 	if err != nil {
 		rc.logger.Error("Authentication with captcha failed", zap.Error(err))
-		return "", fmt.Errorf("authentication request failed: %w", err)
+		return fmt.Errorf("authentication request failed: %w", err)
 	}
 
 	if loginResult.Type == "multifactor" {
 		rc.logger.Info("multifactor required for authentication")
-		return "", errors.New("captcha required")
+		return errors.New("captcha required")
 	}
 	if loginResult.Type == "success" {
 		rc.logger.Info("Authentication with captcha successful")
-		return loginResult.Success.LoginToken, nil
+		err := rc.completeAuthentication(loginResult.Success.LoginToken)
+		if err != nil {
+			return err
+		}
+		_, err = rc.getAuthorization()
+		if err != nil {
+			return err
+		}
+		return nil
 	}
 
 	rc.logger.Error("Authentication with captcha failed", zap.Any("response", loginResult))
-	return "", errors.New("authentication with captcha failed")
+	return errors.New("authentication with captcha failed")
 }
 
 // Launch finds and launches the Riot client
@@ -299,7 +307,7 @@ func (rc *RiotClient) getAuthorization() (map[string]interface{}, error) {
 //	webview.Terminate()
 //	webview.Destroy()
 //
-//	loginToken, err := c.loginWithCaptcha(username, password, captchaToken)
+//	loginToken, err := c.LoginWithCaptcha(username, password, captchaToken)
 //	if err != nil {
 //		return err
 //	}

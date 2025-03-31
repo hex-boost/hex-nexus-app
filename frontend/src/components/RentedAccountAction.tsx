@@ -19,7 +19,7 @@ type RentedAccountButtonProps = {
 
 export function RentedAccountButton({ account }: RentedAccountButtonProps) {
   const { clientState } = useLeagueEvents();
-  const { isLaunchRiotClientPending, isLoginPending, handleLaunchRiotClient, handleOpenCaptchaWebview, isCaptchaSolvingPending } = useLeagueManager({ account });
+  const { isLaunchRiotClientPending, handleLaunchRiotClient, handleOpenCaptchaWebview, authenticationState } = useLeagueManager({ account });
 
   const renderButton = () => {
     switch (clientState) {
@@ -48,23 +48,32 @@ export function RentedAccountButton({ account }: RentedAccountButtonProps) {
       case CLIENT_STATES.LOGIN_READY:
         return (
           <Button
-            disabled={isCaptchaSolvingPending}
-            loading={isCaptchaSolvingPending}
+            disabled={authenticationState !== ''}
+            loading={authenticationState !== ''}
             className="flex-1 bg-blue-600 w-full hover:bg-blue-700 text-white"
             onClick={() => handleOpenCaptchaWebview()}
           >
-            {!isLoginPending
+            {authenticationState === 'WAITING_CAPTCHA'
               ? (
                   <>
-                    <LogIn className="mr-2 h-4 w-4" />
-                    Login to
-                    account
+                    Waiting captcha to be solved
                   </>
                 )
-              : (
-                  'Authenticating...'
-                )}
+              : authenticationState === 'WAITING_LOGIN'
+                ? (
+                    <>
+                      Authenticating...
+                    </>
+                  )
+                : (
+                    <>
+                      <LogIn className="mr-2 h-4 w-4" />
+                      Login to
+                      account
+                    </>
+                  )}
           </Button>
+
         );
 
       case CLIENT_STATES.LOGGED_IN:

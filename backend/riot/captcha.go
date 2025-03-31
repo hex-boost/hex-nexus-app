@@ -165,10 +165,17 @@ func (rc *RiotClient) getCaptchaData() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if getCurrentAuthResult.Type == "auth" && getCurrentAuthResult.Captcha.Hcaptcha.Data != "" {
-		return getCurrentAuthResult.Captcha.Hcaptcha.Data, nil
-	}
+	if getCurrentAuthResult.Type != "auth" {
 
+		rc.logger.Error("Invalid authentication state", zap.Any("authState", getCurrentAuthResult))
+		return "", errors.New("invalid authentication state")
+	}
+	_, err = rc.client.R().
+		Delete("/rso-authenticator/v1/authentication")
+	if err != nil {
+		rc.logger.Error("Error in authentication delete session", zap.Error(err))
+		return "", err
+	}
 	var startAuthResult types.RiotIdentityResponse
 	startAuthRes, err := rc.client.R().
 		SetBody(getRiotIdentityStartPayload()).
@@ -194,14 +201,14 @@ func (rc *RiotClient) getCaptchaData() (string, error) {
 	return startAuthResult.Captcha.Hcaptcha.Data, nil
 }
 
-func (rc *RiotClient) WaitForCaptchaResolution(timeout time.Duration) error {
+func (rc *RiotClient) WaitAndGetCaptchaResponse(timeout time.Duration) (string, error) {
 	rc.logger.Info("Aguardando resolução do captcha", zap.Duration("timeout", timeout))
 
 	select {
 	case token := <-rc.hcaptchaResponse:
 		rc.logger.Info("Captcha resolvido com sucesso", zap.String("token_length", fmt.Sprintf("%d", len(token))))
-		return nil
+		return token, nil
 	case <-time.After(timeout):
-		return errors.New("timeout ao aguardar resolução do captcha")
+		return "", errors.New("timeout ao aguardar resolução do captcha")
 	}
 }

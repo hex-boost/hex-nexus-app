@@ -80,3 +80,33 @@ func (rc *RiotClient) waitForReadyState(timeout time.Duration) error {
 
 	return errors.New("timeout ao aguardar serviço de autenticação ficar pronto")
 }
+func (rc *RiotClient) WaitUntilUserinfoIsReady(timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	interval := 200 * time.Millisecond
+
+	rc.logger.Info("Verificando disponibilidade das informações do usuário", zap.Duration("timeout", timeout))
+
+	for time.Now().Before(deadline) {
+		// Tenta obter informações do usuário do LCU
+		resp, err := rc.client.R().Get("/lol-summoner/v1/current-summoner")
+
+		if err == nil && resp.StatusCode() == 200 && len(resp.Body()) > 0 {
+			rc.logger.Info("Informações do usuário estão prontas")
+			return nil
+		}
+
+		// Registra o status da tentativa
+		status := "erro"
+		if err != nil {
+			status = err.Error()
+		} else {
+			status = fmt.Sprintf("status %d", resp.StatusCode())
+		}
+		rc.logger.Debug("Aguardando informações do usuário ficarem prontas", zap.String("status", status))
+
+		// Aguarda antes da próxima tentativa
+		time.Sleep(interval)
+	}
+
+	return errors.New("timeout ao aguardar informações do usuário ficarem prontas")
+}

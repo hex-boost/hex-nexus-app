@@ -2,7 +2,7 @@ import { ClientMonitor } from '@league';
 import { Events } from '@wailsio/runtime';
 import { useEffect, useState } from 'react';
 
-const CLIENT_STATES = {
+export const CLIENT_STATES = {
   CHECKING: 'league:client:checking',
   CLOSED: 'league:client:closed',
   OPEN: 'league:client:open',
@@ -45,12 +45,12 @@ export function useLeagueEvents() {
         CLIENT_STATES.OPEN,
         CLIENT_STATES.LOGIN_READY,
         CLIENT_STATES.LOGGED_IN,
-        CLIENT_STATES.RENTED_ACCOUNT,
       );
     };
   }, []);
 
   return {
     clientState,
+    setClientState,
   };
 }
