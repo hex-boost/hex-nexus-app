@@ -8,9 +8,10 @@ import (
 	"github.com/inkeliz/gowebview"
 	"go.uber.org/zap"
 	"net/http"
+	"time"
 )
 
-func (c *Client) startCaptchaServer() {
+func (rc *RiotClient) startCaptchaServer() {
 	http.HandleFunc("/index.html", func(w http.ResponseWriter, r *http.Request) {
 		// Set the requested headers
 		w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -84,9 +85,9 @@ func (c *Client) startCaptchaServer() {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 
-		c.logger.Info("sending captcha token from the endpoint", zap.String("token_length", c.captchaData))
+		rc.logger.Info("sending captcha token from the endpoint", zap.String("token_length", rc.captchaData))
 		response := map[string]string{
-			"rqdata": c.captchaData,
+			"rqdata": rc.captchaData,
 		}
 
 		err := json.NewEncoder(w).Encode(response)
@@ -109,11 +110,12 @@ func (c *Client) startCaptchaServer() {
 				http.Error(w, "Invalid request", http.StatusBadRequest)
 				return
 			}
-			c.logger.Info("Received captcha token", zap.String("token_length", fmt.Sprintf("%d", len(tokenData.Token))))
+			rc.logger.Info("Received captcha token", zap.String("token_length", fmt.Sprintf("%d", len(tokenData.Token))))
 			if tokenData.Token != "" {
+
 				go func() {
-					c.hcaptchaResponse <- tokenData.Token
-					c.logger.Info("token sent to channel")
+					rc.hcaptchaResponse <- tokenData.Token
+					rc.logger.Info("token sent to channel")
 				}()
 			}
 
@@ -125,14 +127,14 @@ func (c *Client) startCaptchaServer() {
 
 	// Start the server on port 6969
 	go func() {
-		c.logger.Info("Starting captcha server on http://127.0.0.1:6969")
+		rc.logger.Info("Starting captcha server on http://127.0.0.1:6969")
 		if err := http.ListenAndServe(":6969", nil); err != nil {
-			c.logger.Error("Failed to start captcha server", zap.Error(err))
+			rc.logger.Error("Failed to start captcha server", zap.Error(err))
 		}
 	}()
 }
 
-func (c *Client) getWebView() (gowebview.WebView, error) {
+func (rc *RiotClient) GetWebView() (gowebview.WebView, error) {
 	webview, err := gowebview.New(&gowebview.Config{URL: "http://127.0.0.1:6969/index.html"})
 	if err != nil {
 		return nil, err
@@ -140,26 +142,26 @@ func (c *Client) getWebView() (gowebview.WebView, error) {
 
 	return webview, nil
 }
-func (c *Client) handleCaptcha() error {
-	c.logger.Info("Starting captcha handling")
+func (rc *RiotClient) handleCaptcha() error {
+	rc.logger.Info("Starting captcha handling")
 
 	// Get captcha data
-	captchaData, err := c.getCaptchaData()
+	captchaData, err := rc.getCaptchaData()
 	if err != nil {
-		c.logger.Error("Failed to get captcha data", zap.Error(err))
+		rc.logger.Error("Failed to get captcha data", zap.Error(err))
 		return err
 	}
 
-	c.captchaData = captchaData
+	rc.captchaData = captchaData
 
 	// Return captcha data so it can be rendered
 	return nil
 }
 
-func (c *Client) getCaptchaData() (string, error) {
+func (rc *RiotClient) getCaptchaData() (string, error) {
 	var getCurrentAuthResult types.RiotIdentityResponse
 
-	_, err := c.client.R().SetResult(&getCurrentAuthResult).Get("/rso-authenticator/v1/authentication")
+	_, err := rc.client.R().SetResult(&getCurrentAuthResult).Get("/rso-authenticator/v1/authentication")
 	if err != nil {
 		return "", err
 	}
@@ -168,21 +170,21 @@ func (c *Client) getCaptchaData() (string, error) {
 	}
 
 	var startAuthResult types.RiotIdentityResponse
-	startAuthRes, err := c.client.R().
+	startAuthRes, err := rc.client.R().
 		SetBody(getRiotIdentityStartPayload()).
 		SetResult(&startAuthResult).
 		Post("/rso-authenticator/v1/authentication/riot-identity/start")
 	if err != nil {
-		c.logger.Error("Error in authentication start request", zap.Error(err))
+		rc.logger.Error("Error in authentication start request", zap.Error(err))
 		return "", err
 	}
 
 	if startAuthRes.IsError() {
 		var errorResponse types.ErrorResponse
 		if err := json.Unmarshal(startAuthRes.Body(), &errorResponse); err != nil {
-			c.logger.Error("Failed to parse error response", zap.Error(err))
+			rc.logger.Error("Failed to parse error response", zap.Error(err))
 		}
-		c.logger.Error("Authentication failed", zap.String("message", errorResponse.Message))
+		rc.logger.Error("Authentication failed", zap.String("message", errorResponse.Message))
 		return "", errors.New(errorResponse.Message)
 	}
 
@@ -190,4 +192,16 @@ func (c *Client) getCaptchaData() (string, error) {
 		return "", errors.New("no captcha data")
 	}
 	return startAuthResult.Captcha.Hcaptcha.Data, nil
+}
+
+func (rc *RiotClient) WaitForCaptchaResolution(timeout time.Duration) error {
+	rc.logger.Info("Aguardando resolução do captcha", zap.Duration("timeout", timeout))
+
+	select {
+	case token := <-rc.hcaptchaResponse:
+		rc.logger.Info("Captcha resolvido com sucesso", zap.String("token_length", fmt.Sprintf("%d", len(token))))
+		return nil
+	case <-time.After(timeout):
+		return errors.New("timeout ao aguardar resolução do captcha")
+	}
 }

@@ -44,8 +44,8 @@ export default function AccountDetails({ account, price, onAccountChange }: {
   const [activeTab, setActiveTab] = useState(0);
   const { getCompanyIcon, getGameIcon } = useMapping();
 
-  const soloQueueRank = account.rankings?.find(r => r.queueType === 'soloqueue');
-  const flexQueueRank = account.rankings?.find(r => r.queueType === 'flex');
+  const soloQueueRank = account.rankings?.find(rc => rc.queueType === 'soloqueue');
+  const flexQueueRank = account.rankings?.find(rc => rc.queueType === 'flex');
   const { calculateTimeRemaining } = useDateTime();
   const baseElo = soloQueueRank?.elo || 'default';
   const baseEloUpperCase = baseElo.charAt(0).toUpperCase() + baseElo.slice(1).toLowerCase();
@@ -87,7 +87,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                 </div>
               </div>
 
-              <div className="flex text-lg r capitalize items-center gap-2">
+              <div className="flex text-lg rc capitalize items-center gap-2">
                 <img
                   src={getCompanyIcon(account.type)}
                   alt={account.type}

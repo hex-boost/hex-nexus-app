@@ -1,21 +1,20 @@
-import type { AccountType } from '@/types/types';
-import { Client } from '@riot';
+import { ClientMonitor } from '@league';
 import { Events } from '@wailsio/runtime';
 import { useEffect, useState } from 'react';
-import { useLeagueManager } from './useLeagueManager.ts';
 
 const CLIENT_STATES = {
+  CHECKING: 'league:client:checking',
   CLOSED: 'league:client:closed',
   OPEN: 'league:client:open',
   LOGIN_READY: 'league:client:loginready',
   LOGGED_IN: 'league:client:loggedin',
-  RENTED_ACCOUNT: 'league:account:rented',
+  CAPTCHA_SOLVING: 'league:client:captchasolving', // Novo estado
+
 };
 
-export function useLeagueClient(account: AccountType) {
-  const [clientState, setClientState] = useState(CLIENT_STATES.CLOSED);
-  const [accountInfo, setAccountInfo] = useState<any>(null);
-  const { handleLoginToAccount, isLoginPending } = useLeagueManager({ account });
+export function useLeagueEvents() {
+  ClientMonitor.Start();
+  const [clientState, setClientState] = useState(CLIENT_STATES.CHECKING);
 
   useEffect(() => {
     const removeClosedListener = Events.On(CLIENT_STATES.CLOSED, () => {
@@ -35,6 +34,7 @@ export function useLeagueClient(account: AccountType) {
     });
 
     return () => {
+      ClientMonitor.Stop();
       removeClosedListener();
       removeOpenListener();
       removeLoginReadyListener();
@@ -49,15 +49,8 @@ export function useLeagueClient(account: AccountType) {
       );
     };
   }, []);
-  useMutation;
-  await Client.LaunchRiotClient();
 
   return {
     clientState,
-    accountInfo,
-    isLoginPending,
-
-    setAccountInfo,
-    handleLoginToAccount,
   };
 }

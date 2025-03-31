@@ -1,50 +1,69 @@
 import type { AccountType } from '@/types/types.ts';
 import { Button } from '@/components/ui/button.tsx';
-import { useLeagueClient } from '@/hooks/useLeagueClient';
+import { useLeagueEvents } from '@/hooks/useLeagueEvents.ts';
+import { useLeagueManager } from '@/hooks/useLeagueManager.ts';
 import { LogIn } from 'lucide-react';
 
 const CLIENT_STATES = {
+  CHECKING: 'league:client:checking',
   CLOSED: 'league:client:closed',
   OPEN: 'league:client:open',
   LOGIN_READY: 'league:client:loginready',
   LOGGED_IN: 'league:client:loggedin',
   RENTED_ACCOUNT: 'league:account:rented',
 };
+
 type RentedAccountButtonProps = {
   account: AccountType;
 };
+
 export function RentedAccountButton({ account }: RentedAccountButtonProps) {
-  const {
-    clientState,
-    accountInfo,
-    isLoginPending,
-    handleOpenLeagueClient,
-    handleLoginToAccount,
-  } = useLeagueClient(account);
+  const { clientState } = useLeagueEvents();
+  const { isLaunchRiotClientPending, isLoginPending, handleLaunchRiotClient, handleOpenCaptchaWebview, isCaptchaSolvingPending } = useLeagueManager({ account });
 
   const renderButton = () => {
     switch (clientState) {
       case CLIENT_STATES.CLOSED:
         return (
           <Button
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-            onClick={handleOpenLeagueClient}
+            loading={isLaunchRiotClientPending}
+            disabled={isLaunchRiotClientPending}
+            className="flex-1 w-full bg-blue-600 hover:bg-blue-700 text-white"
+            onClick={() => handleLaunchRiotClient()}
           >
-            <LogIn className="mr-2 h-4 w-4" />
-            Open League of Legends
+            {!isLaunchRiotClientPending
+              ? (
+                  <>
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Open League
+                  </>
+                )
+              : (
+
+                  'Starting Riot Client...'
+                )}
           </Button>
         );
 
       case CLIENT_STATES.LOGIN_READY:
         return (
           <Button
-            disabled={isLoginPending}
-            loading={isLoginPending}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-            onClick={() => handleLoginToAccount()}
+            disabled={isCaptchaSolvingPending}
+            loading={isCaptchaSolvingPending}
+            className="flex-1 bg-blue-600 w-full hover:bg-blue-700 text-white"
+            onClick={() => handleOpenCaptchaWebview()}
           >
-            <LogIn className="mr-2 h-4 w-4" />
-            Login to LoL
+            {!isLoginPending
+              ? (
+                  <>
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Login to
+                    account
+                  </>
+                )
+              : (
+                  'Authenticating...'
+                )}
           </Button>
         );
 
@@ -52,40 +71,30 @@ export function RentedAccountButton({ account }: RentedAccountButtonProps) {
         return (
           <Button
             disabled
-            className="flex-1 bg-green-600 text-white cursor-default"
+            className="flex-1 w-full bg-green-600 text-white cursor-default"
           >
-            Connected to LoL
+            Conectado ao LoL
           </Button>
         );
 
       default:
         return (
           <Button
+            loading
+            variant="ghost"
             disabled
-            className="flex-1 bg-yellow-600 text-white cursor-default"
+            className="flex-1 w-full bg-gray-600 text-white cursor-default"
           >
-            Waiting for client...
+            Waiting client...
           </Button>
         );
     }
   };
 
   return (
-    <div className="account-status-container">
-      <div className="mt-4">
-        {renderButton()}
+    <>
+      {renderButton()}
 
-        {accountInfo && (
-          <div className="mt-2 text-sm text-gray-500">
-            {clientState === CLIENT_STATES.LOGGED_IN && (
-              <span>
-                Connected as
-                {accountInfo.username}
-              </span>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
+    </>
   );
 }

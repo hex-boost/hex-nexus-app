@@ -8,21 +8,19 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-resty/resty/v2"
+	"github.com/hex-boost/hex-nexus-app/backend/types"
+	"github.com/hex-boost/hex-nexus-app/backend/utils"
+	"github.com/mitchellh/go-ps"
+	"go.uber.org/zap"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
-	"time"
-
-	"github.com/hex-boost/hex-nexus-app/backend/types"
-	"github.com/hex-boost/hex-nexus-app/backend/utils"
-	"github.com/mitchellh/go-ps"
-	"go.uber.org/zap"
 )
 
 // RiotClient provides methods for interacting with Riot authentication services
-type Client struct {
+type RiotClient struct {
 	client           *resty.Client
 	logger           *utils.Logger
 	hcaptchaResponse chan string
@@ -31,8 +29,8 @@ type Client struct {
 }
 
 // NewRiotClient creates a new Riot client for authentication
-func NewRiotClient(logger *utils.Logger) *Client {
-	return &Client{
+func NewRiotClient(logger *utils.Logger) *RiotClient {
+	return &RiotClient{
 		client:           nil, // Will be initialized during authentication
 		logger:           logger,
 		ctx:              context.Background(),
@@ -40,24 +38,30 @@ func NewRiotClient(logger *utils.Logger) *Client {
 	}
 }
 
-func (c *Client) getRiotProcess() (pid int, err error) {
+func (rc *RiotClient) getProcess() (pid int, err error) {
 	processes, err := ps.Processes()
 	if err != nil {
 		return 0, fmt.Errorf("failed to list processes: %w", err)
 	}
-
-	// Find the League Client or Riot Client process ID
+	riotProcessNames := []string{
+		"RiotClient.exe",
+		"RiotClient",
+		"Riot Client",
+		"Riot Client.exe",
+	}
+	// Find the League RiotClient or Riot RiotClient process ID
 	for _, process := range processes {
 		exe := process.Executable()
-		if exe == "Riot Client.exe" {
-			return process.Pid(), nil
+		for _, name := range riotProcessNames {
+			if exe == name {
+				return process.Pid(), nil
+			}
 		}
 	}
-
-	return 0, errors.New("unable to find League Client or Riot Client process")
+	return 0, errors.New("unable to find League RiotClient or Riot RiotClient process")
 }
 
-func (c *Client) getClientCredentials(riotClientPid int) (port string, authToken string, err error) {
+func (rc *RiotClient) getCredentials(riotClientPid int) (port string, authToken string, err error) {
 	var cmdLine string
 
 	cmd := exec.Command("wmic", "process", "where", fmt.Sprintf("ProcessId=%d", riotClientPid), "get", "CommandLine", "/format:list")
@@ -85,8 +89,8 @@ func (c *Client) getClientCredentials(riotClientPid int) (port string, authToken
 }
 
 // LoginWithCaptcha authenticates with a completed captcha token
-func (c *Client) loginWithCaptcha(username, password, captchaToken string) (string, error) {
-	c.logger.Info("Authenticating with captcha token", zap.String("token_length", fmt.Sprintf("%d", len(captchaToken))))
+func (rc *RiotClient) loginWithCaptcha(username, password, captchaToken string) (string, error) {
+	rc.logger.Info("Authenticating with captcha token", zap.String("token_length", fmt.Sprintf("%d", len(captchaToken))))
 
 	authPayload := types.Authentication{
 		Campaign: nil,
@@ -102,31 +106,31 @@ func (c *Client) loginWithCaptcha(username, password, captchaToken string) (stri
 	}
 
 	var loginResult types.RiotIdentityResponse
-	_, err := c.client.R().
+	_, err := rc.client.R().
 		SetBody(authPayload).
 		SetResult(&loginResult).
 		Put("/rso-authenticator/v1/authentication")
 	if err != nil {
-		c.logger.Error("Authentication with captcha failed", zap.Error(err))
+		rc.logger.Error("Authentication with captcha failed", zap.Error(err))
 		return "", fmt.Errorf("authentication request failed: %w", err)
 	}
 
 	if loginResult.Type == "multifactor" {
-		c.logger.Info("multifactor required for authentication")
+		rc.logger.Info("multifactor required for authentication")
 		return "", errors.New("captcha required")
 	}
 	if loginResult.Type == "success" {
-		c.logger.Info("Authentication with captcha successful")
+		rc.logger.Info("Authentication with captcha successful")
 		return loginResult.Success.LoginToken, nil
 	}
 
-	c.logger.Error("Authentication with captcha failed", zap.Any("response", loginResult))
+	rc.logger.Error("Authentication with captcha failed", zap.Any("response", loginResult))
 	return "", errors.New("authentication with captcha failed")
 }
 
-// LaunchRiotClient finds and launches the Riot client
-func (c *Client) LaunchRiotClient() error {
-	c.logger.Info("Attempting to launch Riot client")
+// Launch finds and launches the Riot client
+func (rc *RiotClient) Launch() error {
+	rc.logger.Info("Attempting to launch Riot client")
 
 	// Determine the path to RiotClientInstalls.json based on OS
 	var riotClientPath string
@@ -139,7 +143,7 @@ func (c *Client) LaunchRiotClient() error {
 	// Read the client path from the JSON file
 	fileContent, err := os.ReadFile(riotClientPath)
 	if err != nil {
-		c.logger.Error("Failed to read Riot client installs file", zap.Error(err))
+		rc.logger.Error("Failed to read Riot client installs file", zap.Error(err))
 		return fmt.Errorf("failed to read Riot client installs file: %w", err)
 	}
 
@@ -148,7 +152,7 @@ func (c *Client) LaunchRiotClient() error {
 	}
 
 	if err := json.Unmarshal(fileContent, &clientInstalls); err != nil {
-		c.logger.Error("Failed to parse Riot client installs file", zap.Error(err))
+		rc.logger.Error("Failed to parse Riot client installs file", zap.Error(err))
 		return fmt.Errorf("failed to parse Riot client installs file: %w", err)
 	}
 
@@ -158,61 +162,65 @@ func (c *Client) LaunchRiotClient() error {
 
 	args := []string{"--launch-product=league_of_legends", "--launch-patchline=live"}
 
-	c.logger.Info("Launching Riot client",
+	rc.logger.Info("Launching Riot client",
 		zap.String("path", clientInstalls.RcDefault),
 		zap.Strings("args", args))
 
 	// Launch the process
 	cmd := exec.Command(clientInstalls.RcDefault, args...)
-	c.logger.Info("Starting Riot client process")
+	rc.logger.Info("Starting Riot client process")
 	if err := cmd.Start(); err != nil {
-		c.logger.Error("Failed to start Riot client", zap.Error(err))
+		rc.logger.Error("Failed to start Riot client", zap.Error(err))
 		return fmt.Errorf("failed to start Riot client: %w", err)
 	}
 	return nil
 }
 
-// InitializeClient sets up the client with connection to the League Client
-func (c *Client) initializeClient() error {
-	if !c.IsRunning() {
-		c.logger.Info("Riot client not running, attempting to launch it")
-		if err := c.LaunchRiotClient(); err != nil {
-			return fmt.Errorf("failed to launch Riot client: %w", err)
-		}
-		err := c.waitForClientReady(30 * time.Second)
-		if err != nil {
-			c.logger.Error("Failed to wait for Riot client to be ready", zap.Error(err))
-			return err
-		}
+// InitializeClient sets up the client with connection to the League RiotClient
+func (rc *RiotClient) initialize() error {
 
-	}
-
-	riotClientPid, err := c.getRiotProcess()
+	riotClientPid, err := rc.getProcess()
 	if err != nil {
-		c.logger.Error("Failed to get Riot client pid", zap.Error(err))
+		rc.logger.Error("Failed to get Riot client pid", zap.Error(err))
 		return err
 	}
-	port, authToken, err := c.getClientCredentials(riotClientPid)
+	port, authToken, err := rc.getCredentials(riotClientPid)
 	if err != nil {
-		c.logger.Error("Failed to get client credentials", zap.Error(err))
+		rc.logger.Error("Failed to get client credentials", zap.Error(err))
 		return err
 	}
 
-	c.logger.Info("Credentials obtained", zap.String("port", port), zap.Any("authToken", authToken))
+	rc.logger.Info("Credentials obtained", zap.String("port", port), zap.Any("authToken", authToken))
 
 	client := resty.New().
 		SetBaseURL("https://127.0.0.1:"+port).
 		SetHeader("Authorization", "Basic "+authToken)
 	client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 
-	c.client = client
+	rc.client = client
+	return nil
+}
+func (rc *RiotClient) Initialize() error {
+	// Inicializa o cliente
+	if err := rc.initialize(); err != nil {
+		return err
+	}
+
+	if err := rc.handleCaptcha(); err != nil {
+		return err
+	}
+
+	// Inicia o servidor captcha
+	rc.startCaptchaServer()
+
+	// Retorna URL para o frontend abrir como iframe
 	return nil
 }
 
 // CompleteAuthentication completes the authentication flow with a login token
-func (c *Client) completeAuthentication(loginToken string) error {
+func (rc *RiotClient) completeAuthentication(loginToken string) error {
 	var loginTokenResp types.LoginTokenResponse
-	putResp, err := c.client.R().
+	putResp, err := rc.client.R().
 		SetBody(types.LoginTokenRequest{
 			AuthenticationType: "RiotAuth",
 			CodeVerifier:       "",
@@ -222,88 +230,87 @@ func (c *Client) completeAuthentication(loginToken string) error {
 		SetResult(&loginTokenResp).
 		Put("/rso-auth/v1/session/login-token")
 	if err != nil {
-		c.logger.Error("Error sending login token", zap.Error(err))
+		rc.logger.Error("Error sending login token", zap.Error(err))
 		return err
 	}
 
 	if putResp.IsError() {
-		c.logger.Error("Login token response error", zap.Any("response", putResp))
+		rc.logger.Error("Login token response error", zap.Any("response", putResp))
 		return errors.New("login token request failed")
 	}
 
 	if loginTokenResp.Type != "authenticated" {
-		c.logger.Error("Authentication failed", zap.String("type", loginTokenResp.Type))
+		rc.logger.Error("Authentication failed", zap.String("type", loginTokenResp.Type))
 		return errors.New("authentication not successful")
 	}
 
-	c.logger.Info("Successfully authenticated with login token")
+	rc.logger.Info("Successfully authenticated with login token")
 	return nil
 }
 
 // GetAuthorization gets the authorization token
-func (c *Client) getAuthorization() (map[string]interface{}, error) {
+func (rc *RiotClient) getAuthorization() (map[string]interface{}, error) {
 	var authResult map[string]interface{}
-	postResp, err := c.client.R().
+	postResp, err := rc.client.R().
 		SetBody(getAuthorizationRequestPayload()).
 		SetResult(&authResult).
 		Post("/rso-auth/v2/authorizations/riot-client")
 	if err != nil {
-		c.logger.Error("Authorization request failed", zap.Error(err))
+		rc.logger.Error("Authorization request failed", zap.Error(err))
 		return nil, err
 	}
 
 	if postResp.IsError() {
-		c.logger.Error("Authorization response error", zap.Any("response", postResp))
+		rc.logger.Error("Authorization response error", zap.Any("response", postResp))
 		return nil, errors.New("authorization request failed")
 	}
 
-	c.logger.Info("Authorization successful")
+	rc.logger.Info("Authorization successful")
 	return authResult, nil
 }
 
-// AuthenticateWithCaptcha handles the complete captcha authentication flow
-func (c *Client) Authenticate(username string, password string) error {
-	// Initialize the client
-	if err := c.initializeClient(); err != nil {
-		return err
-	}
-	if err := c.waitForReadyState(20 * time.Second); err != nil {
-		return err
-	}
-	err := c.handleCaptcha()
-	if err != nil {
-		return err
-	}
-
-	c.logger.Info("Captcha server started")
-	c.startCaptchaServer()
-
-	webview, err := c.getWebView()
-	if err != nil {
-		return errors.New("failed to open captcha webview")
-	}
-	go func() {
-		c.logger.Info("webview start opening for user to complete captcha")
-		webview.Run()
-	}()
-	captchaToken := <-c.hcaptchaResponse
-	c.logger.Info("Captcha response received")
-
-	webview.Terminate()
-	webview.Destroy()
-
-	loginToken, err := c.loginWithCaptcha(username, password, captchaToken)
-	if err != nil {
-		return err
-	}
-	c.logger.Info("Login with captcha succeeded")
-
-	// Complete the authentication flow
-	if err := c.completeAuthentication(loginToken); err != nil {
-		return err
-	}
-
-	// Get authorization
-	_, err = c.getAuthorization()
-	return err
-}
+//func (c *RiotClient) Authenticate(username string, password string) error {
+//	// Initialize the client
+//	if err := c.initialize(); err != nil {
+//		return err
+//	}
+//	if err := c.waitForReadyState(20 * time.Second); err != nil {
+//		return err
+//	}
+//	err := c.handleCaptcha()
+//	if err != nil {
+//		return err
+//	}
+//
+//	c.logger.Info("Captcha server started")
+//	c.startCaptchaServer()
+//
+//	webview, err := c.GetWebView()
+//	if err != nil {
+//		return errors.New("failed to open captcha webview")
+//	}
+//	go func() {
+//		c.logger.Info("webview start opening for user to complete captcha")
+//		webview.Run()
+//	}()
+//	captchaToken := <-c.hcaptchaResponse
+//	c.logger.Info("Captcha response received")
+//
+//	webview.Terminate()
+//	webview.Destroy()
+//
+//	loginToken, err := c.loginWithCaptcha(username, password, captchaToken)
+//	if err != nil {
+//		return err
+//	}
+//	c.logger.Info("Login with captcha succeeded")
+//
+//	// Complete the authentication flow
+//	if err := c.completeAuthentication(loginToken); err != nil {
+//		return err
+//	}
+//
+//	// Get authorization
+//	_, err = c.getAuthorization()
+//	return err
+//}

@@ -12,19 +12,18 @@ const (
 	EventLeagueClientOpen       = "league:client:open"
 	EventLeagueClientLoggedIn   = "league:client:loggedin"
 	EventLeagueClientLoginReady = "league:client:loginready"
-	EventLeagueRentedAccount    = "league:account:rented"
 )
 
 type ClientMonitor struct {
 	app           *application.WebviewWindow
 	lcuConn       *LCUConnection
-	riotClient    *riot.Client
+	riotClient    *riot.RiotClient
 	isRunning     bool
 	pollingTicker *time.Ticker
 	previousState string
 }
 
-func NewClientMonitor(lcuConn *LCUConnection, riotClient *riot.Client) *ClientMonitor {
+func NewClientMonitor(lcuConn *LCUConnection, riotClient *riot.RiotClient) *ClientMonitor {
 	return &ClientMonitor{
 		app:           nil,
 		lcuConn:       lcuConn,
@@ -42,7 +41,7 @@ func (m *ClientMonitor) Start() {
 	}
 
 	m.isRunning = true
-	m.pollingTicker = time.NewTicker(3 * time.Second)
+	m.pollingTicker = time.NewTicker(100 * time.Millisecond)
 
 	go func() {
 		for {
@@ -64,7 +63,6 @@ func (m *ClientMonitor) Stop() {
 }
 
 func (m *ClientMonitor) checkClientState() {
-	// Verifica se o cliente League está em execução
 	isRunning := m.riotClient.IsRunning()
 
 	// Verifica se o cliente está logado (se estiver em execução)
@@ -73,7 +71,7 @@ func (m *ClientMonitor) checkClientState() {
 
 	if isRunning {
 		isLoggedIn = m.lcuConn.IsInventoryReady()
-		//isLoginReady = m.riotClient.()
+		isLoginReady = m.riotClient.IsAuthenticationReady()
 	}
 
 	// Determina o estado atual
@@ -89,16 +87,10 @@ func (m *ClientMonitor) checkClientState() {
 		currentState = EventLeagueClientOpen
 	}
 
-	// Se o estado mudou, emite um evento
 	if currentState != m.previousState {
 		m.app.EmitEvent(currentState)
 		m.previousState = currentState
 	}
-
-	// Sempre verifica se a conta atual é alugada
-	//if m.IsCurrentAccountRented() {
-	//	m.app.EmitEvent(EventLeagueRentedAccount, m.GetRentedAccountInfo())
-	//}
 }
 
 func (m *ClientMonitor) IsCurrentAccountRented() bool {

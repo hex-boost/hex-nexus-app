@@ -29,8 +29,6 @@ func NewSummonerClient(lcu *LCUConnection, logger *utils.Logger) *SummonerClient
 	}
 }
 
-// DecodeRiotJWT decodes a Riot JWT token without verification
-
 // GetLoginSession gets current user login session information
 func (s *SummonerClient) GetLoginSession() (*types.LoginSession, error) {
 	s.logger.Debug("Fetching login session information")
