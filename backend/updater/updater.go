@@ -1,7 +1,6 @@
 package updater
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"os"
@@ -13,9 +12,9 @@ import (
 )
 
 var (
-	Version    = "development"
-	BackendURL = "http://localhost:1337"
-	APIToken   = "b632ef87c3cbdda0975786fc85c1f452083bf07ef0977170400562577c627d2309949ba4e9b74a2c4c30d9ac575521ba97e3a61fac31f635390629a102674ac860c4935fcf98c8934a7af1052141d30cc31060939d1074ec3a055b9f1589c4c2fab46f6cbcee61bc06a5bceb3102d13d860c15106cd9a306248f890f31c2bfbff"
+	Version    = "1.0.0"
+	BackendURL = "https://nexus-back.up.railway.app"
+	APIToken   = "8d1052df2be1c2318e11927a9c5a05b7376688ccf98902101bef3d7da66d65db2ab781fb5e4d8efde8f8224baaba3e745d0191f9b0f6ce85ddfd5fd625e2306698a6214913aa8023a754a423427d993449f03214965b813876bce3c1fbe11469e4fa742e6e5faf9f3358c36f14284c95bfc5bd8af9b67a57e385ebd77a274bf5"
 )
 
 type Updater struct {
@@ -43,7 +42,6 @@ func (u *Updater) CheckForUpdates() (*Response, error) {
 		SetTimeout(10 * time.Second)
 	var result Response
 	strapiURL := fmt.Sprintf("%s/api/versions/update", BackendURL)
-	fmt.Printf("apitoken: " + APIToken + "\nbackendurl: " + BackendURL + "\n")
 	resp, err := client.R().
 		SetHeader("x-client-version", u.CurrentVersion).
 		SetAuthToken("Bearer " + APIToken).
@@ -93,7 +91,7 @@ type VersionResponse struct {
 	} `json:"latestVersion"`
 }
 
-func (u *Updater) Update(ctx context.Context) error {
+func (u *Updater) Update() error {
 	_, err := os.Executable()
 	strapiLatestVersionURL := fmt.Sprintf("%s/api/versions/latest", BackendURL)
 	if err != nil {
@@ -127,16 +125,11 @@ func (u *Updater) Update(ctx context.Context) error {
 	defer func(binReader io.ReadCloser) {
 		err := binReader.Close()
 		if err != nil {
-			fmt.Printf("Error closing binary reader: %v\n", err)
 		}
 	}(binReader)
 	err = selfupdate.Apply(binReader, selfupdate.Options{})
 	if err != nil {
-		if err != nil {
-			return err
-		}
 		return err
 	}
-	//runtime.Quit(ctx)
 	return nil
 }

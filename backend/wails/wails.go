@@ -2,7 +2,6 @@ package wails
 
 import (
 	"embed"
-	"fmt"
 	"github.com/hex-boost/hex-nexus-app/backend/app"
 	"github.com/hex-boost/hex-nexus-app/backend/discord"
 	"github.com/hex-boost/hex-nexus-app/backend/league"
@@ -24,20 +23,15 @@ func Init() {
 	}
 }
 
-type Weekday string
-
 func SetupSystemTray(app *application.App, window *application.WebviewWindow, icon []byte) *application.SystemTray {
 	systray := app.NewSystemTray()
-
 	menu := application.NewMenu()
 	menu.Add("Nexus").SetBitmap(icon).SetEnabled(false)
 	menu.AddSeparator()
-
 	sairItem := menu.Add("Exit Nexus")
 	sairItem.OnClick(func(ctx *application.Context) {
 		app.Quit()
 	})
-
 	systray.SetLabel("Nexus")
 	systray.SetIcon(icon)
 	systray.OnClick(func() {
@@ -48,9 +42,9 @@ func SetupSystemTray(app *application.App, window *application.WebviewWindow, ic
 	})
 	systray.SetDarkModeIcon(icon)
 	systray.SetMenu(menu)
-
 	return systray
 }
+
 func Run(assets embed.FS, icon []byte) {
 	Init()
 	var mainWindow *application.WebviewWindow
@@ -69,16 +63,14 @@ func Run(assets embed.FS, icon []byte) {
 			DisableQuitOnLastWindowClosed: true,
 		},
 		SingleInstance: &application.SingleInstanceOptions{
-			UniqueID: "com.hexboost.nexus.app", // Use um ID mais específico baseado no nome do seu app
-
+			UniqueID: "com.hexboost.nexus.app",
 			OnSecondInstanceLaunch: func(data application.SecondInstanceData) {
-				log.Printf("Segunda instância detectada com args: %v", data.Args)
+				log.Printf("Second instance detected with args: %v", data.Args)
 				if mainWindow != nil {
 					mainWindow.Show()
 					mainWindow.Focus()
 				}
 			},
-
 			AdditionalData: map[string]string{
 				"appVersion": updater.Version,
 				"launchTime": time.Now().Format(time.RFC3339),
@@ -92,7 +84,6 @@ func Run(assets embed.FS, icon []byte) {
 			application.NewService(clientMonitor),
 			application.NewService(lcuConn),
 			application.NewService(utilsBind),
-
 			application.NewService(updater.NewUpdater()),
 		},
 		Assets: application.AssetOptions{
@@ -101,34 +92,28 @@ func Run(assets embed.FS, icon []byte) {
 	})
 	mainWindow = app.NewWebviewWindowWithOptions(
 		application.WebviewWindowOptions{
-			Name:  "Main",
-			Title: "Nexus",
-
+			Name:          "Main",
+			Title:         "Nexus",
 			Width:         1440,
 			Height:        900,
 			AlwaysOnTop:   false,
 			URL:           "",
 			DisableResize: true,
-
-			Frameless: true,
-			MinWidth:  1280,
-			MinHeight: 720,
-			MaxWidth:  1600,
-			MaxHeight: 900,
+			Frameless:     true,
+			MinWidth:      1280,
+			MinHeight:     720,
+			MaxWidth:      1600,
+			MaxHeight:     900,
 			Windows: application.WindowsWindow{
-
-				BackdropType: 0,
-				DisableIcon:  false,
-				Theme:        1,
-				CustomTheme:  nil,
-
+				BackdropType:            0,
+				DisableIcon:             false,
+				Theme:                   1,
+				CustomTheme:             nil,
 				ResizeDebounceMS:        0,
 				WindowDidMoveDebounceMS: 0,
-
 				GeneralAutofillEnabled:  true,
 				PasswordAutosaveEnabled: true,
 			},
-
 			BackgroundType:  2,
 			InitialPosition: 0,
 			BackgroundColour: application.RGBA{
@@ -141,26 +126,10 @@ func Run(assets embed.FS, icon []byte) {
 			DefaultContextMenuDisabled: true,
 		},
 	)
-	mainWindow.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
-		// Hide the window
-		mainWindow.Hide()
-		// Cancel the event so it doesn't get destroyed
-		e.Cancel()
-	})
 	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(e *application.WindowEvent) {
-		fmt.Println("Runtime ready")
-
+		startup(app)
 	})
-
 	app.EmitEvent("app:main:window:ready", nil)
-	//systray.AttachWindow(mainWindow).WindowOffset(5)
-	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(e *application.WindowEvent) {
-		fmt.Println("Runtime ready")
-
-		mainWindow.ExecJS("console.log('executed')")
-
-	})
-
 	SetupSystemTray(app, mainWindow, icon)
 	clientMonitor.SetWindow(mainWindow)
 	err := app.Run()

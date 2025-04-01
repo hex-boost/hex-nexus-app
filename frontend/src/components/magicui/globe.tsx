@@ -13,11 +13,10 @@ const GLOBE_CONFIG: COBEOptions = {
   onRender: () => { },
   devicePixelRatio: 2,
   phi: 0,
-
   dark: 0.8,
-  baseColor: [0.2706, 0.3216, 0.7216], // #4552B8
-  markerColor: [0.3020, 0.2824, 0.5137], // #4D4883
-  glowColor: [0.5176, 0.6392, 0.9098], // #8
+  baseColor: [0.2706, 0.3216, 0.7216],
+  markerColor: [0.3020, 0.2824, 0.5137],
+  glowColor: [0.5176, 0.6392, 0.9098],
   theta: 0.3,
   diffuse: 0.4,
   mapSamples: 16000,

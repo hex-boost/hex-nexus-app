@@ -13,6 +13,5 @@ var iconFS embed.FS
 
 func main() {
 	iconBytes, _ := iconFS.ReadFile("build/appicon16x16.png")
-
 	wails.Run(assets, iconBytes)
 }

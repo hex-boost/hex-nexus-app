@@ -181,12 +181,12 @@ Section "Uninstall"
   Delete "$INSTDIR\uninstall.exe"
 
   ; Remove directories
-  RMDir /rc "$INSTDIR\assets"
-  RMDir /rc "$INSTDIR\docs"
+  RMDir /r "$INSTDIR\assets"
+  RMDir /r "$INSTDIR\docs"
 
   ; Remove shortcuts
   Delete "$DESKTOP\${PRODUCT_NAME}.lnk"
-  RMDir /rc "$SMPROGRAMS\$StartMenuFolder"
+  RMDir /r "$SMPROGRAMS\$StartMenuFolder"
 
   ; Remove registry entries
   DeleteRegKey HKLM "${PRODUCT_UNINST_KEY}"

@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"github.com/hex-boost/hex-nexus-app/backend/updater"
 	"github.com/pkg/browser"
-	"os"
 	"os/exec"
 )
 
@@ -30,7 +30,7 @@ func (h *Utils) GetHWID() string {
 }
 
 func (h *Utils) GetBackendUrl() string {
-	return os.Getenv("BACKEND_URL")
+	return updater.BackendURL
 }
 func (h *Utils) OpenBrowser(url string) error {
 	return browser.OpenURL(url)

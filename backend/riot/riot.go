@@ -136,45 +136,33 @@ func (rc *RiotClient) LoginWithCaptcha(username, password, captchaToken string) 
 	return errors.New("authentication with captcha failed")
 }
 
-// Launch finds and launches the Riot client
 func (rc *RiotClient) Launch() error {
 	rc.logger.Info("Attempting to launch Riot client")
-
-	// Determine the path to RiotClientInstalls.json based on OS
 	var riotClientPath string
 	programData := os.Getenv("PROGRAMDATA")
 	if programData == "" {
 		programData = "C:\\ProgramData"
 	}
 	riotClientPath = filepath.Join(programData, "Riot Games", "RiotClientInstalls.json")
-
-	// Read the client path from the JSON file
 	fileContent, err := os.ReadFile(riotClientPath)
 	if err != nil {
 		rc.logger.Error("Failed to read Riot client installs file", zap.Error(err))
 		return fmt.Errorf("failed to read Riot client installs file: %w", err)
 	}
-
 	var clientInstalls struct {
 		RcDefault string `json:"rc_default"`
 	}
-
 	if err := json.Unmarshal(fileContent, &clientInstalls); err != nil {
 		rc.logger.Error("Failed to parse Riot client installs file", zap.Error(err))
 		return fmt.Errorf("failed to parse Riot client installs file: %w", err)
 	}
-
 	if clientInstalls.RcDefault == "" {
 		return errors.New("could not find Riot client path in installs file")
 	}
-
 	args := []string{"--launch-product=league_of_legends", "--launch-patchline=live"}
-
 	rc.logger.Info("Launching Riot client",
 		zap.String("path", clientInstalls.RcDefault),
 		zap.Strings("args", args))
-
-	// Launch the process
 	cmd := exec.Command(clientInstalls.RcDefault, args...)
 	rc.logger.Info("Starting Riot client process")
 	if err := cmd.Start(); err != nil {
@@ -184,9 +172,7 @@ func (rc *RiotClient) Launch() error {
 	return nil
 }
 
-// InitializeClient sets up the client with connection to the League RiotClient
 func (rc *RiotClient) InitializeRestyClient() error {
-
 	riotClientPid, err := rc.getProcess()
 	if err != nil {
 		rc.logger.Error("Failed to get Riot client pid", zap.Error(err))
@@ -197,14 +183,11 @@ func (rc *RiotClient) InitializeRestyClient() error {
 		rc.logger.Error("Failed to get client credentials", zap.Error(err))
 		return err
 	}
-
 	rc.logger.Info("Credentials obtained", zap.String("port", port), zap.Any("authToken", authToken))
-
 	client := resty.New().
 		SetBaseURL("https://127.0.0.1:"+port).
 		SetHeader("Authorization", "Basic "+authToken)
 	client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
-
 	rc.client = client
 	return nil
 }
@@ -213,19 +196,13 @@ func (rc *RiotClient) InitializeCaptchaHandling() error {
 	if err := rc.InitializeRestyClient(); err != nil {
 		return err
 	}
-
 	if err := rc.handleCaptcha(); err != nil {
 		return err
 	}
-
-	// Inicia o servidor captcha
 	rc.startCaptchaServer()
-
-	// Retorna URL para o frontend abrir como iframe
 	return nil
 }
 
-// CompleteAuthentication completes the authentication flow with a login token
 func (rc *RiotClient) completeAuthentication(loginToken string) error {
 	var loginTokenResp types.LoginTokenResponse
 	putResp, err := rc.client.R().
@@ -241,17 +218,14 @@ func (rc *RiotClient) completeAuthentication(loginToken string) error {
 		rc.logger.Error("Error sending login token", zap.Error(err))
 		return err
 	}
-
 	if putResp.IsError() {
 		rc.logger.Error("Login token response error", zap.Any("response", putResp))
 		return errors.New("login token request failed")
 	}
-
 	if loginTokenResp.Type != "authenticated" {
 		rc.logger.Error("Authentication failed", zap.String("type", loginTokenResp.Type))
 		return errors.New("authentication not successful")
 	}
-
 	rc.logger.Info("Successfully authenticated with login token")
 	return nil
 }

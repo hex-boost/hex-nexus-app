@@ -6,7 +6,6 @@ import { useQuery } from '@tanstack/react-query';
 
 export function useCommonFetch() {
   const { isAuthenticated, setUser } = useUserStore();
-
   const {
     data: user,
     isLoading: isUserLoading,

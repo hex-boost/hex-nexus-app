@@ -96,14 +96,11 @@ func (rc *RiotClient) GetUserinfo() (*types.UserInfo, error) {
 		rc.logger.Debug("Erro ao obter informações do usuário", zap.Any("response", resp))
 		return nil, errors.New("erro ao obter informações do usuário")
 	}
-
-	// Decodificar a string JSON interna
 	var userInfoData types.UserInfo
 	if err := json.Unmarshal([]byte(rawResponse.UserInfo), &userInfoData); err != nil {
 		rc.logger.Debug("Erro ao decodificar dados do usuário", zap.Error(err))
 		return nil, fmt.Errorf("erro ao decodificar informações do usuário: %w", err)
 	}
-
 	return &userInfoData, nil
 }
 func (rc *RiotClient) WaitUntilUserinfoIsReady(timeout time.Duration) error {

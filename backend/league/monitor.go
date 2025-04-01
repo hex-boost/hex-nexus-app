@@ -39,10 +39,8 @@ func (m *ClientMonitor) Start() {
 	if m.isRunning {
 		return
 	}
-
 	m.isRunning = true
 	m.pollingTicker = time.NewTicker(50 * time.Millisecond)
-
 	go func() {
 		for {
 			select {
@@ -57,18 +55,14 @@ func (m *ClientMonitor) Stop() {
 	if !m.isRunning {
 		return
 	}
-
 	m.pollingTicker.Stop()
 	m.isRunning = false
 }
 
 func (m *ClientMonitor) checkClientState() {
 	isRunning := m.riotClient.IsRunning()
-
-	// Verifica se o cliente está logado (se estiver em execução)
 	isLoggedIn := false
 	isLoginReady := false
-
 	if isRunning {
 		if !m.riotClient.IsClientInitialized() {
 			err := m.riotClient.InitializeRestyClient()
@@ -76,17 +70,13 @@ func (m *ClientMonitor) checkClientState() {
 				fmt.Println("Error initializing client:", err)
 				return
 			}
-
 		}
 		_, userinfoErr := m.riotClient.GetUserinfo()
 		isLoggedIn = userinfoErr == nil
 		authError := m.riotClient.IsAuthStateValid()
 		isLoginReady = authError == nil
 	}
-
-	// Determina o estado atual
 	var currentState string
-
 	if !isRunning {
 		currentState = EventLeagueClientClosed
 	} else if isLoggedIn {
@@ -96,7 +86,6 @@ func (m *ClientMonitor) checkClientState() {
 	} else {
 		currentState = EventLeagueClientOpen
 	}
-
 	if currentState != m.previousState {
 		m.app.EmitEvent(currentState)
 		m.previousState = currentState

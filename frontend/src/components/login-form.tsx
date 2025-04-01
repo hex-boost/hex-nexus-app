@@ -155,15 +155,15 @@ export function LoginForm({
                     />
                     <h1 className="text-4xl font-bold mb-2">Nexus</h1>
                     <p className="text-base text-muted-foreground font-medium text-center mb-1">
-                      The number one place to find your account .
+                      The number one place to find your account
                       <br />
-                      <strong className="font-medium text-white">Never waste your time </strong>
+                      <strong className="font-medium text-white">Never waste your time</strong>
                       {' '}
                       searching for accounts again.
                     </p>
                   </div>
                   <FlickeringGrid
-                    className="absolute h-full opacity-50 inset-0 z-0 w-screen"
+                    className="absolute h-full opacity-50 inset-0 z-0 w-screen pointer-events-none"
                     squareSize={4}
                     gridGap={6}
                     color="#4552B8"

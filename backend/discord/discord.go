@@ -10,12 +10,12 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/hex-boost/hex-nexus-app/backend"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
+	"github.com/hex-boost/hex-nexus-app/backend/updater"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/pkg/browser"
 	"html/template"
 	"mime/multipart"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 )
@@ -39,7 +39,7 @@ type DiscordConfig struct {
 func New(logger *utils.Logger) *Discord {
 	return &Discord{
 		config: &DiscordConfig{
-			backendURL: os.Getenv("BACKEND_URL"),
+			backendURL: updater.BackendURL,
 			client:     resty.New(),
 		},
 		logger: logger,
@@ -85,7 +85,6 @@ func (d *Discord) StartOAuth() (map[string]interface{}, error) {
 			errMsg := errors.New("authorization code not found")
 			d.renderErrorTemplate(w, errMsg)
 			errChan <- errMsg
-
 		}
 		d.logger.Info("Authorization code received", "code_length", len(code))
 		jwt, userData, err := d.authenticateWithStrapiAndProcessAvatar(code)
@@ -134,30 +133,24 @@ func (d *Discord) StartOAuth() (map[string]interface{}, error) {
 	}
 }
 
-// fetchDiscordUserInfo fetches user information from the Discord API
 func (d *Discord) fetchDiscordUserInfo(accessToken string) (*types.DiscordUser, error) {
 	d.logger.Debug("Fetching Discord user information")
-
 	resp, err := d.config.client.R().
 		SetHeader("Authorization", "Bearer "+accessToken).
 		Get(discordApiBaseURL + "/users/@me")
-
 	if err != nil {
 		d.logger.Error("Failed to fetch Discord user information", "error", err)
 		return nil, fmt.Errorf("failed to fetch user information: %v", err)
 	}
-
 	if resp.StatusCode() != 200 {
 		d.logger.Error("Discord API returned error", "status", resp.StatusCode(), "body", string(resp.Body()))
 		return nil, fmt.Errorf("failed to fetch Discord user information: status %d", resp.StatusCode())
 	}
-
 	var user types.DiscordUser
 	if err := json.Unmarshal(resp.Body(), &user); err != nil {
 		d.logger.Error("Error decoding Discord API response", "error", err)
 		return nil, fmt.Errorf("failed to parse response: %v", err)
 	}
-
 	d.logger.Info("Discord user information obtained successfully", "user_id", user.ID, "username", user.Username)
 	return &user, nil
 }
@@ -182,25 +175,19 @@ func (d *Discord) authenticateWithStrapiAndProcessAvatar(code string) (string, i
 		return "", nil, fmt.Errorf("authentication error: %d - %s", resp.StatusCode(), string(resp.Body()))
 	}
 	d.logger.Info("Strapi authentication successful", "user_id", authResult.User.Id)
-
-	// Process and upload Discord avatar
 	if err := d.uploadDiscordAvatar(code, authResult.JWT, authResult.User.Id); err != nil {
 		d.logger.Warn("Error processing avatar", "error", err, "user_id", authResult.User.Id)
 	} else {
 		d.logger.Info("Avatar processed successfully", "user_id", authResult.User.Id)
 	}
-
-	// Fetch updated user information after avatar upload
 	userMeURL := fmt.Sprintf("%s/api/users/me", d.config.backendURL)
 	userResp, err := d.config.client.R().
 		SetHeader("Authorization", "Bearer "+authResult.JWT).
 		Get(userMeURL)
-
 	if err != nil {
 		d.logger.Error("Error fetching user data", "error", err)
 		return authResult.JWT, &authResult.User, nil
 	}
-
 	var userData map[string]interface{}
 	if err := json.Unmarshal(userResp.Body(), &userData); err != nil {
 		d.logger.Error("Error decoding user response", "error", err)
@@ -209,7 +196,6 @@ func (d *Discord) authenticateWithStrapiAndProcessAvatar(code string) (string, i
 	userId, _ := userData["id"].(float64)
 	username, _ := userData["username"].(string)
 	d.logger.Info("User data fetched successfully after avatar upload", "user_id", userId, "username", username)
-
 	return authResult.JWT, &userData, nil
 }
 
