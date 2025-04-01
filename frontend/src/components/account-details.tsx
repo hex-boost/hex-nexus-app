@@ -21,6 +21,7 @@ import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { useAccountActions } from '@/hooks/useAccountActions.ts';
 import { useAccountFilters } from '@/hooks/useAccountFilters.ts';
 import { useDateTime } from '@/hooks/useDateTime.ts';
+import { LeagueClientProvider } from '@/hooks/useLeagueEvents.tsx';
 import { strapiClient } from '@/lib/strapi.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
 import { cn } from '@/lib/utils.ts';
@@ -292,7 +293,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Rented Account</CardTitle>
+                  <CardTitle>Rentedaa Account</CardTitle>
                   <CardDescription>This account is currently rented by you</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -329,7 +330,11 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                   </div>
                 </CardContent>
                 <CardFooter className="flex gap-3">
-                  <RentedAccountButton account={account} />
+
+                  <LeagueClientProvider>
+
+                    <RentedAccountButton account={account} />
+                  </LeagueClientProvider>
                   {/* <Button */}
                   {/*  disabled={isLoginPending} */}
                   {/*  loading={isLoginPending} */}

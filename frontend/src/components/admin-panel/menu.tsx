@@ -23,62 +23,62 @@ export function Menu({ isOpen }: MenuProps) {
 
             {menus.map(
               ({ href, label, icon: Icon, submenus }, index) =>
-                !submenus || submenus.length === 0 ? (
-                  <div className="w-full" key={index}>
-                    <TooltipProvider disableHoverableContent>
-                      <Tooltip delayDuration={100}>
-                        <TooltipTrigger asChild>
-                          <Button
-                            className={clsx('hover:bg-primary/10 w-full   rounded-md justify-start h-10 mb-4', pathname.endsWith(href) ? 'bg-primary/10 text-blue-400' : 'bg-transparent text-muted-foreground  hover:text-blue-400/80')}
-                            asChild
-                          >
-                            <Link to={href}>
-                              <span
-                                className={cn(isOpen === false ? '' : 'mr-4')}
+                !submenus || submenus.length === 0
+                  ? (
+                      <div className="w-full" key={index}>
+                        <TooltipProvider disableHoverableContent>
+                          <Tooltip delayDuration={100}>
+                            <TooltipTrigger asChild>
+                              <Button
+                                className={clsx('hover:bg-primary/10 w-full   rounded-md justify-start h-10 mb-4', pathname.endsWith(href) ? 'bg-primary/10 text-blue-400' : 'bg-transparent text-muted-foreground  hover:text-blue-400/80')}
+                                asChild
                               >
-                                {/* @ts-ignore */}
-                                <Icon size={20} className="stroke-2" />
-                              </span>
-                              <p
-                                className={cn(
-                                  'max-w-[200px] truncate',
-                                  isOpen === false
-                                    ? '-translate-x-96 opacity-0'
-                                    : 'translate-x-0 opacity-100',
-                                )}
-                              >
+                                <Link to={href}>
+                                  <span
+                                    className={cn(isOpen === false ? '' : 'mr-4')}
+                                  >
+                                    <Icon size={20} className="stroke-2" />
+                                  </span>
+                                  <p
+                                    className={cn(
+                                      'max-w-[200px] truncate',
+                                      isOpen === false
+                                        ? '-translate-x-96 opacity-0'
+                                        : 'translate-x-0 opacity-100',
+                                    )}
+                                  >
+                                    {label}
+                                  </p>
+                                </Link>
+                              </Button>
+                            </TooltipTrigger>
+                            {isOpen === false && (
+                              <TooltipContent side="right">
                                 {label}
-                              </p>
-                            </Link>
-                          </Button>
-                        </TooltipTrigger>
-                        {isOpen === false && (
-                          <TooltipContent side="right">
-                            {label}
-                          </TooltipContent>
-                        )}
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                ) : (
-                  <div className="w-full" key={index}>
-                    <CollapseMenuButton
-                      icon={Icon}
-                      label={label}
-                      active={
-                        pathname.endsWith(href)
-                      }
-                      submenus={submenus}
-                      isOpen={isOpen}
-                    />
-                  </div>
-                ),
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    )
+                  : (
+                      <div className="w-full" key={index}>
+                        <CollapseMenuButton
+                          icon={Icon}
+                          label={label}
+                          active={
+                            pathname.endsWith(href)
+                          }
+                          submenus={submenus}
+                          isOpen={isOpen}
+                        />
+                      </div>
+                    ),
             )}
           </li>
         ))}
         <li className="w-full grow flex items-end justify-center pb-4">
-          <span className="font-medium text-muted-foreground text-sm">v1.0.2</span>
-          {/* {GetCurrentVersion()} */}
+          <span className="font-medium text-muted-foreground text-sm">{import.meta.env.VITE_APP_VERSION}</span>
         </li>
       </ul>
     </nav>

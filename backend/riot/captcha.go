@@ -77,7 +77,7 @@ func (rc *RiotClient) startCaptchaServer() {
     </script>
 </head>
 <body>
-<div id="fds">not selected</div>
+<div id="fds" style="display: none;">not selected</div>
 <form action="/" method="POST" id="hcaptcha-form">
     <div id="hcaptcha-container"></div>
     <input type="submit" value="SEND">
@@ -128,6 +128,7 @@ func (rc *RiotClient) startCaptchaServer() {
 					if err != nil {
 						return
 					}
+					rc.webview.Terminate()
 				}()
 			}
 
@@ -155,7 +156,7 @@ func (rc *RiotClient) GetWebView() (gowebview.WebView, error) {
 }
 
 func (rc *RiotClient) CloseWebview() {
-	rc.webview.Destroy()
+	//rc.webview.Destroy()
 }
 func (rc *RiotClient) handleCaptcha() error {
 	rc.logger.Info("Starting captcha handling")

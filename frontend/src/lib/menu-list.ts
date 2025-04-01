@@ -8,7 +8,7 @@ type Submenu = {
 type Menu = {
   href: string;
   label: string;
-  icon: React.ComponentType;
+  icon: any;
   submenus?: Submenu[];
 };
 
