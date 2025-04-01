@@ -23,6 +23,18 @@ func Init() {
 	}
 }
 
+// HTML para a janela de atualização
+
+func createContextMenu(window *application.WebviewWindow) *application.Menu {
+	contextMenu := application.NewMenu()
+
+	reloadItem := contextMenu.Add("Reload Page")
+	reloadItem.OnClick(func(ctx *application.Context) {
+		window.Reload()
+	})
+
+	return contextMenu
+}
 func SetupSystemTray(app *application.App, window *application.WebviewWindow, icon []byte) *application.SystemTray {
 	systray := app.NewSystemTray()
 	menu := application.NewMenu()
@@ -129,6 +141,8 @@ func Run(assets embed.FS, icon []byte) {
 	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(e *application.WindowEvent) {
 		startup(app)
 	})
+
+	createContextMenu(mainWindow)
 	app.EmitEvent("app:main:window:ready", nil)
 	SetupSystemTray(app, mainWindow, icon)
 	clientMonitor.SetWindow(mainWindow)

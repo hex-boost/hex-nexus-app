@@ -1,9 +1,8 @@
+// frontend/src/hooks/useLeagueManager.tsx
 import type { AccountType } from '@/types/types';
-import { CLIENT_STATES, useLeagueEvents } from '@/hooks/useLeagueEvents.ts';
+import { useLeagueEvents } from '@/hooks/useLeagueEvents';
 import { RiotClient } from '@riot';
 import { useMutation } from '@tanstack/react-query';
-
-import { useState } from 'react';
 import { toast } from 'sonner';
 import { Duration } from '../../bindings/time/index';
 
@@ -12,42 +11,26 @@ export function useLeagueManager({
 }: {
   account: AccountType;
 }) {
-  const { setClientState } = useLeagueEvents();
+  const { clientInfo, updateAuthState } = useLeagueEvents();
 
-  // const { mutate: handleSummonerUpdate } = useMutation<any, string>({
-  //   mutationKey: ['summoner', 'update', account.id],
-  //   mutationFn: async () => {
-  //     await LCUConnection.WaitUntilReady();
-  //     await LCUConnection.InitializeConnection();
-  //     await LCUConnection.WaitInventoryIsReady();
-  //     await SummonerService.UpdateFromLCU(account.username, account.password);
-  //   },
-  //   onError: (error) => {
-  //     console.error(error);
-  //   },
-  // });
-  const [authenticationState, setAuthenticationState] = useState<'WAITING_CAPTCHA' | 'WAITING_LOGIN' | 'LOGIN_SUCCESS' | ''>('');
-
-  const { mutate: handleOpenCaptchaWebview } = useMutation<any, string>({
+  const { mutate: handleOpenCaptchaWebview } = useMutation<any, {}>({
     mutationKey: ['account', 'solveCaptcha', account.id],
     mutationFn: async () => {
-      setAuthenticationState('WAITING_CAPTCHA');
+      updateAuthState('WAITING_CAPTCHA');
       await RiotClient.InitializeCaptchaHandling();
       await RiotClient.GetWebView();
 
-      const captchaResponse = await RiotClient.WaitAndGetCaptchaResponse(Duration.Second * 120); // timeout de 2 minutos
-      await RiotClient.CloseWebview();
-      setAuthenticationState('WAITING_LOGIN');
+      const captchaResponse = await RiotClient.WaitAndGetCaptchaResponse(Duration.Second * 120);
+      updateAuthState('WAITING_LOGIN');
       await RiotClient.LoginWithCaptcha(account.username, account.password, captchaResponse);
       await RiotClient.WaitUntilUserinfoIsReady(Duration.Second * 20);
     },
     onSuccess: () => {
-      setAuthenticationState('LOGIN_SUCCESS');
+      updateAuthState('LOGIN_SUCCESS');
       toast.success('Autenticado com sucesso');
     },
-    onError: (error) => {
-      setAuthenticationState('');
-      setClientState(CLIENT_STATES.CHECKING);
+    onError: (error: string) => {
+      updateAuthState('', error as string);
 
       if (error === 'captcha_not_allowed') {
         toast.error('O captcha expirou ou foi rejeitado', {
@@ -56,19 +39,11 @@ export function useLeagueManager({
             label: 'Tentar novamente',
             onClick: () => handleOpenCaptchaWebview(),
           },
-          duration: 10000, // 10 segundos para o usuário ver a notificação
+          duration: 10000,
         });
       } else {
         toast.error('Erro na autenticação', {
-          description: () => {
-            return (
-              <span>
-                {' '}
-                {error}
-                {' '}
-              </span>
-            );
-          },
+          description: () => <span>{error}</span>,
           action: {
             label: 'Tentar novamente',
             onClick: () => handleOpenCaptchaWebview(),
@@ -79,11 +54,11 @@ export function useLeagueManager({
       console.error('erro na autenticação', error);
     },
   });
+
   const { mutate: handleLaunchRiotClient, isPending: isLaunchRiotClientPending } = useMutation({
     mutationKey: ['account', 'login', account.id],
     mutationFn: async () => {
-      setAuthenticationState('');
-
+      updateAuthState('');
       await RiotClient.Launch();
       await RiotClient.WaitUntilIsRunning(Duration.Second * 10);
       await RiotClient.WaitUntilAuthenticationIsReady(Duration.Second * 20);
@@ -91,8 +66,8 @@ export function useLeagueManager({
     onSuccess: () => {
       toast.success('Riot Client launched successfully');
     },
-
     onError: () => {
+      updateAuthState('');
       toast.error('Ocorreu um erro ao iniciar o Riot Client', {
         description: 'Pode existir outro cliente aberto impedindo a inicialização.',
         action: {
@@ -112,8 +87,6 @@ export function useLeagueManager({
           },
         },
       });
-
-      setAuthenticationState('');
     },
   });
 
@@ -121,6 +94,6 @@ export function useLeagueManager({
     isLaunchRiotClientPending,
     handleLaunchRiotClient,
     handleOpenCaptchaWebview,
-    authenticationState,
+    authenticationState: clientInfo.authState,
   };
 }

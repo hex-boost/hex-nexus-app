@@ -18,6 +18,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"syscall"
 )
 
 // RiotClient provides methods for interacting with Riot authentication services
@@ -141,7 +142,7 @@ func (rc *RiotClient) getCredentials(riotClientPid int) (port string, authToken 
 }
 
 // LoginWithCaptcha authenticates with a completed captcha token
-func (rc *RiotClient) LoginWithCaptcha(username, password, captchaToken string) error {
+func (rc *RiotClient) LoginWithCaptcha(username, password, captchaToken string) (string, error) {
 	rc.logger.Info("Authenticating with captcha token", zap.String("token_length", fmt.Sprintf("%d", len(captchaToken))))
 
 	authPayload := types.Authentication{
@@ -164,31 +165,31 @@ func (rc *RiotClient) LoginWithCaptcha(username, password, captchaToken string) 
 		Put("/rso-authenticator/v1/authentication")
 	if err != nil {
 		rc.logger.Error("Authentication with captcha failed", zap.Error(err))
-		return fmt.Errorf("authentication request failed: %w", err)
+		return "", fmt.Errorf("authentication request failed: %w", err)
 	}
 
 	if loginResult.Type == "multifactor" {
 		rc.logger.Info("multifactor required for authentication")
-		return errors.New("captcha required")
+		return "", errors.New("captcha required")
 	}
 	if loginResult.Type == "success" {
 		rc.logger.Info("Authentication with captcha successful")
 		err := rc.completeAuthentication(loginResult.Success.LoginToken)
 		if err != nil {
-			return err
+			return "", err
 		}
 		_, err = rc.getAuthorization()
 		if err != nil {
-			return err
+			return "", err
 		}
-		return nil
+		return "", nil
 	}
 	if loginResult.Error == "captcha_not_allowed" {
-		return errors.New(loginResult.Error)
+		return loginResult.Captcha.Hcaptcha.Data, errors.New(loginResult.Error)
 	}
 
 	rc.logger.Error("Authentication with captcha failed", zap.Any("response", loginResult))
-	return errors.New("authentication with captcha failed")
+	return "", errors.New("authentication with captcha failed")
 }
 
 func (rc *RiotClient) Launch() error {
@@ -221,6 +222,9 @@ func (rc *RiotClient) Launch() error {
 		zap.Strings("args", args))
 	cmd := exec.Command(clientInstalls.RcDefault, args...)
 	rc.logger.Info("Starting Riot client process")
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		HideWindow: true,
+	}
 	if err := cmd.Start(); err != nil {
 		rc.logger.Error("Failed to start Riot client", zap.Error(err))
 		return fmt.Errorf("failed to start Riot client: %w", err)
