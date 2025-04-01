@@ -42,7 +42,7 @@ const router = createRouter({
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
 
-    <Toaster />
+    <Toaster theme="dark" richColors />
     <ReactQueryDevtools client={queryClient} />
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />

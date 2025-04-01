@@ -18,6 +18,25 @@ func (rc *RiotClient) IsRunning() bool {
 
 	return true
 }
+
+func (rc *RiotClient) WaitUntilIsRunning(timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	checkInterval := 500 * time.Millisecond
+
+	rc.logger.Info("Aguardando o cliente Riot iniciar", zap.Duration("timeout", timeout))
+
+	for time.Now().Before(deadline) {
+		if rc.IsRunning() {
+			rc.logger.Info("Cliente Riot está em execução")
+			return nil
+		}
+
+		rc.logger.Debug("Cliente Riot não encontrado, verificando novamente")
+		time.Sleep(checkInterval)
+	}
+
+	return fmt.Errorf("timeout ao aguardar o cliente Riot iniciar")
+}
 func (rc *RiotClient) IsAuthenticationReady() bool {
 	// Verifica se o cliente está pronto para autenticação
 	pid, err := rc.getProcess()
@@ -28,6 +47,7 @@ func (rc *RiotClient) IsAuthenticationReady() bool {
 	_, _, err = rc.getCredentials(pid)
 	return err == nil
 }
+
 func (rc *RiotClient) WaitUntilAuthenticationIsReady(timeout time.Duration) error {
 	deadline := time.Now().Add(timeout)
 	checkInterval := 100 * time.Millisecond
@@ -40,11 +60,23 @@ func (rc *RiotClient) WaitUntilAuthenticationIsReady(timeout time.Duration) erro
 		}
 
 		port, _, err := rc.getCredentials(pid)
+
 		if err != nil {
 			rc.logger.Debug("Riot client process found but not fully initialized")
 			continue
 		}
-		rc.logger.Info("Riot client is running and ready",
+		if !rc.IsClientInitialized() {
+			rc.logger.Info("Riot client is not initialized")
+			continue
+		}
+		err = rc.IsAuthStateValid()
+		if err != nil {
+			rc.logger.Info("Riot client is opened but auth state is invalid")
+			continue
+		}
+
+		rc.logger.Info("Riot client is opened and auth state is valid")
+		rc.logger.Info("Credentials:",
 			zap.Int("pid", pid),
 			zap.String("port", port))
 		return nil

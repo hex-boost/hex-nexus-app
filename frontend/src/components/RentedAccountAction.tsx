@@ -1,7 +1,7 @@
 import type { AccountType } from '@/types/types.ts';
 import { Button } from '@/components/ui/button.tsx';
 import { useLeagueEvents } from '@/hooks/useLeagueEvents.ts';
-import { useLeagueManager } from '@/hooks/useLeagueManager.ts';
+import { useLeagueManager } from '@/hooks/useLeagueManager.tsx';
 import { LogIn } from 'lucide-react';
 
 const CLIENT_STATES = {
@@ -20,7 +20,6 @@ type RentedAccountButtonProps = {
 export function RentedAccountButton({ account }: RentedAccountButtonProps) {
   const { clientState } = useLeagueEvents();
   const { isLaunchRiotClientPending, handleLaunchRiotClient, handleOpenCaptchaWebview, authenticationState } = useLeagueManager({ account });
-
   const renderButton = () => {
     switch (clientState) {
       case CLIENT_STATES.CLOSED:

@@ -10,6 +10,14 @@ vars:
   VITE_PORT: '{{.WAILS_VITE_PORT | default 9245}}'
 
 tasks:
+  debug:
+    summary: Executa a aplicação em modo de depuração
+    cmds:
+      - go build -gcflags="all=-N -l" -o {{.BIN_DIR}}/{{.APP_NAME}}.exe
+      - wails3 dev -config ./build/config.yml -port {{.VITE_PORT}}
+    env:
+      GOOS: windows
+      WAILS_VITE_PORT: "{{.VITE_PORT}}"
   build:
     summary: Builds the application
     cmds:

@@ -1,6 +1,7 @@
 package riot
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,7 +13,14 @@ import (
 )
 
 func (rc *RiotClient) startCaptchaServer() {
-	http.HandleFunc("/index.html", func(w http.ResponseWriter, r *http.Request) {
+	mux := http.NewServeMux()
+
+	captchaServer := &http.Server{
+		Addr:    ":6969",
+		Handler: mux,
+	}
+
+	mux.HandleFunc("/index.html", func(w http.ResponseWriter, r *http.Request) {
 		// Set the requested headers
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Cache-Control", "no-cache")
@@ -81,7 +89,7 @@ func (rc *RiotClient) startCaptchaServer() {
 	})
 
 	// API endpoint to get captcha data
-	http.HandleFunc("/api/captcha/data", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/captcha/data", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 
@@ -97,7 +105,7 @@ func (rc *RiotClient) startCaptchaServer() {
 	})
 
 	// API endpoint to receive token
-	http.HandleFunc("/api/captcha/token", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/captcha/token", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 
@@ -116,6 +124,10 @@ func (rc *RiotClient) startCaptchaServer() {
 				go func() {
 					rc.hcaptchaResponse <- tokenData.Token
 					rc.logger.Info("token sent to channel")
+					err := captchaServer.Shutdown(context.Background())
+					if err != nil {
+						return
+					}
 				}()
 			}
 
@@ -124,11 +136,10 @@ func (rc *RiotClient) startCaptchaServer() {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
-
 	// Start the server on port 6969
 	go func() {
 		rc.logger.Info("Starting captcha server on http://127.0.0.1:6969")
-		if err := http.ListenAndServe(":6969", nil); err != nil {
+		if err := captchaServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			rc.logger.Error("Failed to start captcha server", zap.Error(err))
 		}
 	}()
@@ -139,8 +150,12 @@ func (rc *RiotClient) GetWebView() (gowebview.WebView, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	rc.webview = webview
 	return webview, nil
+}
+
+func (rc *RiotClient) CloseWebview() {
+	rc.webview.Destroy()
 }
 func (rc *RiotClient) handleCaptcha() error {
 	rc.logger.Info("Starting captcha handling")
@@ -158,10 +173,21 @@ func (rc *RiotClient) handleCaptcha() error {
 	return nil
 }
 func (rc *RiotClient) IsAuthStateValid() error {
+	if rc.client == nil {
+		return errors.New("client is not initialized")
+	}
 	var getCurrentAuthResult types.RiotIdentityResponse
-	_, err := rc.client.R().SetResult(&getCurrentAuthResult).Get("/rso-authenticator/v1/authentication")
+	result, err := rc.client.R().SetResult(&getCurrentAuthResult).Get("/rso-authenticator/v1/authentication")
 	if err != nil {
+		rc.logger.Error("Authentication failed", zap.Error(err))
 		return err
+	}
+	if result.IsError() {
+		rc.logger.Error("Authentication failed",
+			zap.String("message", string(result.Body())),
+			zap.Int("status_code", result.StatusCode()))
+		return fmt.Errorf("authentication failed with status code %d: %s",
+			result.StatusCode(), string(result.Body()))
 	}
 	if getCurrentAuthResult.Type != "auth" {
 		return errors.New("invalid authentication state")

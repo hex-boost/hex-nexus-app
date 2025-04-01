@@ -10,6 +10,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
+	"github.com/inkeliz/gowebview"
 	"github.com/mitchellh/go-ps"
 	"go.uber.org/zap"
 	"os"
@@ -26,6 +27,7 @@ type RiotClient struct {
 	hcaptchaResponse chan string
 	ctx              context.Context
 	captchaData      string
+	webview          gowebview.WebView
 }
 
 // NewRiotClient creates a new Riot client for authentication
@@ -37,7 +39,57 @@ func NewRiotClient(logger *utils.Logger) *RiotClient {
 		hcaptchaResponse: make(chan string),
 	}
 }
+func (rc *RiotClient) ResetRestyClient() {
+	rc.client = nil
+}
 
+// ForceCloseAllClients closes all Riot-related processes
+func (rc *RiotClient) ForceCloseAllClients() error {
+	rc.logger.Info("Forcing close of all Riot clients")
+
+	riotProcesses := []string{
+		"RiotClientCrashHandler.exe",
+		"RiotClientServices.exe",
+		"RiotClientUx.exe",
+		"RiotClientUxRender.exe",
+		"Riot Client.exe",
+		"LeagueCrashHandler.exe",
+		"LeagueCrashHandler64.exe",
+		"LeagueClient.exe",
+		"LeagueClientUx.exe",
+		"LeagueClientUxRender.exe",
+		"VALORANT.exe",
+		"VALORANT-Win64-Shipping.exe",
+	}
+
+	processes, err := ps.Processes()
+	if err != nil {
+		rc.logger.Error("Failed to list processes", zap.Error(err))
+		return fmt.Errorf("failed to list processes: %w", err)
+	}
+
+	for _, process := range processes {
+		processName := process.Executable()
+		for _, riotProcess := range riotProcesses {
+			if processName == riotProcess {
+				cmd := exec.Command("taskkill", "/F", "/PID", fmt.Sprintf("%d", process.Pid()))
+				if err := cmd.Run(); err != nil {
+					rc.logger.Error("Failed to kill process",
+						zap.String("process", processName),
+						zap.Int("pid", process.Pid()),
+						zap.Error(err))
+				} else {
+					rc.logger.Info("Successfully killed process",
+						zap.String("process", processName),
+						zap.Int("pid", process.Pid()))
+				}
+				break
+			}
+		}
+	}
+	rc.ResetRestyClient()
+	return nil
+}
 func (rc *RiotClient) getProcess() (pid int, err error) {
 	processes, err := ps.Processes()
 	if err != nil {
@@ -131,12 +183,16 @@ func (rc *RiotClient) LoginWithCaptcha(username, password, captchaToken string) 
 		}
 		return nil
 	}
+	if loginResult.Error == "captcha_not_allowed" {
+		return errors.New(loginResult.Error)
+	}
 
 	rc.logger.Error("Authentication with captcha failed", zap.Any("response", loginResult))
 	return errors.New("authentication with captcha failed")
 }
 
 func (rc *RiotClient) Launch() error {
+	rc.ResetRestyClient()
 	rc.logger.Info("Attempting to launch Riot client")
 	var riotClientPath string
 	programData := os.Getenv("PROGRAMDATA")
