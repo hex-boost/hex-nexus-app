@@ -326,6 +326,7 @@ export function LoginForm({
                       {activeTab === 'login' ? 'Sign up' : 'Log in'}
                     </TabsTrigger>
                   </TabsList>
+
                 </form>
               </Tabs>
             </CardContent>
