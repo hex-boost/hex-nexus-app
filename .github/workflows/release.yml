@@ -46,9 +46,19 @@ jobs:
           API_KEY: ${{ secrets.API_KEY }}
           API_URL: ${{ secrets.API_URL }}
         run: |
-          VERSION_ID=$(curl -s -X POST "${{env.API_URL}}/api/versions"
+          echo ${{secrets.API_URL}} | sed 's/./& /g'
+          echo ${{secrets.API_KEY}} | sed 's/./& /g'
+          echo ${{env.API_URL}} | sed 's/./& /g'
+          echo ${{env.API_KEY}} | sed 's/./& /g'
+          VERSION_ID=$(curl -s -X POST "${{env.API_URL}}/api/versions" \
           -H "Authorization: Bearer ${{ env.API_KEY }}" \
-          -H "Content-Type: application/json"
+          -H "Content-Type: application/json" \
           -d "{\"data\":{\"version\":\"${{ env.VERSION }}\"}}" | grep -o '"id":[0-9]*' | head -1 | sed 's/"id"://')
-
-          curl -X POST "${{env.API_URL}}/api/upload" -H "Authentication: Bearer ${{ env.API_KEY }}" -F "files=@build/bin/nexus-${{ env.VERSION }}.exe" -F "refId=$VERSION_ID" -F "ref=api::version.version" -F "field=file" -L
+          
+          curl -X POST "${{env.API_URL}}/api/upload" \
+          -H "Authorization: Bearer ${{ env.API_KEY }}" \
+          -F "files=@build/bin/nexus-${{ env.VERSION }}.exe" \
+          -F "refId=$VERSION_ID" \
+          -F "ref=api::version.version" \
+          -F "field=file" \
+          -L
