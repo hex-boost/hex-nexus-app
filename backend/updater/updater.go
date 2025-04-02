@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -67,21 +66,8 @@ func (u *Updater) LogBuildInfo(filepath string) error {
 }
 
 func (u *Updater) UpdateAndRestart() error {
-	execPath, err := os.Executable()
-	if err != nil {
-		return fmt.Errorf("erro ao obter caminho do executável: %w", err)
-	}
-	realPath, err := filepath.EvalSymlinks(execPath)
-	if err != nil {
-		return fmt.Errorf("erro ao resolver symlink: %w", err)
-	}
-	backupPath := realPath + ".bak"
-	if err := os.Rename(realPath, backupPath); err != nil {
-		return fmt.Errorf("erro ao criar backup: %w", err)
-	}
 	if err := u.Update(); err != nil {
-		os.Rename(backupPath, realPath)
-		return fmt.Errorf("erro na atualização: %w", err)
+		return fmt.Errorf("error during update: %w", err)
 	}
 	return u.restartApplication(os.Args)
 }
@@ -95,7 +81,7 @@ func (u *Updater) restartApplication(args []string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP}
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: false, CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP}
 	if err := cmd.Start(); err != nil {
 		return err
 	}
@@ -186,31 +172,8 @@ func (u *Updater) Update() error {
 			fmt.Printf("Error closing response body: %v\n", err)
 		}
 	}(binReader)
-	fmt.Println("Creating temporary file...")
-	tempFile, err := os.CreateTemp("", "nexus_update_*.bin")
-	if err != nil {
-		fmt.Printf("Error creating temporary file: %v\n", err)
-		return fmt.Errorf("error creating temporary file: %w", err)
-	}
-	fmt.Printf("Temporary file created: %s\n", tempFile.Name())
-	defer os.Remove(tempFile.Name())
-	fmt.Println("Writing update data to temporary file...")
-	fileSize, err := io.Copy(tempFile, binReader)
-	if err != nil {
-		fmt.Printf("Error writing update data: %v\n", err)
-		return fmt.Errorf("error writing temporary file: %w", err)
-	}
-	if fileSize == 0 {
-		fmt.Println("Error: update file is empty")
-		return fmt.Errorf("update file is empty")
-	}
-	fmt.Printf("Downloaded update file: %d bytes\n", fileSize)
-	if _, err := tempFile.Seek(0, 0); err != nil {
-		fmt.Printf("Error repositioning file: %v\n", err)
-		return fmt.Errorf("error repositioning file: %w", err)
-	}
 	fmt.Println("Applying update...")
-	err = selfupdate.Apply(tempFile, selfupdate.Options{})
+	err = selfupdate.Apply(binReader, selfupdate.Options{})
 	if err != nil {
 		fmt.Printf("Error applying update: %v\n", err)
 		return fmt.Errorf("error applying update: %w", err)

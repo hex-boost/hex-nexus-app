@@ -66,7 +66,7 @@ func Run(assets embed.FS, icon []byte) {
 	clientMonitor := league.NewClientMonitor(lcuConn, riotClient)
 	app := application.New(application.Options{
 		Name:        "Nexus",
-		Description: "Nexus - Account Renting App",
+		Description: "Nexus",
 		Icon:        icon,
 		Windows: application.WindowsOptions{
 			DisableQuitOnLastWindowClosed: true,

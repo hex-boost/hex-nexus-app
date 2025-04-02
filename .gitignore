@@ -3,5 +3,6 @@ node_modules
 *.env
 frontend/bindings
 /logs/*
-/build/bin/*
+build
 bin/*
+.task
