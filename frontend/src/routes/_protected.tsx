@@ -21,7 +21,7 @@ function DashboardLayout() {
     router.navigate({ to: '/login' });
   }
   const isLoading = isAuthenticated() && isUserLoading;
-  const userAvatar = import.meta.env.VITE_BACKEND_URL + user?.avatar.url;
+  const userAvatar = import.meta.env.VITE_API_URL + user?.avatar.url;
   return (
     <>
 

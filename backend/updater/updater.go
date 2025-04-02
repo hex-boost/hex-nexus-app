@@ -187,9 +187,32 @@ func (u *Updater) Update() error {
 		if err != nil {
 		}
 	}(binReader)
-	err = selfupdate.Apply(binReader, selfupdate.Options{})
+	tempFile, err := os.CreateTemp("", "nexus_update_*.bin")
 	if err != nil {
-		return err
+		return fmt.Errorf("erro ao criar arquivo temporário: %w", err)
+	}
+	defer os.Remove(tempFile.Name())
+
+	fileSize, err := io.Copy(tempFile, binReader)
+	if err != nil {
+		return fmt.Errorf("erro ao escrever arquivo temporário: %w", err)
+	}
+
+	if fileSize == 0 {
+		return fmt.Errorf("arquivo de atualização vazio")
+	}
+
+	fmt.Printf("Baixado arquivo de atualização: %d bytes\n", fileSize)
+
+	// Reposicionar o arquivo para o início
+	if _, err := tempFile.Seek(0, 0); err != nil {
+		return fmt.Errorf("erro ao reposicionar arquivo: %w", err)
+	}
+
+	// Tentar aplicar a atualização
+	err = selfupdate.Apply(tempFile, selfupdate.Options{})
+	if err != nil {
+		return fmt.Errorf("erro ao aplicar atualização: %w", err)
 	}
 	return nil
 }

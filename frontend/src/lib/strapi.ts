@@ -4,7 +4,7 @@ import type { StrapiDefaultOptions } from 'strapi-ts-sdk/dist/infra/strapi-sdk/s
 import { ProviderAuth, Strapi, UserAuth, UserBase } from 'strapi-ts-sdk';
 
 const defaults: StrapiDefaultOptions = {
-  url: import.meta.env.VITE_BACKEND_URL || 'http://localhost:1337',
+  url: import.meta.env.VITE_API_URL || 'http://localhost:1337',
   prefix: '/api',
 
   store: {

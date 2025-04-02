@@ -9,12 +9,9 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/riot"
 	"github.com/hex-boost/hex-nexus-app/backend/updater"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
-	"github.com/wailsapp/wails/v3/pkg/events"
-	"os"
-	"path/filepath"
-
 	"github.com/joho/godotenv"
 	"github.com/wailsapp/wails/v3/pkg/application"
+	"github.com/wailsapp/wails/v3/pkg/events"
 	"log"
 	"time"
 )
@@ -59,26 +56,26 @@ func SetupSystemTray(app *application.App, window *application.WebviewWindow, ic
 func Run(assets embed.FS, icon []byte) {
 
 	mainLogger := utils.NewFileLogger("app")
-	Init()
-	execPath, err := os.Executable()
+	//Init()
+	//execPath, err := os.Executable()
 	mainUpdater := updater.NewUpdater()
-	if err == nil {
-		logDir := filepath.Dir(execPath)
-		logFile := filepath.Join(logDir, "build_info.log")
-
-		// Registre as informações de build
-		err = mainUpdater.LogBuildInfo(logFile)
-		if err != nil {
-
-		}
-		err = mainUpdater.Update()
-		if err != nil {
-			mainLogger.Error("Error updating application:", err)
-			return
-		}
-		mainLogger.Info("Updated application")
-
-	}
+	//if err == nil {
+	//	logDir := filepath.Dir(execPath)
+	//	logFile := filepath.Join(logDir, "build_info.log")
+	//
+	//	// Registre as informações de build
+	//	err = mainUpdater.LogBuildInfo(logFile)
+	//	if err != nil {
+	//
+	//	}
+	//	err = mainUpdater.Update()
+	//	if err != nil {
+	//		mainLogger.Error("Error updating application:", err)
+	//		return
+	//	}
+	//	mainLogger.Info("Updated application")
+	//
+	//}
 	var mainWindow *application.WebviewWindow
 	utilsBind := utils.NewUtils()
 	lcuConn := league.NewLCUConnection(app.App().Log().League())
@@ -163,10 +160,9 @@ func Run(assets embed.FS, icon []byte) {
 		//startup(app)
 	})
 	createContextMenu(mainWindow)
-	app.EmitEvent("app:main:window:ready", nil)
 	SetupSystemTray(app, mainWindow, icon)
 	clientMonitor.SetWindow(mainWindow)
-	err = app.Run()
+	err := app.Run()
 	if err != nil {
 		log.Fatal(err)
 		return

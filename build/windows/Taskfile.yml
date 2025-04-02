@@ -4,17 +4,22 @@ includes:
   common: ../Taskfile.yml
 
 tasks:
+  clean:
+    summary: Cleans the build directory
+    cmds:
+      - cmd: cmd.exe /c "taskkill /F /IM dlv.exe /T 2>nul || exit /b 0"
   build:
     summary: Builds the application for Windows
     deps:
       - task: common:go:mod:tidy
       - task: common:build:frontend
+      - task: clean
         vars:
           PRODUCTION: '{{.PRODUCTION}}'
       - task: common:generate:icons
     cmds:
       - task: generate:syso
-      - cmd: go build -tags production -trimpath -buildvcs=false -ldflags="-X github.com/hex-boost/hex-nexus-app/backend/updater.Version={{.VERSION}} -X github.com/hex-boost/hex-nexus-app/backend/updater.BackendURL={{.BACKEND_URL}} -X github.com/hex-boost/hex-nexus-app/backend/updater.APIToken={{.API_TOKEN}}" -o bin/Nexus.exe .
+      - cmd: go build -tags production -trimpath -buildvcs=false -ldflags="-X github.com/hex-boost/hex-nexus-app/backend/updater.Version={{.VERSION}} -X github.com/hex-boost/hex-nexus-app/backend/updater.BackendURL={{.API_URL}} -X github.com/hex-boost/hex-nexus-app/backend/updater.APIToken={{.API_KEY}}" -o bin/Nexus{{.VERSION}}.exe .
       - cmd: powershell Remove-item *.syso
         platforms: [windows]
       - cmd: rm -f *.syso
@@ -56,4 +61,5 @@ tasks:
 
   run:
     cmds:
-      - powershell -Command "while (1) { dlv exec bin/Nexus.exe --headless --listen :2345 --api-version 2 }"
+      - cmd.exe /c "taskkill /F /IM dlv.exe /T 2>nul || exit /b 0"
+      - powershell -Command "while (1) { dlv exec bin/Nexus{{.VERSION}}.exe --headless --listen :2345 --api-version 2 }"
