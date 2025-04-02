@@ -11,7 +11,6 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/joho/godotenv"
 	"github.com/wailsapp/wails/v3/pkg/application"
-	"github.com/wailsapp/wails/v3/pkg/events"
 	"log"
 	"time"
 )
@@ -22,14 +21,6 @@ func Init() {
 	}
 }
 
-func createContextMenu(window *application.WebviewWindow) *application.Menu {
-	contextMenu := application.NewMenu()
-	reloadItem := contextMenu.Add("Reload Page")
-	reloadItem.OnClick(func(ctx *application.Context) {
-		window.Reload()
-	})
-	return contextMenu
-}
 func SetupSystemTray(app *application.App, window *application.WebviewWindow, icon []byte) *application.SystemTray {
 	systray := app.NewSystemTray()
 	menu := application.NewMenu()
@@ -53,7 +44,6 @@ func SetupSystemTray(app *application.App, window *application.WebviewWindow, ic
 }
 
 func Run(assets embed.FS, icon []byte) {
-	mainLogger := utils.NewFileLogger("app")
 	Init()
 	mainUpdater := updater.NewUpdater()
 	var mainWindow *application.WebviewWindow
@@ -130,10 +120,6 @@ func Run(assets embed.FS, icon []byte) {
 			OpenInspectorOnStartup: false,
 		},
 	)
-	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(e *application.WindowEvent) {
-		mainLogger.Info("RUNTIME READY")
-	})
-	//createContextMenu(mainWindow)
 	SetupSystemTray(app, mainWindow, icon)
 	clientMonitor.SetWindow(mainWindow)
 	err := app.Run()
