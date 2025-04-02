@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/fynelabs/selfupdate"
@@ -60,6 +63,57 @@ func (u *Updater) LogBuildInfo(filepath string) error {
 		Version, BackendURL, APIToken, time.Now().Format(time.RFC3339))
 
 	return os.WriteFile(filepath, []byte(info), 0644)
+}
+func (u *Updater) UpdateAndRestart() error {
+	execPath, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("erro ao obter caminho do executável: %w", err)
+	}
+
+	// Resolver symlinks se existirem
+	realPath, err := filepath.EvalSymlinks(execPath)
+	if err != nil {
+		return fmt.Errorf("erro ao resolver symlink: %w", err)
+	}
+
+	// Fazer backup do binário atual
+	backupPath := realPath + ".bak"
+	if err := os.Rename(realPath, backupPath); err != nil {
+		return fmt.Errorf("erro ao criar backup: %w", err)
+	}
+
+	// Fazer a atualização
+	if err := u.Update(); err != nil {
+		// Restaurar backup em caso de falha
+		os.Rename(backupPath, realPath)
+		return fmt.Errorf("erro na atualização: %w", err)
+	}
+
+	// Reiniciar a aplicação
+	return u.restartApplication(os.Args)
+}
+
+func (u *Updater) restartApplication(args []string) error {
+	execPath, err := os.Executable()
+	if err != nil {
+		return err
+	}
+
+	// Preparar comando para reiniciar
+	cmd := exec.Command(execPath, args[1:]...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP}
+
+	// Iniciar nova instância e sair do processo atual
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+
+	os.Exit(0)
+	return nil // Nunca executado, apens para compilação
 }
 
 type VersionResponse struct {
