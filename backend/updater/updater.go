@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"github.com/fynelabs/selfupdate"
 	"github.com/go-resty/resty/v2"
+	cmdUtils "github.com/hex-boost/hex-nexus-app/backend/cmd"
 	"io"
 	"os"
 	"os/exec"
 	"strings"
-	"syscall"
 )
 
 var (
@@ -84,7 +84,7 @@ func (u *Updater) restartApplication(args []string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: false, CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP}
+	cmd = cmdUtils.HideConsoleWindow(cmd)
 	if err := cmd.Start(); err != nil {
 		return err
 	}

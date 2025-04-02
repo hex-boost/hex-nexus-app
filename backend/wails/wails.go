@@ -76,7 +76,7 @@ func Run(assets embed.FS, icon []byte) {
 			OnSecondInstanceLaunch: func(data application.SecondInstanceData) {
 				log.Printf("Second instance detected with args: %v", data.Args)
 				if mainWindow != nil {
-					mainWindow.Show()
+					mainWindow.Restore()
 					mainWindow.Focus()
 				}
 			},

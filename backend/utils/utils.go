@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
-	"github.com/hex-boost/hex-nexus-app/backend/updater"
+	cmdUtils "github.com/hex-boost/hex-nexus-app/backend/cmd"
 	"github.com/pkg/browser"
 	"os/exec"
 )
@@ -20,6 +20,7 @@ func (h *Utils) GetHWID() string {
 	const xx = "cmd.exe"
 	var stdout bytes.Buffer
 	cmd := exec.Command(xx, "/c", "wmic csproduct get uuid")
+	cmd= cmdUtils.HideConsoleWindow(cmd)
 	cmd.Stdout = &stdout
 	cmd.Run()
 	out := stdout.String()
@@ -29,7 +30,6 @@ func (h *Utils) GetHWID() string {
 	return hash
 }
 
-func (h *Utils) GetBackendUrl() string {
 	return updater.BackendURL
 }
 func (h *Utils) OpenBrowser(url string) error {

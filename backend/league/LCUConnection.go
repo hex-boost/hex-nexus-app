@@ -57,10 +57,9 @@ func (c *LCUConnection) InitializeConnection() error {
 func (c *LCUConnection) getProcessCommandLine() ([]byte, error) {
 
 	c.logger.Debug("Looking for League client process")
-
 	cmd := exec.Command("wmic", "process", "where", "name='LeagueClientUx.exe'", "get", "commandline")
+	cmd = utils.HideConsoleWindow(cmd)
 	output, err := cmd.Output()
-
 	if err != nil {
 		return nil, err
 	}

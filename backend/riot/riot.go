@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-resty/resty/v2"
+	cmdUtils "github.com/hex-boost/hex-nexus-app/backend/cmd"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/inkeliz/gowebview"
@@ -18,7 +19,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"syscall"
 )
 
 // RiotClient provides methods for interacting with Riot authentication services
@@ -74,6 +74,7 @@ func (rc *RiotClient) ForceCloseAllClients() error {
 		for _, riotProcess := range riotProcesses {
 			if processName == riotProcess {
 				cmd := exec.Command("taskkill", "/F", "/PID", fmt.Sprintf("%d", process.Pid()))
+				cmd = cmdUtils.HideConsoleWindow(cmd)
 				if err := cmd.Run(); err != nil {
 					rc.logger.Error("Failed to kill process",
 						zap.String("process", processName),
@@ -222,9 +223,7 @@ func (rc *RiotClient) Launch() error {
 		zap.Strings("args", args))
 	cmd := exec.Command(clientInstalls.RcDefault, args...)
 	rc.logger.Info("Starting Riot client process")
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		HideWindow: true,
-	}
+	cmdUtils.HideConsoleWindow(cmd)
 	if err := cmd.Start(); err != nil {
 		rc.logger.Error("Failed to start Riot client", zap.Error(err))
 		return fmt.Errorf("failed to start Riot client: %w", err)
