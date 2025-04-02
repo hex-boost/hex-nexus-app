@@ -6,7 +6,6 @@ includes:
 
 
 
-dotenv: [ '.env' ]
 vars:
   APP_NAME: "Nexus"
   BIN_DIR: "bin"
