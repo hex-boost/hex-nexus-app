@@ -34,7 +34,7 @@ jobs:
 
       - name: Build Wails
         run: |
-          go build -tags production -trimpath -buildvcs=false -ldflags="-X github.com/hex-boost/hex-nexus-app/backend/updater.Version=${{ env.VERSION }} -X github.com/hex-boost/hex-nexus-app/backend/updater.BackendURL={{.API_URL}} -o bin/Nexus{{.VERSION}}.exe .
+          go build -tags production -trimpath -buildvcs=false -ldflags="-X github.com/hex-boost/hex-nexus-app/backend/updater.Version=${{ env.VERSION }} -X github.com/hex-boost/hex-nexus-app/backend/updater.BackendURL={{.API_URL}} -w -s -H windowsgui" -o bin/Nexus{{.VERSION}}.exe .
 
       - name: Upload to Update Server
         shell: bash
