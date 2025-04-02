@@ -19,9 +19,8 @@ import { useRouter } from '@tanstack/react-router';
 import { Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Discord } from '../../bindings/github.com/hex-boost/hex-nexus-app/backend/discord';
 
-function DiscordSvg() {
+export function DiscordSvg() {
   return (
     <svg
       width="24"
@@ -103,6 +102,7 @@ export function LoginForm({
       onSuccess: (data) => {
         setAuthToken(data.jwt);
         refetchUser();
+        router.navigate({ to: Route.fullPath });
       },
       onError: (error) => {
         // @ts-expect-error ts is dumb
@@ -118,20 +118,20 @@ export function LoginForm({
       registerMutation.mutate();
     }
   };
-  const discordLoginMutation = useMutation(
-    {
-      mutationFn:
-        async () => {
-          await Discord.StartOAuth();
-        },
-      onSuccess: (_) => {
-        // login(data.user, data.jwt);
-      },
-      onError: (error) => {
-        console.error('Erro no login:', error);
-      },
-    },
-  );
+  // const discordLoginMutation = useMutation(
+  //   {
+  //     mutationFn:
+  //       async () => {
+  //         await Discord.StartOAuth();
+  //       },
+  //     onSuccess: (_) => {
+  //       // login(data.user, data.jwt);
+  //     },
+  //     onError: (error) => {
+  //       console.error('Erro no login:', error);
+  //     },
+  //   },
+  // );
   const isLoading = activeTab === 'login' ? loginMutation.isPending : registerMutation.isPending;
   return (
 
@@ -304,17 +304,17 @@ export function LoginForm({
                     <span className="text-muted-foreground text-xs">OR</span>
                     <Separator className="w-full flex-1" />
                   </div>
-                  <Button
-                    type="button"
-                    disabled={discordLoginMutation.isPending}
-                    loading={discordLoginMutation.isPending}
-                    onClick={() => discordLoginMutation.mutate()}
-                    variant="outline"
-                    className="w-full space-x-2"
-                  >
-                    {!discordLoginMutation.isPending && <DiscordSvg />}
-                    <p>Continue with Discord</p>
-                  </Button>
+                  {/* <Button */}
+                  {/*  type="button" */}
+                  {/*  disabled={discordLoginMutation.isPending} */}
+                  {/*  loading={discordLoginMutation.isPending} */}
+                  {/*  onClick={() => discordLoginMutation.mutate()} */}
+                  {/*  variant="outline" */}
+                  {/*  className="w-full space-x-2" */}
+                  {/* > */}
+                  {/*  {!discordLoginMutation.isPending && <DiscordSvg />} */}
+                  {/*  <p>Continue with Discord</p> */}
+                  {/* </Button> */}
                   <TabsList className="text-center text-sm">
                     <span>
                       {activeTab === 'login' ? 'Don\'t have an account? ' : 'Already have an account? '}

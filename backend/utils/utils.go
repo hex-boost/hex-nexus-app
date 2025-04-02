@@ -20,7 +20,7 @@ func (h *Utils) GetHWID() string {
 	const xx = "cmd.exe"
 	var stdout bytes.Buffer
 	cmd := exec.Command(xx, "/c", "wmic csproduct get uuid")
-	cmd= cmdUtils.HideConsoleWindow(cmd)
+	cmd = cmdUtils.HideConsoleWindow(cmd)
 	cmd.Stdout = &stdout
 	cmd.Run()
 	out := stdout.String()
@@ -30,8 +30,6 @@ func (h *Utils) GetHWID() string {
 	return hash
 }
 
-	return updater.BackendURL
-}
 func (h *Utils) OpenBrowser(url string) error {
 	return browser.OpenURL(url)
 }

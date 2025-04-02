@@ -119,6 +119,7 @@ func (rc *RiotClient) getCredentials(riotClientPid int) (port string, authToken 
 	var cmdLine string
 
 	cmd := exec.Command("wmic", "process", "where", fmt.Sprintf("ProcessId=%d", riotClientPid), "get", "CommandLine", "/format:list")
+	cmd = cmdUtils.HideConsoleWindow(cmd)
 	output, err := cmd.Output()
 	if err != nil {
 		return "", "", fmt.Errorf("failed to get command line: %w", err)

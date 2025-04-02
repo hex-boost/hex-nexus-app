@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-resty/resty/v2"
+	cmdUtils "github.com/hex-boost/hex-nexus-app/backend/cmd"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"go.uber.org/zap"
 	"os/exec"
@@ -58,7 +59,7 @@ func (c *LCUConnection) getProcessCommandLine() ([]byte, error) {
 
 	c.logger.Debug("Looking for League client process")
 	cmd := exec.Command("wmic", "process", "where", "name='LeagueClientUx.exe'", "get", "commandline")
-	cmd = utils.HideConsoleWindow(cmd)
+	cmd = cmdUtils.HideConsoleWindow(cmd)
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, err
