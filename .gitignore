@@ -6,3 +6,4 @@ frontend/bindings
 build
 bin/*
 .task
+*.syso
