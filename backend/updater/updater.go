@@ -3,21 +3,18 @@ package updater
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/fynelabs/selfupdate"
+	"github.com/go-resty/resty/v2"
 	"io"
 	"os"
 	"os/exec"
 	"strings"
 	"syscall"
-	"time"
-
-	"github.com/fynelabs/selfupdate"
-	"github.com/go-resty/resty/v2"
 )
 
 var (
 	Version    = "development"
 	BackendURL = "https://nexus-back.up.railway.app"
-	APIToken   = "e5bd04e90e05b51937ba00e4a43ae8fe91e722db62b4d616ee7bd692dbdc28f603595c207716c8e662392d3b83b67b1057bf002701edb5edadd0f2061ae7ad83e43e67d0b64aff715b7289af290c22d846400756ac63f23c069e73a4bd4eb81738ed6c8862d0aec0c67e80c29a3027fdf60d174066244ef532b25a5d3509020e"
 )
 
 type Updater struct {
@@ -41,10 +38,10 @@ type Response struct {
 }
 
 func (u *Updater) CheckForUpdates() (*Response, error) {
-	client := resty.New().
-		SetTimeout(10 * time.Second)
+	client := resty.New()
 	var result Response
 	strapiURL := fmt.Sprintf("%s/api/versions/update", BackendURL)
+
 	resp, err := client.R().
 		SetHeader("x-client-version", u.CurrentVersion).
 		SetResult(&result).
@@ -53,16 +50,22 @@ func (u *Updater) CheckForUpdates() (*Response, error) {
 		return nil, err
 	}
 	if resp.IsError() {
+		var errorResponse struct {
+			Data  interface{} `json:"data"`
+			Error struct {
+				Message string `json:"message"`
+			} `json:"error"`
+		}
+
+		if err := json.Unmarshal(resp.Body(), &errorResponse); err == nil &&
+			errorResponse.Error.Message == "No versions found" {
+			// Return a valid response with no update needed
+			return &Response{NeedsUpdate: false, Version: "No version on backend"}, nil
+		}
+
 		return nil, fmt.Errorf("API returned status: %d for %s", resp.StatusCode(), strapiURL)
 	}
 	return &result, nil
-}
-
-func (u *Updater) LogBuildInfo(filepath string) error {
-	info := fmt.Sprintf("Versão: %s\nBackendURL: %s\nAPIToken: %s\nData de verificação: %s\n",
-		Version, BackendURL, APIToken, time.Now().Format(time.RFC3339))
-
-	return os.WriteFile(filepath, []byte(info), 0644)
 }
 
 func (u *Updater) UpdateAndRestart() error {

@@ -4,12 +4,11 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/app"
 	"github.com/hex-boost/hex-nexus-app/backend/updater"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
-	"github.com/wailsapp/wails/v3/pkg/application"
 	"os"
 	"path/filepath"
 )
 
-func startup(mainApp *application.App) {
+func Startup() {
 	log := utils.NewFileLogger("updater")
 	updaterService := updater.NewUpdater()
 	if updaterService.CurrentVersion == "development" {
@@ -34,7 +33,7 @@ func startup(mainApp *application.App) {
 				return
 			}
 			log.Info("Update completed successfully. Restarting application.")
-			mainApp.Quit()
+			os.Exit(0)
 		} else {
 			log.Info("The application is up to date.")
 		}

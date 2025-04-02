@@ -31,3 +31,4 @@ git push origin $nova_tag
 git push origin main
 
 echo "Tag $nova_tag criada e enviada para o repositório."
+sleep 2

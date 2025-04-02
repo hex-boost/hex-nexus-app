@@ -22,6 +22,8 @@ tasks:
     summary: Builds the application
     cmds:
       - task: "{{OS}}:build"
+        vars:
+          VERSION: "{{.VERSION}}"
 
   package:
     summary: Packages a production build of the application

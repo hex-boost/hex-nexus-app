@@ -114,14 +114,10 @@ func Run(assets embed.FS, icon []byte) {
 			MaxWidth:      1600,
 			MaxHeight:     900,
 			Windows: application.WindowsWindow{
-				BackdropType:            0,
-				DisableIcon:             false,
 				Theme:                   1,
 				CustomTheme:             nil,
-				ResizeDebounceMS:        0,
-				WindowDidMoveDebounceMS: 0,
-				GeneralAutofillEnabled:  true,
-				PasswordAutosaveEnabled: true,
+				GeneralAutofillEnabled:  false,
+				PasswordAutosaveEnabled: false,
 			},
 			BackgroundType:  2,
 			InitialPosition: 0,
@@ -131,15 +127,13 @@ func Run(assets embed.FS, icon []byte) {
 				Blue:  0,
 				Alpha: 80,
 			},
-			OpenInspectorOnStartup:     false,
-			DefaultContextMenuDisabled: true,
+			OpenInspectorOnStartup: false,
 		},
 	)
 	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(e *application.WindowEvent) {
 		mainLogger.Info("RUNTIME READY")
-		startup(app)
 	})
-	createContextMenu(mainWindow)
+	//createContextMenu(mainWindow)
 	SetupSystemTray(app, mainWindow, icon)
 	clientMonitor.SetWindow(mainWindow)
 	err := app.Run()
