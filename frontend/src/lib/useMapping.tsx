@@ -23,7 +23,7 @@ export function useMapping() {
     }
   };
   const getRankColor = (tier: string) => {
-    switch (tier.toLowerCase()) {
+    switch (tier?.toLowerCase() || '') {
       case 'iron':
       case 'bronze':
         return 'text-zinc-600 dark:text-zinc-400';
@@ -60,7 +60,7 @@ export function useMapping() {
       unranked: unrankedIcon,
     };
 
-    return icons[rank.toLowerCase()] || unrankedIcon; // Default to iron if not found
+    return icons[rank?.toLowerCase() || 'unranked'] || unrankedIcon; // Default to iron if not found
   }
 
   const getSkinRarityColor = (rarity: string) => {

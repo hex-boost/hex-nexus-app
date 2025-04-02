@@ -6,10 +6,54 @@ import { useRouter } from '@tanstack/react-router';
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react'; // hooks/useAccounts.ts
 import { useMemo, useState } from 'react';
 
+export function getLeaverBusterInfo(account: AccountType) {
+  if (!account.leaverBuster?.leaverBusterEntryDto) {
+    return null;
+  }
+
+  const leaverData = account.leaverBuster.leaverBusterEntryDto;
+  const penaltyData = leaverData.leaverPenalty;
+
+  // Only consider actual active penalties, not just the leaver level
+  const hasActivePenalties
+        = penaltyData?.hasActivePenalty === true
+          || leaverData.punishedGamesRemaining > 0
+          || (penaltyData?.rankRestricted === true && penaltyData?.rankRestrictedGamesRemaining > 0);
+
+  if (hasActivePenalties) {
+    // Format time to display in minutes
+    const waitTimeMinutes = penaltyData?.delayTime ? Math.floor(penaltyData.delayTime / 60000) : 0;
+
+    // Format a user-friendly status message focused on what matters to a booster
+    let message = '';
+
+    // Low Priority Queue (most important info for boosters)
+    if (leaverData.punishedGamesRemaining > 0) {
+      message += `${waitTimeMinutes}min queue × ${leaverData.punishedGamesRemaining} games`;
+    }
+
+    // Ranked restrictions (also important)
+    if (penaltyData?.rankRestricted && penaltyData?.rankRestrictedGamesRemaining > 0) {
+      if (message) {
+        message += ' • ';
+      }
+      message += `Ranked restricted: ${penaltyData.rankRestrictedGamesRemaining} games`;
+    }
+
+    return {
+      hasRestriction: true,
+      severity: leaverData.leaverLevel,
+      message,
+    };
+  }
+
+  return null; // No active penalties
+}
 export function useAccounts() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
+    leaverStatus: [] as string[],
     game: '',
     division: '',
     rank: '',
@@ -130,7 +174,28 @@ export function useAccounts() {
       if (filters.company && filters.company !== 'any' && account.type !== filters.company) {
         return false;
       }
+      if (filters.leaverStatus && filters.leaverStatus.length > 0) {
+        const leaverInfo = getLeaverBusterInfo(account);
 
+        if (!leaverInfo && filters.leaverStatus.includes('none')) {
+          return true;
+        }
+        if (!leaverInfo) {
+          return false;
+        }
+
+        if (leaverInfo.severity >= 3 && filters.leaverStatus.includes('high')) {
+          return true;
+        }
+        if (leaverInfo.severity >= 1 && filters.leaverStatus.includes('medium')) {
+          return true;
+        }
+        if (leaverInfo.severity < 1 && filters.leaverStatus.includes('low')) {
+          return true;
+        }
+
+        return false;
+      }
       return true;
     });
   }, [sortedAccounts, searchQuery, filters]);
@@ -144,6 +209,7 @@ export function useAccounts() {
       status: '',
       selectedChampions: [],
       selectedSkins: [],
+      leaverStatus: [],
     });
     setSearchQuery('');
     setSortConfig({ key: null, direction: null });

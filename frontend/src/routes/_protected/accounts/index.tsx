@@ -2,8 +2,10 @@ import type { Price } from '@/types/price.ts';
 import type { AccountType, RankingType } from '@/types/types.ts';
 import { COMPANIES, DIVISIONS, LOL_TIERS, REGIONS, VALORANT_TIERS } from '@/components/accountsMock.ts';
 import { CoinIcon } from '@/components/coin-icon';
+
 import { AccountGameIcon } from '@/components/GameComponents';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
+import { Badge } from '@/components/ui/badge.tsx';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
@@ -11,14 +13,25 @@ import { Label } from '@/components/ui/label';
 import { MultiSelectCombobox } from '@/components/ui/multi-select-combobox.tsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
-import { useAccounts } from '@/hooks/useAccounts.tsx';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { getLeaverBusterInfo, useAccounts } from '@/hooks/useAccounts.tsx';
 import { useAllDataDragon } from '@/hooks/useDataDragon.ts';
 import { usePrice } from '@/hooks/usePrice.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
 import { cn } from '@/lib/utils';
 import { createFileRoute } from '@tanstack/react-router';
-import { Check, ChevronDown, Filter, MoreHorizontal, Search } from 'lucide-react';
-import { useState } from 'react';
+import {
+  AlertCircle,
+  AlertOctagon,
+  AlertTriangle,
+  Check,
+  ChevronDown,
+  Filter,
+  MoreHorizontal,
+  Search,
+  Shield,
+} from 'lucide-react';
+import { useState } from 'react'; // Helper function to get company icon
 
 // Helper function to get company icon
 export const Route = createFileRoute('/_protected/accounts/')({
@@ -114,7 +127,7 @@ type AccountActionsMenuProps = {
   accountId: string;
   onViewDetails: (id: string) => void;
 };
-
+// Add this function to handle the leaverBuster display
 function AccountActionsMenu({ accountId, onViewDetails }: AccountActionsMenuProps) {
   return (
     <DropdownMenu>
@@ -160,7 +173,13 @@ function AccountRow({
     ranking => ranking.queueType === 'soloqueue' && ranking.type === 'current' && ranking.elo !== '',
   ) || account.rankings.find(
     ranking => ranking.queueType === 'soloqueue' && ranking.type === 'provisory',
-  ) as any;
+  ) || {
+    elo: 'unranked',
+    division: '',
+    points: 0,
+    wins: 0,
+    losses: 0,
+  };
   const previousSoloqueueRank = account.rankings.find(ranking => ranking.queueType === 'soloqueue' && ranking.type === 'previous')!;
 
   return (
@@ -176,26 +195,155 @@ function AccountRow({
       </td>
       <td className="p-3">
         <div className="flex items-center gap-2">
-          <span className="text-sm text-zinc-600 dark:text-zinc-400">
-            Restrictions
-          </span>
-        </div>
-      </td>
-      <td className="p-3">
-        <div className="flex items-center gap-2">
           <div className="w-6 h-6">{getRegionIcon(account.server)}</div>
           <span className="text-sm text-zinc-600 dark:text-zinc-400">
             {account.server.slice(0, account.server.length - 1)}
           </span>
         </div>
       </td>
+
       <td className="p-3">
-        <div className="flex items-center gap-2">
+        {(() => {
+          const leaverInfo = getLeaverBusterInfo(account);
+
+          if (!leaverInfo) {
+            return (
+              <div className="flex items-center">
+                <Badge variant="outline" className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800">
+                  <Shield className="h-3.5 w-3.5 mr-1" />
+                  <span>None</span>
+                </Badge>
+              </div>
+            );
+          }
+
+          // Determine severity styling based on leaver level
+          const severityConfig = {
+            icon: leaverInfo.severity >= 3
+              ? AlertOctagon
+              : leaverInfo.severity >= 1
+                ? AlertTriangle
+                : AlertCircle,
+            badge: leaverInfo.severity >= 3
+              ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800'
+              : leaverInfo.severity >= 1
+                ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800'
+                : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+            label: leaverInfo.severity >= 3
+              ? 'High'
+              : leaverInfo.severity >= 1
+                ? 'Medium'
+                : 'Low',
+          };
+
+          const Icon = severityConfig.icon;
+
+          return (
+            <TooltipProvider delayDuration={0}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge
+                    variant="outline"
+                    className={`cursor-help ${severityConfig.badge}`}
+                  >
+                    <Icon className="h-3.5 w-3.5 mr-1" />
+                    <span>{severityConfig.label}</span>
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="bottom"
+                  align="start"
+                  className="w-72 p-3 text-xs bg-white dark:bg-zinc-800 shadow-lg rounded-md border border-zinc-200 dark:border-zinc-700"
+                >
+                  {(() => {
+                    if (!leaverInfo) {
+                      return null;
+                    }
+
+                    const leaverData = account.leaverBuster?.leaverBusterEntryDto;
+                    if (!leaverData) {
+                      return null;
+                    }
+
+                    // Format timestamp to date
+                    const lastPunishmentDate = new Date(leaverData.lastPunishmentIncurredTimeMillis).toLocaleDateString();
+                    const daysSinceLastPunishment = Math.floor(
+                      (Date.now() - leaverData.lastPunishmentIncurredTimeMillis) / (1000 * 60 * 60 * 24),
+                    );
+
+                    return (
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center pb-1 mb-1 border-b border-zinc-200 dark:border-zinc-700">
+                          <span className="font-medium">LeaverBuster Status</span>
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] ${severityConfig.badge}`}>
+                            {severityConfig.label}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-y-1.5 gap-x-2">
+                          <span className="text-zinc-500 dark:text-zinc-400">Level:</span>
+                          <span className="font-medium">{leaverData.leaverLevel}</span>
+
+                          <span className="text-zinc-500 dark:text-zinc-400">Queue Time:</span>
+                          <span className="font-medium">
+                            {leaverData.leaverPenalty?.delayTime ? `${Math.floor(leaverData.leaverPenalty.delayTime / 60000)}min` : 'None'}
+                          </span>
+
+                          <span className="text-zinc-500 dark:text-zinc-400">Games Remaining:</span>
+                          <span className="font-medium">{leaverData.punishedGamesRemaining || 'None'}</span>
+
+                          <span className="text-zinc-500 dark:text-zinc-400">Ranked Restricted:</span>
+                          <span className="font-medium">
+                            {leaverData.leaverPenalty?.rankRestricted
+                              ? `Yes (${leaverData.leaverPenalty.rankRestrictedGamesRemaining} games)`
+                              : 'No'}
+                          </span>
+
+                          <span className="text-zinc-500 dark:text-zinc-400">Tainted Account:</span>
+                          <span className="font-medium">{leaverData.tainted ? 'Yes' : 'No'}</span>
+
+                          <span className="text-zinc-500 dark:text-zinc-400">Last Penalty:</span>
+                          <span className="font-medium">
+                            {lastPunishmentDate}
+                            {' '}
+                            (
+                            {daysSinceLastPunishment}
+                            {' '}
+                            days ago)
+                          </span>
+
+                          <span className="text-zinc-500 dark:text-zinc-400">Total Penalties:</span>
+                          <span className="font-medium">
+                            {leaverData.totalPunishedGamesPlayed || 0}
+                            {' '}
+                            games
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          );
+        })()}
+      </td>
+      <td className="p-3">
+        <div className="flex items-center gap-1">
           <img className="w-6 h-6" alt={currentSoloqueueRank?.elo} src={getEloIcon(currentSoloqueueRank?.elo || 'unranked')} />
           <span className={`text-sm capitalize font-medium ${getRankColor(currentSoloqueueRank?.elo || 'unranked')}`}>
             {currentSoloqueueRank?.division}
             {' '}
-            <span className="text-xs">{currentSoloqueueRank?.points}</span>
+            {
+              currentSoloqueueRank.elo.toLowerCase() !== 'unranked'
+              && (
+                <span className="text-[10px]">
+                  {currentSoloqueueRank?.points}
+                  {' '}
+                  LP
+                </span>
+              )
+            }
           </span>
         </div>
       </td>
@@ -211,16 +359,31 @@ function AccountRow({
       <td className="p-3">
         {(() => {
           const totalGames = (currentSoloqueueRank?.wins || 0) + (currentSoloqueueRank?.losses || 0);
-          const winRate = totalGames > 0 ? Math.round((currentSoloqueueRank?.wins || 0 / totalGames) * 100) : 0;
-
+          const winRate = totalGames > 0 ? Math.round(((currentSoloqueueRank?.wins || 0) / totalGames) * 100) : 0;
           // Definindo a cor baseada no valor do winrate
           let winRateColorClass = 'text-zinc-600 dark:text-muted-foreground'; // cor padrão (média)
-          if (winRate >= 65) {
-            winRateColorClass = 'text-blue-600 dark:text-blue-300 font-medium'; // alta taxa de vitórias
-          } else if (winRate < 40 && winRate > 0) {
-            winRateColorClass = 'text-red-600 dark:text-red-300'; // baixa taxa de vitórias
+          if (winRate > 60) {
+            // Blue scale for win rates above 60% (increasing intensity)
+            if (winRate >= 95) {
+              winRateColorClass = 'text-blue-500 dark:text-blue-500 font-medium';
+            } else if (winRate >= 85) {
+              winRateColorClass = 'text-blue-400 dark:text-blue-400 font-medium';
+            } else if (winRate >= 75) {
+              winRateColorClass = 'text-blue-300 dark:text-blue-300 font-medium';
+            } else if (winRate >= 65) {
+              winRateColorClass = 'text-blue-200 dark:text-blue-200';
+            } else {
+              winRateColorClass = 'text-blue-100 dark:text-blue-100';
+            } // 60-65%
+          } else if (winRate < 40 && winRate > 0) { // Red scale for win rates below 50% (increasing intensity for lower rates)
+            if (winRate < 30) {
+              winRateColorClass = 'text-red-500 dark:text-red-400';
+            } else if (winRate < 40) {
+              winRateColorClass = 'text-red-300 dark:text-red-300';
+            } else {
+              winRateColorClass = 'text-red-100 dark:text-red-100';
+            } // 40-49%
           }
-
           return (
             <span className="text-sm text-muted-foreground">
               {currentSoloqueueRank?.wins || 0}
@@ -442,7 +605,6 @@ function Accounts() {
 
   const { getCompanyIcon } = useMapping();
   const [loadDragonData, setLoadDragonData] = useState(false);
-
   const { allChampions, allSkins, isLoading: isDataDragonLoading } = useAllDataDragon(loadDragonData);
   const [selectedChampionIds, setSelectedChampionIds] = useState<string[]>([]);
   const [selectedSkinIds, setSelectedSkinIds] = useState<string[]>([]);
@@ -466,7 +628,7 @@ function Accounts() {
           >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Game, Tier and Rank */}
-              <div className="space-y-4">
+              <div className="grid gap-4">
 
                 <div>
                   <Label htmlFor="tier" className="text-sm font-medium mb-1.5 block">
@@ -556,7 +718,7 @@ function Accounts() {
               </div>
 
               {/* Champions and Skins */}
-              <div className="space-y-4">
+              <div className="grid h-full flex-col gap-4">
 
                 <div>
                   <Label className="text-sm font-medium mb-1.5 block">Specific Champions</Label>
@@ -648,6 +810,54 @@ function Accounts() {
                       </div>
                     )}
                   />
+                  {/* LeaverBuster Filter */}
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium mb-1.5 block">Account Restrictions</Label>
+                  <div className="flex gap-2 mt-1.5">
+                    {[
+                      { value: 'none', label: 'None', icon: Shield, className: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' },
+                      { value: 'low', label: 'Low', icon: AlertCircle, className: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800' },
+                      { value: 'medium', label: 'Medium', icon: AlertTriangle, className: 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800' },
+                      { value: 'high', label: 'High', icon: AlertOctagon, className: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800' },
+                    ].map((status) => {
+                      const Icon = status.icon;
+                      const isSelected = filters.leaverStatus?.includes(status.value);
+
+                      return (
+                        <div className="w-full flex">
+                          <Badge
+
+                            key={status.value}
+                            variant="outline"
+                            className={cn(
+                              status.className,
+                              'cursor-pointer w-full h-full transition-all',
+                              isSelected ? 'ring-2 ring-offset-1 ring-blue-500' : '',
+                            )}
+                            onClick={() => {
+                              const currentStatuses = filters.leaverStatus || [];
+                              const newStatuses = isSelected
+                                ? currentStatuses.filter(s => s !== status.value)
+                                : [...currentStatuses, status.value];
+
+                              setFilters({
+                                ...filters,
+                                leaverStatus: newStatuses,
+                              });
+                            }}
+                          >
+                            <Icon className="h-3.5 w-3.5 mr-1" />
+                            <span>{status.label}</span>
+                            {isSelected && (
+                              <Check className="ml-1 h-3 w-3" />
+                            )}
+                          </Badge>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 
