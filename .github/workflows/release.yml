@@ -23,6 +23,37 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '22'
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm install
+          npm run build
+
+      - name: Generate Bindings
+        run: wails3 generate bindings -clean=true
+
+      - name: Generate Icons
+        run: |
+          cd build
+          wails3 generate icons -input appicon.png -windowsfilename windows/icon.ico
+
+      - name: Update Build Assets
+        run: |
+          cd build
+          wails3 update build-assets -name "Nexus" -binaryname "Nexus" -config config.yml -dir .
+
+      - name: Generate Syso
+        run: |
+          cd build
+          wails3 generate syso -arch amd64 -icon windows/icon.ico -manifest windows/wails.exe.manifest -info windows/info.json -out ../wails_windows_amd64.syso
+
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm run build
+        env:
+          VITE_APP_VERSION: ${{ env.VERSION }}
+          VITE_API_URL: ${{ secrets.API_URL }}
 
       - name: Install Wails
         run: go install -v github.com/wailsapp/wails/v3/cmd/wails3@latest
@@ -34,7 +65,7 @@ jobs:
 
       - name: Build Wails
         run: |
-          go build -tags production -trimpath -buildvcs=false -ldflags="-X github.com/hex-boost/hex-nexus-app/backend/updater.Version=${{ env.VERSION }} -X github.com/hex-boost/hex-nexus-app/backend/updater.BackendURL={{.API_URL}} -w -s -H windowsgui" -o bin/Nexus{{.VERSION}}.exe .
+          go build -tags production -trimpath -buildvcs=false -ldflags="-X github.com/hex-boost/hex-nexus-app/backend/updater.Version=${{ env.VERSION }} -X github.com/hex-boost/hex-nexus-app/backend/updater.BackendURL=${{secrets.API_URL}} -w -s -H windowsgui" -o bin/Nexus${{ env.VERSION }}.exe .
 
       - name: Upload to Update Server
         shell: bash
