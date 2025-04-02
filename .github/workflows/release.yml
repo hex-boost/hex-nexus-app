@@ -39,13 +39,28 @@ jobs:
           API_URL: ${{ secrets.API_URL }}
           API_KEY: ${{ secrets.API_KEY }}
           PRODUCTION: true
-
+      - name: Check build artifacts
+        shell: bash
+        run: |
+          echo "Listing build directory contents:"
+          ls -la build/
+          echo "Listing bin directory contents:"
+          ls -la build/bin/ || echo "bin directory not found"
+          echo "Searching for executable:"
+          find . -name "*.exe" -type f
       - name: Upload to Update Server
         shell: bash
         env:
           API_KEY: ${{ secrets.API_KEY }}
           API_URL: ${{ secrets.API_URL }}
         run: |
+          EXE_PATH=$(find . -name "nexus*.exe" -type f | head -1)
+    
+          if [ -z "$EXE_PATH" ]; then
+          echo "❌ No executable found"
+          exit 1
+          fi
+
           # Create version record with verbose output
           echo "Creating version record for ${{ env.VERSION }}..."
           VERSION_RESPONSE=$(curl -v -s -X POST "${{env.API_URL}}/api/versions" \
@@ -64,12 +79,14 @@ jobs:
           echo "Failed to extract version ID"
           exit 1
           fi
+          echo "Found executable at: $EXE_PATH"
+          
           
           # Upload file with status code tracking
           echo "Uploading application binary..."
           UPLOAD_RESULT=$(curl -v -X POST "${{env.API_URL}}/api/upload" \
           -H "Authorization: Bearer ${{ env.API_KEY }}" \
-          -F "files=@build/bin/nexus-${{ env.VERSION }}.exe" \
+          -F "files=@$EXE_PATH" \
           -F "refId=$VERSION_ID" \
           -F "ref=api::version.version" \
           -F "field=file" \
