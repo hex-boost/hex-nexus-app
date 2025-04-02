@@ -1,3 +1,9 @@
+# This file contains the configuration for this project.
+# When you update `info` or `fileAssociations`, run `wails3 task common:update:build-assets` to update the assets.
+# Note that this will overwrite any changes you have made to the assets.
+version: '3'
+
+# This information is used to generate the build assets.
 info:
   companyName: "My Company" # The name of the company
   productName: "My Product" # The name of the application
@@ -5,18 +11,9 @@ info:
   description: "A program that does X" # The application description
   copyright: "(c) 2024, My Company" # Copyright text
   comments: "Some Product Comments" # Comments
-  version: "v0.0.1" # The application version  copyright: Copyright © 2024
-app:
-  name: Nexus
-  info:
-    productName: Nexus
-    companyName: Hex Boost
-    productVersion: 1.0.0
-    copyright: Copyright © 2024
-  windows:
-    executableName: nexus
-    fileDescription: Nexus Application
-    iconPath: path/to/icon.ico
+  version: "v0.0.1" # The application version
+
+# Dev mode configuration
 dev_mode:
   root_path: .
   log_level: warn
@@ -35,13 +32,31 @@ dev_mode:
       - "*.go"
     git_ignore: true
   executes:
-    - cmd: wails3 task install:frontend:deps
+    - cmd: wails3 task common:install:frontend:deps
       type: once
-    - cmd: wails3 task build:frontend
-      type: blocking
+    - cmd: wails3 task common:dev:frontend
+      type: background
     - cmd: go mod tidy
       type: blocking
     - cmd: wails3 task build
       type: blocking
     - cmd: wails3 task run
       type: primary
+
+# File Associations
+# More information at: https://v3alpha.wails.io/noit/done/yet
+fileAssociations:
+#  - ext: wails
+#    name: Wails
+#    description: Wails Application File
+#    iconName: wailsFileIcon
+#    role: Editor
+#  - ext: jpg
+#    name: JPEG
+#    description: Image File
+#    iconName: jpegFileIcon
+#    role: Editor
+
+# Other data
+other:
+  - name: My Other Data
