@@ -35,13 +35,13 @@ dev_mode:
       - "*.go"
     git_ignore: true
   executes:
-    - cmd: wails3 task common:install:frontend:deps
+    - cmd: wails3 task install:frontend:deps
       type: once
-    - cmd: wails3 task common:dev:frontend
-      type: background
-    - cmd: go mod tidy
+    - cmd: wails3 task build:frontend
       type: blocking
-    - cmd: wails3 task build
-      type: blocking
-    - cmd: wails3 task run
-      type: primary
+#    - cmd: go mod tidy
+#      type: blocking
+#    - cmd: wails3 task build
+#      type: blocking
+#    - cmd: wails3 task run
+#      type: primary

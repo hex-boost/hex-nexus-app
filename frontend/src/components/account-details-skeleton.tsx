@@ -8,6 +8,7 @@ export function AccountInfoSkeleton() {
         <Skeleton className="h-5 w-20" />
         <Skeleton className="h-5 w-20" />
       </div>
+      aa
       <div className="flex gap-4">
         <Skeleton className="h-10 w-10 rounded-full" />
         <div className="space-y-2">

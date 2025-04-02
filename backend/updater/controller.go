@@ -1,62 +1,121 @@
 package updater
 
 import (
-	"time"
+	"fmt"
+	"github.com/go-resty/resty/v2"
+	"io"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
+	"strings"
 )
 
-type UpdateController struct {
-	updater      *Updater
-	apiURL       string
-	lastCheck    time.Time
-	checkEnabled bool
+func (u *Updater) UpdateAndRestart() error {
+	// Caminho do executável atual
+	execPath, err := os.Executable()
+	if err != nil {
+		return err
+	}
+
+	// Baixa a nova versão para um arquivo temporário
+	tempFile, err := u.downloadNewVersion()
+	if err != nil {
+		return err
+	}
+
+	// Cria um arquivo de script para realizar a atualização
+	restartScript := u.createRestartScript(execPath, tempFile)
+
+	// Executa o script de reinicialização em um processo separado
+	cmd := exec.Command(restartScript)
+	cmd.Start()
+
+	// Encerra a aplicação atual para permitir a substituição do binário
+	os.Exit(0)
+
+	return nil
 }
 
-//
-//func (c *UpdateController) CheckForUpdates() (*VersionInfo, error) {
-//	if !c.checkEnabled {
-//		return nil, nil
-//	}
-//	if time.Since(c.lastCheck) < time.Hour {
-//		return nil, nil
-//	}
-//	c.lastCheck = time.Now()
-//	app.App().Log().Wails().Infoln("Verificando atualizações...")
-//	versionInfo, err := c.updater.CheckForUpdates()
-//	if err != nil {
-//		app.App().Log().Wails().Errorf("Erro ao verificar atualizações: %v", err)
-//		return nil, err
-//	}
-//	if versionInfo != nil && versionInfo.Version != c.updater.GetCurrentVersion() {
-//		app.App().Log().Wails().Infof("Nova versão disponível: %s (atual: %s)",
-//			versionInfo.Version, c.updater.GetCurrentVersion())
-//		return versionInfo, nil
-//	}
-//	app.App().Log().Wails().Infoln("Nenhuma atualização disponível")
-//	return nil, nil
-//}
-//
-//func (c *UpdateController) ApplyUpdate(versionInfo *VersionInfo) error {
-//	if versionInfo == nil {
-//		return fmt.Errorf("informações de versão não fornecidas")
-//	}
-//	app.App().Log().Wails().Infof("Iniciando atualização para versão %s", versionInfo.Version)
-//	err := c.updater.Update(versionInfo)
-//	if err != nil {
-//		app.App().Log().Wails().Errorf("Falha na atualização: %v", err)
-//		return err
-//	}
-//	app.App().Log().Wails().Infoln("Atualização aplicada com sucesso. Reinicializando...")
-//	return nil
-//}
-//
-//func (c *UpdateController) GetUpdateStatus() map[string]interface{} {
-//	return map[string]interface{}{
-//		"currentVersion": c.updater.GetCurrentVersion(),
-//		"lastCheck":      c.lastCheck,
-//		"enabled":        c.checkEnabled,
-//	}
-//}
-//
-//func (c *UpdateController) SetCheckEnabled(enabled bool) {
-//	c.checkEnabled = enabled
-//}
+func (u *Updater) downloadNewVersion() (string, error) {
+	strapiLatestVersionURL := fmt.Sprintf("%s/api/versions/latest", BackendURL)
+
+	var response VersionResponse
+	client := resty.New()
+	resp, err := client.R().
+		SetResult(&response).SetAuthToken("Bearer " + APIToken).
+		Get(strapiLatestVersionURL)
+	if err != nil {
+		return "", err
+	}
+	if resp.IsError() {
+		return "", fmt.Errorf("API returned status: %d", resp.StatusCode())
+	}
+
+	fileURL := response.LatestVersion.File.URL
+	if fileURL == "" {
+		return "", fmt.Errorf("no file URL found in response")
+	}
+	if !strings.HasPrefix(fileURL, "http") {
+		fileURL = BackendURL + fileURL
+	}
+
+	// Cria um arquivo temporário para a nova versão
+	tempFile := filepath.Join(os.TempDir(), "new_version"+filepath.Ext(os.Args[0]))
+
+	// Baixa o arquivo para o temporário
+	resp, err = client.R().
+		SetDoNotParseResponse(true).
+		Get(fileURL)
+	if err != nil {
+		return "", err
+	}
+
+	binReader := resp.RawBody()
+	defer binReader.Close()
+
+	outFile, err := os.OpenFile(tempFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
+	if err != nil {
+		return "", err
+	}
+	defer outFile.Close()
+
+	_, err = io.Copy(outFile, binReader)
+	if err != nil {
+		return "", err
+	}
+
+	return tempFile, nil
+}
+
+func (u *Updater) createRestartScript(execPath, tempFile string) string {
+	var script string
+	var scriptExt string
+
+	if runtime.GOOS == "windows" {
+		scriptExt = ".bat"
+		script = fmt.Sprintf(`@echo off
+timeout /t 1 /nobreak > NUL
+copy /y "%s" "%s"
+start "" "%s"
+del "%s"
+`, tempFile, execPath, execPath, "%~f0")
+	} else {
+		scriptExt = ".sh"
+		script = fmt.Sprintf(`#!/bin/sh
+sleep 1
+cp "%s" "%s"
+chmod +x "%s"
+"%s" &
+rm -- "$0"
+`, tempFile, execPath, execPath, execPath)
+	}
+
+	scriptPath := filepath.Join(os.TempDir(), "restart"+scriptExt)
+	err := os.WriteFile(scriptPath, []byte(script), 0755)
+	if err != nil {
+		return ""
+	}
+
+	return scriptPath
+}

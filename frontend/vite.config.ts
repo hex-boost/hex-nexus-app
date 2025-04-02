@@ -16,6 +16,15 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  build: {
+
+    outDir: 'dist',
+    sourcemap: false,
+
+    rollupOptions: {
+      cache: true,
+    },
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

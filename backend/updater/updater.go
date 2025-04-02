@@ -12,9 +12,9 @@ import (
 )
 
 var (
-	Version    = "1.0.0"
+	Version    = "1.0.2"
 	BackendURL = "https://nexus-back.up.railway.app"
-	APIToken   = "8d1052df2be1c2318e11927a9c5a05b7376688ccf98902101bef3d7da66d65db2ab781fb5e4d8efde8f8224baaba3e745d0191f9b0f6ce85ddfd5fd625e2306698a6214913aa8023a754a423427d993449f03214965b813876bce3c1fbe11469e4fa742e6e5faf9f3358c36f14284c95bfc5bd8af9b67a57e385ebd77a274bf5"
+	APIToken   = "e5bd04e90e05b51937ba00e4a43ae8fe91e722db62b4d616ee7bd692dbdc28f603595c207716c8e662392d3b83b67b1057bf002701edb5edadd0f2061ae7ad83e43e67d0b64aff715b7289af290c22d846400756ac63f23c069e73a4bd4eb81738ed6c8862d0aec0c67e80c29a3027fdf60d174066244ef532b25a5d3509020e"
 )
 
 type Updater struct {
@@ -51,9 +51,15 @@ func (u *Updater) CheckForUpdates() (*Response, error) {
 		return nil, err
 	}
 	if resp.IsError() {
-		return nil, fmt.Errorf("API returned status: %d", resp.StatusCode())
+		return nil, fmt.Errorf("API returned status: %d for %s", resp.StatusCode(), strapiURL)
 	}
 	return &result, nil
+}
+func (u *Updater) LogBuildInfo(filepath string) error {
+	info := fmt.Sprintf("Versão: %s\nBackendURL: %s\nAPIToken: %s\nData de verificação: %s\n",
+		Version, BackendURL, APIToken, time.Now().Format(time.RFC3339))
+
+	return os.WriteFile(filepath, []byte(info), 0644)
 }
 
 type VersionResponse struct {

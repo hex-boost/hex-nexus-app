@@ -85,7 +85,20 @@ func NewLogger(prefix string) *Logger {
 }
 
 // NewFileLogger creates a logger that outputs to a file
-func NewFileLogger(prefix string, file *os.File) *Logger {
+func NewFileLogger(prefix string) *Logger {
+	logsDir := "logs"
+	if err := os.MkdirAll(logsDir, os.ModePerm); err != nil {
+		panic(err)
+	}
+
+	// Define log file path
+	logPath := filepath.Join(logsDir, "app")
+
+	// Open file for logging
+	file, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
 	// Create encoder config
 	encoderConfig := zap.NewProductionEncoderConfig()
 	encoderConfig.TimeKey = "time"

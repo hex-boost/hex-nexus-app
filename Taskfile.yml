@@ -1,40 +1,185 @@
 version: '3'
 
-includes:
-  common: ./build/Taskfile.yml
-  windows: ./build/windows/Taskfile.yml
+dotenv: ['.env']
 
 vars:
   APP_NAME: "Nexus"
   BIN_DIR: "bin"
+  DIST_DIR: "dist"
+  BACKEND_URL: '{{.API_URL | default "http://localhost:1337"}}'
   VITE_PORT: '{{.WAILS_VITE_PORT | default 9245}}'
+  VERSION: '{{.VERSION | default "development"}}'
+  API_TOKEN: '{{.API_KEY | default "development"}}'
 
 tasks:
-  debug:
-    summary: Executa a aplicação em modo de depuração
+  prod:
+    summary: Executa o pipeline completo de produção
     cmds:
-      - go build -gcflags="all=-N -l" -o {{.BIN_DIR}}/{{.APP_NAME}}.exe
-      - wails3 dev -config ./build/config.yml -port {{.VITE_PORT}}
+#      - task: clean
+      - task: build:prod
+      - task: package
+  clean:
+    summary: Remove diretórios de build e temporários
+    cmds:
+      - bash -c "rm -rf {{.BIN_DIR}}/* {{.DIST_DIR}} frontend/dist"
+  build:prod:
+    summary: Constrói a aplicação para produção com todas as otimizações
+    sources:
+      - "**/*.go"     # Só executa se arquivos .go forem modificados
+      - "go.mod"
+      - "go.sum"
+    generates:
+      - "{{.BIN_DIR}}/{{.APP_NAME}}.exe"  # Output que determina se precisa reconstruir
+    deps:
+      - task: go:mod:tidy
+    cmds:
+      - task: generate:bindings
+      - task: generate:icons
+      - task: generate:syso
+      - task: build:frontend:prod
+      - go build -tags production -trimpath -buildvcs=false -ldflags="-X github.com/hex-boost/hex-nexus-app/backend/updater.Version={{.VERSION}} -X github.com/hex-boost/hex-nexus-app/backend/updater.BackendURL={{.BACKEND_URL}} -X github.com/hex-boost/hex-nexus-app/backend/updater.APIToken={{.API_TOKEN}} -w -s -H windowsgui" -o bin/Nexus.exe
+      - powershell Remove-item *.syso
     env:
       GOOS: windows
-      WAILS_VITE_PORT: "{{.VITE_PORT}}"
-  build:
-    summary: Builds the application
+      CGO_ENABLED: 0
+      GOARCH: '{{.ARCH | default "amd64"}}'
+      PRODUCTION: "true"
+
+  build:frontend:prod:
+    summary: Compila o frontend com otimizações para produção
+    dir: frontend
+    deps:
+      - task: install:frontend:deps
     cmds:
-      - task: "{{OS}}:build"
+      - npm run build
+    env:
+      NODE_ENV: production
+      VITE_APP_VERSION: '{{.VERSION}}'
+      VITE_BACKEND_URL: '{{.BACKEND_URL | default "http://localhost:8080"}}'
+  build:
+    summary: Builds the application for Windows
+    deps:
+      - task: go:mod:tidy
+      - task: build:frontend
+        vars:
+          PRODUCTION: '{{.PRODUCTION}}'
+      - task: generate:icons
+    cmds:
+      - task: generate:syso
+      - go build {{.BUILD_FLAGS}} -o {{.BIN_DIR}}/{{.APP_NAME}}.exe
+      - powershell Remove-item *.syso
+    vars:
+      BUILD_FLAGS: '{{if eq .PRODUCTION "true"}}-tags production -trimpath -buildvcs=false -ldflags="-w -s -H windowsgui"{{else}}-buildvcs=false -gcflags=all="-l"{{end}}'
+    env:
+      GOOS: windows
+      CGO_ENABLED: 0
+      GOARCH: '{{.ARCH | default "amd64"}}'
+      PRODUCTION: '{{.PRODUCTION | default "false"}}'
 
   package:
-    summary: Packages a production build of the application
+    summary: Creates installation package for Windows
     cmds:
-      - task: "{{OS}}:package"
+      - task: create:nsis:installer
 
   run:
-    summary: Runs the application
+    summary: Runs the compiled application
     cmds:
-      - task: "{{OS}}:run"
+      - '{{.BIN_DIR}}\\{{.APP_NAME}}.exe'
 
   dev:
     summary: Runs the application in development mode
     cmds:
       - wails3 dev -config ./build/config.yml -port {{.VITE_PORT}}
 
+  # Windows specific tasks
+  generate:syso:
+    summary: Generates Windows `.syso` file
+    dir: build
+    cmds:
+      - wails3 generate syso -arch {{.ARCH}} -icon windows/icon.ico -manifest windows/wails.exe.manifest -info windows/info.json -out ../wails_windows_{{.ARCH}}.syso
+    vars:
+      ARCH: '{{.ARCH | default "amd64"}}'
+
+  create:nsis:installer:
+    summary: Creates NSIS installer
+    dir: build/windows/nsis
+    cmds:
+      - wails3 generate webview2bootstrapper -dir "{{.ROOT_DIR}}\build\windows\nsis"
+      - makensis -DARG_WAILS_{{.ARG_FLAG}}_BINARY="{{.ROOT_DIR}}\{{.BIN_DIR}}\{{.APP_NAME}}.exe" project.nsi
+    vars:
+      ARCH: '{{.ARCH | default "amd64"}}'
+      ARG_FLAG: '{{if eq .ARCH "amd64"}}AMD64{{else}}ARM64{{end}}'
+
+  # Common tasks
+  go:mod:tidy:
+    summary: Runs `go mod tidy`
+    internal: true
+    cmds:
+      - go mod tidy
+
+  install:frontend:deps:
+    summary: Installs frontend dependencies
+    dir: frontend
+    sources:
+      - package.json
+      - package-lock.json
+    generates:
+      - node_modules/*
+    preconditions:
+      - sh: npm version
+        msg: "It looks like npm is not installed. Npm is part of the Node installer: https://nodejs.org/en/download/"
+    cmds:
+      - npm install
+
+  build:frontend:
+    summary: Builds the frontend project
+    dir: frontend
+    sources:
+      - "**/*"
+    generates:
+      - dist/*
+    deps:
+      - task: install:frontend:deps
+      - task: generate:bindings
+    cmds:
+      - npm run {{.BUILD_COMMAND}} -q
+    env:
+      PRODUCTION: '{{.PRODUCTION | default "false"}}'
+    vars:
+      BUILD_COMMAND: '{{if eq .PRODUCTION "true"}}build{{else}}build:dev{{end}}'
+
+  generate:bindings:
+    summary: Generates bindings for the frontend
+    deps:
+    sources:
+      - "**/*.go"
+      - go.mod
+      - go.sum
+    generates:
+      - "frontend/bindings/**/*"
+    cmds:
+      - wails3 generate bindings --names -ts -i -clean=true
+    timeout: 120s
+  generate:icons:
+    summary: Generates `.ico` file for Windows
+    dir: build
+    sources:
+      - "appicon.png"
+    generates:
+      - "windows/icons.ico"
+    cmds:
+      - wails3 generate icons -input appicon.png -windowsfilename windows/icons.ico
+
+  dev:frontend:
+    summary: Runs the frontend in development mode
+    dir: frontend
+    deps:
+      - task: install:frontend:deps
+    cmds:
+#      - npm run dev -- --port {{.VITE_PORT}} --strictPort
+
+  update:build-assets:
+    summary: Updates build resources
+    dir: build
+    cmds:
+      - wails3 update build-assets -name "{{.APP_NAME}}" -binaryname "{{.APP_NAME}}" -config config.yml -dir .
