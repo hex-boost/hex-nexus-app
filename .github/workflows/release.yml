@@ -46,19 +46,43 @@ jobs:
           API_KEY: ${{ secrets.API_KEY }}
           API_URL: ${{ secrets.API_URL }}
         run: |
-          echo ${{secrets.API_URL}} | sed 's/./& /g'
-          echo ${{secrets.API_KEY}} | sed 's/./& /g'
-          echo ${{env.API_URL}} | sed 's/./& /g'
-          echo ${{env.API_KEY}} | sed 's/./& /g'
-          VERSION_ID=$(curl -s -X POST "${{env.API_URL}}/api/versions" \
+          # Create version record with verbose output
+          echo "Creating version record for ${{ env.VERSION }}..."
+          VERSION_RESPONSE=$(curl -v -s -X POST "${{env.API_URL}}/api/versions" \
           -H "Authorization: Bearer ${{ env.API_KEY }}" \
           -H "Content-Type: application/json" \
-          -d "{\"data\":{\"version\":\"${{ env.VERSION }}\"}}" | grep -o '"id":[0-9]*' | head -1 | sed 's/"id"://')
+          -d "{\"data\":{\"version\":\"${{ env.VERSION }}\"}}")
           
-          curl -X POST "${{env.API_URL}}/api/upload" \
+          echo "API Response for version creation:"
+          echo "$VERSION_RESPONSE"
+          
+          # Extract version ID
+          VERSION_ID=$(echo "$VERSION_RESPONSE" | grep -o '"id":[0-9]*' | head -1 | sed 's/"id"://')
+          echo "Extracted Version ID: $VERSION_ID"
+          
+          if [ -z "$VERSION_ID" ]; then
+          echo "Failed to extract version ID"
+          exit 1
+          fi
+          
+          # Upload file with status code tracking
+          echo "Uploading application binary..."
+          UPLOAD_RESULT=$(curl -v -X POST "${{env.API_URL}}/api/upload" \
           -H "Authorization: Bearer ${{ env.API_KEY }}" \
           -F "files=@build/bin/nexus-${{ env.VERSION }}.exe" \
           -F "refId=$VERSION_ID" \
           -F "ref=api::version.version" \
           -F "field=file" \
-          -L
+          -w "\nStatus code: %{http_code}" \
+          -L)
+          
+          echo "Upload Result:"
+          echo "$UPLOAD_RESULT"
+          
+          # Check if upload was successful
+          if echo "$UPLOAD_RESULT" | grep -q "Status code: 2[0-9][0-9]"; then
+            echo "✅ Upload completed successfully"
+          else
+          echo "❌ Upload failed"
+          exit 1
+          fi
