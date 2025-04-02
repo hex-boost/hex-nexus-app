@@ -54,7 +54,7 @@ jobs:
           API_KEY: ${{ secrets.API_KEY }}
           API_URL: ${{ secrets.API_URL }}
         run: |
-          EXE_PATH=$(find . -name "nexus*.exe" -type f | head -1)
+          EXE_PATH=$(find . -name "Nexus*.exe" -type f | head -1)
     
           if [ -z "$EXE_PATH" ]; then
           echo "❌ No executable found"
