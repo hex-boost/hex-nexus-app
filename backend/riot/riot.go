@@ -224,7 +224,7 @@ func (rc *RiotClient) Launch() error {
 		zap.Strings("args", args))
 	cmd := exec.Command(clientInstalls.RcDefault, args...)
 	rc.logger.Info("Starting Riot client process")
-	cmdUtils.HideConsoleWindow(cmd)
+	cmd = cmdUtils.HideConsoleWindow(cmd)
 	if err := cmd.Start(); err != nil {
 		rc.logger.Error("Failed to start Riot client", zap.Error(err))
 		return fmt.Errorf("failed to start Riot client: %w", err)
