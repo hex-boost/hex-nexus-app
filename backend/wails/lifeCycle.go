@@ -8,46 +8,35 @@ import (
 )
 
 func startup(mainApp *application.App) {
-	// Cria um logger para o módulo de atualização
 	log := utils.NewFileLogger("updater")
-
 	updaterService := updater.NewUpdater()
-
 	if updaterService.CurrentVersion == "development" {
-		log.Info("Execução em modo de desenvolvimento, ignorando verificação de atualização")
+		log.Info("Running in development mode, skipping update check")
 		return
 	}
-
-	log.Info("Verificando atualizações. Versão atual: " + updaterService.CurrentVersion)
-
+	log.Info("Checking for updates. Current version: " + updaterService.CurrentVersion)
 	response, err := updaterService.CheckForUpdates()
 	if err != nil {
-		log.Errorf("Erro ao verificar atualizações: %v", err)
+		log.Errorf("Error checking for updates: %v", err)
 		app.App().Log().Wails().Infoln(err)
-		// Registra o erro mas não interrompe a execução
 		return
 	}
-
 	if response != nil {
-		log.Infof("Resposta do servidor: precisa atualizar=%v, versão disponível=%s",
+		log.Infof("Server response: update needed=%v, available version=%s",
 			response.NeedsUpdate, response.Version)
-
 		if response.NeedsUpdate {
-			log.Info("Iniciando processo de atualização para a versão " + response.Version)
-
+			log.Info("Starting update process to version " + response.Version)
 			err := updaterService.Update()
 			if err != nil {
-				log.Errorf("Falha na atualização: %v", err)
-				// Registra o erro mas não causa pânico, permitindo que o aplicativo continue
+				log.Errorf("Update failed: %v", err)
 				return
 			}
-
-			log.Info("Atualização concluída com sucesso. Reiniciando aplicativo.")
+			log.Info("Update completed successfully. Restarting application.")
 			mainApp.Quit()
 		} else {
-			log.Info("O aplicativo está atualizado.")
+			log.Info("The application is up to date.")
 		}
 	} else {
-		log.Warn("Resposta vazia do servidor de atualização")
+		log.Warn("Empty response from update server")
 	}
 }

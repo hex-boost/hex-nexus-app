@@ -23,32 +23,24 @@ export const Route = createRootRouteWithContext<RouterContext>()({
   beforeLoad: async ({ location }) => {
     const isAuthenticated = useUserStore.getState().isAuthenticated();
     const isLoginRoute = location.pathname === '/login';
-
-    // Se não estiver autenticado e tentar acessar qualquer rota exceto login
     if (!isAuthenticated && !isLoginRoute) {
       throw redirect({
         to: '/login',
       });
     }
-    // Se estiver autenticado e tentar acessar login
     if (isAuthenticated && isLoginRoute) {
       throw redirect({
         to: DashboardRoute.fullPath,
       });
     }
-
     return { isAuthenticated };
   },
 });
 
 function RootLayout() {
-  // Este é seu layout base, que apenas renderiza o conteúdo
-  // sem elementos visuais adicionais
   return (
     <>
-
       <div className="flex flex-col h-screen">
-
         <div
           className=" bg-card border-b"
           style={{ '--wails-draggable': 'drag' } as React.CSSProperties}

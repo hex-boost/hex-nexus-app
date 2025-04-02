@@ -21,14 +21,13 @@ func Init() {
 		log.Println("Warning: Error loading .env file:", err)
 	}
 }
+
 func createContextMenu(window *application.WebviewWindow) *application.Menu {
 	contextMenu := application.NewMenu()
-
 	reloadItem := contextMenu.Add("Reload Page")
 	reloadItem.OnClick(func(ctx *application.Context) {
 		window.Reload()
 	})
-
 	return contextMenu
 }
 func SetupSystemTray(app *application.App, window *application.WebviewWindow, icon []byte) *application.SystemTray {
@@ -54,28 +53,9 @@ func SetupSystemTray(app *application.App, window *application.WebviewWindow, ic
 }
 
 func Run(assets embed.FS, icon []byte) {
-
 	mainLogger := utils.NewFileLogger("app")
-	//Init()
-	//execPath, err := os.Executable()
+	Init()
 	mainUpdater := updater.NewUpdater()
-	//if err == nil {
-	//	logDir := filepath.Dir(execPath)
-	//	logFile := filepath.Join(logDir, "build_info.log")
-	//
-	//	// Registre as informações de build
-	//	err = mainUpdater.LogBuildInfo(logFile)
-	//	if err != nil {
-	//
-	//	}
-	//	err = mainUpdater.Update()
-	//	if err != nil {
-	//		mainLogger.Error("Error updating application:", err)
-	//		return
-	//	}
-	//	mainLogger.Info("Updated application")
-	//
-	//}
 	var mainWindow *application.WebviewWindow
 	utilsBind := utils.NewUtils()
 	lcuConn := league.NewLCUConnection(app.App().Log().League())
@@ -157,7 +137,7 @@ func Run(assets embed.FS, icon []byte) {
 	)
 	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(e *application.WindowEvent) {
 		mainLogger.Info("RUNTIME READY")
-		//startup(app)
+		startup(app)
 	})
 	createContextMenu(mainWindow)
 	SetupSystemTray(app, mainWindow, icon)
