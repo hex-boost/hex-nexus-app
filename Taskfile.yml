@@ -6,27 +6,20 @@ includes:
 
 
 
+dotenv: [ '.env' ]
 vars:
   APP_NAME: "Nexus"
   BIN_DIR: "bin"
   DIST_DIR: "dist"
-  BACKEND_URL: '{{.API_URL | default "http://localhost:1337"}}'
+  API_URL: '{{.API_URL | default "http://localhost:1337"}}'
   VITE_PORT: '{{.WAILS_VITE_PORT | default 9245}}'
   VERSION: '{{.VERSION | default "development"}}'
-  API_TOKEN: '{{.API_KEY | default "development"}}'
+  API_KEY: '{{.API_KEY | default "development"}}'
   ENV_FILE: '.env'
-  PRODUCTION_ENV_FILE: '.env.production'
 
 tasks:
   build:
     summary: Builds the application
-    dotenv: [ '.env' ]
-    cmds:
-      - task: "{{OS}}:build"
-
-  build:prod:
-    summary: Builds the application
-    dotenv: ['.env.production']
     cmds:
       - task: "{{OS}}:build"
 

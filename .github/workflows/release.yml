@@ -17,43 +17,12 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.24'
+          go-version: '1.24.1'
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '22'
-      - name: Install frontend dependencies
-        run: |
-          cd frontend
-          npm install
-          npm run build
-
-      - name: Generate Bindings
-        run: wails3 generate bindings -clean=true
-
-      - name: Generate Icons
-        run: |
-          cd build
-          wails3 generate icons -input appicon.png -windowsfilename windows/icon.ico
-
-      - name: Update Build Assets
-        run: |
-          cd build
-          wails3 update build-assets -name "Nexus" -binaryname "Nexus" -config config.yml -dir .
-
-      - name: Generate Syso
-        run: |
-          cd build
-          wails3 generate syso -arch amd64 -icon windows/icon.ico -manifest windows/wails.exe.manifest -info windows/info.json -out ../wails_windows_amd64.syso
-
-      - name: Build Frontend
-        run: |
-          cd frontend
-          npm run build
-        env:
-          VITE_APP_VERSION: ${{ env.VERSION }}
-          VITE_API_URL: ${{ secrets.API_URL }}
+          node-version: '22.14.1'
 
       - name: Install Wails
         run: go install -v github.com/wailsapp/wails/v3/cmd/wails3@latest
@@ -62,10 +31,14 @@ jobs:
         id: get_version
         shell: bash
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
-
-      - name: Build Wails
-        run: |
-          go build -tags production -trimpath -buildvcs=false -ldflags="-X github.com/hex-boost/hex-nexus-app/backend/updater.Version=${{ env.VERSION }} -X github.com/hex-boost/hex-nexus-app/backend/updater.BackendURL=${{secrets.API_URL}} -w -s -H windowsgui" -o bin/Nexus${{ env.VERSION }}.exe .
+      - name: Build with taskfile
+        run: wails3 task build -v
+        env:
+          APP_NAME: Nexus
+          VERSION: ${{ env.VERSION }}
+          API_URL: ${{ secrets.API_URL }}
+          API_KEY: ${{ secrets.API_KEY }}
+          PRODUCTION: true
 
       - name: Upload to Update Server
         shell: bash
