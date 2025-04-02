@@ -24,7 +24,17 @@ export default function SubscriptionStatus({ className, subscription }: Subscrip
         day: 'numeric',
       })
     : 'N/A';
+  function isSubscriptionActive(subscription?: PremiumType): boolean {
+    if (!subscription?.expiresAt) {
+      return false;
+    }
 
+    const expiryDate = new Date(subscription.expiresAt);
+    const today = new Date();
+
+    // A subscription is active if the expiry date is in the future
+    return expiryDate > today;
+  }
   return (
     <div className={cn('w-full', className)}>
       <div className="bg-zinc-50 dark:bg-white/[0.01] rounded-xl p-5 mb-4">
@@ -34,7 +44,7 @@ export default function SubscriptionStatus({ className, subscription }: Subscrip
             {subscription?.tier || 'Free Trial'}
           </h3>
           <div
-            className={cn('px-3 py-1 rounded-full text-xs font-medium', subscription?.isActive ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400')}
+            className={cn('px-3 py-1 rounded-full text-xs font-medium', isSubscriptionActive(subscription) ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400')}
           >
             {
               // @ts-expect-error aaa
@@ -60,7 +70,7 @@ export default function SubscriptionStatus({ className, subscription }: Subscrip
           <div>
             <p className="text-xs text-zinc-600 dark:text-zinc-400">Expires on</p>
             <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-              {subscription?.isActive
+              {isSubscriptionActive(subscription)
                 ? (
                     <>
                       {formattedExpiryDate}

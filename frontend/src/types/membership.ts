@@ -1,5 +1,3 @@
-import type { ReactNode } from 'react';
-
 export type Benefit = {
   title: string;
   description: string;
@@ -7,16 +5,22 @@ export type Benefit = {
 
 export type PricingPlan = {
   tier: string;
-  description?: string;
+  description: string;
   price: number;
   period?: string;
-  benefits: Benefit[];
+  productID?: string; // Added for Stripe
+  priceID?: string; // Added for Stripe
+  benefits: { title: string; description: string }[];
   buttonText: string;
-  buttonVariant?: 'default' | 'outline';
-  buttonIcon?: ReactNode;
+  buttonVariant?: 'default' | 'outline' | 'destructive';
+  buttonIcon?: React.ReactNode;
   highlighted?: boolean;
 };
-
+export type SubscriptionRequest = {
+  priceID: string;
+  productID: string;
+  subscriptionTier: string;
+};
 export type PricingProps = {
   isPending: boolean;
   plans: PricingPlan[];

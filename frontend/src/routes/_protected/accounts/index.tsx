@@ -156,8 +156,12 @@ function AccountRow({
   getCompanyIcon,
   getRankColor,
 }: AccountRowProps) {
-  const ranking = account.rankings.find(ranking => ranking.queueType === 'soloqueue')!;
-  // const alternativeRanking = account.rankings.find(ranking => ranking.queueType === 'flex')!;
+  const currentSoloqueueRank = account.rankings.find(
+    ranking => ranking.queueType === 'soloqueue' && ranking.type === 'current' && ranking.elo !== '',
+  ) || account.rankings.find(
+    ranking => ranking.queueType === 'soloqueue' && ranking.type === 'provisory',
+  ) as any;
+  const previousSoloqueueRank = account.rankings.find(ranking => ranking.queueType === 'soloqueue' && ranking.type === 'previous')!;
 
   return (
     <tr
@@ -172,6 +176,13 @@ function AccountRow({
       </td>
       <td className="p-3">
         <div className="flex items-center gap-2">
+          <span className="text-sm text-zinc-600 dark:text-zinc-400">
+            Restrictions
+          </span>
+        </div>
+      </td>
+      <td className="p-3">
+        <div className="flex items-center gap-2">
           <div className="w-6 h-6">{getRegionIcon(account.server)}</div>
           <span className="text-sm text-zinc-600 dark:text-zinc-400">
             {account.server.slice(0, account.server.length - 1)}
@@ -180,17 +191,27 @@ function AccountRow({
       </td>
       <td className="p-3">
         <div className="flex items-center gap-2">
-          <img className="w-6 h-6" alt={ranking.elo} src={getEloIcon(ranking.elo)} />
-          <span className={`text-sm capitalize font-medium ${getRankColor(ranking?.elo)}`}>
-            {ranking?.division || ranking.division}
+          <img className="w-6 h-6" alt={currentSoloqueueRank?.elo} src={getEloIcon(currentSoloqueueRank?.elo || 'unranked')} />
+          <span className={`text-sm capitalize font-medium ${getRankColor(currentSoloqueueRank?.elo || 'unranked')}`}>
+            {currentSoloqueueRank?.division}
+            {' '}
+            <span className="text-xs">{currentSoloqueueRank?.points}</span>
+          </span>
+        </div>
+      </td>
+      <td className="p-3">
+        <div className="flex items-center gap-2">
+          <img className="w-6 h-6" alt={previousSoloqueueRank.elo} src={getEloIcon(previousSoloqueueRank.elo)} />
+          <span className={`text-sm capitalize font-medium ${getRankColor(previousSoloqueueRank?.elo)}`}>
+            {previousSoloqueueRank?.division}
           </span>
         </div>
       </td>
 
       <td className="p-3">
         {(() => {
-          const totalGames = ranking.wins + ranking.losses;
-          const winRate = totalGames > 0 ? Math.round((ranking.wins / totalGames) * 100) : 0;
+          const totalGames = (currentSoloqueueRank?.wins || 0) + (currentSoloqueueRank?.losses || 0);
+          const winRate = totalGames > 0 ? Math.round((currentSoloqueueRank?.wins || 0 / totalGames) * 100) : 0;
 
           // Definindo a cor baseada no valor do winrate
           let winRateColorClass = 'text-zinc-600 dark:text-muted-foreground'; // cor padrão (média)
@@ -202,9 +223,9 @@ function AccountRow({
 
           return (
             <span className="text-sm text-muted-foreground">
-              {ranking.wins}
+              {currentSoloqueueRank?.wins || 0}
               W/
-              {ranking.losses}
+              {currentSoloqueueRank?.losses || 0}
               L
               {' '}
               <span className={`font-medium text-xs ${winRateColorClass}`}>
@@ -246,7 +267,7 @@ function AccountRow({
         </span>
       </td>
       <td className="p-3">
-        <PriceDisplay isPriceLoading={isPriceLoading} price={price} ranking={ranking} />
+        <PriceDisplay isPriceLoading={isPriceLoading} price={price} ranking={currentSoloqueueRank} />
       </td>
       <td className="p-3 text-center" onClick={e => e.stopPropagation()}>
         <AccountActionsMenu accountId={account.documentId} onViewDetails={onViewDetails} />
@@ -335,8 +356,12 @@ function AccountsTable({
           <tr className="bg-zinc-50 dark:bg-black/20">
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">ID</th>
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Game</th>
-            <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Region</th>
-            <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Rank</th>
+            <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+              Region
+            </th>
+            <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Restrictions</th>
+            <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Current Rank</th>
+            <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Previous Rank</th>
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Winrate</th>
             <th
               className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400 cursor-pointer"

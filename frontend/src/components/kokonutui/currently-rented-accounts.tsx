@@ -46,7 +46,7 @@ export default function CurrentlyRentedAccounts({ accounts, className }: Current
                 new Date(latest.createdAt) > new Date(current.createdAt) ? latest : current,
               );
 
-              const currentRanking = account.rankings.find(ranking => !ranking.isPrevious)!;
+              const currentRanking = account.rankings.find(ranking => ranking.type === 'previous')!;
               const rankColor = getRankColor(currentRanking?.elo?.toLowerCase());
               return (
                 <Link

@@ -1,7 +1,8 @@
-import type { PricingPlan } from '@/types/membership.ts';
-import { mockCheckoutSession } from '@/components/accountsMock.ts';
+// In routes/_protected/subscription/index.tsx
+import type { CheckoutSession, PricingPlan, SubscriptionRequest } from '@/types/membership.ts';
 import { Badge } from '@/components/ui/badge';
 import { Pricing } from '@/components/ui/pricing-cards.tsx';
+import { strapiClient } from '@/lib/strapi.ts';
 import { useMutation } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { Browser } from '@wailsio/runtime';
@@ -13,44 +14,30 @@ export const Route = createFileRoute('/_protected/subscription/')({
 });
 
 function RouteComponent() {
-  // Simular o tier atual do usuário vindo da API
   const [currentApiTier] = useState<string | undefined>('tier 2');
   const [pendingPlanTier, setPendingPlanTier] = useState<string | null>(null);
 
-  // Converter o tier da API para o nome de exibição
+  // Map API tiers to display names
   const mapTierToDisplayName = (tier: string | undefined): string => {
     switch (tier) {
-      case 'tier 1': return 'Basic';
+      case 'tier 1': return 'Professional';
       case 'tier 2': return 'Premium';
-      case 'tier 3': return 'Professional';
+      case 'tier 3': return 'Basic';
       default: return 'Free Trial';
     }
   };
 
-  // Obter o nome de exibição atual
+  // Map display names to API tiers
+  const mapDisplayNameToApiTier = (displayName: string): string => {
+    switch (displayName) {
+      case 'Professional': return 'tier 1';
+      case 'Premium': return 'tier 2';
+      case 'Basic': return 'tier 3';
+      default: return 'free';
+    }
+  };
+
   const currentPlanTier = mapTierToDisplayName(currentApiTier);
-
-  const { mutate: selectPlan } = useMutation({
-    mutationKey: ['subscription'],
-    mutationFn: async (tier: string) => {
-      setPendingPlanTier(tier);
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      console.warn(tier);
-      return mockCheckoutSession;
-    },
-    onSuccess: async () => {
-      await Browser.OpenURL(mockCheckoutSession.url as string);
-      setPendingPlanTier(null);
-    },
-    onError: () => {
-      setPendingPlanTier(null);
-    },
-    onSettled: () => {
-      // Opcional: resetar o estado pendente quando a mutação terminar
-      // setPendingPlanTier(null);
-    },
-  });
-
   const pricingPlans: PricingPlan[] = [
     {
       tier: 'Free Trial',
@@ -74,8 +61,10 @@ function RouteComponent() {
     },
     {
       tier: 'Basic',
-      description: 'Perfect for part-time boosters ',
+      description: 'Perfect for part-time boosters',
       price: 10,
+      productID: 'prod_S1fq7S9IZvkbpZ',
+      priceID: 'price_1R7cVHH5geFvBgszgYr9Jcbw',
       benefits: [
         {
           title: 'Instantly earns 3000 coins',
@@ -95,6 +84,8 @@ function RouteComponent() {
       tier: 'Premium',
       description: 'The ideal solution for serious boosters who accounts.',
       price: 20,
+      productID: 'prod_S1fqyKNDvKHwaf',
+      priceID: 'price_1R7cUzH5geFvBgszpO8iF39D',
       benefits: [
         {
           title: 'Instantly earns 10000 coins',
@@ -112,6 +103,8 @@ function RouteComponent() {
       tier: 'Professional',
       description: 'For full-time professional boosters',
       price: 30,
+      productID: 'prod_RvrOOPilyjlFDb',
+      priceID: 'price_1R1zfKH5geFvBgszzAPRt8o8',
       benefits: [
         {
           title: 'Unlimited coins & accounts',
@@ -127,6 +120,48 @@ function RouteComponent() {
       highlighted: currentPlanTier === 'Professional',
     },
   ];
+
+  async function createSubscription(data: SubscriptionRequest): Promise<CheckoutSession> {
+    try {
+      const response = await strapiClient.create<CheckoutSession>(
+        'stripe/subscription',
+        data,
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error('Subscription creation failed:', error);
+      throw new Error('Failed to create subscription');
+    }
+  }
+  const { mutate: selectPlan } = useMutation({
+    mutationKey: ['subscription'],
+    mutationFn: async (tier: string) => {
+      setPendingPlanTier(tier);
+
+      // Find selected plan
+      const selectedPlan = pricingPlans.find(plan => plan.tier === tier);
+
+      if (!selectedPlan?.priceID || !selectedPlan?.productID) {
+        throw new Error('Invalid plan selected or free plan');
+      }
+
+      // Make real API call
+      return await createSubscription({
+        priceID: selectedPlan.priceID,
+        productID: selectedPlan.productID,
+        subscriptionTier: mapDisplayNameToApiTier(tier),
+      });
+    },
+    onSuccess: async (data) => {
+      await Browser.OpenURL(data.url!);
+      setPendingPlanTier(null);
+    },
+    onError: (error) => {
+      console.error('Subscription error:', error);
+      setPendingPlanTier(null);
+    },
+  });
 
   return (
     <div>
@@ -148,7 +183,11 @@ function RouteComponent() {
                 </Badge>
               </p>
             </div>
-            <Pricing pendingPlanTier={pendingPlanTier} onPlanSelect={selectPlan} plans={pricingPlans} />
+            <Pricing
+              pendingPlanTier={pendingPlanTier}
+              onPlanSelect={selectPlan}
+              plans={pricingPlans}
+            />
           </div>
         </div>
       </div>

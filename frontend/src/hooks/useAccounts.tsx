@@ -103,7 +103,7 @@ export function useAccounts() {
 
   const filteredAccounts = useMemo(() => {
     return sortedAccounts.filter((account) => {
-      const soloqueueRanking = account.rankings.find(ranking => ranking.queueType === 'soloqueue' && !ranking.isPrevious);
+      const soloqueueRanking = account.rankings.find(ranking => ranking.queueType === 'soloqueue' && ranking.type === 'current');
 
       // For search query, keep the existing logic
       if (searchQuery && !account.documentId.toString().includes(searchQuery.toLowerCase())) {
