@@ -9,9 +9,12 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/riot"
 	"github.com/hex-boost/hex-nexus-app/backend/updater"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
+	"github.com/wailsapp/wails/v3/pkg/events"
+	"os"
+	"path/filepath"
+
 	"github.com/joho/godotenv"
 	"github.com/wailsapp/wails/v3/pkg/application"
-	"github.com/wailsapp/wails/v3/pkg/events"
 	"log"
 	"time"
 )
@@ -21,9 +24,6 @@ func Init() {
 		log.Println("Warning: Error loading .env file:", err)
 	}
 }
-
-// HTML para a janela de atualização
-
 func createContextMenu(window *application.WebviewWindow) *application.Menu {
 	contextMenu := application.NewMenu()
 
@@ -57,21 +57,28 @@ func SetupSystemTray(app *application.App, window *application.WebviewWindow, ic
 }
 
 func Run(assets embed.FS, icon []byte) {
-	Init()
-	//execPath, err := os.Executable()
-	//mainUpdater := updater.NewUpdater()
-	//if err == nil {
-	//	logDir := filepath.Dir(execPath)
-	//	logFile := filepath.Join(logDir, "build_info.log")
-	//
-	//	// Registre as informações de build
-	//	err = mainUpdater.LogBuildInfo(logFile)
-	//	if err != nil {
-	//
-	//	}
-	//}
 
-	updaterService := updater.NewUpdater()
+	mainLogger := utils.NewFileLogger("app")
+	Init()
+	execPath, err := os.Executable()
+	mainUpdater := updater.NewUpdater()
+	if err == nil {
+		logDir := filepath.Dir(execPath)
+		logFile := filepath.Join(logDir, "build_info.log")
+
+		// Registre as informações de build
+		err = mainUpdater.LogBuildInfo(logFile)
+		if err != nil {
+
+		}
+		err = mainUpdater.Update()
+		if err != nil {
+			mainLogger.Error("Error updating application:", err)
+			return
+		}
+		mainLogger.Info("Updated application")
+
+	}
 	var mainWindow *application.WebviewWindow
 	utilsBind := utils.NewUtils()
 	lcuConn := league.NewLCUConnection(app.App().Log().League())
@@ -109,20 +116,18 @@ func Run(assets embed.FS, icon []byte) {
 			application.NewService(clientMonitor),
 			application.NewService(lcuConn),
 			application.NewService(utilsBind),
-			application.NewService(updaterService),
+			application.NewService(mainUpdater),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
 		},
 	})
-
 	mainWindow = app.NewWebviewWindowWithOptions(
 		application.WebviewWindowOptions{
 			Name:          "Main",
 			Title:         "Nexus",
 			Width:         1440,
 			Height:        900,
-			Hidden:        true,
 			AlwaysOnTop:   false,
 			URL:           "",
 			DisableResize: true,
@@ -153,26 +158,15 @@ func Run(assets embed.FS, icon []byte) {
 			DefaultContextMenuDisabled: true,
 		},
 	)
-	loadingWindow := app.NewWebviewWindowWithOptions(
-		application.WebviewWindowOptions{
-			Name:   "fodase",
-			Title:  "Fodase2",
-			HTML:   updater.UpdaterHTML,
-			Hidden: false,
-		},
-	)
-
 	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(e *application.WindowEvent) {
-		startup(loadingWindow, updaterService)
-		loadingWindow.Hide()
-		mainWindow.Show()
+		mainLogger.Info("RUNTIME READY")
+		//startup(app)
 	})
-
 	createContextMenu(mainWindow)
 	app.EmitEvent("app:main:window:ready", nil)
 	SetupSystemTray(app, mainWindow, icon)
 	clientMonitor.SetWindow(mainWindow)
-	err := app.Run()
+	err = app.Run()
 	if err != nil {
 		log.Fatal(err)
 		return

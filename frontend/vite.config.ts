@@ -17,13 +17,7 @@ export default defineConfig({
     tailwindcss(),
   ],
   build: {
-
-    outDir: 'dist',
-    sourcemap: false,
-
-    rollupOptions: {
-      cache: true,
-    },
+    emptyOutDir: false,
   },
   resolve: {
     alias: {

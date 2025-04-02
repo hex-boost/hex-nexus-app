@@ -39,9 +39,9 @@ dev_mode:
       type: once
     - cmd: wails3 task build:frontend
       type: blocking
-#    - cmd: go mod tidy
-#      type: blocking
-#    - cmd: wails3 task build
-#      type: blocking
-#    - cmd: wails3 task run
-#      type: primary
+    - cmd: go mod tidy
+      type: blocking
+    - cmd: wails3 task build
+      type: blocking
+    - cmd: wails3 task run
+      type: primary
