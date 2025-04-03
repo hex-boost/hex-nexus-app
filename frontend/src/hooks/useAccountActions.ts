@@ -55,7 +55,6 @@ export function useAccountActions({
     },
     onSuccess: (data) => {
       toast.success(data.message);
-      setIsExtendDialogOpen(false);
     },
     onError: (error) => {
       toast.error(error.error.message);

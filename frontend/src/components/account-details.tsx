@@ -112,14 +112,15 @@ export default function AccountDetails({ account, price, onAccountChange }: {
   const soloQueueRank = account.rankings?.find(lc => lc.queueType === 'soloqueue');
   const flexQueueRank = account.rankings?.find(lc => lc.queueType === 'flex');
   const { calculateTimeRemaining } = useDateTime();
-  const baseElo = soloQueueRank?.elo || 'default';
+  const baseElo = soloQueueRank?.elo || 'Unranked';
   const baseEloUpperCase = baseElo.charAt(0).toUpperCase() + baseElo.slice(1).toLowerCase();
-  const basePrice = price.league[baseEloUpperCase] || 666;
-  const rentalOptionsWithPrice = price.timeMultipliers.map(percentage => ({
-    hours: percentage,
+  const basePrice = price.league[baseEloUpperCase] || 105; // Default to Unranked price instead of 666
+
+  // Map the hours correctly to the multipliers
+  const rentalOptionsWithPrice = price.timeMultipliers.map((percentage, index) => ({
+    hours: hours[index], // Use the predefined hours array
     price: percentage === 0 ? basePrice : basePrice * (1 + percentage / 100),
   }));
-
   const {
     data: dropRefund,
   } = useQuery({
@@ -392,17 +393,17 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                     </div>
                   </div>
                   <Separator />
-                  <div className="">
+                  <div>
                     <div className="text-sm mb-2 text-zinc-600 dark:text-zinc-400">Quick extend options</div>
                     <div className="grid grid-cols-3 gap-2">
-                      {price.timeMultipliers.map((option, index) => (
+                      {price.timeMultipliers.map((_option, index) => (
                         <Button
                           key={index}
                           variant="outline"
                           size="sm"
                           className="flex border-primary/10 bg-white/[0.001] flex-col items-center gap-1 h-auto py-2"
                           onClick={() => handleExtendAccount(index)}
-                          loading={isExtendPending && selectedExtensionIndex === index}
+                          loading={isExtendPending && selectedExtensionIndex === option}
                           disabled={isExtendPending}
                         >
                           <span className="text-sm">
@@ -484,7 +485,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                       // eslint-disable-next-line jsx-a11y/no-static-element-interactions,jsx-a11y/click-events-have-key-events
                       <div
                         key={index}
-                        className={cn('border rounded-lg p-3 cursor-pointer transition-all', selectedRentalOptionIndex === index ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700')}
+                        className={cn('border  rounded-lg p-3 cursor-pointer transition-all', selectedRentalOptionIndex === index ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700')}
                         onClick={() => setSelectedRentalOptionIndex(index)}
                       >
                         <div className="flex justify-between items-start mb-2">
