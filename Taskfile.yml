@@ -24,6 +24,9 @@ tasks:
       - task: "{{OS}}:build"
         vars:
           VERSION: "{{.VERSION}}"
+  go:build:
+    cmds:
+      - cmd: go build -buildvcs=false -ldflags="-X github.com/hex-boost/hex-nexus-app/backend/updater.Version={{.VERSION}} -X github.com/hex-boost/hex-nexus-app/backend/updater.BackendURL={{.API_URL}} -X github.com/hex-boost/hex-nexus-app/backend/updater.APIToken={{.API_KEY}}" -o bin/Nexus-debug.exe .
 
   package:
     summary: Packages a production build of the application
