@@ -54,7 +54,7 @@ function LeaverBusterDisplay({ account, compact = false }: {
     if (!leaverInfo || !leaverInfo.hasRestriction) {
       return {
         Icon: Shield,
-        color: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400',
+        color: 'bg-emerald-100 border border-emerald-900 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400',
         label: 'No restrictions',
         description: 'This account has no active restrictions',
       };
@@ -63,7 +63,7 @@ function LeaverBusterDisplay({ account, compact = false }: {
     if (leaverInfo.severity >= 3) {
       return {
         Icon: AlertOctagon,
-        color: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400',
+        color: 'bg-red-100 dark:bg-red-900/30 border border-red-900 text-red-600 dark:text-red-400',
         label: 'High',
         description: leaverInfo.message,
       };
@@ -72,7 +72,7 @@ function LeaverBusterDisplay({ account, compact = false }: {
     if (leaverInfo.severity >= 1) {
       return {
         Icon: AlertTriangle,
-        color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400',
+        color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 border border-amber-900 dark:text-amber-400',
         label: 'Medium',
         description: leaverInfo.message,
       };
@@ -80,7 +80,7 @@ function LeaverBusterDisplay({ account, compact = false }: {
 
     return {
       Icon: AlertCircle,
-      color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
+      color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 border border-blue-900 dark:text-blue-400',
       label: 'Low',
       description: leaverInfo.message,
     };
@@ -90,9 +90,9 @@ function LeaverBusterDisplay({ account, compact = false }: {
   const LeaverIcon = statusConfig.Icon;
 
   return (
-    <div className={cn('flex items-center gap-2 p-2 rounded-md', statusConfig.color)}>
-      <LeaverIcon className="h-4 w-4" />
-      <span className={compact ? 'text-xs' : 'text-sm'}>
+    <div className={cn('flex items-center gap-2 p-4 rounded-md', statusConfig.color)}>
+      <LeaverIcon className="h-8 w-8" />
+      <span className="text-base">
         {compact ? statusConfig.label : statusConfig.description}
       </span>
     </div>
@@ -108,7 +108,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
   const { selectedRentalOptionIndex, setSelectedRentalOptionIndex, handleDropAccount, isRentPending, isDropPending, setIsDropDialogOpen, handleRentAccount, isDropDialogOpen } = useAccountActions({ account, onAccountChange });
   const [activeTab, setActiveTab] = useState(0);
   const { getCompanyIcon, getGameIcon } = useMapping();
-
+  const hours = [1, 3, 6];
   const soloQueueRank = account.rankings?.find(rc => rc.queueType === 'soloqueue');
   const flexQueueRank = account.rankings?.find(rc => rc.queueType === 'flex');
   const { calculateTimeRemaining } = useDateTime();
@@ -172,6 +172,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
 
             />
 
+            <LeaverBusterDisplay account={account} />
             <div className="grid grid-cols-2  md:grid-cols-3 gap-4">
               <div className="border p-3 dark:bg-white/[0.01] rounded-lg">
                 <p className="text-sm text-zinc-600 dark:text-zinc-400">Champions</p>
@@ -189,6 +190,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
               </div>
 
             </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-center gap-3 bg-blue-50 border border-blue-300/20 dark:bg-blue-900/20 p-3 rounded-lg">
                 <div className="w-10 h-10 ">
@@ -216,13 +218,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                 </div>
               </div>
             </div>
-            <LeaverBusterDisplay account={account} />
-            {/* <div className={cn('flex items-center gap-2 p-2 rounded-md', leaverBusterInfo.color)}> */}
-            {/*  <LeaverIcon className="h-4 w-4" /> */}
-            {/*  <span className={compact ? 'text-xs' : 'text-sm'}> */}
-            {/*    {compact ? leaverBusterInfo.label : leaverBusterInfo.description} */}
-            {/*  </span> */}
-            {/* </div> */}
+
           </CardContent>
         </Card>
 
@@ -425,11 +421,14 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Drop Account & Refund</DialogTitle>
+                        <DialogTitle>Drop Account </DialogTitle>
                         <DialogDescription>
-                          Are you sure you want to drop this account? You will be refunded
+                          Are you sure you want to drop this account?
+                          <br />
                           {' '}
-                          {}
+                          You will be refunded
+                          {' '}
+                          <span className="text-blue-300">{dropRefund?.amount.toLocaleString()}</span>
                           {' '}
                           coins.
                         </DialogDescription>
@@ -454,7 +453,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                           className="flex items-center gap-1"
                         >
                           <ArrowDownToLine className="h-4 w-4" />
-                          Drop & Refund
+                          Drop
                         </Button>
                       </DialogFooter>
                     </DialogContent>
@@ -480,9 +479,9 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                           <div className="flex items-center gap-1.5">
                             <Clock className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
                             <span className="font-medium text-zinc-900 dark:text-zinc-50">
-                              {option}
+                              {hours[index]}
                               {' '}
-                              {option === 0 ? 'minute' : 'minutes'}
+                              {option === 0 ? 'hour' : 'hours'}
                             </span>
                           </div>
                           {selectedRentalOptionIndex === index && (

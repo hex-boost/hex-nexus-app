@@ -190,7 +190,17 @@ function AccountRow({
         <div className="flex items-center gap-2">
           <div className="w-6 h-6">{getRegionIcon(account.server)}</div>
           <span className="text-sm text-zinc-600 dark:text-zinc-400">
-            {account.server.slice(0, account.server.length - 1)}
+            {
+              account.server === 'LA1'
+                ? 'LAN'
+                : account.server === 'OC1'
+                  ? 'OCE'
+                  : account.server === 'ME1'
+                    ? 'MEA'
+                    : account.server === 'EUN1'
+                      ? 'EUNE'
+                      : account.server.slice(0, account.server.length - 1)
+            }
           </span>
         </div>
       </td>
@@ -380,7 +390,13 @@ function AccountRow({
       <td className="p-3 text-sm text-zinc-600 dark:text-zinc-400">
         {account.LCUskins.length}
       </td>
-      <td className="p-3 text-sm text-zinc-600 dark:text-zinc-400">
+      <td className="p-3 flex gap-2 items-center text-sm text-zinc-600 dark:text-zinc-400">
+        <div className="w-6 h-6">
+          <img
+            src="https://raw.communitydragon.org/15.2/plugins/rcp-fe-lol-collections/global/default/images/skins-viewer/currencies/icon-blue-essence.png"
+          />
+        </div>
+
         {account.blueEssence?.toLocaleString() || '0'}
       </td>
       <td className="p-3">
@@ -678,7 +694,7 @@ function Accounts() {
                             {getRegionIcon(region)}
                           </div>
                           <span className="text-sm">
-                            {region === 'LA1' ? 'LAN' : region === 'OC1' ? 'OCE' : region.slice(0, region.length - 1)}
+                            {region === 'LA1' ? 'LAN' : region === 'OC1' ? 'OCE' : region === 'ME1' ? 'MEA' : region === 'EUN1' ? 'EUNE' : region.slice(0, region.length - 1)}
                           </span>
                         </SelectItem>
                       ))}
