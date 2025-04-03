@@ -294,7 +294,6 @@ func (d *Discord) uploadDiscordAvatar(accessToken string, userJwt string, userId
 	return nil
 }
 
-// HandleDiscordCallback sets up an HTTP server to process Discord callbacks
 func (d *Discord) handleDiscordCallback(callback func(token string, err error)) {
 	router := mux.NewRouter()
 	srv := &http.Server{
@@ -308,7 +307,6 @@ func (d *Discord) handleDiscordCallback(callback func(token string, err error)) 
 		code := r.URL.Query().Get("access_token")
 		d.logger.Debug("Callback received with token", "token_length", len(code))
 
-		// Authenticate with Strapi
 		authURL := fmt.Sprintf("%s/api/auth/discord/callback?access_token=%s", d.config.backendURL, code)
 		resp, err := d.config.client.R().Get(authURL)
 

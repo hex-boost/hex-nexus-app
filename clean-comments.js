@@ -4,6 +4,11 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
+// Get current date and time in UTC
+const now = new Date();
+const formattedDate = now.toISOString().slice(0, 19).replace('T', ' ');
+const currentUser = 'Rafael8313';
+
 // Configuration
 const config = {
     extensions: {
@@ -12,6 +17,7 @@ const config = {
     },
     excludeFiles: ['.d.ts'], // File extensions to exclude
     excludeDirs: ['node_modules', 'vendor', 'build', 'dist', '.git'],
+    preserveDocComments: true, // Whether to preserve JSDoc style comments
     modifyInPlace: true // Set to false if you want to create backup files
 };
 
@@ -26,15 +32,47 @@ try {
 
 const stripComments = require('strip-comments');
 
-// Function to remove comments from JavaScript/TypeScript files while preserving URLs
-function removeJSComments(content) {
-    // We'll use strip-comments with options to preserve URLs
-    return stripComments(content, {
+// Function to preserve JSDoc comments but remove other comments
+function preserveJSDocComments(content) {
+    // Store all JSDoc comments
+    const jsdocComments = [];
+    let counter = 0;
+
+    // Find and replace JSDoc comments with placeholders
+    const contentWithoutJSDoc = content.replace(/\/\*\*[\s\S]*?\*\//g, (match) => {
+        const placeholder = `__JSDOC_PLACEHOLDER_${counter}__`;
+        jsdocComments.push({ placeholder, comment: match });
+        counter++;
+        return placeholder;
+    });
+
+    // Remove remaining comments
+    const withoutComments = stripComments(contentWithoutJSDoc, {
         preserveUrls: true
     });
+
+    // Restore JSDoc comments
+    let result = withoutComments;
+    jsdocComments.forEach(({ placeholder, comment }) => {
+        result = result.replace(placeholder, comment);
+    });
+
+    return result;
 }
 
-// Function to remove comments from Go files while preserving URLs
+// Function to remove comments from JavaScript/TypeScript files while preserving URLs
+function removeJSComments(content) {
+    if (config.preserveDocComments) {
+        return preserveJSDocComments(content);
+    } else {
+        // Remove all comments
+        return stripComments(content, {
+            preserveUrls: true
+        });
+    }
+}
+
+// Function to remove comments from Go files while preserving URLs and docs
 function removeGoComments(content) {
     // First, protect URLs by temporarily replacing them
     const urlPlaceholders = [];
@@ -48,15 +86,36 @@ function removeGoComments(content) {
         return placeholder;
     });
 
-    // Now remove comments on the protected content
-    // Remove line comments
-    let result = urlProtectedContent.replace(/\/\/.*$/gm, '');
+    // If preserving doc comments, replace them with placeholders too
+    const docComments = [];
+    let docCounter = 0;
+    let contentToProcess = urlProtectedContent;
 
-    // Remove block comments
+    if (config.preserveDocComments) {
+        contentToProcess = urlProtectedContent.replace(/\/\*\*[\s\S]*?\*\//g, (match) => {
+            const placeholder = `__GODOC_PLACEHOLDER_${docCounter}__`;
+            docComments.push({ placeholder, comment: match });
+            docCounter++;
+            return placeholder;
+        });
+    }
+
+    // Now remove regular comments
+    // Remove line comments
+    let result = contentToProcess.replace(/\/\/.*$/gm, '');
+
+    // Remove block comments, but not doc comments which were already replaced
     result = result.replace(/\/\*[\s\S]*?\*\//g, '');
 
     // Clean up extra newlines from removed comments
     result = result.replace(/\n\s*\n\s*\n/g, '\n\n');
+
+    // Restore doc comments if we preserved them
+    if (config.preserveDocComments) {
+        docComments.forEach(({ placeholder, comment }) => {
+            result = result.replace(new RegExp(placeholder, 'g'), comment);
+        });
+    }
 
     // Restore URLs
     urlPlaceholders.forEach(({ placeholder, url }) => {
@@ -119,7 +178,7 @@ function processFile(filePath) {
                 console.log(`✅ Comments removed (backup created): ${filePath}`);
             }
         } else {
-            console.log(`ℹ️ No comments found: ${filePath}`);
+            console.log(`ℹ️ No comments found or all comments preserved: ${filePath}`);
         }
     } catch (error) {
         console.error(`❌ Error processing ${filePath}: ${error.message}`);
@@ -169,6 +228,7 @@ function main() {
       --go-extensions=.go        Specify Go extensions (default: .go)
       --exclude=dir1,dir2        Specify directories to exclude
       --exclude-files=.d.ts      Specify file patterns to exclude
+      --remove-doc-comments      Remove JSDoc comments (/**...*/) as well
       --help, -h                 Show this help message
 
     Examples:
@@ -176,6 +236,7 @@ function main() {
       node remove-comments-cli.js src                # Process src directory
       node remove-comments-cli.js --no-modify        # Create backups
       node remove-comments-cli.js --exclude-files=.d.ts,.min.js
+      node remove-comments-cli.js --remove-doc-comments  # Remove all comments
     `);
         return;
     }
@@ -186,6 +247,8 @@ function main() {
     args.forEach(arg => {
         if (arg.startsWith('--no-modify')) {
             config.modifyInPlace = false;
+        } else if (arg.startsWith('--remove-doc-comments')) {
+            config.preserveDocComments = false;
         } else if (arg.startsWith('--extensions=')) {
             config.extensions.react = arg.substring(13).split(',');
         } else if (arg.startsWith('--go-extensions=')) {
@@ -200,15 +263,16 @@ function main() {
     });
 
     console.log('=== Comment Remover CLI ===');
+    console.log(`Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): ${formattedDate}`);
+    console.log(`Current User's Login: ${currentUser}`);
+    console.log('=========================');
     console.log(`Target directory: ${targetDir}`);
     console.log(`React extensions: ${config.extensions.react.join(', ')}`);
     console.log(`Go extensions: ${config.extensions.go.join(', ')}`);
     console.log(`Excluded directories: ${config.excludeDirs.join(', ')}`);
     console.log(`Excluded file patterns: ${config.excludeFiles.join(', ')}`);
+    console.log(`Preserve JSDoc comments: ${config.preserveDocComments ? 'Yes' : 'No'}`);
     console.log(`Mode: ${config.modifyInPlace ? 'Modify in-place' : 'Create backups'}`);
-    console.log('=========================');
-    console.log(`Current Date and Time (UTC): ${new Date().toISOString().replace('T', ' ').slice(0, 19)}`);
-    console.log(`Current User: Rafael8313`);
     console.log('=========================');
 
     // Start processing

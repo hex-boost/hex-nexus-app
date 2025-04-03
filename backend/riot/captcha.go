@@ -21,12 +21,11 @@ func (rc *RiotClient) startCaptchaServer() {
 	}
 
 	mux.HandleFunc("/index.html", func(w http.ResponseWriter, r *http.Request) {
-		// Set the requested headers
+		
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Cache-Control", "no-cache")
 		w.Header().Set("Content-Type", "text/html")
 
-		// Serve the HTML file content
 		htmlContent := `<html>
 <head>
     <script src="https://js.hcaptcha.com/1/api.js?render=explicit&onload=hCaptchaLoaded"
@@ -42,7 +41,6 @@ func (rc *RiotClient) startCaptchaServer() {
                     const body = document.querySelector('#fds')
                     body.innerText = token
 
-                    // Submit token using fetch
                     fetch('/api/captcha/token', {
                         method: 'POST',
                         headers: {
@@ -88,7 +86,6 @@ func (rc *RiotClient) startCaptchaServer() {
 		fmt.Fprint(w, htmlContent)
 	})
 
-	// API endpoint to get captcha data
 	mux.HandleFunc("/api/captcha/data", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -104,7 +101,6 @@ func (rc *RiotClient) startCaptchaServer() {
 		}
 	})
 
-	// API endpoint to receive token
 	mux.HandleFunc("/api/captcha/token", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -137,7 +133,7 @@ func (rc *RiotClient) startCaptchaServer() {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
-	// Start the server on port 6969
+	
 	go func() {
 		rc.logger.Info("Starting captcha server on http://127.0.0.1:6969")
 		if err := captchaServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -156,12 +152,11 @@ func (rc *RiotClient) GetWebView() (gowebview.WebView, error) {
 }
 
 func (rc *RiotClient) CloseWebview() {
-	//rc.webview.Destroy()
+	
 }
 func (rc *RiotClient) handleCaptcha() error {
 	rc.logger.Info("Starting captcha handling")
 
-	// Get captcha data
 	captchaData, err := rc.getCaptchaData()
 	if err != nil {
 		rc.logger.Error("Failed to get captcha data", zap.Error(err))
@@ -170,7 +165,6 @@ func (rc *RiotClient) handleCaptcha() error {
 
 	rc.captchaData = captchaData
 
-	// Return captcha data so it can be rendered
 	return nil
 }
 func (rc *RiotClient) IsAuthStateValid() error {

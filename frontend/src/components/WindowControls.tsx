@@ -1,4 +1,3 @@
-import type { Size } from '@wailsio/runtime/types/screens';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { Window } from '@wailsio/runtime';
@@ -13,7 +12,7 @@ type Position = {
 export function WindowControls({ className }: { className?: string }) {
   const window = Window;
   const [isMaximized, setIsMaximized] = useState(false);
-  const [previousSize, setPreviousSize] = useState<Size | null>(null);
+  const [previousSize, setPreviousSize] = useState<any | null>(null);
   const [previousPosition, setPreviousPosition] = useState<Position | null>();
   useEffect(() => {
     const updateMaximizeState = async () => {

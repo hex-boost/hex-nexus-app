@@ -63,7 +63,7 @@ export const MultiSelectCombobox = <T extends BaseOption>({
   }, []);
 
   const preloadImages = useCallback((visibleOptions: T[]) => {
-    visibleOptions.forEach((option) => {
+    visibleOptions.forEach((option: any) => {
       if (!loadedImages[option.value]) {
         const img = new Image();
 

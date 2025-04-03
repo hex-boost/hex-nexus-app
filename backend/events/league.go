@@ -1,6 +1,5 @@
 package customEvents
 
-// GetLeagueEvents retorna todos os eventos relacionados ao League of Legends
 type LeagueEventsI struct {
 	ClientClosed     string
 	ClientOpen       string

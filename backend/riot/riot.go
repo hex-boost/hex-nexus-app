@@ -21,7 +21,6 @@ import (
 	"strings"
 )
 
-// RiotClient provides methods for interacting with Riot authentication services
 type RiotClient struct {
 	client           *resty.Client
 	logger           *utils.Logger
@@ -31,10 +30,9 @@ type RiotClient struct {
 	webview          gowebview.WebView
 }
 
-// NewRiotClient creates a new Riot client for authentication
 func NewRiotClient(logger *utils.Logger) *RiotClient {
 	return &RiotClient{
-		client:           nil, // Will be initialized during authentication
+		client:           nil, 
 		logger:           logger,
 		ctx:              context.Background(),
 		hcaptchaResponse: make(chan string),
@@ -44,7 +42,6 @@ func (rc *RiotClient) ResetRestyClient() {
 	rc.client = nil
 }
 
-// ForceCloseAllClients closes all Riot-related processes
 func (rc *RiotClient) ForceCloseAllClients() error {
 	rc.logger.Info("Forcing close of all Riot clients")
 
@@ -103,7 +100,7 @@ func (rc *RiotClient) getProcess() (pid int, err error) {
 		"Riot Client",
 		"Riot Client.exe",
 	}
-	// Find the League RiotClient or Riot RiotClient process ID
+	
 	for _, process := range processes {
 		exe := process.Executable()
 		for _, name := range riotProcessNames {
@@ -129,7 +126,7 @@ func (rc *RiotClient) getCredentials(riotClientPid int) (port string, authToken 
 	if len(cmdLineParts) > 1 {
 		cmdLine = strings.TrimSpace(cmdLineParts[1])
 	}
-	// Parse command line for port and auth token
+	
 	portRegex := regexp.MustCompile(`--app-port=(\d+)`)
 	authRegex := regexp.MustCompile(`--remoting-auth-token=([\w-]+)`)
 
@@ -143,7 +140,6 @@ func (rc *RiotClient) getCredentials(riotClientPid int) (port string, authToken 
 	return "", "", fmt.Errorf("unable to extract credentials from process %s (PID: %d)", riotClientPid)
 }
 
-// LoginWithCaptcha authenticates with a completed captcha token
 func (rc *RiotClient) LoginWithCaptcha(username, password, captchaToken string) (string, error) {
 	rc.logger.Info("Authenticating with captcha token", zap.String("token_length", fmt.Sprintf("%d", len(captchaToken))))
 
@@ -252,7 +248,7 @@ func (rc *RiotClient) InitializeRestyClient() error {
 	return nil
 }
 func (rc *RiotClient) InitializeCaptchaHandling() error {
-	// Inicializa o cliente
+	
 	if err := rc.InitializeRestyClient(); err != nil {
 		return err
 	}
@@ -290,7 +286,6 @@ func (rc *RiotClient) completeAuthentication(loginToken string) error {
 	return nil
 }
 
-// GetAuthorization gets the authorization token
 func (rc *RiotClient) getAuthorization() (map[string]interface{}, error) {
 	var authResult map[string]interface{}
 	postResp, err := rc.client.R().
@@ -311,48 +306,3 @@ func (rc *RiotClient) getAuthorization() (map[string]interface{}, error) {
 	return authResult, nil
 }
 
-//func (c *RiotClient) Authenticate(username string, password string) error {
-//	// Initialize the client
-//	if err := c.initialize(); err != nil {
-//		return err
-//	}
-//	if err := c.waitForReadyState(20 * time.Second); err != nil {
-//		return err
-//	}
-//	err := c.handleCaptcha()
-//	if err != nil {
-//		return err
-//	}
-//
-//	c.logger.Info("Captcha server started")
-//	c.startCaptchaServer()
-//
-//	webview, err := c.GetWebView()
-//	if err != nil {
-//		return errors.New("failed to open captcha webview")
-//	}
-//	go func() {
-//		c.logger.Info("webview start opening for user to complete captcha")
-//		webview.Run()
-//	}()
-//	captchaToken := <-c.hcaptchaResponse
-//	c.logger.Info("Captcha response received")
-//
-//	webview.Terminate()
-//	webview.Destroy()
-//
-//	loginToken, err := c.LoginWithCaptcha(username, password, captchaToken)
-//	if err != nil {
-//		return err
-//	}
-//	c.logger.Info("Login with captcha succeeded")
-//
-//	// Complete the authentication flow
-//	if err := c.completeAuthentication(loginToken); err != nil {
-//		return err
-//	}
-//
-//	// Get authorization
-//	_, err = c.getAuthorization()
-//	return err
-//}

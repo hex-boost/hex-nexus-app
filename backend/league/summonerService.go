@@ -38,7 +38,6 @@ func (l *SummonerService) UpdateFromLCU(username string, password string) error 
 
 	eg, _ := errgroup.WithContext(context.Background())
 
-	// Fetch current summoner
 	eg.Go(func() error {
 		summoner, err := l.summonerClient.GetCurrentSummoner()
 		if err != nil {
@@ -51,7 +50,6 @@ func (l *SummonerService) UpdateFromLCU(username string, password string) error 
 		return nil
 	})
 
-	// Fetch champions
 	eg.Go(func() error {
 		champs, err := l.summonerClient.GetChampions()
 		if err != nil {
@@ -64,7 +62,6 @@ func (l *SummonerService) UpdateFromLCU(username string, password string) error 
 		return nil
 	})
 
-	// Fetch skins
 	eg.Go(func() error {
 		skinData, err := l.summonerClient.GetSkins()
 		if err != nil {
@@ -77,7 +74,6 @@ func (l *SummonerService) UpdateFromLCU(username string, password string) error 
 		return nil
 	})
 
-	// Fetch currency
 	eg.Go(func() error {
 		currency, err := l.summonerClient.GetCurrency()
 		if err != nil {
@@ -90,7 +86,6 @@ func (l *SummonerService) UpdateFromLCU(username string, password string) error 
 		return nil
 	})
 
-	// Fetch ranking
 	eg.Go(func() error {
 		ranking, err := l.summonerClient.GetRanking()
 		if err != nil {
@@ -103,7 +98,6 @@ func (l *SummonerService) UpdateFromLCU(username string, password string) error 
 		return nil
 	})
 
-	// Fetch region
 	eg.Go(func() error {
 		reg, err := l.summonerClient.GetRegion()
 		if err != nil {
@@ -116,7 +110,6 @@ func (l *SummonerService) UpdateFromLCU(username string, password string) error 
 		return nil
 	})
 
-	// Wait for all goroutines to complete
 	if err := eg.Wait(); err != nil {
 		return err
 	}
@@ -133,7 +126,6 @@ func (l *SummonerService) UpdateFromLCU(username string, password string) error 
 		}
 	}
 
-	// Extract ranking data safely
 	rankedStats := types.RankedStats{
 		RankedFlexSR:  make(map[string]interface{}),
 		RankedSolo5x5: make(map[string]interface{}),
@@ -151,14 +143,13 @@ func (l *SummonerService) UpdateFromLCU(username string, password string) error 
 		}
 	}
 
-	// Create summoner object
 	summoner := types.Summoner{
 		Username:      username,
 		Password:      password,
 		Gamename:      currentSummoner.GameName,
 		Tagline:       currentSummoner.TagLine,
-		Champions:     champions, // Adjust type as needed
-		ChampionSkins: skins,     // Adjust type as needed
+		Champions:     champions, 
+		ChampionSkins: skins,     
 		Currencies:    currencies,
 		RankedStats:   rankedStats,
 		Server:        region,

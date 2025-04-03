@@ -47,19 +47,26 @@ export default function SubscriptionStatus({ className, subscription }: Subscrip
           >
             {
 
-              subscription?.isActive || subscription?.tier === ''
+              isSubscriptionActive(subscription)
                 ? (
                     <div className="flex items-center gap-1">
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       Active
                     </div>
                   )
-                : (
-                    <div className="flex items-center gap-1">
-                      <AlertCircle className="w-3.5 h-3.5" />
-                      Expired
-                    </div>
-                  )
+                : !subscription?.tier
+                    ? (
+                        <div className="flex items-center gap-1">
+                          <AlertCircle className="w-3.5 h-3.5" />
+                          N/A
+                        </div>
+                      )
+                    : (
+                        <div className="flex items-center gap-1">
+                          <AlertCircle className="w-3.5 h-3.5" />
+                          Expired
+                        </div>
+                      )
             }
           </div>
         </div>

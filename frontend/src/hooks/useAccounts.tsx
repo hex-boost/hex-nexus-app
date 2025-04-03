@@ -221,7 +221,7 @@ export function useAccounts() {
         return false;
       }
       if (filters.selectedChampions.length > 0) {
-        // Check if account has ALL the selected champions
+        
         const missingChampions = filters.selectedChampions.some(championId =>
           !account.LCUchampions.includes(Number.parseInt(championId)),
         );
@@ -230,9 +230,9 @@ export function useAccounts() {
         }
       }
 
-      // Filter by skins
+      
       if (filters.selectedSkins.length > 0) {
-        // Check if account has ALL the selected skins
+        
         const missingSkins = filters.selectedSkins.some(skinId =>
           !account.LCUskins.includes(Number.parseInt(skinId)),
         );
