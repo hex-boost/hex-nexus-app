@@ -38,7 +38,7 @@ func (rc *RiotClient) WaitUntilIsRunning(timeout time.Duration) error {
 	return fmt.Errorf("timeout ao aguardar o cliente Riot iniciar")
 }
 func (rc *RiotClient) IsAuthenticationReady() bool {
-	
+
 	pid, err := rc.getProcess()
 	if err != nil {
 		return false
@@ -69,6 +69,8 @@ func (rc *RiotClient) WaitUntilAuthenticationIsReady(timeout time.Duration) erro
 			rc.logger.Info("Riot client is not initialized")
 			continue
 		}
+		time.Sleep(
+			5)
 		err = rc.IsAuthStateValid()
 		if err != nil {
 			rc.logger.Info("Riot client is opened but auth state is invalid")
@@ -85,33 +87,6 @@ func (rc *RiotClient) WaitUntilAuthenticationIsReady(timeout time.Duration) erro
 	return errors.New("timeout waiting for Riot client to initialize")
 }
 
-func (rc *RiotClient) waitForReadyState(timeout time.Duration) error {
-	deadline := time.Now().Add(timeout)
-	interval := 200 * time.Millisecond
-
-	rc.logger.Info("Verificando disponibilidade do serviço de autenticação", zap.Duration("timeout", timeout))
-
-	for time.Now().Before(deadline) {
-		resp, err := rc.client.R().Get("/rso-auth/configuration/v3/ready-state")
-
-		if err == nil && resp.StatusCode() == 200 {
-			rc.logger.Info("Serviço de autenticação está pronto")
-			return nil
-		}
-
-		status := "erro"
-		if err != nil {
-			status = err.Error()
-		} else {
-			status = fmt.Sprintf("status %d", resp.StatusCode())
-		}
-		rc.logger.Debug("Aguardando serviço ficar pronto", zap.String("status", status))
-
-		time.Sleep(interval)
-	}
-
-	return errors.New("timeout ao aguardar serviço de autenticação ficar pronto")
-}
 func (rc *RiotClient) IsClientInitialized() bool {
 	return rc.client != nil
 }

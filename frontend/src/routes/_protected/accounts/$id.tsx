@@ -40,9 +40,9 @@ function AccountByID() {
     queryFn: () => strapiClient.find<AccountType[]>('accounts/rented').then(res => res.data),
   });
 
-  const refetchAccount = () => {
-    queryClient.invalidateQueries({ queryKey: ['accounts', 'available'] });
-    queryClient.invalidateQueries({ queryKey: ['accounts', 'rented'] });
+  const refetchAccount = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['accounts', 'available'] });
+    await queryClient.invalidateQueries({ queryKey: ['accounts', 'rented'] });
   };
 
   const account = rentedAccounts?.find(acc => acc.documentId === id)

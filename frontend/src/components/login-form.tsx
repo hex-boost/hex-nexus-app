@@ -64,15 +64,23 @@ export function LoginForm({
   });
   const loginMutation = useMutation(
     {
-      mutationFn:
-        async () => {
-          return await userAuth.login({
-            identifier: formData.email,
-            password: formData.password,
-          });
-        },
+      mutationFn: async () => {
+        return await userAuth.login({
+          identifier: formData.email,
+          password: formData.password,
+        });
+      },
       onSuccess: async (data) => {
         setAuthToken(data.jwt);
+        if (import.meta.env.API_URL !== 'http://localhost:1337') {
+          const currentHwid = await Utils.GetHWID();
+          if (data.user.hwid && data.user.hwid !== currentHwid) {
+            setAuthToken(''); // Clear token
+            toast.error('Login failed: Hardware ID mismatch');
+            return;
+          }
+        }
+
         await refetchUser();
         router.navigate({ to: '/dashboard' });
       },
