@@ -60,6 +60,8 @@ export function useAccounts() {
     company: '',
     status: '',
     selectedChampions: [] as string[],
+    minBlueEssence: 0,
+
     selectedSkins: [] as string[],
   });
 
@@ -212,6 +214,10 @@ export function useAccounts() {
         wins: 0,
         losses: 0,
       } as RankingType;
+      const blueEssence = account.blueEssence || 0;
+      if (blueEssence < filters.minBlueEssence) {
+        return false;
+      }
 
       if (searchQuery && !account.documentId.toString().includes(searchQuery.toLowerCase())) {
         return false;

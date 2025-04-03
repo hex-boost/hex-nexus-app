@@ -2,17 +2,18 @@ import type { Price } from '@/types/price.ts';
 import type { AccountType, RankingType } from '@/types/types.ts';
 import { DIVISIONS, LOL_TIERS, VALORANT_TIERS } from '@/components/accountsMock.ts';
 import { CoinIcon } from '@/components/coin-icon';
-
 import { AccountGameIcon } from '@/components/GameComponents';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
+
 import { Badge } from '@/components/ui/badge.tsx';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/button.tsx';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input.tsx';
+import { Label } from '@/components/ui/label.tsx';
 import { MultiSelectCombobox } from '@/components/ui/multi-select-combobox.tsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
+import { Slider } from '@/components/ui/slider.tsx';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getLeaverBusterInfo, useAccounts } from '@/hooks/useAccounts.tsx';
 import { useAllDataDragon } from '@/hooks/useDataDragon.ts';
@@ -380,6 +381,9 @@ function AccountRow({
       <td className="p-3 text-sm text-zinc-600 dark:text-zinc-400">
         {account.LCUskins.length}
       </td>
+      <td className="p-3 text-sm text-zinc-600 dark:text-zinc-400">
+        {account.blueEssence?.toLocaleString() || '0'}
+      </td>
       <td className="p-3">
         <div className="flex items-center gap-2">
           <img
@@ -524,6 +528,8 @@ function AccountsTable({
                 <SortIndicator column="LCUskins" />
               </div>
             </th>
+
+            <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Blue Essence</th>
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Company</th>
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Status</th>
             <th
@@ -791,8 +797,59 @@ function Accounts() {
                     )}
                   />
                 </div>
-              </div>
 
+                <div>
+                  <Label className="text-sm font-medium mb-1.5 block">
+                    Blue Essence (
+                    {filters.minBlueEssence.toLocaleString()}
+                    )
+                  </Label>
+                  <div className="flex flex-wrap gap-2 my-2">
+                    {[450, 1350, 3150, 4800, 6300, 7800].map(value => (
+                      <Button
+                        key={value}
+                        variant="outline"
+                        size="sm"
+                        className={cn(
+                          'h-7 px-2  text-xs',
+                          filters.minBlueEssence === value ? 'bg-blue-100 dark:bg-blue-900/20 border-blue-500' : '',
+                        )}
+                        onClick={() => setFilters({
+                          ...filters,
+                          minBlueEssence: value,
+                        })}
+                      >
+                        {value.toLocaleString()}
+                        {' '}
+                        BE
+                      </Button>
+                    ))}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-2 text-xs"
+                      onClick={() => setFilters({
+                        ...filters,
+                        minBlueEssence: 0,
+                      })}
+                    >
+                      Reset
+                    </Button>
+                  </div>
+                  <Slider
+                    defaultValue={[filters.minBlueEssence]}
+                    min={0}
+                    max={30000}
+                    step={100}
+                    onValueChange={value =>
+                      setFilters({
+                        ...filters,
+                        minBlueEssence: value[0],
+                      })}
+                    className="my-4"
+                  />
+                </div>
+              </div>
               <div className="space-y-6 flex flex-col justify-between h-full">
 
                 <div className="grid">
