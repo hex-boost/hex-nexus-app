@@ -1,4 +1,4 @@
-import type { AccountType } from '@/types/types';
+import type { AccountType, RankingType } from '@/types/types';
 import { strapiClient } from '@/lib/strapi.ts';
 import { useMapping } from '@/lib/useMapping';
 import { useQuery } from '@tanstack/react-query';
@@ -195,7 +195,17 @@ export function useAccounts() {
 
   const filteredAccounts = useMemo(() => {
     return sortedAccounts.filter((account) => {
-      const soloqueueRanking = account.rankings.find(ranking => ranking.queueType === 'soloqueue' && ranking.type === 'current');
+      const soloqueueRanking = account.rankings.find(
+        ranking => ranking.queueType === 'soloqueue' && ranking.type === 'current' && ranking.elo !== '',
+      ) || account.rankings.find(
+        ranking => ranking.queueType === 'soloqueue' && ranking.type === 'provisory',
+      ) || {
+        elo: '',
+        division: '',
+        points: 0,
+        wins: 0,
+        losses: 0,
+      } as RankingType;
 
       if (searchQuery && !account.documentId.toString().includes(searchQuery.toLowerCase())) {
         return false;
@@ -210,7 +220,26 @@ export function useAccounts() {
         && (!soloqueueRanking || soloqueueRanking.elo?.toLowerCase() !== filters.rank.toLowerCase())) {
         return false;
       }
+      if (filters.selectedChampions.length > 0) {
+        // Check if account has ALL the selected champions
+        const missingChampions = filters.selectedChampions.some(championId =>
+          !account.LCUchampions.includes(Number.parseInt(championId)),
+        );
+        if (missingChampions) {
+          return false;
+        }
+      }
 
+      // Filter by skins
+      if (filters.selectedSkins.length > 0) {
+        // Check if account has ALL the selected skins
+        const missingSkins = filters.selectedSkins.some(skinId =>
+          !account.LCUskins.includes(Number.parseInt(skinId)),
+        );
+        if (missingSkins) {
+          return false;
+        }
+      }
       if (filters.region && filters.region !== 'any' && account.server !== filters.region) {
         return false;
       }

@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator.tsx';
 import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
 import { useGoFunctions } from '@/hooks/useGoBindings.ts';
 import { useProfileAvatar } from '@/hooks/useProfileAvatar.ts';
@@ -51,7 +50,7 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<'div'>) {
-  const { HWID } = useGoFunctions();
+  const { Utils } = useGoFunctions();
   const { refetchUser } = useCommonFetch();
   const router = useRouter();
   const { getDefaultBase64Avatar, uploadImageFromBase64 } = useProfileAvatar();
@@ -95,7 +94,7 @@ export function LoginForm({
             email: formData.email,
             password: formData.password,
             avatar: uploadedAvatar.data[0].id,
-            hwid: HWID,
+            hwid: await Utils.GetHWID(),
           } as any;
           return await userAuth.register(registerPayload);
         },
@@ -286,22 +285,6 @@ export function LoginForm({
                       ? isLoading ? 'Signing in...' : 'Sign in'
                       : isLoading ? 'Registering...' : 'Register'}
                   </Button>
-                  <div className="flex items-center  gap-4 w-full">
-                    <Separator className="flex-1 w-full" />
-                    <span className="text-muted-foreground text-xs">OR</span>
-                    <Separator className="w-full flex-1" />
-                  </div>
-                  {}
-                  {}
-                  {}
-                  {}
-                  {}
-                  {}
-                  {}
-                  {}
-                  {}
-                  {}
-                  {}
                   <TabsList className="text-center text-sm">
                     <span>
                       {activeTab === 'login' ? 'Don\'t have an account? ' : 'Already have an account? '}
