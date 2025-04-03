@@ -38,32 +38,25 @@ export type TransferTokenType = Entity<AdminTransferToken>;
 export type TransferTokenPermissionType = Entity<AdminTransferTokenPermission>;
 export type AdminUserType = Entity<AdminUser>;
 
-
 export type ActionType = Entity<ApiActionAction>;
 export type PremiumType = Entity<ApiPremiumPremium>;
 export type PriceType = Entity<ApiPricePrice>;
 export type RankingType = Entity<ApiRankingRanking>;
 export type TransactionType = Entity<ApiTransactionTransaction>;
 
-
 export type ContentReleaseType = Entity<PluginContentReleasesRelease>;
 export type ContentReleaseActionType = Entity<PluginContentReleasesReleaseAction>;
 
-
 export type LocaleType = Entity<PluginI18NLocale>;
-
 
 export type WorkflowType = Entity<PluginReviewWorkflowsWorkflow>;
 export type WorkflowStageType = Entity<PluginReviewWorkflowsWorkflowStage>;
 
-
 export type MediaFileType = Entity<PluginUploadFile>;
 export type MediaFolderType = Entity<PluginUploadFolder>;
 
-
 export type PermissionType = Entity<PluginUsersPermissionsPermission>;
 export type RoleType = Entity<PluginUsersPermissionsRole>;
-
 
 export type UserRole = RoleType;
 export type UserMedia = MediaFileType;

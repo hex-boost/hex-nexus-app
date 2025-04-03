@@ -7,7 +7,6 @@ type GameIconProps = {
 };
 
 export function AccountGameIcon({ game, className, size = 24 }: GameIconProps) {
-  
   switch (game.toLowerCase()) {
     case 'lol':
       return <LolIcon size={size} className={className} />;

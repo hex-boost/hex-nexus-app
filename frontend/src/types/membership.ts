@@ -8,8 +8,8 @@ export type PricingPlan = {
   description: string;
   price: number;
   period?: string;
-  productID?: string; 
-  priceID?: string; 
+  productID?: string;
+  priceID?: string;
   benefits: { title: string; description: string }[];
   buttonText: string;
   buttonVariant?: 'default' | 'outline' | 'destructive';

@@ -26,13 +26,6 @@ type List02Props = {
   className?: string;
 };
 
-
-
-
-
-
-
-
 const TRANSACTIONS: Transaction[] = [
   {
     id: '1',

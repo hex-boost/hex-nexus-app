@@ -6,7 +6,7 @@ export const mockCheckoutSession: CheckoutSession = {
   object: 'checkout.session',
   after_expiration: null,
   allow_promotion_codes: true,
-  amount_subtotal: 2000, 
+  amount_subtotal: 2000,
   amount_total: 2000,
   automatic_tax: {
     enabled: false,
@@ -27,7 +27,7 @@ export const mockCheckoutSession: CheckoutSession = {
     tax_ids: [],
   },
   customer_email: 'cliente@exemplo.com',
-  expires_at: Math.floor(Date.now() / 1000) + 3600 * 24, 
+  expires_at: Math.floor(Date.now() / 1000) + 3600 * 24,
   livemode: false,
   locale: 'pt-BR',
   metadata: {
@@ -79,7 +79,6 @@ export type Account = {
     rank: string;
   };
 };
-
 
 export const ACCOUNTS: Account[] = [
   {
@@ -299,7 +298,7 @@ export const ACCOUNTS: Account[] = [
     status: 'Available',
     isRentedByUser: true,
     refundableAmount: 1600,
-    expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 12).toISOString(), 
+    expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 12).toISOString(),
     soloQueueRank: {
       tier: 'Diamond',
       rank: 'I',
@@ -308,7 +307,6 @@ export const ACCOUNTS: Account[] = [
   },
 ];
 
-
 export const REGIONS: Server[] = ['NA1', 'EUW1', 'EUN1', 'OC1'];
 export const LOL_TIERS = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Emerald', 'Diamond'];
 export const VALORANT_TIERS = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Ascendant', 'Immortal', 'Radiant'];
@@ -316,7 +314,6 @@ export const DIVISIONS = ['I', 'II', 'III', 'IV'];
 export const COMPANIES = ['Nexus'];
 export const STATUSES = ['Available', 'Rented', 'Reserved'];
 export const GAMES = ['League of Legends', 'Valorant'];
-
 
 export const CHAMPIONS = [
   'Aatrox',

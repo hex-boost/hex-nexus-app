@@ -22,18 +22,6 @@ type AccountInfoDisplayProps = {
   compact?: boolean;
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
 function RankDisplay({
   title,
   rank,
@@ -57,9 +45,6 @@ function RankDisplay({
   getEloIcon: (elo: string) => string;
   getTierIcon?: (tier: string) => string;
 }) {
-  
-  
-
   return (
     <div className="bg-zinc-50
     space-y-2 border dark:bg-white/[0.01] p-3 rounded-lg"
@@ -121,57 +106,15 @@ function RankDisplay({
   );
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 export default function AccountInfoDisplay({
-  
-  
-  
+
   gameName,
-  
+
   soloQueueRank,
   flexQueueRank,
   previousSeasonRank,
   compact = false,
 }: AccountInfoDisplayProps) {
-  
-  
   const { getRankColor, getEloIcon } = useMapping();
   return (
     <div className={cn('w-full', compact ? 'space-y-2' : 'space-y-4')}>
@@ -188,7 +131,7 @@ export default function AccountInfoDisplay({
             previousSeasonRank={previousSeasonRank}
             getRankColor={getRankColor}
             getEloIcon={getEloIcon}
-            
+
           />
 
           <RankDisplay

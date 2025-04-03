@@ -1,9 +1,7 @@
-
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 import { Skeleton } from '@/components/ui/skeleton.tsx';
-
 
 import { cn } from '@/lib/utils';
 
@@ -20,15 +18,15 @@ export type BaseOption = {
 export type Option<T extends BaseOption = BaseOption> = T;
 
 type Props<T extends BaseOption> = {
-    label: string;
-    renderItem: (option: T) => React.ReactNode;
-    renderSelectedItem: (value: string[]) => React.ReactNode;
-    options: T[];
+  label: string;
+  renderItem: (option: T) => React.ReactNode;
+  renderSelectedItem: (value: string[]) => React.ReactNode;
+  options: T[];
   onOpenChange?: (open: boolean) => void;
 
-    value: string[];
-    onChange: (value: string[]) => void;
-    placeholder?: string;
+  value: string[];
+  onChange: (value: string[]) => void;
+  placeholder?: string;
   isLoading?: boolean;
 };
 
@@ -44,21 +42,19 @@ export const MultiSelectCombobox = <T extends BaseOption>({
 
   placeholder,
 }: Props<T>) => {
-  
   const [open, setOpen] = useState(false);
   const [renderLoading, setRenderLoading] = useState(false);
   const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
 
-  
   const parentRef = React.useRef<HTMLDivElement>(null);
   const rowVirtualizer = useVirtualizer({
     count: options.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 36, 
+    estimateSize: () => 36,
     overscan: 100,
 
   });
-    const handleChange = (currentValue: string) => {
+  const handleChange = (currentValue: string) => {
     onChange(value.includes(currentValue) ? value.filter(val => val !== currentValue) : [...value, currentValue]);
   };
 
@@ -70,8 +66,7 @@ export const MultiSelectCombobox = <T extends BaseOption>({
     visibleOptions.forEach((option) => {
       if (!loadedImages[option.value]) {
         const img = new Image();
-        
-        
+
         const avatarUrl = option.avatar || ''; // Assuming avatar property exists
         if (avatarUrl) {
           img.onload = () => handleImageLoad(option.value);
@@ -200,7 +195,7 @@ export const MultiSelectCombobox = <T extends BaseOption>({
                         const option = options[virtualItem.index];
                         return (
                           <CommandItem
-                            key={`${option.value}-${virtualItem.index}`} 
+                            key={`${option.value}-${virtualItem.index}`}
 
                             value={option.label}
                             onSelect={() => handleChange(option.value)}

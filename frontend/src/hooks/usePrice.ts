@@ -1,4 +1,3 @@
-
 import type { PriceData } from '@/types/price.ts';
 import { strapiClient } from '@/lib/strapi.ts';
 import { useQuery } from '@tanstack/react-query';

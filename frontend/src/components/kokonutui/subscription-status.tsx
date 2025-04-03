@@ -32,7 +32,6 @@ export default function SubscriptionStatus({ className, subscription }: Subscrip
     const expiryDate = new Date(subscription.expiresAt);
     const today = new Date();
 
-    
     return expiryDate > today;
   }
   return (
@@ -47,7 +46,7 @@ export default function SubscriptionStatus({ className, subscription }: Subscrip
             className={cn('px-3 py-1 rounded-full text-xs font-medium', isSubscriptionActive(subscription) ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400')}
           >
             {
-              
+
               subscription?.isActive || subscription?.tier === ''
                 ? (
                     <div className="flex items-center gap-1">

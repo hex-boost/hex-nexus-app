@@ -118,20 +118,7 @@ export function LoginForm({
       registerMutation.mutate();
     }
   };
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
   const isLoading = activeTab === 'login' ? loginMutation.isPending : registerMutation.isPending;
   return (
 

@@ -3,7 +3,7 @@ import { strapiClient } from '@/lib/strapi.ts';
 import { useMapping } from '@/lib/useMapping';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
-import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react'; 
+import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 export function getLeaverBusterInfo(account: AccountType) {
@@ -14,17 +14,14 @@ export function getLeaverBusterInfo(account: AccountType) {
   const leaverData = account.leaverBuster.leaverBusterEntryDto;
   const penaltyData = leaverData.leaverPenalty;
 
-  
   const hasActivePenalties
         = penaltyData?.hasActivePenalty === true
           || leaverData.punishedGamesRemaining > 0
           || (penaltyData?.rankRestricted === true && penaltyData?.rankRestrictedGamesRemaining > 0);
 
   if (hasActivePenalties) {
-    
     const waitTimeMinutes = penaltyData?.delayTime ? Math.floor(penaltyData.delayTime / 60000) : 0;
 
-    
     let message = '';
 
     // Low Priority Queue (most important info for boosters)
@@ -92,7 +89,6 @@ export function useAccounts() {
         }
         const restrictions = account.ban.restrictions;
 
-        
         const hasInvalidCredentials = restrictions.some(r =>
           r.type === 'INVALID_CREDENTIALS' || r.type === 'MFA_REQUIRED',
         );
@@ -118,7 +114,6 @@ export function useAccounts() {
       if (sortConfig.direction === 'ascending') {
         direction = 'descending';
       } else if (sortConfig.direction === 'descending') {
-        
         setSortConfig({ key: null, direction: null });
         return;
       }
@@ -136,7 +131,6 @@ export function useAccounts() {
 
     if (sortConfig.key && sortConfig.direction) {
       sortableAccounts.sort((a, b) => {
-        
         if (sortConfig.key === 'LCUchampions' || sortConfig.key === 'LCUskins') {
           const aLength = a[sortConfig.key]?.length || 0;
           const bLength = b[sortConfig.key]?.length || 0;
@@ -146,13 +140,10 @@ export function useAccounts() {
             : bLength - aLength;
         }
 
-        
         if (sortConfig.key === 'coin_price') {
-          
           const aRank = a.rankings.find(r => r.queueType === 'soloqueue' && r.type === 'current')?.elo?.toLowerCase() || 'unranked';
           const bRank = b.rankings.find(r => r.queueType === 'soloqueue' && r.type === 'current')?.elo?.toLowerCase() || 'unranked';
 
-          
           const rankValues: Record<string, number> = {
             challenger: 9,
             grandmaster: 8,
@@ -174,7 +165,6 @@ export function useAccounts() {
             : bValue - aValue;
         }
 
-        
         if (sortConfig.key === 'winrate') {
           const aRanking = a.rankings.find(r => r.queueType === 'soloqueue' && r.type === 'current');
           const bRanking = b.rankings.find(r => r.queueType === 'soloqueue' && r.type === 'current');
@@ -190,7 +180,6 @@ export function useAccounts() {
             : bWinRate - aWinRate;
         }
 
-        
         if (a[sortConfig.key as keyof AccountType] < b[sortConfig.key as keyof AccountType]) {
           return sortConfig.direction === 'ascending' ? -1 : 1;
         }
@@ -208,24 +197,20 @@ export function useAccounts() {
     return sortedAccounts.filter((account) => {
       const soloqueueRanking = account.rankings.find(ranking => ranking.queueType === 'soloqueue' && ranking.type === 'current');
 
-      
       if (searchQuery && !account.documentId.toString().includes(searchQuery.toLowerCase())) {
         return false;
       }
 
-      
       if (filters.division && filters.division !== 'any'
         && (!soloqueueRanking || soloqueueRanking.division !== filters.division)) {
         return false;
       }
 
-      
       if (filters.rank && filters.rank !== 'any'
         && (!soloqueueRanking || soloqueueRanking.elo?.toLowerCase() !== filters.rank.toLowerCase())) {
         return false;
       }
 
-      
       if (filters.region && filters.region !== 'any' && account.server !== filters.region) {
         return false;
       }
@@ -243,8 +228,6 @@ export function useAccounts() {
           return false;
         }
 
-        
-        
         if (leaverInfo.severity >= 3 && filters.leaverStatus.includes('high')) {
           return true;
         }
@@ -289,7 +272,7 @@ export function useAccounts() {
     router.navigate({ to: `/accounts/${accountId}` });
   };
   return {
-    
+
     searchQuery,
     setSearchQuery,
     showFilters,
@@ -298,17 +281,14 @@ export function useAccounts() {
     setFilters,
     sortConfig,
 
-    
     accounts,
     isLoading,
 
-    
     getRankColor,
     getEloIcon,
     getRegionIcon,
     getGameIcon,
 
-    
     sortedAccounts,
     filteredAccounts,
 

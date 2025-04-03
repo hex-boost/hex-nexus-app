@@ -14,9 +14,9 @@
 }
 
 * {
-    user-select: none;
-    -webkit-user-select: none;
-    -ms-user-select: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
 }
 
 :root {
@@ -185,16 +185,16 @@
 }
 /* Adicione este CSS ao seu arquivo de estilos */
 @keyframes minimizeAnimation {
-    from {
-        opacity: 1;
-        transform: scale(1);
-    }
-    to {
-        opacity: 0;
-        transform: scale(0.5);
-    }
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.5);
+  }
 }
 
 .minimize-animation {
-    animation: minimizeAnimation 0.5s forwards;
+  animation: minimizeAnimation 0.5s forwards;
 }

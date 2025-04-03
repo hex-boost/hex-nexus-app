@@ -8,14 +8,12 @@ export function ErrorPage() {
   const [errorMessage, setErrorMessage] = useState<string>('An unexpected error occurred');
   const [isAnimating, setIsAnimating] = useState(true);
 
-  
   useEffect(() => {
     setIsAnimating(true);
     const timer = setTimeout(() => setIsAnimating(false), 800);
     return () => clearTimeout(timer);
   }, []);
 
-  
   useEffect(() => {
     setErrorMessage('We encountered a problem while processing your request');
   }, []);

@@ -32,7 +32,6 @@ export default function CurrentlyRentedAccounts({ accounts, className }: Current
     } else if (hours > 0) {
       return `${hours}h left`;
     } else {
-      
       const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
       return `${minutes}m left`;
     }

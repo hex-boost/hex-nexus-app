@@ -35,10 +35,6 @@ const router = createRouter({
 },
 );
 
-
-
-
-
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
 

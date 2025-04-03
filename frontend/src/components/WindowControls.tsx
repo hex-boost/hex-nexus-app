@@ -1,4 +1,3 @@
-
 import type { Size } from '@wailsio/runtime/types/screens';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -7,8 +6,8 @@ import { Minus, XIcon } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 type Position = {
-    x: number;
-    y: number;
+  x: number;
+  y: number;
 };
 
 export function WindowControls({ className }: { className?: string }) {

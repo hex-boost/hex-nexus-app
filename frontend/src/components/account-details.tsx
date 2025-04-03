@@ -31,9 +31,6 @@ import { ArrowDownToLine, Check, CircleCheckBig, Clock, Search, Shield, X } from
 import { useState } from 'react';
 import AccountInfoDisplay from './account-info-display';
 
-
-
-
 export default function AccountDetails({ account, price, onAccountChange }: {
   onAccountChange: () => void;
   price: Price;
@@ -105,8 +102,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
               leaverBusterStatus="None"
               soloQueueRank={soloQueueRank}
               flexQueueRank={flexQueueRank}
-              
-              
+
             />
 
             <div className="grid grid-cols-2  md:grid-cols-3 gap-4">
@@ -450,7 +446,6 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                       >
                         <CoinIcon className="w-4 h-4 text-amber-500 dark:text-amber-400" />
                         {(() => {
-                          
                           const selectedOption = rentalOptionsWithPrice[selectedRentalOptionIndex];
                           return selectedOption ? selectedOption.price.toLocaleString() : '0';
                         })()}

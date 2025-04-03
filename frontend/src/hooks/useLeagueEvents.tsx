@@ -5,7 +5,6 @@ import { ClientMonitor } from '@league';
 import { Events } from '@wailsio/runtime';
 import { createContext, useContext, useEffect, useState } from 'react';
 
-
 const LeagueClientContext = createContext<{
   clientInfo: LeagueClientInfo;
   updateClientState: (state: LeagueClientState) => void;

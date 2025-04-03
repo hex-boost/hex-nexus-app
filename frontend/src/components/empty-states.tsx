@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { Filter, Gamepad2, History, RefreshCw, Search, ShieldAlert, ShoppingCart, User2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-
 function SearchAnimation() {
   return (
     <motion.div
@@ -447,7 +446,6 @@ export default function EmptyState({ type, searchQuery = '', onAction, onReset }
     </div>
   );
 }
-
 
 export function NoSearchResults({
   searchQuery,

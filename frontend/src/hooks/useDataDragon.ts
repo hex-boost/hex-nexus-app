@@ -7,7 +7,6 @@ const CACHE_DB_NAME = 'nexus_ddragon_cache';
 const CACHE_STORE_NAME = 'cache_store';
 const CACHE_VERSION = 1;
 
-
 type CachedItem<T> = {
   data: T;
   version: string;
@@ -51,28 +50,24 @@ export function useAllDataDragon(enabled = true) {
   const versionQuery = useQuery({
     queryKey: ['ddragon-version'],
     queryFn: async () => {
-      
       const response = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
       const versions = await response.json() as string[];
       const latestVersion = versions[0];
 
-      
       const db = await getDB();
       const tx = db.transaction(CACHE_STORE_NAME, 'readonly');
       const cachedVersionItem = await tx.store.get('cached_version');
       const cachedVersion = cachedVersionItem?.version;
 
       if (cachedVersion && cachedVersion !== latestVersion) {
-        
         await clearCache();
       }
 
-      
       await saveToCache('cached_version', null, latestVersion);
 
       return latestVersion;
     },
-    staleTime: 60 * 60 * 1000, 
+    staleTime: 60 * 60 * 1000,
     enabled,
   });
 
@@ -85,24 +80,21 @@ export function useAllDataDragon(enabled = true) {
 
       const currentVersion = versionQuery.data;
 
-      
       const cachedData = await getFromCache<Record<string, any>>('champions', currentVersion);
       if (cachedData) {
         return cachedData;
       }
 
-      
       const response = await fetch(
         `https://ddragon.leagueoflegends.com/cdn/${currentVersion}/data/en_US/champion.json`,
       );
       const data = await response.json() as DDragonChampionsData;
 
-      
       await saveToCache('champions', data.data, currentVersion);
 
       return data.data;
     },
-    staleTime: Infinity, 
+    staleTime: Infinity,
     enabled: !!versionQuery.data,
   });
 
@@ -115,7 +107,6 @@ export function useAllDataDragon(enabled = true) {
 
       const currentVersion = versionQuery.data;
 
-      
       const cachedDetails = await getFromCache<any[]>('champion_details', currentVersion);
       if (cachedDetails) {
         return cachedDetails;
@@ -134,12 +125,11 @@ export function useAllDataDragon(enabled = true) {
 
       const allDetails = await Promise.all(detailPromises);
 
-      
       await saveToCache('champion_details', allDetails, currentVersion);
 
       return allDetails;
     },
-    staleTime: Infinity, 
+    staleTime: Infinity,
     enabled: !!versionQuery.data && !!championsQuery.data,
   });
 
@@ -149,7 +139,6 @@ export function useAllDataDragon(enabled = true) {
     }
   }, [enabled]);
 
-  
   const determineRarity = (skin: any): string => {
     if (skin.name.includes('Ultimate')) {
       return 'Ultimate';
@@ -164,7 +153,6 @@ export function useAllDataDragon(enabled = true) {
   };
 
   const allChampions = useMemo(() => {
-    
     if (!versionQuery.data || !championsQuery.data) {
       return [];
     }
@@ -181,7 +169,6 @@ export function useAllDataDragon(enabled = true) {
   }, [versionQuery.data, championsQuery.data]);
 
   const allSkins = useMemo(() => {
-    
     if (!versionQuery.data || !allChampionDetailsQuery.data) {
       return [];
     }

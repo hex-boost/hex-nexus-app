@@ -7,7 +7,7 @@ type AuroraTextProps = {
   children: React.ReactNode;
   className?: string;
   colors?: string[];
-  speed?: number; 
+  speed?: number;
 };
 
 export function AuroraText({
@@ -27,12 +27,10 @@ export function AuroraText({
   >({});
   const maskId = useId();
 
-  
   useEffect(() => {
     if (containerRef.current) {
       const computedStyle = window.getComputedStyle(containerRef.current);
 
-      
       const relevantStyles = {
         fontSize: computedStyle.fontSize,
         fontFamily: computedStyle.fontFamily,
@@ -52,7 +50,6 @@ export function AuroraText({
     }
   }, [className]);
 
-  
   useEffect(() => {
     const updateFontSize = () => {
       if (containerRef.current) {
@@ -71,7 +68,6 @@ export function AuroraText({
     return () => window.removeEventListener('resize', updateFontSize);
   }, [className]);
 
-  
   useEffect(() => {
     const updateDimensions = () => {
       if (textRef.current) {
@@ -101,12 +97,11 @@ export function AuroraText({
       return;
     }
 
-    
     canvas.width = dimensions.width;
     canvas.height = dimensions.height;
 
     let time = 0;
-    const baseSpeed = 0.008; 
+    const baseSpeed = 0.008;
 
     function animate() {
       if (!ctx || !canvas) {

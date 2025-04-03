@@ -31,8 +31,7 @@ import {
   Search,
   Shield,
 } from 'lucide-react';
-import { useState } from 'react'; 
-
+import { useState } from 'react';
 
 export const Route = createFileRoute('/_protected/accounts/')({
   component: Accounts,
@@ -57,7 +56,6 @@ function SearchBar({ searchQuery, setSearchQuery }: SearchBarProps) {
   );
 }
 
-
 type FilterButtonProps = {
   showFilters: boolean;
   setShowFilters: (show: boolean) => void;
@@ -77,7 +75,6 @@ function FilterButton({ showFilters, setShowFilters }: FilterButtonProps) {
     </Button>
   );
 }
-
 
 type ResultsCountProps = {
   filteredCount: number;
@@ -122,7 +119,6 @@ function PriceDisplay({ isPriceLoading, price, ranking }: PriceDisplayProps) {
   );
 }
 
-
 type AccountActionsMenuProps = {
   accountId: string;
   onViewDetails: (id: string) => void;
@@ -144,9 +140,6 @@ function AccountActionsMenu({ accountId, onViewDetails }: AccountActionsMenuProp
     </DropdownMenu>
   );
 }
-
-
-
 
 type AccountRowProps = {
   account: AccountType;
@@ -217,7 +210,6 @@ function AccountRow({
             );
           }
 
-          
           const severityConfig = {
             icon: leaverInfo.severity >= 3
               ? AlertOctagon
@@ -265,7 +257,6 @@ function AccountRow({
                       return null;
                     }
 
-                    
                     const lastPunishmentDate = new Date(leaverData.lastPunishmentIncurredTimeMillis).toLocaleDateString();
 
                     return (
@@ -344,10 +335,9 @@ function AccountRow({
         {(() => {
           const totalGames = (currentSoloqueueRank?.wins || 0) + (currentSoloqueueRank?.losses || 0);
           const winRate = totalGames > 0 ? Math.round(((currentSoloqueueRank?.wins || 0) / totalGames) * 100) : 0;
-          
-          let winRateColorClass = 'text-zinc-600 dark:text-muted-foreground'; 
+
+          let winRateColorClass = 'text-zinc-600 dark:text-muted-foreground';
           if (winRate > 60) {
-            
             if (winRate >= 95) {
               winRateColorClass = 'text-blue-500 dark:text-blue-500 font-medium';
             } else if (winRate >= 85) {
@@ -358,15 +348,15 @@ function AccountRow({
               winRateColorClass = 'text-blue-200 dark:text-blue-200';
             } else {
               winRateColorClass = 'text-blue-100 dark:text-blue-100';
-            } 
-          } else if (winRate < 40 && winRate > 0) { 
+            }
+          } else if (winRate < 40 && winRate > 0) {
             if (winRate < 30) {
               winRateColorClass = 'text-red-500 dark:text-red-400';
             } else if (winRate < 40) {
               winRateColorClass = 'text-red-300 dark:text-red-300';
             } else {
               winRateColorClass = 'text-red-100 dark:text-red-100';
-            } 
+            }
           }
           return (
             <span className="text-sm text-muted-foreground">
@@ -423,7 +413,6 @@ function AccountRow({
   );
 }
 
-
 function AccountTableSkeleton() {
   return (
     <>
@@ -467,7 +456,6 @@ function AccountTableSkeleton() {
     </>
   );
 }
-
 
 type AccountsTableProps = {
   isLoading: boolean;
@@ -761,7 +749,7 @@ function Accounts() {
                   <MultiSelectCombobox
                     label=" skins"
                     options={allSkins
-                      .filter(skin => skin.name !== 'default') 
+                      .filter(skin => skin.name !== 'default')
                       .map(skin => ({
                         label: skin.name,
                         value: skin.champion.toString(),
@@ -794,7 +782,6 @@ function Accounts() {
                     renderSelectedItem={selectedValues => (
                       <div className="flex -space-x-2">
                         {selectedValues.map((champion) => {
-                          
                           const skin = allSkins.find(s => s.champion.toString() === champion);
                           return (
                             <Avatar
