@@ -1,6 +1,6 @@
 import type { Price } from '@/types/price.ts';
 import type { AccountType, RankingType } from '@/types/types.ts';
-import { DIVISIONS, LOL_TIERS, REGIONS, VALORANT_TIERS } from '@/components/accountsMock.ts';
+import { DIVISIONS, LOL_TIERS, VALORANT_TIERS } from '@/components/accountsMock.ts';
 import { CoinIcon } from '@/components/coin-icon';
 
 import { AccountGameIcon } from '@/components/GameComponents';
@@ -581,6 +581,7 @@ function Accounts() {
     getRankColor,
     getEloIcon,
     getRegionIcon,
+    availableRegions,
   } = useAccounts();
 
   const { getCompanyIcon } = useMapping();
@@ -676,17 +677,13 @@ function Accounts() {
                           Any region
                         </span>
                       </SelectItem>
-                      {REGIONS.map(region => (
+                      {availableRegions.map(region => (
                         <SelectItem className="flex items-center" key={region} value={region}>
-
-                          <div
-                            className="w-6 h-6 flex items-center justify-center "
-                          >
-                            {getRegionIcon(region as any)}
+                          <div className="w-6 h-6 flex items-center justify-center">
+                            {getRegionIcon(region)}
                           </div>
                           <span className="text-sm">
-                            {' '}
-                            {region.slice(0, region.length - 1)}
+                            {region === 'LA1' ? 'LAN' : region === 'OC1' ? 'OCE' : region.slice(0, region.length - 1)}
                           </span>
                         </SelectItem>
                       ))}

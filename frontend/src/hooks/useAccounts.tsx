@@ -304,8 +304,19 @@ export function useAccounts() {
   const handleViewAccountDetails = (accountId: string) => {
     router.navigate({ to: `/accounts/${accountId}` });
   };
+  const availableRegions = useMemo(() => {
+    if (!accounts) {
+      return [];
+    }
 
+    // Create a Set of unique server values and convert back to array
+    const regions = [...new Set(accounts.map(account => account.server))];
+
+    // Sort alphabetically for consistent display
+    return regions.sort();
+  }, [accounts]);
   return {
+    availableRegions,
     searchQuery,
     setSearchQuery,
     showFilters,
