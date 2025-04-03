@@ -23,9 +23,9 @@ export function useCommonFetch() {
       if (import.meta.env.API_URL !== 'http://localhost:1337') {
         if (user.hwid !== await Utils.GetHWID()) {
           logout();
-          toast.error('You have been logged out due to HWID change');
+          toast.error('You have been logged out due to HWID mismatch');
           router.navigate({ to: '/login' });
-          return {} as UserType;
+          throw new Error('HWID mismatch');
         }
       }
 

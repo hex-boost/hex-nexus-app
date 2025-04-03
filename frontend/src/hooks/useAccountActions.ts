@@ -11,7 +11,7 @@ export function useAccountActions({
   onAccountChange,
 }: {
   account: AccountType;
-  onAccountChange: () => void;
+  onAccountChange: () => Promise<void>;
 }) {
   const { refetchUser } = useCommonFetch();
   const [selectedRentalOptionIndex, setSelectedRentalOptionIndex] = useState<number>(1);
@@ -20,16 +20,16 @@ export function useAccountActions({
   const { mutate: handleDropAccount, isPending: isDropPending } = useMutation<{ message: string }, StrapiError>({
     mutationKey: ['accounts', 'drop', account.documentId],
     mutationFn: async () => {
-      return await strapiClient.request<{ message: string }>('post', `accounts/${account.documentId}/drop`);
+      const response = await strapiClient.request<{ message: string }>('post', `accounts/${account.documentId}/drop`);
+      await refetchUser();
+      await onAccountChange();
+      return response;
     },
     onSuccess: (data) => {
       toast.success(data.message);
-      refetchUser();
-      onAccountChange();
     },
     onError: (error) => {
       toast.error(error.error.message);
-      onAccountChange();
     },
   });
 
@@ -40,21 +40,21 @@ export function useAccountActions({
   >({
     mutationKey: ['accounts', 'rent', account.documentId],
     mutationFn: async (timeIndex: number) => {
-      return await strapiClient.request<{ message: string }>('post', `accounts/${account.documentId}/rentals`, {
+      const response = strapiClient.request<{ message: string }>('post', `accounts/${account.documentId}/rentals`, {
         data: {
           game: 'league',
           time: timeIndex,
         },
       });
+      await refetchUser();
+      await onAccountChange();
+      return response;
     },
     onSuccess: (data) => {
       toast.success(data.message);
-      refetchUser();
-      onAccountChange();
     },
     onError: (error) => {
       toast.error(error.error.message);
-      onAccountChange();
     },
   });
 
