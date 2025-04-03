@@ -64,7 +64,7 @@ export function useAccounts() {
   });
 
   const [sortConfig, setSortConfig] = useState<{
-    key: keyof SortKey | null;
+    key: SortKey | null;
     direction: 'ascending' | 'descending' | null;
   }>({
     key: null,
@@ -132,8 +132,11 @@ export function useAccounts() {
     if (sortConfig.key && sortConfig.direction) {
       sortableAccounts.sort((a, b) => {
         if (sortConfig.key === 'LCUchampions' || sortConfig.key === 'LCUskins') {
-          const aLength = a[sortConfig.key]?.length || 0;
-          const bLength = b[sortConfig.key]?.length || 0;
+          const aArray = a[sortConfig.key as keyof AccountType] as unknown as any[] || [];
+          const bArray = b[sortConfig.key as keyof AccountType] as unknown as any[] || [];
+
+          const aLength = aArray?.length || 0;
+          const bLength = bArray?.length || 0;
 
           return sortConfig.direction === 'ascending'
             ? aLength - bLength
@@ -180,10 +183,13 @@ export function useAccounts() {
             : bWinRate - aWinRate;
         }
 
-        if (a[sortConfig.key as keyof AccountType] < b[sortConfig.key as keyof AccountType]) {
+        const aValue = a[sortConfig.key as keyof AccountType];
+        const bValue = b[sortConfig.key as keyof AccountType];
+
+        if (aValue < bValue) {
           return sortConfig.direction === 'ascending' ? -1 : 1;
         }
-        if (a[sortConfig.key as keyof AccountType] > b[sortConfig.key as keyof AccountType]) {
+        if (aValue > bValue) {
           return sortConfig.direction === 'ascending' ? 1 : -1;
         }
         return 0;
@@ -221,7 +227,6 @@ export function useAccounts() {
         return false;
       }
       if (filters.selectedChampions.length > 0) {
-        
         const missingChampions = filters.selectedChampions.some(championId =>
           !account.LCUchampions.includes(Number.parseInt(championId)),
         );
@@ -230,9 +235,7 @@ export function useAccounts() {
         }
       }
 
-      
       if (filters.selectedSkins.length > 0) {
-        
         const missingSkins = filters.selectedSkins.some(skinId =>
           !account.LCUskins.includes(Number.parseInt(skinId)),
         );
@@ -271,6 +274,7 @@ export function useAccounts() {
       return true;
     });
   }, [sortedAccounts, searchQuery, filters]);
+
   const resetFilters = () => {
     setFilters({
       game: '',
@@ -300,8 +304,8 @@ export function useAccounts() {
   const handleViewAccountDetails = (accountId: string) => {
     router.navigate({ to: `/accounts/${accountId}` });
   };
-  return {
 
+  return {
     searchQuery,
     setSearchQuery,
     showFilters,
@@ -309,18 +313,14 @@ export function useAccounts() {
     filters,
     setFilters,
     sortConfig,
-
     accounts,
     isLoading,
-
     getRankColor,
     getEloIcon,
     getRegionIcon,
     getGameIcon,
-
     sortedAccounts,
     filteredAccounts,
-
     requestSort,
     resetFilters,
     SortIndicator,
