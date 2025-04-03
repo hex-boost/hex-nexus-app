@@ -8,8 +8,8 @@ export type PricingPlan = {
   description: string;
   price: number;
   period?: string;
-  productID?: string; // Added for Stripe
-  priceID?: string; // Added for Stripe
+  productID?: string; 
+  priceID?: string; 
   benefits: { title: string; description: string }[];
   buttonText: string;
   buttonVariant?: 'default' | 'outline' | 'destructive';

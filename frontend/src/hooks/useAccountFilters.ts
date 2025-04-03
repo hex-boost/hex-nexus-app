@@ -27,7 +27,7 @@ export function useAccountFilters({
       account.LCUskins.includes(skin.id),
     );
 
-    // Apply search filter
+    
     return accountSkins.filter(skin =>
       skin && (
         skin.name.toLowerCase().includes(skinsSearch.toLowerCase())

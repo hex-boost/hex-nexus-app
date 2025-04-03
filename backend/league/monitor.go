@@ -94,5 +94,5 @@ func (m *ClientMonitor) checkClientState() {
 
 func (m *ClientMonitor) IsCurrentAccountRented() bool {
 	return true
-	//return m.lcuConn.IsLoggedIn() && m.lcuConn.GetCurrentAccount().IsRented
+	
 }

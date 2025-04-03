@@ -11,7 +11,7 @@ export default function LastRentedAccount() {
     tier: 'Diamond',
     rank: 'III',
     rentedAt: '2024-03-15T14:20:00Z',
-    rentalDuration: 6, // hours
+    rentalDuration: 6, 
     champions: 152,
     skins: 93,
     cost: 2800,

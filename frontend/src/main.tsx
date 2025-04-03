@@ -16,7 +16,7 @@ WebFont.load({
   },
 
 });
-// import { ReactQueryDevtoolsPanel } from '@tanstack/react-query-devtools'
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -34,11 +34,11 @@ const router = createRouter({
   },
 },
 );
-// declare module '@tanstack/react-router' {
-//   type Register = {
-//     router: typeof router;
-//   };
-// }
+
+
+
+
+
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
 

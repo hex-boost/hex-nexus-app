@@ -7,7 +7,7 @@ const CACHE_DB_NAME = 'nexus_ddragon_cache';
 const CACHE_STORE_NAME = 'cache_store';
 const CACHE_VERSION = 1;
 
-// Interface para os objetos no cache
+
 type CachedItem<T> = {
   data: T;
   version: string;
@@ -51,28 +51,28 @@ export function useAllDataDragon(enabled = true) {
   const versionQuery = useQuery({
     queryKey: ['ddragon-version'],
     queryFn: async () => {
-      // Sempre buscar a versão mais recente
+      
       const response = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
       const versions = await response.json() as string[];
       const latestVersion = versions[0];
 
-      // Verificar se a versão mudou e limpar cache se necessário
+      
       const db = await getDB();
       const tx = db.transaction(CACHE_STORE_NAME, 'readonly');
       const cachedVersionItem = await tx.store.get('cached_version');
       const cachedVersion = cachedVersionItem?.version;
 
       if (cachedVersion && cachedVersion !== latestVersion) {
-        // Versão mudou, limpar cache
+        
         await clearCache();
       }
 
-      // Salvar a nova versão
+      
       await saveToCache('cached_version', null, latestVersion);
 
       return latestVersion;
     },
-    staleTime: 60 * 60 * 1000, // 1 hora para verificar atualizações de versão
+    staleTime: 60 * 60 * 1000, 
     enabled,
   });
 
@@ -85,24 +85,24 @@ export function useAllDataDragon(enabled = true) {
 
       const currentVersion = versionQuery.data;
 
-      // Tentar obter do cache com a versão atual
+      
       const cachedData = await getFromCache<Record<string, any>>('champions', currentVersion);
       if (cachedData) {
         return cachedData;
       }
 
-      // Buscar dados atualizados
+      
       const response = await fetch(
         `https://ddragon.leagueoflegends.com/cdn/${currentVersion}/data/en_US/champion.json`,
       );
       const data = await response.json() as DDragonChampionsData;
 
-      // Salvar no cache com a versão atual
+      
       await saveToCache('champions', data.data, currentVersion);
 
       return data.data;
     },
-    staleTime: Infinity, // Os dados só precisam ser revalidados quando a versão mudar
+    staleTime: Infinity, 
     enabled: !!versionQuery.data,
   });
 
@@ -115,7 +115,7 @@ export function useAllDataDragon(enabled = true) {
 
       const currentVersion = versionQuery.data;
 
-      // Tentar obter do cache com a versão atual
+      
       const cachedDetails = await getFromCache<any[]>('champion_details', currentVersion);
       if (cachedDetails) {
         return cachedDetails;
@@ -134,12 +134,12 @@ export function useAllDataDragon(enabled = true) {
 
       const allDetails = await Promise.all(detailPromises);
 
-      // Salvar no cache com a versão atual
+      
       await saveToCache('champion_details', allDetails, currentVersion);
 
       return allDetails;
     },
-    staleTime: Infinity, // Os dados só precisam ser revalidados quando a versão mudar
+    staleTime: Infinity, 
     enabled: !!versionQuery.data && !!championsQuery.data,
   });
 
@@ -149,7 +149,7 @@ export function useAllDataDragon(enabled = true) {
     }
   }, [enabled]);
 
-  // O resto do seu código permanece igual
+  
   const determineRarity = (skin: any): string => {
     if (skin.name.includes('Ultimate')) {
       return 'Ultimate';
@@ -164,7 +164,7 @@ export function useAllDataDragon(enabled = true) {
   };
 
   const allChampions = useMemo(() => {
-    // Seu código existente...
+    
     if (!versionQuery.data || !championsQuery.data) {
       return [];
     }
@@ -181,7 +181,7 @@ export function useAllDataDragon(enabled = true) {
   }, [versionQuery.data, championsQuery.data]);
 
   const allSkins = useMemo(() => {
-    // Seu código existente...
+    
     if (!versionQuery.data || !allChampionDetailsQuery.data) {
       return [];
     }

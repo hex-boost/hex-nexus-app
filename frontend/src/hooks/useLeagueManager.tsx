@@ -1,4 +1,4 @@
-// frontend/src/hooks/useLeagueManager.tsx
+
 import type { AccountType } from '@/types/types';
 import { useLeagueEvents } from '@/hooks/useLeagueEvents';
 import { RiotClient } from '@riot';

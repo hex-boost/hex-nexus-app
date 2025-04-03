@@ -38,33 +38,33 @@ export type TransferTokenType = Entity<AdminTransferToken>;
 export type TransferTokenPermissionType = Entity<AdminTransferTokenPermission>;
 export type AdminUserType = Entity<AdminUser>;
 
-// API types
+
 export type ActionType = Entity<ApiActionAction>;
 export type PremiumType = Entity<ApiPremiumPremium>;
 export type PriceType = Entity<ApiPricePrice>;
 export type RankingType = Entity<ApiRankingRanking>;
 export type TransactionType = Entity<ApiTransactionTransaction>;
 
-// Plugin: Content Releases
+
 export type ContentReleaseType = Entity<PluginContentReleasesRelease>;
 export type ContentReleaseActionType = Entity<PluginContentReleasesReleaseAction>;
 
-// Plugin: i18n
+
 export type LocaleType = Entity<PluginI18NLocale>;
 
-// Plugin: Review Workflows
+
 export type WorkflowType = Entity<PluginReviewWorkflowsWorkflow>;
 export type WorkflowStageType = Entity<PluginReviewWorkflowsWorkflowStage>;
 
-// Plugin: Upload
+
 export type MediaFileType = Entity<PluginUploadFile>;
 export type MediaFolderType = Entity<PluginUploadFolder>;
 
-// Plugin: Users-Permissions
+
 export type PermissionType = Entity<PluginUsersPermissionsPermission>;
 export type RoleType = Entity<PluginUsersPermissionsRole>;
 
-// Additional common types from specific entities
+
 export type UserRole = RoleType;
 export type UserMedia = MediaFileType;
 export type RankingGame = RankingType['game'];

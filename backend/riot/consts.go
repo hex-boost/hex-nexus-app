@@ -5,7 +5,7 @@ import "github.com/hex-boost/hex-nexus-app/backend/types"
 func getAuthorizationRequestPayload() types.AuthorizationRequest {
 	return types.AuthorizationRequest{
 		ClientID:      "riot-client",
-		RedirectURI:   "http://localhost/redirect",
+		RedirectURI:   "http:
 		ResponseType:  "token id_token",
 		Scope:         "openid link ban lol_region account",
 		AcrValues:     "",

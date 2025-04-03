@@ -15,7 +15,7 @@ type LeagueRepository struct {
 
 func NewLeagueRepository(logger *utils.Logger) *LeagueRepository {
 	client := resty.New()
-	client.SetBaseURL("http://localhost:1337/api")
+	client.SetBaseURL("http:
 	client.SetHeader("Content-Type", "application/json")
 	client.SetHeader("Accept", "application/json")
 	return &LeagueRepository{
@@ -30,10 +30,6 @@ func (l *LeagueRepository) SetJWT(jwt string) {
 func (l *LeagueRepository) SaveSummoner(summoner types.Summoner) error {
 	l.client.SetHeader("Authorization", "Bearer "+l.jwt)
 
-	// Create payload with data field containing summoner in an array
-	//payload := map[string]interface{}{
-	//	"data": []types.Summoner{summoner},
-	//}
 	response, err := l.client.R().SetBody(summoner).Put("/accounts/refresh")
 	if err != nil {
 		l.logger.Errorf("Failed to make request to save summoner: %v", err)

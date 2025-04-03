@@ -49,7 +49,7 @@ export function useProfileAvatar() {
     }
   }
   async function uploadImageFromBase64(base64Image: string, fileName: string = 'avatar.png') {
-    // Convert base64 to blob
+    
     const base64Data = base64Image.split(',')[1] as string;
     const byteCharacters = atob(base64Data);
     const byteNumbers = Array.from({ length: byteCharacters.length }, (_, i) => byteCharacters.charCodeAt(i));

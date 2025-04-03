@@ -1,60 +1,37 @@
-// Local UI component imports
+
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 
-// Utility imports
+
 import { cn } from '@/lib/utils';
 
 import { useVirtualizer } from '@tanstack/react-virtual';
-// Third-party component imports
+
 import { Check, ChevronsUpDown, X } from 'lucide-react';
 import React, { cloneElement, useCallback, useEffect, useState } from 'react';
 
-/**
- * Base interface for option items in the multi-select combobox
- * @property label - Display text for the option
- * @property value - Unique identifier for the option
- */
 export type BaseOption = {
   label: string;
   value: string;
 };
 
-/**
- * Generic type for extending BaseOption with additional properties
- */
 export type Option<T extends BaseOption = BaseOption> = T;
 
-/**
- * Props interface for the MultiSelectCombobox component
- * @template T - Type extending BaseOption
- */
 type Props<T extends BaseOption> = {
-  /** Label for the combobox */
-  label: string;
-  /** Custom render function for individual options */
-  renderItem: (option: T) => React.ReactNode;
-  /** Custom render function for selected items display */
-  renderSelectedItem: (value: string[]) => React.ReactNode;
-  /** Array of available options */
-  options: T[];
+    label: string;
+    renderItem: (option: T) => React.ReactNode;
+    renderSelectedItem: (value: string[]) => React.ReactNode;
+    options: T[];
   onOpenChange?: (open: boolean) => void;
 
-  /** Array of selected values */
-  value: string[];
-  /** Callback function when selection changes */
-  onChange: (value: string[]) => void;
-  /** Optional placeholder text for search input */
-  placeholder?: string;
+    value: string[];
+    onChange: (value: string[]) => void;
+    placeholder?: string;
   isLoading?: boolean;
 };
 
-/**
- * A customizable multi-select combobox component with type safety
- * @template T - Type extending BaseOption
- */
 export const MultiSelectCombobox = <T extends BaseOption>({
   label,
   renderItem,
@@ -67,25 +44,21 @@ export const MultiSelectCombobox = <T extends BaseOption>({
 
   placeholder,
 }: Props<T>) => {
-  // State for controlling popover visibility
+  
   const [open, setOpen] = useState(false);
   const [renderLoading, setRenderLoading] = useState(false);
   const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
 
-  // Handle virtualization for large datasets
+  
   const parentRef = React.useRef<HTMLDivElement>(null);
   const rowVirtualizer = useVirtualizer({
     count: options.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 36, // Estimated height of each row
+    estimateSize: () => 36, 
     overscan: 100,
 
   });
-  /**
-   * Handles the selection/deselection of an option
-   * @param currentValue - The value to toggle
-   */
-  const handleChange = (currentValue: string) => {
+    const handleChange = (currentValue: string) => {
     onChange(value.includes(currentValue) ? value.filter(val => val !== currentValue) : [...value, currentValue]);
   };
 
@@ -97,8 +70,8 @@ export const MultiSelectCombobox = <T extends BaseOption>({
     visibleOptions.forEach((option) => {
       if (!loadedImages[option.value]) {
         const img = new Image();
-        // Find image URL from your rendered component if possible
-        // @ts-expect-error avatar existignores
+        
+        
         const avatarUrl = option.avatar || ''; // Assuming avatar property exists
         if (avatarUrl) {
           img.onload = () => handleImageLoad(option.value);
@@ -167,7 +140,7 @@ export const MultiSelectCombobox = <T extends BaseOption>({
             }
           }}
         >
-          {/* Icon and label section */}
+          {}
 
           <div className="flex-1 text-muted-foreground overflow-hidden">
             {value.length > 0 ? renderSelectedItem(value) : `Select ${label}...`}
@@ -227,7 +200,7 @@ export const MultiSelectCombobox = <T extends BaseOption>({
                         const option = options[virtualItem.index];
                         return (
                           <CommandItem
-                            key={`${option.value}-${virtualItem.index}`} // More stable key
+                            key={`${option.value}-${virtualItem.index}`} 
 
                             value={option.label}
                             onSelect={() => handleChange(option.value)}

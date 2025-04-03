@@ -7,7 +7,7 @@ type AuroraTextProps = {
   children: React.ReactNode;
   className?: string;
   colors?: string[];
-  speed?: number; // 1 is default speed, 2 is twice as fast, 0.5 is half speed
+  speed?: number; 
 };
 
 export function AuroraText({
@@ -27,12 +27,12 @@ export function AuroraText({
   >({});
   const maskId = useId();
 
-  // Updated effect to compute all text styles from parent
+  
   useEffect(() => {
     if (containerRef.current) {
       const computedStyle = window.getComputedStyle(containerRef.current);
 
-      // Extract text-related styles
+      
       const relevantStyles = {
         fontSize: computedStyle.fontSize,
         fontFamily: computedStyle.fontFamily,
@@ -52,7 +52,7 @@ export function AuroraText({
     }
   }, [className]);
 
-  // Updated effect to compute font size from both inline and class styles
+  
   useEffect(() => {
     const updateFontSize = () => {
       if (containerRef.current) {
@@ -71,7 +71,7 @@ export function AuroraText({
     return () => window.removeEventListener('resize', updateFontSize);
   }, [className]);
 
-  // Update effect to set ready state after dimensions are computed
+  
   useEffect(() => {
     const updateDimensions = () => {
       if (textRef.current) {
@@ -101,12 +101,12 @@ export function AuroraText({
       return;
     }
 
-    // Set canvas size
+    
     canvas.width = dimensions.width;
     canvas.height = dimensions.height;
 
     let time = 0;
-    const baseSpeed = 0.008; // Original speed as base unit
+    const baseSpeed = 0.008; 
 
     function animate() {
       if (!ctx || !canvas) {
@@ -159,10 +159,10 @@ export function AuroraText({
         height: dimensions.height || 'auto',
       }}
     >
-      {/* Hidden text for SEO */}
+      {}
       <span className="sr-only">{children}</span>
 
-      {/* Visual placeholder while canvas loads */}
+      {}
       <span
         style={{
           opacity: isReady ? 0 : 1,

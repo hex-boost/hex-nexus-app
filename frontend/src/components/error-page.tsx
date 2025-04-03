@@ -8,14 +8,14 @@ export function ErrorPage() {
   const [errorMessage, setErrorMessage] = useState<string>('An unexpected error occurred');
   const [isAnimating, setIsAnimating] = useState(true);
 
-  // Reset animation when component renders
+  
   useEffect(() => {
     setIsAnimating(true);
     const timer = setTimeout(() => setIsAnimating(false), 800);
     return () => clearTimeout(timer);
   }, []);
 
-  // Set error message
+  
   useEffect(() => {
     setErrorMessage('We encountered a problem while processing your request');
   }, []);
@@ -25,7 +25,7 @@ export function ErrorPage() {
     <div className="flex min-h-screen flex-col items-center justify-center p-6 bg-zinc-50 dark:bg-background">
 
       <div className="w-full max-w-md mx-auto text-center space-y-8">
-        {/* Animated icon */}
+        {}
         <div className="flex justify-center">
           <div className={`rounded-full bg-red-100 dark:bg-red-900/30 p-5 ${isAnimating ? 'animate-pulse' : ''}`}>
             <AlertCircle
@@ -35,7 +35,7 @@ export function ErrorPage() {
           </div>
         </div>
 
-        {/* Messages */}
+        {}
         <div className="space-y-3">
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
             Oops, something went wrong!
@@ -45,7 +45,7 @@ export function ErrorPage() {
           </p>
         </div>
 
-        {/* Action buttons */}
+        {}
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Button
             variant="outline"

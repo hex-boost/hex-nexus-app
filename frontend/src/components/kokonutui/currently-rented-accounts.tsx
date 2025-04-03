@@ -32,7 +32,7 @@ export default function CurrentlyRentedAccounts({ accounts, className }: Current
     } else if (hours > 0) {
       return `${hours}h left`;
     } else {
-      // Less than an hour left
+      
       const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
       return `${minutes}m left`;
     }
@@ -132,10 +132,10 @@ export default function CurrentlyRentedAccounts({ accounts, className }: Current
             )}
       </div>
 
-      {/* <Button variant="outline" className=" w-full  flex items-center justify-center gap-1"> */}
-      {/*  <span>View All Rented Accounts</span> */}
-      {/*  <ArrowRight className="w-3.5 h-3.5" /> */}
-      {/* </Button> */}
+      {}
+      {}
+      {}
+      {}
     </div>
   );
 }

@@ -1,11 +1,11 @@
 import type { LeagueAuthenticationState, LeagueClientInfo } from '@/types/LeagueClientState';
 import { LeagueClientState } from '@/types/LeagueClientState';
-// frontend/src/hooks/useLeagueEvents.ts
+
 import { ClientMonitor } from '@league';
 import { Events } from '@wailsio/runtime';
 import { createContext, useContext, useEffect, useState } from 'react';
 
-// Criando um contexto para compartilhar o estado do cliente
+
 const LeagueClientContext = createContext<{
   clientInfo: LeagueClientInfo;
   updateClientState: (state: LeagueClientState) => void;

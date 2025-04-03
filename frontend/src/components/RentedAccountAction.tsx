@@ -1,4 +1,4 @@
-// frontend/src/components/RentedAccountAction.tsx
+
 import type { AccountType } from '@/types/types.ts';
 import { Button } from '@/components/ui/button.tsx';
 import { useLeagueEvents } from '@/hooks/useLeagueEvents.tsx';

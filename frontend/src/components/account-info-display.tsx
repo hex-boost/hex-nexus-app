@@ -21,19 +21,19 @@ type AccountInfoDisplayProps = {
   };
   compact?: boolean;
 };
-// const eloColors = {
-//   league_of_legends_iron: '#51484A',
-//   league_of_legends_bronze: '#8C513A',
-//   league_of_legends_silver: '#80989D',
-//   league_of_legends_gold: '#CD8837',
-//   league_of_legends_emerald: '#149C3A',
-//   league_of_legends_platinum: '#25ACD6',
-//   league_of_legends_diamond: '#8141EB',
-//   league_of_legends_master: '#9D48E0',
-//   league_of_legends_grandmaster: '#CD4545',
-//   league_of_legends_challenger: '#F4C874',
-//   league_of_legends_unranked: '#6B6963',
-// };
+
+
+
+
+
+
+
+
+
+
+
+
+
 function RankDisplay({
   title,
   rank,
@@ -57,8 +57,8 @@ function RankDisplay({
   getEloIcon: (elo: string) => string;
   getTierIcon?: (tier: string) => string;
 }) {
-  // const currentRank = rank?.elo || previousSeasonRank?.tier || 'unranked';
-  // const rankColor = eloColors[`league_of_legends_${currentRank.toLowerCase()}`] || '#6B6963';
+  
+  
 
   return (
     <div className="bg-zinc-50
@@ -121,65 +121,65 @@ function RankDisplay({
   );
 }
 
-// Helper function to get game icon
 
-// Helper function to get status color
 
-// Helper function to get leaver buster status info
-// const getLeaverBusterInfo = (status: 'None' | 'Low' | 'Medium' | 'High') => {
-//   switch (status) {
-//     case 'None':
-//       return {
-//         color: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400',
-//         icon: Shield,
-//         label: 'No Penalties',
-//         description: 'This account has no leaver buster penalties.',
-//       };
-//     case 'Low':
-//       return {
-//         color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
-//         icon: AlertTriangle,
-//         label: 'Low Priority (5min)',
-//         description: 'This account has a low-priority queue of 5 minutes for 3 games.',
-//       };
-//     case 'Medium':
-//       return {
-//         color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400',
-//         icon: AlertTriangle,
-//         label: 'Low Priority (10min)',
-//         description: 'This account has a low-priority queue of 10 minutes for 5 games.',
-//       };
-//     case 'High':
-//       return {
-//         color: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400',
-//         icon: Ban,
-//         label: 'Low Priority (20min)',
-//         description: 'This account has a low-priority queue of 20 minutes for 5 games.',
-//       };
-//   }
-// };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 export default function AccountInfoDisplay({
-  // accountId,
-  // game,
-  // status,
+  
+  
+  
   gameName,
-  // leaverBusterStatus,
+  
   soloQueueRank,
   flexQueueRank,
   previousSeasonRank,
   compact = false,
 }: AccountInfoDisplayProps) {
-  // const leaverBusterInfo = getLeaverBusterInfo(leaverBusterStatus);
-  // const LeaverIcon = leaverBusterInfo.icon;
+  
+  
   const { getRankColor, getEloIcon } = useMapping();
   return (
     <div className={cn('w-full', compact ? 'space-y-2' : 'space-y-4')}>
 
-      {/* Game Name (if available) */}
+      {}
       {gameName && <div className="text-base font-medium text-zinc-900 dark:text-zinc-50">{gameName}</div>}
 
-      {/* Rank information */}
+      {}
       <div className={cn('grid gap-3', compact ? 'grid-cols-2' : 'grid-cols-1 sm:grid-cols-2')}>
         <>
           <RankDisplay
@@ -188,7 +188,7 @@ export default function AccountInfoDisplay({
             previousSeasonRank={previousSeasonRank}
             getRankColor={getRankColor}
             getEloIcon={getEloIcon}
-            // getTierIcon={getTierIcon}
+            
           />
 
           <RankDisplay
@@ -202,13 +202,13 @@ export default function AccountInfoDisplay({
 
       </div>
 
-      {/* Leaver Buster Status */}
-      {/* <div className={cn('flex items-center gap-2 p-2 rounded-md', leaverBusterInfo.color)}> */}
-      {/*  <LeaverIcon className="h-4 w-4" /> */}
-      {/*  <span className={compact ? 'text-xs' : 'text-sm'}> */}
-      {/*    {compact ? leaverBusterInfo.label : leaverBusterInfo.description} */}
-      {/*  </span> */}
-      {/* </div> */}
+      {}
+      {}
+      {}
+      {}
+      {}
+      {}
+      {}
     </div>
   );
 }

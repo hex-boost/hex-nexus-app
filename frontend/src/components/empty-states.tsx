@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Filter, Gamepad2, History, RefreshCw, Search, ShieldAlert, ShoppingCart, User2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-// Animation Components
+
 function SearchAnimation() {
   return (
     <motion.div
@@ -160,7 +160,7 @@ function ActiveAccountsAnimation() {
     >
       <motion.div className="absolute w-24 h-20 rounded-md border-2 border-zinc-300 dark:border-zinc-600 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
 
-      {/* Gamepad */}
+      {}
       <motion.div
         className="absolute w-16 h-10 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
         animate={{
@@ -173,16 +173,16 @@ function ActiveAccountsAnimation() {
           repeatType: 'loop',
         }}
       >
-        {/* Main body */}
+        {}
         <div className="absolute w-16 h-8 bg-blue-500 dark:bg-blue-400 rounded-full top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
 
-        {/* Left grip */}
+        {}
         <div className="absolute w-4 h-6 bg-blue-600 dark:bg-blue-500 rounded-full left-0 top-1/2 -translate-y-1/2" />
 
-        {/* Right grip */}
+        {}
         <div className="absolute w-4 h-6 bg-blue-600 dark:bg-blue-500 rounded-full right-0 top-1/2 -translate-y-1/2" />
 
-        {/* Buttons */}
+        {}
         <div className="absolute w-2 h-2 bg-white rounded-full right-4 top-1/2 -translate-y-1/2" />
         <div className="absolute w-2 h-2 bg-white rounded-full right-7 top-1/2 -translate-y-1/2" />
       </motion.div>
@@ -200,12 +200,12 @@ function RentalHistoryAnimation() {
     >
       <motion.div className="absolute w-24 h-20 rounded-md border-2 border-zinc-300 dark:border-zinc-600 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
 
-      {/* Clock face */}
+      {}
       <motion.div
         className="absolute w-16 h-16 rounded-full border-2 border-zinc-300 dark:border-zinc-600 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
       />
 
-      {/* Hour hand */}
+      {}
       <motion.div
         className="absolute w-1 h-5 bg-blue-500 dark:bg-blue-400 rounded-full left-1/2 top-1/2 origin-bottom"
         style={{ transformOrigin: 'bottom center' }}
@@ -219,7 +219,7 @@ function RentalHistoryAnimation() {
         }}
       />
 
-      {/* Minute hand */}
+      {}
       <motion.div
         className="absolute w-1 h-7 bg-zinc-700 dark:bg-zinc-300 rounded-full left-1/2 top-1/2 origin-bottom"
         style={{ transformOrigin: 'bottom center' }}
@@ -233,7 +233,7 @@ function RentalHistoryAnimation() {
         }}
       />
 
-      {/* Center dot */}
+      {}
       <motion.div
         className="absolute w-2 h-2 bg-blue-500 dark:bg-blue-400 rounded-full left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
       />
@@ -251,7 +251,7 @@ function ChampionsAnimation() {
     >
       <motion.div className="absolute w-24 h-20 rounded-md border-2 border-zinc-300 dark:border-zinc-600 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
 
-      {/* Character silhouette */}
+      {}
       <motion.div
         className="absolute w-12 h-16 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
         animate={{
@@ -263,13 +263,13 @@ function ChampionsAnimation() {
           repeatType: 'loop',
         }}
       >
-        {/* Head */}
+        {}
         <div className="absolute w-6 h-6 bg-blue-500 dark:bg-blue-400 rounded-full left-1/2 top-0 -translate-x-1/2" />
 
-        {/* Body */}
+        {}
         <div className="absolute w-8 h-8 bg-blue-500 dark:bg-blue-400 rounded-md left-1/2 top-5 -translate-x-1/2" />
 
-        {/* Question mark overlay */}
+        {}
         <motion.div
           className="absolute text-white text-xl font-bold left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
           animate={{
@@ -298,7 +298,7 @@ function SkinsAnimation() {
     >
       <motion.div className="absolute w-24 h-20 rounded-md border-2 border-zinc-300 dark:border-zinc-600 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
 
-      {/* Shield shape */}
+      {}
       <motion.div
         className="absolute w-14 h-16 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
         animate={{
@@ -310,19 +310,19 @@ function SkinsAnimation() {
           repeatType: 'loop',
         }}
       >
-        {/* Shield body */}
+        {}
         <div
           className="absolute w-14 h-14 bg-blue-500 dark:bg-blue-400 rounded-t-full left-0 top-0"
           style={{ clipPath: 'polygon(0% 0%, 100% 0%, 100% 75%, 50% 100%, 0% 75%)' }}
         />
 
-        {/* Shield decoration */}
+        {}
         <div
           className="absolute w-10 h-10 border-2 border-white left-1/2 top-2 -translate-x-1/2 rounded-t-full"
           style={{ clipPath: 'polygon(0% 0%, 100% 0%, 100% 75%, 50% 100%, 0% 75%)' }}
         />
 
-        {/* Question mark */}
+        {}
         <div className="absolute text-white text-xl font-bold left-1/2 top-5 -translate-x-1/2">?</div>
       </motion.div>
     </motion.div>
@@ -448,7 +448,7 @@ export default function EmptyState({ type, searchQuery = '', onAction, onReset }
   );
 }
 
-// Specialized empty states for specific contexts
+
 export function NoSearchResults({
   searchQuery,
   onReset,

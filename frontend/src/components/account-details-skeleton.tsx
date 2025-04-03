@@ -1,4 +1,4 @@
-// components/skeletons/account-content-skeleton.tsx
+
 import { Skeleton } from '@/components/ui/skeleton';
 
 export function AccountInfoSkeleton() {

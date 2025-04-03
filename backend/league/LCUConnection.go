@@ -15,14 +15,12 @@ import (
 	"time"
 )
 
-// LCUConnection handles the connection to the League of Legends client
 type LCUConnection struct {
 	client *resty.Client
 	logger *utils.Logger
 	ctx    context.Context
 }
 
-// NewLCUConnection creates a new League client connection
 func NewLCUConnection(logger *utils.Logger) *LCUConnection {
 	return &LCUConnection{
 		client: nil,
@@ -31,11 +29,9 @@ func NewLCUConnection(logger *utils.Logger) *LCUConnection {
 	}
 }
 
-// InitializeConnection finds and connects to the League client
 func (c *LCUConnection) InitializeConnection() error {
 	c.logger.Info("Initializing League client connection")
 
-	// Find League client process and get connection details
 	port, token, _, err := c.getLeagueCredentials()
 	if err != nil {
 		return err
@@ -43,11 +39,10 @@ func (c *LCUConnection) InitializeConnection() error {
 	encodedAuth := base64.StdEncoding.EncodeToString([]byte("riotClient:" + token))
 
 	client := resty.New().
-		SetBaseURL(fmt.Sprintf("https://127.0.0.1:%s", port)).
+		SetBaseURL(fmt.Sprintf("https:
 		SetHeader("Accept", "application/json").
 		SetHeader("Authorization", "Basic "+encodedAuth)
 
-	// League client uses self-signed cert
 	client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 
 	c.client = client
@@ -67,10 +62,9 @@ func (c *LCUConnection) getProcessCommandLine() ([]byte, error) {
 	return output, nil
 }
 
-// getLeagueCredentials locates the League client process and extracts connection details
 func (c *LCUConnection) getLeagueCredentials() (port, token, pid string, err error) {
 	output, err := c.getProcessCommandLine()
-	// Extract port and auth token using regex
+	
 	portRegex := regexp.MustCompile(`--app-port=(\d+)`)
 	tokenRegex := regexp.MustCompile(`--remoting-auth-token=([\w-]+)`)
 	pidRegex := regexp.MustCompile(`--app-pid=(\d+)`)
@@ -117,14 +111,12 @@ func (c *LCUConnection) WaitInventoryIsReady() {
 			c.logger.Debug("Still waiting for inventory system to be ready", zap.Int("attempts", attempts))
 		}
 
-		// Sleep to avoid hammering the client
 		time.Sleep(1 * time.Second)
 	}
 }
 
-// IsInventoryReady checks if the League client is ready to accept API requests
 func (c *LCUConnection) IsInventoryReady() bool {
-	// Check if client is properly initialized
+	
 	if c.client == nil {
 		c.logger.Debug("LCU client not initialized")
 		return false
@@ -138,7 +130,6 @@ func (c *LCUConnection) IsInventoryReady() bool {
 		return false
 	}
 
-	// Check if we got a successful response
 	if resp.IsError() {
 		c.logger.Debug("LCU client ready and accepting API requests")
 		return false
@@ -147,7 +138,6 @@ func (c *LCUConnection) IsInventoryReady() bool {
 	return result
 }
 
-// WaitUntilReady waits for the League client to be ready with a timeout
 func (c *LCUConnection) WaitUntilReady() error {
 	timeout := 60 * time.Second
 	c.logger.Info("Waiting for League client to be ready", zap.Duration("timeout", timeout))

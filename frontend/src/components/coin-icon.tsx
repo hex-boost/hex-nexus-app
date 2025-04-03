@@ -11,9 +11,9 @@ export function CoinIcon({ className, color = 'currentColor' }: { className?: st
       className={className}
     >
       <circle cx="12" cy="12" r="9" />
-      {/* Double circle coin */}
+      {}
       <circle cx="12" cy="12" r="6" strokeWidth={0.5} />
-      {/* Minimalist crown */}
+      {}
       <path d="M10 13L12 10L14 13" />
       <path d="M10 13L14 13" />
     </svg>

@@ -43,7 +43,7 @@ type RiotIdentity struct {
 }
 type LoginTokenResponse struct {
 	Type string `json:"type"`
-	// Add other fields if present in response
+	
 }
 type LoginTokenRequest struct {
 	AuthenticationType string `json:"authentication_type"`

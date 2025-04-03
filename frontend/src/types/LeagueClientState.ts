@@ -1,4 +1,4 @@
-// frontend/src/types/leagueClientTypes.ts
+
 export enum LeagueClientState {
   CHECKING = 'league:client:checking',
   CLOSED = 'league:client:closed',

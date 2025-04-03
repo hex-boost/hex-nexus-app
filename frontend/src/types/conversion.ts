@@ -2,7 +2,7 @@ import type { RankingType } from '@/types/types.ts';
 import type { Public, Schema, Struct } from '@strapi/types';
 import type { ApiResponse } from 'strapi-ts-sdk';
 
-// Simplified helper that just uses the ContentTypeSchemas directly
+
 export type GetContentTypeSchema<T extends string> =
   T extends keyof Public.ContentTypeSchemas ? Public.ContentTypeSchemas[T] : never;
 type ExtractValueFromLabelValue<T extends string> =
@@ -31,7 +31,7 @@ type ExpandRelations<R> =
           ? Entity<GetContentTypeSchema<Target>>
           : any;
 
-// Extract types with field name awareness
+
 type ExtractRecursiveType<T, K extends string | number | symbol = never> =
   K extends 'ranking'
     ? RankingType :
@@ -57,6 +57,6 @@ type ExtractRecursiveType<T, K extends string | number | symbol = never> =
                                     T extends Schema.Attribute.RichText ? string :
                                       T extends Schema.Attribute.Relation<any, any> ? ExpandRelations<T> :
                                         unknown;
-// Main Entity type for external use
+
 export type Entity<EntityType extends Struct.CollectionTypeSchema | Struct.SingleTypeSchema> =
   RecursiveEntity<EntityType>;

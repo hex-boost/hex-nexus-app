@@ -31,9 +31,9 @@ import { ArrowDownToLine, Check, CircleCheckBig, Clock, Search, Shield, X } from
 import { useState } from 'react';
 import AccountInfoDisplay from './account-info-display';
 
-// Types
 
-// Rental options
+
+
 export default function AccountDetails({ account, price, onAccountChange }: {
   onAccountChange: () => void;
   price: Price;
@@ -67,7 +67,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
   return (
     <>
       <div className="lg:col-span-3 space-y-6">
-        {/* Account info card */}
+        {}
         <Card>
           <CardHeader className="border-none justify-center">
             <CardTitle className="flex border-none items-center justify-between">
@@ -105,8 +105,8 @@ export default function AccountDetails({ account, price, onAccountChange }: {
               leaverBusterStatus="None"
               soloQueueRank={soloQueueRank}
               flexQueueRank={flexQueueRank}
-              // previousSeasonRank={'unknown'}
-              // valorantRank={'unknown'}
+              
+              
             />
 
             <div className="grid grid-cols-2  md:grid-cols-3 gap-4">
@@ -345,7 +345,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                   {/*  Login to */}
                   {/*  {' '} */}
                   {/*  {'lol' === 'lol' ? 'LoL' : 'Valorant'} */}
-                  {/* </Button> */}
+                  {}
 
                   <Dialog open={isDropDialogOpen} onOpenChange={setIsDropDialogOpen}>
                     <DialogTrigger asChild>
@@ -360,7 +360,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                         <DialogDescription>
                           Are you sure you want to drop this account? You will be refunded
                           {' '}
-                          {/* {account.refundableAmount} */}
+                          {}
                           {' '}
                           coins.
                         </DialogDescription>
@@ -450,7 +450,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                       >
                         <CoinIcon className="w-4 h-4 text-amber-500 dark:text-amber-400" />
                         {(() => {
-                          // Make sure we have a valid selected option and price
+                          
                           const selectedOption = rentalOptionsWithPrice[selectedRentalOptionIndex];
                           return selectedOption ? selectedOption.price.toLocaleString() : '0';
                         })()}
@@ -471,7 +471,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
               </Card>
             )}
 
-        {/* Account security card */}
+        {}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

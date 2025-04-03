@@ -15,7 +15,7 @@ export type RouterContext = {
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootLayout,
-  errorComponent: ErrorPage, // Adicionando o componente de erro
+  errorComponent: ErrorPage, 
   notFoundComponent: () => {
     return <div>Page not found</div>;
   },

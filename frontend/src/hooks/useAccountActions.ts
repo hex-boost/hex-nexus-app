@@ -17,9 +17,9 @@ export function useAccountActions({
   const [selectedRentalOptionIndex, setSelectedRentalOptionIndex] = useState<number>(1);
   const [isDropDialogOpen, setIsDropDialogOpen] = useState(false);
 
-  // Calculate rental options with price
+  
 
-  // Drop account mutation
+  
   const { mutate: handleDropAccount, isPending: isDropPending } = useMutation<{ message: string }, StrapiError>({
     mutationKey: ['accounts', 'drop', account.documentId],
     mutationFn: async () => {
@@ -36,7 +36,7 @@ export function useAccountActions({
     },
   });
 
-  // Rent account mutation
+  
   const { mutate: handleRentAccount, isPending: isRentPending } = useMutation<
     { message: string },
     StrapiError,
@@ -63,13 +63,13 @@ export function useAccountActions({
   });
 
   return {
-    // Rental state and actions
+    
     selectedRentalOptionIndex,
     setSelectedRentalOptionIndex,
     handleRentAccount,
     isRentPending,
 
-    // Drop state and actions
+    
     isDropDialogOpen,
     setIsDropDialogOpen,
     handleDropAccount,

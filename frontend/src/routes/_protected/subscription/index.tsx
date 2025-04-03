@@ -1,4 +1,4 @@
-// In routes/_protected/subscription/index.tsx
+
 import type { CheckoutSession, PricingPlan, SubscriptionRequest } from '@/types/membership.ts';
 import { Badge } from '@/components/ui/badge';
 import { Pricing } from '@/components/ui/pricing-cards.tsx';
@@ -17,7 +17,7 @@ function RouteComponent() {
   const [currentApiTier] = useState<string | undefined>('tier 2');
   const [pendingPlanTier, setPendingPlanTier] = useState<string | null>(null);
 
-  // Map API tiers to display names
+  
   const mapTierToDisplayName = (tier: string | undefined): string => {
     switch (tier) {
       case 'tier 1': return 'Professional';
@@ -27,7 +27,7 @@ function RouteComponent() {
     }
   };
 
-  // Map display names to API tiers
+  
   const mapDisplayNameToApiTier = (displayName: string): string => {
     switch (displayName) {
       case 'Professional': return 'tier 1';
@@ -139,14 +139,14 @@ function RouteComponent() {
     mutationFn: async (tier: string) => {
       setPendingPlanTier(tier);
 
-      // Find selected plan
+      
       const selectedPlan = pricingPlans.find(plan => plan.tier === tier);
 
       if (!selectedPlan?.priceID || !selectedPlan?.productID) {
         throw new Error('Invalid plan selected or free plan');
       }
 
-      // Make real API call
+      
       return await createSubscription({
         priceID: selectedPlan.priceID,
         productID: selectedPlan.productID,

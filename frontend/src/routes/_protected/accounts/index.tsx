@@ -31,13 +31,13 @@ import {
   Search,
   Shield,
 } from 'lucide-react';
-import { useState } from 'react'; // Helper function to get company icon
+import { useState } from 'react'; 
 
-// Helper function to get company icon
+
 export const Route = createFileRoute('/_protected/accounts/')({
   component: Accounts,
 });
-// 1. SearchBar component
+
 type SearchBarProps = {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
@@ -57,7 +57,7 @@ function SearchBar({ searchQuery, setSearchQuery }: SearchBarProps) {
   );
 }
 
-// 2. FilterButton component
+
 type FilterButtonProps = {
   showFilters: boolean;
   setShowFilters: (show: boolean) => void;
@@ -78,7 +78,7 @@ function FilterButton({ showFilters, setShowFilters }: FilterButtonProps) {
   );
 }
 
-// 3. ResultsCount component
+
 type ResultsCountProps = {
   filteredCount: number;
   totalCount?: number;
@@ -99,7 +99,7 @@ function ResultsCount({ filteredCount, totalCount }: ResultsCountProps) {
     </div>
   );
 }
-// 4. PriceDisplay component
+
 type PriceDisplayProps = {
   isPriceLoading: boolean;
   price: Price;
@@ -122,12 +122,12 @@ function PriceDisplay({ isPriceLoading, price, ranking }: PriceDisplayProps) {
   );
 }
 
-// 5. AccountActionsMenu component
+
 type AccountActionsMenuProps = {
   accountId: string;
   onViewDetails: (id: string) => void;
 };
-// Add this function to handle the leaverBuster display
+
 function AccountActionsMenu({ accountId, onViewDetails }: AccountActionsMenuProps) {
   return (
     <DropdownMenu>
@@ -145,9 +145,9 @@ function AccountActionsMenu({ accountId, onViewDetails }: AccountActionsMenuProp
   );
 }
 
-// 6. TableHeaderRow component
 
-// 7. AccountRow component - handles display of account data and loading state
+
+
 type AccountRowProps = {
   account: AccountType;
   isPriceLoading: boolean;
@@ -217,7 +217,7 @@ function AccountRow({
             );
           }
 
-          // Determine severity styling based on leaver level
+          
           const severityConfig = {
             icon: leaverInfo.severity >= 3
               ? AlertOctagon
@@ -265,7 +265,7 @@ function AccountRow({
                       return null;
                     }
 
-                    // Format timestamp to date
+                    
                     const lastPunishmentDate = new Date(leaverData.lastPunishmentIncurredTimeMillis).toLocaleDateString();
 
                     return (
@@ -344,10 +344,10 @@ function AccountRow({
         {(() => {
           const totalGames = (currentSoloqueueRank?.wins || 0) + (currentSoloqueueRank?.losses || 0);
           const winRate = totalGames > 0 ? Math.round(((currentSoloqueueRank?.wins || 0) / totalGames) * 100) : 0;
-          // Definindo a cor baseada no valor do winrate
-          let winRateColorClass = 'text-zinc-600 dark:text-muted-foreground'; // cor padrão (média)
+          
+          let winRateColorClass = 'text-zinc-600 dark:text-muted-foreground'; 
           if (winRate > 60) {
-            // Blue scale for win rates above 60% (increasing intensity)
+            
             if (winRate >= 95) {
               winRateColorClass = 'text-blue-500 dark:text-blue-500 font-medium';
             } else if (winRate >= 85) {
@@ -358,15 +358,15 @@ function AccountRow({
               winRateColorClass = 'text-blue-200 dark:text-blue-200';
             } else {
               winRateColorClass = 'text-blue-100 dark:text-blue-100';
-            } // 60-65%
-          } else if (winRate < 40 && winRate > 0) { // Red scale for win rates below 50% (increasing intensity for lower rates)
+            } 
+          } else if (winRate < 40 && winRate > 0) { 
             if (winRate < 30) {
               winRateColorClass = 'text-red-500 dark:text-red-400';
             } else if (winRate < 40) {
               winRateColorClass = 'text-red-300 dark:text-red-300';
             } else {
               winRateColorClass = 'text-red-100 dark:text-red-100';
-            } // 40-49%
+            } 
           }
           return (
             <span className="text-sm text-muted-foreground">
@@ -423,7 +423,7 @@ function AccountRow({
   );
 }
 
-// 8. AccountTableSkeleton - loading state for accounts table
+
 function AccountTableSkeleton() {
   return (
     <>
@@ -468,7 +468,7 @@ function AccountTableSkeleton() {
   );
 }
 
-// 9. AccountsTable - table component with header and rows
+
 type AccountsTableProps = {
   isLoading: boolean;
   filteredAccounts: any[];
@@ -607,19 +607,19 @@ function Accounts() {
       <h1 className="text-3xl font-semibold pb-6 ">Accounts Available</h1>
 
       <div className="space-y-6">
-        {/* Header with search and filters */}
+        {}
         <div className="flex flex-col sm:flex-row gap-4 justify-between">
           <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
           <FilterButton showFilters={showFilters} setShowFilters={setShowFilters} />
         </div>
 
-        {/* Filters section */}
+        {}
         {showFilters && (
           <div
             className="bg-white dark:bg-black/20 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 space-y-6"
           >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Game, Tier and Rank */}
+              {}
               <div className="grid gap-4">
 
                 <div>
@@ -709,7 +709,7 @@ function Accounts() {
                 </div>
               </div>
 
-              {/* Champions and Skins */}
+              {}
               <div className="flex h-full flex-col gap-4">
 
                 <div>
@@ -761,7 +761,7 @@ function Accounts() {
                   <MultiSelectCombobox
                     label=" skins"
                     options={allSkins
-                      .filter(skin => skin.name !== 'default') // Remove default skins
+                      .filter(skin => skin.name !== 'default') 
                       .map(skin => ({
                         label: skin.name,
                         value: skin.champion.toString(),
@@ -794,7 +794,7 @@ function Accounts() {
                     renderSelectedItem={selectedValues => (
                       <div className="flex -space-x-2">
                         {selectedValues.map((champion) => {
-                          // Use skin data instead of champion data
+                          
                           const skin = allSkins.find(s => s.champion.toString() === champion);
                           return (
                             <Avatar
@@ -869,10 +869,10 @@ function Accounts() {
           </div>
         )}
 
-        {/* Results count */}
+        {}
         <ResultsCount filteredCount={filteredAccounts.length} totalCount={accounts?.length} />
 
-        {/* Table View */}
+        {}
         <AccountsTable
           isLoading={isLoading}
           filteredAccounts={filteredAccounts}

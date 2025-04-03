@@ -10,7 +10,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, useParams } from '@tanstack/react-router';
 import { ArrowLeftIcon } from 'lucide-react';
 
-// The component that will render when the route matches
+
 export const Route = createFileRoute('/_protected/accounts/$id')({
   beforeLoad: ({ params }) => {
     if (!('id' in params)) {
@@ -25,7 +25,7 @@ function AccountByID() {
   const { price, isPriceLoading } = usePrice();
   const queryClient = useQueryClient();
 
-  // Fetch available accounts
+  
   const {
     data: availableAccounts,
     isLoading: isAvailableLoading,
@@ -34,7 +34,7 @@ function AccountByID() {
     queryFn: () => strapiClient.find<AccountType[]>('accounts/available').then(res => res.data),
   });
 
-  // Fetch rented accounts
+  
   const {
     data: rentedAccounts,
     isLoading: isRentedLoading,
@@ -43,24 +43,24 @@ function AccountByID() {
     queryFn: () => strapiClient.find<AccountType[]>('accounts/rented').then(res => res.data),
   });
 
-  // Fetch refund data if needed
-  // Function to refetch both available and rented accounts data
+  
+  
   const refetchAccount = () => {
-    // Invalidate queries to trigger refetching
+    
     queryClient.invalidateQueries({ queryKey: ['accounts', 'available'] });
     queryClient.invalidateQueries({ queryKey: ['accounts', 'rented'] });
   };
 
-  // Merge account data with rented account data taking precedence
+  
   const account = rentedAccounts?.find(acc => acc.documentId === id)
     || availableAccounts?.find(acc => acc.documentId === id)
     || null;
 
   const isLoading = isAvailableLoading || isRentedLoading || isPriceLoading;
 
-  // if (!account && !isLoading) {
-  //   return <div>Account not found</div>;
-  // }
+  
+  
+  
 
   return (
     <>
@@ -126,7 +126,7 @@ function AccountByID() {
             </div>
 
             <div className="col-span-2 space-y-6">
-              {/* Security panel skeleton */}
+              {}
               <Card>
                 <CardHeader>
                   <Skeleton className="h-14 w-60" />
