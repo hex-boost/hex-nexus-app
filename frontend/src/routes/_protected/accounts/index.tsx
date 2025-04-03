@@ -160,7 +160,6 @@ function AccountRow({
   onViewDetails,
   getEloIcon,
   getRegionIcon,
-  getCompanyIcon,
   getRankColor,
 }: AccountRowProps) {
   const currentSoloqueueRank = account.rankings.find(

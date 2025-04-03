@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { useAccountActions } from '@/hooks/useAccountActions.ts';
 import { useAccountFilters } from '@/hooks/useAccountFilters.ts';
+import { getLeaverBusterInfo } from '@/hooks/useAccounts.tsx';
 import { useDateTime } from '@/hooks/useDateTime.ts';
 import { LeagueClientProvider } from '@/hooks/useLeagueEvents.tsx';
 import { strapiClient } from '@/lib/strapi.ts';
@@ -27,10 +28,76 @@ import { useMapping } from '@/lib/useMapping.tsx';
 import { cn } from '@/lib/utils.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowDownToLine, Check, CircleCheckBig, Clock, Search, Shield, X } from 'lucide-react';
+import {
+  AlertCircle,
+  AlertOctagon,
+  AlertTriangle,
+  ArrowDownToLine,
+  Check,
+  CircleCheckBig,
+  Clock,
+  Search,
+  Shield,
+  X,
+} from 'lucide-react';
 import { useState } from 'react';
 import AccountInfoDisplay from './account-info-display';
 
+function LeaverBusterDisplay({ account, compact = false }: {
+  account: AccountType;
+  compact?: boolean;
+}) {
+  const leaverInfo = getLeaverBusterInfo(account);
+
+  // Define styling based on severity
+  const getStatusConfig = () => {
+    if (!leaverInfo || !leaverInfo.hasRestriction) {
+      return {
+        Icon: Shield,
+        color: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400',
+        label: 'No restrictions',
+        description: 'This account has no active restrictions',
+      };
+    }
+
+    if (leaverInfo.severity >= 3) {
+      return {
+        Icon: AlertOctagon,
+        color: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400',
+        label: 'High',
+        description: leaverInfo.message,
+      };
+    }
+
+    if (leaverInfo.severity >= 1) {
+      return {
+        Icon: AlertTriangle,
+        color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400',
+        label: 'Medium',
+        description: leaverInfo.message,
+      };
+    }
+
+    return {
+      Icon: AlertCircle,
+      color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
+      label: 'Low',
+      description: leaverInfo.message,
+    };
+  };
+
+  const statusConfig = getStatusConfig();
+  const LeaverIcon = statusConfig.Icon;
+
+  return (
+    <div className={cn('flex items-center gap-2 p-2 rounded-md', statusConfig.color)}>
+      <LeaverIcon className="h-4 w-4" />
+      <span className={compact ? 'text-xs' : 'text-sm'}>
+        {compact ? statusConfig.label : statusConfig.description}
+      </span>
+    </div>
+  );
+}
 export default function AccountDetails({ account, price, onAccountChange }: {
   onAccountChange: () => void;
   price: Price;
@@ -149,7 +216,13 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                 </div>
               </div>
             </div>
-
+            <LeaverBusterDisplay account={account} />
+            {/* <div className={cn('flex items-center gap-2 p-2 rounded-md', leaverBusterInfo.color)}> */}
+            {/*  <LeaverIcon className="h-4 w-4" /> */}
+            {/*  <span className={compact ? 'text-xs' : 'text-sm'}> */}
+            {/*    {compact ? leaverBusterInfo.label : leaverBusterInfo.description} */}
+            {/*  </span> */}
+            {/* </div> */}
           </CardContent>
         </Card>
 

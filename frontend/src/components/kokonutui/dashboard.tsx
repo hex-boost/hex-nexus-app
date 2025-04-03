@@ -61,50 +61,6 @@ const CurrentlyRentedAccountsSkeleton = () => (
   </div>
 );
 
-const LastRentedAccountSkeleton = () => (
-  <div className="rounded-xl p-4 flex items-center">
-    <div className="flex items-center gap-4 flex-1">
-      <div className="flex items-center gap-2">
-        <Skeleton className="h-6 w-6 rounded-md" />
-        <Skeleton className="h-4 w-16 rounded-sm" />
-      </div>
-
-      <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-700"></div>
-      <Skeleton className="h-5 w-20 rounded-sm" />
-
-      <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-700"></div>
-      <Skeleton className="h-5 w-16 rounded-full" />
-
-      <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-700"></div>
-      <div className="flex items-center gap-1">
-        <Skeleton className="h-4 w-18 rounded-sm" />
-        <Skeleton className="h-4 w-6 rounded-sm" />
-      </div>
-
-      <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-700"></div>
-      <div className="flex items-center gap-1">
-        <Skeleton className="h-4 w-12 rounded-sm" />
-        <Skeleton className="h-4 w-6 rounded-sm" />
-      </div>
-
-      <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-700"></div>
-      <div className="flex items-center gap-1">
-        <Skeleton className="h-4 w-16 rounded-sm" />
-        <Skeleton className="h-4 w-12 rounded-sm" />
-      </div>
-
-      <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-700"></div>
-      <div className="flex items-center gap-1">
-        <Skeleton className="h-4 w-4 rounded-full" />
-        <Skeleton className="h-4 w-10 rounded-sm" />
-      </div>
-    </div>
-
-    <div className="ml-4">
-      <Skeleton className="h-9 w-24 rounded-md" />
-    </div>
-  </div>
-);
 export default function Dashboard({ user }: { user: UserType }) {
   return (
     <div className="space-y-6">

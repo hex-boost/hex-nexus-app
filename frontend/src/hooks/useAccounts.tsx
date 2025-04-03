@@ -283,6 +283,7 @@ export function useAccounts() {
 
   const resetFilters = () => {
     setFilters({
+      minBlueEssence: 0,
       game: '',
       division: '',
       rank: '',
