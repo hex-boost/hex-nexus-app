@@ -64,13 +64,13 @@ export default function List01({ totalBalance = '$26,540.25', accounts = ACCOUNT
         className,
       )}
     >
-      {}
+      {/* Total Balance Section */}
       <div className="p-4 border-b border-zinc-100 dark:border-zinc-800">
         <p className="text-xs text-zinc-600 dark:text-zinc-400">Total Balance</p>
         <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">{totalBalance}</h1>
       </div>
 
-      {}
+      {/* Accounts List */}
       <div className="p-3">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-xs font-medium text-zinc-900 dark:text-zinc-100">Your Accounts</h2>
@@ -120,7 +120,7 @@ export default function List01({ totalBalance = '$26,540.25', accounts = ACCOUNT
         </div>
       </div>
 
-      {}
+      {/* Updated footer with four buttons */}
       <div className="p-2 border-t border-zinc-100 dark:border-zinc-800">
         <div className="grid grid-cols-4 gap-2">
           <button

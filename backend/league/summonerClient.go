@@ -12,6 +12,7 @@ import (
 	"strconv"
 )
 
+// SummonerClient provides methods for interacting with the League of Legends.lcu.client
 type SummonerClient struct {
 	lcu      *LCUConnection
 	lcuUtils *LCUutils
@@ -19,14 +20,16 @@ type SummonerClient struct {
 	ctx      context.Context
 }
 
+// NewSummonerClient creates a new League client
 func NewSummonerClient(lcu *LCUConnection, logger *utils.Logger) *SummonerClient {
 	return &SummonerClient{
-		lcu:    lcu, 
+		lcu:    lcu, // Will be initialized when connecting
 		logger: logger,
 		ctx:    context.Background(),
 	}
 }
 
+// GetLoginSession gets current user login session information
 func (s *SummonerClient) GetLoginSession() (*types.LoginSession, error) {
 	s.logger.Debug("Fetching login session information")
 
@@ -47,6 +50,7 @@ func (s *SummonerClient) GetLoginSession() (*types.LoginSession, error) {
 	return &result, nil
 }
 
+// GetCurrentSummoner gets basic summoner information
 func (s *SummonerClient) GetCurrentSummoner() (*types.CurrentSummoner, error) {
 	s.logger.Debug("Fetching summoner data")
 	var result types.CurrentSummoner
@@ -78,6 +82,7 @@ func (s *SummonerClient) getAssetsIds(assets []interface{}) ([]int, error) {
 	for i, asset := range assets {
 		s.logger.Debug("Asset structure", zap.Int("index", i), zap.Any("asset", asset))
 
+		// Try to handle as direct numeric value first
 		switch v := asset.(type) {
 		case float64:
 			result = append(result, int(v))
@@ -90,6 +95,7 @@ func (s *SummonerClient) getAssetsIds(assets []interface{}) ([]int, error) {
 			continue
 		}
 
+		// If not a direct number, try as map with id field
 		if championMap, ok := asset.(map[string]interface{}); ok {
 			if idVal, ok := championMap["id"]; ok {
 				switch v := idVal.(type) {
@@ -114,6 +120,7 @@ func (s *SummonerClient) getAssetsIds(assets []interface{}) ([]int, error) {
 	return result, nil
 }
 
+// GetChampions gets list of owned champions
 func (s *SummonerClient) GetChampions() ([]int, error) {
 	s.logger.Debug("Fetching owned champions")
 	var encodedData string
@@ -146,6 +153,7 @@ func (s *SummonerClient) GetChampions() ([]int, error) {
 	return championsIds, nil
 }
 
+// GetSkins gets list of owned skins
 func (s *SummonerClient) GetSkins() ([]int, error) {
 	s.logger.Debug("Fetching owned champions")
 	var encodedData string
@@ -178,6 +186,7 @@ func (s *SummonerClient) GetSkins() ([]int, error) {
 	return skinsIds, nil
 }
 
+// GetCurrency gets account currencies (RP, BE, etc)
 func (s *SummonerClient) GetCurrency() (map[string]interface{}, error) {
 	s.logger.Debug("Fetching account currency information")
 
@@ -207,6 +216,7 @@ func (s *SummonerClient) GetCurrency() (map[string]interface{}, error) {
 	return result, nil
 }
 
+// GetRanking gets player ranking information for all queues
 func (s *SummonerClient) GetRanking() (map[string]interface{}, error) {
 	s.logger.Info("Fetching ranking data")
 
@@ -249,6 +259,7 @@ func (s *SummonerClient) GetRanking() (map[string]interface{}, error) {
 	return result, nil
 }
 
+// GetRegion gets the account's region
 func (s *SummonerClient) GetRegion() (string, error) {
 	s.logger.Debug("Fetching account region")
 

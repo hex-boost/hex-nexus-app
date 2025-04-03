@@ -34,7 +34,7 @@ function Pricing({
             </CardHeader>
             <CardContent className="px-6 flex flex-col flex-1">
               <div className="flex flex-col gap-8 h-full">
-                {}
+                {/* Preço com altura fixa */}
                 <div className="h-[10px] flex items-center">
                   <p className="flex flex-row items-center gap-2 text-xl">
                     <span className="text-4xl">
@@ -50,7 +50,7 @@ function Pricing({
                   </p>
                 </div>
 
-                {}
+                {/* Benefícios com altura que pode crescer */}
                 <div className="flex flex-col gap-4 justify-start flex-1">
                   {plan.benefits.map((benefit, benefitIndex) => (
                     <div key={benefitIndex} className="flex flex-row gap-4">
@@ -65,7 +65,7 @@ function Pricing({
                   ))}
                 </div>
 
-                {}
+                {/* Botão sempre no final */}
                 <div className="mt-auto pt-4">
                   <Button
                     loading={isPlanPending}

@@ -14,7 +14,7 @@ import (
 
 var (
 	Version    = "development"
-	BackendURL = "https:
+	BackendURL = "https://nexus-back.up.railway.app"
 )
 
 type Updater struct {
@@ -59,7 +59,7 @@ func (u *Updater) CheckForUpdates() (*Response, error) {
 
 		if err := json.Unmarshal(resp.Body(), &errorResponse); err == nil &&
 			errorResponse.Error.Message == "No versions found" {
-			
+			// Return a valid response with no update needed
 			return &Response{NeedsUpdate: false, Version: "No version on backend"}, nil
 		}
 

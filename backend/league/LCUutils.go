@@ -25,6 +25,7 @@ func (l *LCUutils) DecodeRiotJWT(token string) (*DecodedData, error) {
 		return nil, errors.New("invalid JWT format")
 	}
 
+	// Decode payload
 	padding := strings.Repeat("=", (4-len(parts[1])%4)%4)
 	payload, err := base64.URLEncoding.DecodeString(parts[1] + padding)
 	if err != nil {

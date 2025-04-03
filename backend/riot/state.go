@@ -38,7 +38,7 @@ func (rc *RiotClient) WaitUntilIsRunning(timeout time.Duration) error {
 	return fmt.Errorf("timeout ao aguardar o cliente Riot iniciar")
 }
 func (rc *RiotClient) IsAuthenticationReady() bool {
-	
+	// Verifica se o cliente está pronto para autenticação
 	pid, err := rc.getProcess()
 	if err != nil {
 		return false
@@ -99,6 +99,7 @@ func (rc *RiotClient) waitForReadyState(timeout time.Duration) error {
 			return nil
 		}
 
+		// Registra o status da tentativa
 		status := "erro"
 		if err != nil {
 			status = err.Error()
@@ -107,6 +108,7 @@ func (rc *RiotClient) waitForReadyState(timeout time.Duration) error {
 		}
 		rc.logger.Debug("Aguardando serviço ficar pronto", zap.String("status", status))
 
+		// Aguarda antes da próxima tentativa
 		time.Sleep(interval)
 	}
 

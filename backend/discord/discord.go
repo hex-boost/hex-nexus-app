@@ -22,7 +22,7 @@ import (
 
 const (
 	discordCallbackPort = 45986
-	discordApiBaseURL   = "https:
+	discordApiBaseURL   = "https://discord.com/api"
 	authWaitTimeout     = 2 * time.Minute
 )
 
@@ -209,7 +209,7 @@ func (d *Discord) uploadDiscordAvatar(accessToken string, userJwt string, userId
 		d.logger.Info("User does not have a Discord avatar", "user_id", userId)
 		return fmt.Errorf("user does not have a Discord avatar")
 	}
-	avatarUrl := fmt.Sprintf("https:
+	avatarUrl := fmt.Sprintf("https://cdn.discordapp.com/avatars/%s/%s.png", discordUser.ID, discordUser.Avatar)
 	d.logger.Debug("Avatar URL", "url", avatarUrl)
 	d.logger.Debug("Downloading Discord avatar")
 	imgResp, err := d.config.client.R().Get(avatarUrl)
@@ -294,6 +294,7 @@ func (d *Discord) uploadDiscordAvatar(accessToken string, userJwt string, userId
 	return nil
 }
 
+// HandleDiscordCallback sets up an HTTP server to process Discord callbacks
 func (d *Discord) handleDiscordCallback(callback func(token string, err error)) {
 	router := mux.NewRouter()
 	srv := &http.Server{
@@ -307,6 +308,7 @@ func (d *Discord) handleDiscordCallback(callback func(token string, err error)) 
 		code := r.URL.Query().Get("access_token")
 		d.logger.Debug("Callback received with token", "token_length", len(code))
 
+		// Authenticate with Strapi
 		authURL := fmt.Sprintf("%s/api/auth/discord/callback?access_token=%s", d.config.backendURL, code)
 		resp, err := d.config.client.R().Get(authURL)
 

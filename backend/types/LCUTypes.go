@@ -1,5 +1,6 @@
 package types
 
+// Currency represents LoL and TFT account currencies
 type Currency struct {
 	RP                   int `json:"RP"`
 	LolBlueEssence       int `json:"lol_blue_essence"`
@@ -11,6 +12,7 @@ type Currency struct {
 	TftStarFragments     int `json:"tft_star_fragments"`
 }
 
+// RerollPoints represents ARAM/event game mode reroll points
 type RerollPoints struct {
 	CurrentPoints    int `json:"currentPoints"`
 	MaxRolls         int `json:"maxRolls"`
@@ -19,6 +21,7 @@ type RerollPoints struct {
 	PointsToReroll   int `json:"pointsToReroll"`
 }
 
+// Privacy type for summoner privacy setting
 type Privacy string
 
 const (
@@ -26,6 +29,7 @@ const (
 	PrivacyPrivate Privacy = "PRIVATE"
 )
 
+// CurrentSummoner represents LoL summoner profile data
 type CurrentSummoner struct {
 	AccountId                   int          `json:"accountId"`
 	DisplayName                 string       `json:"displayName"`
@@ -45,6 +49,7 @@ type CurrentSummoner struct {
 	XpUntilNextLevel            int          `json:"xpUntilNextLevel"`
 }
 
+// LoginSession represents LoL account session data
 type LoginSession struct {
 	AccountId      int     `json:"accountId"`
 	Connected      bool    `json:"connected"`
@@ -59,6 +64,7 @@ type LoginSession struct {
 	Username       string  `json:"username"`
 }
 
+// AccountInfo represents basic LoL account information
 type AccountInfo struct {
 	Puuid      string `json:"puuid"`
 	AccountId  int    `json:"accountId"`
@@ -66,6 +72,7 @@ type AccountInfo struct {
 	SummonerId int    `json:"summonerId"`
 }
 
+// LoginState represents LoL login state
 type LoginState struct {
 	Connected      bool    `json:"connected"`
 	State          string  `json:"state"`
@@ -73,6 +80,7 @@ type LoginState struct {
 	Error          *string `json:"error,omitempty"`
 }
 
+// RentalInfo represents champion rental information
 type RentalInfo struct {
 	EndDate           int  `json:"endDate"`
 	PurchaseDate      int  `json:"purchaseDate"`
@@ -80,6 +88,7 @@ type RentalInfo struct {
 	WinCountRemaining int  `json:"winCountRemaining"`
 }
 
+// OwnershipInfo represents champion ownership information
 type OwnershipInfo struct {
 	LoyaltyReward bool       `json:"loyaltyReward"`
 	Owned         bool       `json:"owned"`
@@ -87,6 +96,7 @@ type OwnershipInfo struct {
 	XboxGPReward  bool       `json:"xboxGPReward"`
 }
 
+// InventoryAsset represents LoL champion data
 type InventoryAsset struct {
 	Active             bool          `json:"active"`
 	Alias              string        `json:"alias"`
@@ -108,12 +118,14 @@ type InventoryAsset struct {
 	Title              string        `json:"title"`
 }
 
+// Season represents ranked season information
 type Season struct {
 	CurrentSeasonEnd int `json:"currentSeasonEnd"`
 	CurrentSeasonId  int `json:"currentSeasonId"`
 	NextSeasonStart  int `json:"nextSeasonStart"`
 }
 
+// QueueType represents the ranked queue types
 type QueueType string
 
 const (
@@ -124,6 +136,7 @@ const (
 	QueueTypeTFTDoubleUp QueueType = "RANKED_TFT_DOUBLE_UP"
 )
 
+// RankedEntry represents player's ranked stats in a specific queue
 type RankedEntry struct {
 	Division                      string    `json:"division"`
 	HighestDivision               string    `json:"highestDivision"`
@@ -146,6 +159,7 @@ type RankedEntry struct {
 	Wins                          int       `json:"wins"`
 }
 
+// QueueMap represents queue mapping containing all ranked queues
 type QueueMap struct {
 	RankedFlexSR      RankedEntry `json:"RANKED_FLEX_SR"`
 	RankedSolo5x5     RankedEntry `json:"RANKED_SOLO_5x5"`
@@ -154,6 +168,7 @@ type QueueMap struct {
 	RankedTFTTurbo    RankedEntry `json:"RANKED_TFT_TURBO"`
 }
 
+// GameStatus represents player's game status
 type GameStatus string
 
 const (
@@ -163,6 +178,7 @@ const (
 	GameStatusSpectating  GameStatus = "spectating"
 )
 
+// PresenceData represents LoL specific presence data
 type PresenceData struct {
 	ChampionId               string     `json:"championId"`
 	CompanionId              string     `json:"companionId"`
@@ -183,6 +199,7 @@ type PresenceData struct {
 	Skinname                 string     `json:"skinname"`
 }
 
+// Availability represents friend availability status
 type Availability string
 
 const (
@@ -194,6 +211,7 @@ const (
 	AvailabilityOnline  Availability = "online"
 )
 
+// FriendPresence represents a friend's presence information in League client
 type FriendPresence struct {
 	Availability            Availability `json:"availability"`
 	GameName                string       `json:"gameName"`
@@ -216,6 +234,7 @@ type FriendPresence struct {
 	Time                    int          `json:"time"`
 }
 
+// RankedDataV2 represents comprehensive LoL ranked data (v2 format)
 type RankedDataV2 struct {
 	CurrentSeasonSplitPoints          int                    `json:"currentSeasonSplitPoints"`
 	EarnedRegaliaRewardIds            []string               `json:"earnedRegaliaRewardIds"`
