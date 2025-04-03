@@ -385,15 +385,6 @@ function AccountRow({
         {account.blueEssence?.toLocaleString() || '0'}
       </td>
       <td className="p-3">
-        <div className="flex items-center gap-2">
-          <img
-            src={getCompanyIcon(account.type) || '/placeholder.svg'}
-            alt={account.type}
-            className="w-6 h-6 rounded-md"
-          />
-        </div>
-      </td>
-      <td className="p-3">
         <span
           className={cn(
             'px-2 py-1 rounded-full text-xs font-medium',
@@ -530,7 +521,6 @@ function AccountsTable({
             </th>
 
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Blue Essence</th>
-            <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Company</th>
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Status</th>
             <th
               className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400 cursor-pointer"
