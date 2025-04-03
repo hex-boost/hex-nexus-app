@@ -42,22 +42,24 @@ export function useAccountActions({
   >({
     mutationKey: ['accounts', 'extend', account.documentId],
     mutationFn: async (timeIndex: number) => {
-      // Implementation will be handled by the user
-      const response = strapiClient.request<{ message: string }>('post', `accounts/${account.documentId}/extend`, {
-        data: {
-          game: 'league',
-          time: timeIndex,
+      return toast.promise(
+        (async () => {
+          const response = await strapiClient.request<{ message: string }>('post', `accounts/${account.documentId}/extend`, {
+            data: {
+              game: 'league',
+              time: timeIndex,
+            },
+          });
+          await refetchUser();
+          await onAccountChange();
+          return response;
+        })(),
+        {
+          loading: 'Extending account...',
+          success: data => data.message || 'Account extended successfully',
+          error: error => error.error?.message || 'Failed to extend account',
         },
-      });
-      await refetchUser();
-      await onAccountChange();
-      return response;
-    },
-    onSuccess: (data) => {
-      toast.success(data.message);
-    },
-    onError: (error) => {
-      toast.error(error.error.message);
+      );
     },
   });
 
@@ -80,6 +82,7 @@ export function useAccountActions({
     },
     onSuccess: (data) => {
       toast.success(data.message);
+      setIsDropDialogOpen(false); // Reset dialog state after successful rental
     },
     onError: (error) => {
       toast.error(error.error.message);

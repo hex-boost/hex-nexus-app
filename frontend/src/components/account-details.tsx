@@ -423,7 +423,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
 
                   <RentedAccountButton account={account} />
 
-                  <Dialog open={isDropDialogOpen} onOpenChange={setIsDropDialogOpen}>
+                  <Dialog defaultOpen={false} open={isDropDialogOpen} onOpenChange={setIsDropDialogOpen}>
                     <DialogTrigger asChild>
                       <Button variant="outline" className="flex items-center gap-1">
                         <ArrowDownToLine className="h-4 w-4" />
