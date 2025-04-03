@@ -93,7 +93,7 @@ export function LoginForm({
             email: formData.email,
             password: formData.password,
             avatar: uploadedAvatar.data[0].id,
-            hwid: await Utils.GetHWID,
+            hwid: await Utils.GetHWID(),
           } as any;
           return await userAuth.register(registerPayload);
         },
