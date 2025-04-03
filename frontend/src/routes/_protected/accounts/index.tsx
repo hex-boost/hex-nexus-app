@@ -337,7 +337,7 @@ function AccountRow({
           const winRate = totalGames > 0 ? Math.round(((currentSoloqueueRank?.wins || 0) / totalGames) * 100) : 0;
 
           let winRateColorClass = 'text-zinc-600 dark:text-muted-foreground';
-          if (winRate > 60) {
+          if (winRate > 55) {
             if (winRate >= 95) {
               winRateColorClass = 'text-blue-500 dark:text-blue-500 font-medium';
             } else if (winRate >= 85) {
@@ -595,13 +595,11 @@ function Accounts() {
       <h1 className="text-3xl font-semibold pb-6 ">Accounts Available</h1>
 
       <div className="space-y-6">
-        {}
         <div className="flex flex-col sm:flex-row gap-4 justify-between">
           <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
           <FilterButton showFilters={showFilters} setShowFilters={setShowFilters} />
         </div>
 
-        {}
         {showFilters && (
           <div
             className="bg-white dark:bg-black/20 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 space-y-6"
@@ -697,7 +695,6 @@ function Accounts() {
                 </div>
               </div>
 
-              {}
               <div className="flex h-full flex-col gap-4">
 
                 <div>
@@ -856,10 +853,8 @@ function Accounts() {
           </div>
         )}
 
-        {}
         <ResultsCount filteredCount={filteredAccounts.length} totalCount={accounts?.length} />
 
-        {}
         <AccountsTable
           isLoading={isLoading}
           filteredAccounts={filteredAccounts}

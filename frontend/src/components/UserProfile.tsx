@@ -261,7 +261,7 @@ export function UserProfile({
                   <Link
                     key={item.label}
                     to={item.href}
-                    className="flex items-center justify-between p-2 hover:bg-zinc-50 dark:hover:bg-primary/10 text-zinc-100 dark:hover:!text-blue-300 rounded-lg transition-colors duration-200"
+                    className="flex items-center justify-between py-2 px-4 hover:bg-zinc-50 dark:hover:bg-primary/10 text-zinc-100 dark:hover:!text-blue-300 rounded-lg transition-colors duration-200"
                   >
                     <div className="flex items-center gap-2">
                       {item.icon}
@@ -283,7 +283,7 @@ export function UserProfile({
                   logoutAction();
                 }}
                 type="button"
-                className="w-full flex cursor-pointer items-center justify-between p-2 hover:bg-zinc-50 dark:hover:bg-primary/10 text-zinc-100 dark:hover:!text-blue-300 rounded-lg transition-colors duration-200"
+                className="w-full flex cursor-pointer items-center justify-between py-2 px-4 hover:bg-zinc-50 dark:hover:bg-primary/10 text-zinc-100 dark:hover:!text-blue-300 rounded-lg transition-colors duration-200"
               >
                 <div className="flex items-center gap-2">
                   <LogOut className="w-4 h-4" />

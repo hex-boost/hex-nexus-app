@@ -1,4 +1,5 @@
-import { Home, Star, User } from '@geist-ui/icons';
+import { Home, User } from '@geist-ui/icons';
+import { Crown } from 'lucide-react';
 
 type Submenu = {
   href: string;
@@ -21,7 +22,7 @@ export function getMenuList(): Group[] {
     {
       menus: [
         {
-          href: '/',
+          href: '/dashboard',
           label: 'Dashboard',
           icon: Home,
           submenus: [],
@@ -34,7 +35,7 @@ export function getMenuList(): Group[] {
         {
           href: '/subscription',
           label: 'Subscription',
-          icon: Star,
+          icon: Crown,
         },
       ],
     },

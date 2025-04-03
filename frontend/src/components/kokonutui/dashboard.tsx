@@ -2,7 +2,6 @@ import type { UserType } from '@/types/types';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { Activity, Shield } from 'lucide-react';
 import CurrentlyRentedAccounts from './currently-rented-accounts';
-import LastRentedAccount from './last-rented-account';
 import SubscriptionStatus from './subscription-status';
 
 const SubscriptionStatusSkeleton = () => (
@@ -139,28 +138,6 @@ export default function Dashboard({ user }: { user: UserType }) {
         </div>
       </div>
 
-      <div className="bg-zinc-50 dark:bg-black/20 rounded-xl  p-6 border border-gray-200 dark:border-[#1F1F23]">
-
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 text-left flex items-center gap-2  ">
-          Last Rented Account
-        </h2>
-
-        {
-          !user
-            ? <LastRentedAccountSkeleton />
-            : <LastRentedAccount />
-        }
-
-      </div>
-
-      {}
-      {}
-      {}
-      {}
-      {}
-
-      {}
-      {}
     </div>
   );
 }

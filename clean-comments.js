@@ -4,24 +4,24 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-// Get current date and time in UTC
+
 const now = new Date();
 const formattedDate = now.toISOString().slice(0, 19).replace('T', ' ');
 const currentUser = 'Rafael8313';
 
-// Configuration
+
 const config = {
     extensions: {
         react: ['.js', '.jsx', '.tsx', '.ts'],
         go: ['.go']
     },
-    excludeFiles: ['.d.ts'], // File extensions to exclude
+    excludeFiles: ['.d.ts','.gen.ts'],
     excludeDirs: ['node_modules', 'vendor', 'build', 'dist', '.git'],
-    preserveDocComments: true, // Whether to preserve JSDoc style comments
-    modifyInPlace: true // Set to false if you want to create backup files
+    preserveDocComments: true, 
+    modifyInPlace: true 
 };
 
-// Install dependencies if not already installed
+
 try {
     console.log('Checking dependencies...');
     execSync('npm list strip-comments', { stdio: 'ignore' });
@@ -32,13 +32,13 @@ try {
 
 const stripComments = require('strip-comments');
 
-// Function to preserve JSDoc comments but remove other comments
+
 function preserveJSDocComments(content) {
-    // Store all JSDoc comments
+    
     const jsdocComments = [];
     let counter = 0;
 
-    // Find and replace JSDoc comments with placeholders
+    
     const contentWithoutJSDoc = content.replace(/\/\*\*[\s\S]*?\*\//g, (match) => {
         const placeholder = `__JSDOC_PLACEHOLDER_${counter}__`;
         jsdocComments.push({ placeholder, comment: match });
@@ -46,12 +46,12 @@ function preserveJSDocComments(content) {
         return placeholder;
     });
 
-    // Remove remaining comments
+    
     const withoutComments = stripComments(contentWithoutJSDoc, {
         preserveUrls: true
     });
 
-    // Restore JSDoc comments
+    
     let result = withoutComments;
     jsdocComments.forEach(({ placeholder, comment }) => {
         result = result.replace(placeholder, comment);
@@ -60,25 +60,25 @@ function preserveJSDocComments(content) {
     return result;
 }
 
-// Function to remove comments from JavaScript/TypeScript files while preserving URLs
+
 function removeJSComments(content) {
     if (config.preserveDocComments) {
         return preserveJSDocComments(content);
     } else {
-        // Remove all comments
+        
         return stripComments(content, {
             preserveUrls: true
         });
     }
 }
 
-// Function to remove comments from Go files while preserving URLs and docs
+
 function removeGoComments(content) {
-    // First, protect URLs by temporarily replacing them
+    
     const urlPlaceholders = [];
     let counter = 0;
 
-    // Save URLs with regex pattern that detects URLs starting with http:// or https://
+    
     const urlProtectedContent = content.replace(/(https?:\/\/[^\s"']+)/g, (match) => {
         const placeholder = `__URL_PLACEHOLDER_${counter}__`;
         urlPlaceholders.push({ placeholder, url: match });
@@ -110,14 +110,14 @@ function removeGoComments(content) {
     // Clean up extra newlines from removed comments
     result = result.replace(/\n\s*\n\s*\n/g, '\n\n');
 
-    // Restore doc comments if we preserved them
+    
     if (config.preserveDocComments) {
         docComments.forEach(({ placeholder, comment }) => {
             result = result.replace(new RegExp(placeholder, 'g'), comment);
         });
     }
 
-    // Restore URLs
+    
     urlPlaceholders.forEach(({ placeholder, url }) => {
         result = result.replace(new RegExp(placeholder, 'g'), url);
     });
@@ -125,14 +125,14 @@ function removeGoComments(content) {
     return result;
 }
 
-// Function to check if file should be excluded
+
 function shouldExcludeFile(filePath) {
-    // Check if it's a declaration file (.d.ts)
+    
     if (filePath.endsWith('.d.ts')) {
         return true;
     }
 
-    // Check other excluded file patterns
+    
     for (const pattern of config.excludeFiles) {
         if (filePath.endsWith(pattern)) {
             return true;
@@ -142,9 +142,9 @@ function shouldExcludeFile(filePath) {
     return false;
 }
 
-// Function to process a file
+
 function processFile(filePath) {
-    // Check if file should be excluded
+    
     if (shouldExcludeFile(filePath)) {
         console.log(`Skipping excluded file: ${filePath}`);
         return;
@@ -166,7 +166,7 @@ function processFile(filePath) {
             return;
         }
 
-        // Check if content was modified
+        
         if (content !== processedContent) {
             if (config.modifyInPlace) {
                 fs.writeFileSync(filePath, processedContent, 'utf8');
@@ -185,7 +185,7 @@ function processFile(filePath) {
     }
 }
 
-// Function to walk directories recursively
+
 function walkDir(dir) {
     const files = fs.readdirSync(dir);
 
@@ -194,7 +194,7 @@ function walkDir(dir) {
         const stat = fs.statSync(filePath);
 
         if (stat.isDirectory()) {
-            // Skip excluded directories
+            
             if (config.excludeDirs.includes(file)) {
                 console.log(`Skipping excluded directory: ${filePath}`);
                 return;
@@ -202,7 +202,7 @@ function walkDir(dir) {
             walkDir(filePath);
         } else {
             const ext = path.extname(file).toLowerCase();
-            // Process only React and Go files
+            
             if ([...config.extensions.react, ...config.extensions.go].includes(ext)) {
                 processFile(filePath);
             }
@@ -210,11 +210,11 @@ function walkDir(dir) {
     });
 }
 
-// Main execution
+
 function main() {
     const args = process.argv.slice(2);
 
-    // Display help information if requested
+    
     if (args.includes('--help') || args.includes('-h')) {
         console.log(`
     Comment Remover CLI
@@ -241,7 +241,7 @@ function main() {
         return;
     }
 
-    // Parse command line options
+    
     let targetDir = process.cwd();
 
     args.forEach(arg => {
@@ -275,7 +275,7 @@ function main() {
     console.log(`Mode: ${config.modifyInPlace ? 'Modify in-place' : 'Create backups'}`);
     console.log('=========================');
 
-    // Start processing
+    
     if (!fs.existsSync(targetDir)) {
         console.error(`❌ Directory not found: ${targetDir}`);
         return;

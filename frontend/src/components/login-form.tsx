@@ -10,7 +10,6 @@ import { useGoFunctions } from '@/hooks/useGoBindings.ts';
 import { useProfileAvatar } from '@/hooks/useProfileAvatar.ts';
 import { userAuth } from '@/lib/strapi';
 import { cn } from '@/lib/utils';
-import { Route } from '@/routes/_protected/dashboard/index.tsx';
 import { useUserStore } from '@/stores/useUserStore';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@radix-ui/react-tabs';
 import { useMutation } from '@tanstack/react-query';
@@ -75,7 +74,7 @@ export function LoginForm({
       onSuccess: async (data) => {
         setAuthToken(data.jwt);
         await refetchUser();
-        router.navigate({ to: Route.fullPath });
+        router.navigate({ to: '/dashboard' });
       },
       onError: (error) => {
         // @ts-expect-error ts is dumb
@@ -94,14 +93,15 @@ export function LoginForm({
             email: formData.email,
             password: formData.password,
             avatar: uploadedAvatar.data[0].id,
-            hwid: await Utils.GetHWID(),
+            hwid: await Utils.GetHWID,
           } as any;
           return await userAuth.register(registerPayload);
         },
-      onSuccess: (data) => {
+      onSuccess: async (data) => {
         setAuthToken(data.jwt);
-        refetchUser();
-        router.navigate({ to: Route.fullPath });
+        await refetchUser();
+
+        router.navigate({ to: '/dashboard' });
       },
       onError: (error) => {
         // @ts-expect-error ts is dumb
