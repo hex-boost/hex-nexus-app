@@ -1,6 +1,6 @@
 import type { Price } from '@/types/price.ts';
 import type { AccountType, RankingType } from '@/types/types.ts';
-import { COMPANIES, DIVISIONS, LOL_TIERS, REGIONS, VALORANT_TIERS } from '@/components/accountsMock.ts';
+import { DIVISIONS, LOL_TIERS, REGIONS, VALORANT_TIERS } from '@/components/accountsMock.ts';
 import { CoinIcon } from '@/components/coin-icon';
 
 import { AccountGameIcon } from '@/components/GameComponents';
@@ -179,7 +179,7 @@ function AccountRow({
     points: 0,
     wins: 0,
     losses: 0,
-  };
+  } as RankingType;
   const previousSoloqueueRank = account.rankings.find(ranking => ranking.queueType === 'soloqueue' && ranking.type === 'previous')!;
 
   return (
@@ -208,9 +208,9 @@ function AccountRow({
 
           if (!leaverInfo) {
             return (
-              <div className="flex items-center">
-                <Badge variant="outline" className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800">
-                  <Shield className="h-3.5 w-3.5 mr-1" />
+              <div className="flex items-start">
+                <Badge variant="outline" className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 min-w-[85px]  px-4 py-1.5">
+                  <Shield className="h-4 w-4 mr-1" />
                   <span>None</span>
                 </Badge>
               </div>
@@ -244,9 +244,9 @@ function AccountRow({
                 <TooltipTrigger asChild>
                   <Badge
                     variant="outline"
-                    className={`cursor-help ${severityConfig.badge}`}
+                    className={`cursor-help ${severityConfig.badge} min-w-[85px] py-1.5 px-4`}
                   >
-                    <Icon className="h-3.5 w-3.5 mr-1" />
+                    <Icon className="h-4 w-4  mr-1" />
                     <span>{severityConfig.label}</span>
                   </Badge>
                 </TooltipTrigger>
@@ -267,13 +267,10 @@ function AccountRow({
 
                     // Format timestamp to date
                     const lastPunishmentDate = new Date(leaverData.lastPunishmentIncurredTimeMillis).toLocaleDateString();
-                    const daysSinceLastPunishment = Math.floor(
-                      (Date.now() - leaverData.lastPunishmentIncurredTimeMillis) / (1000 * 60 * 60 * 24),
-                    );
 
                     return (
                       <div className="space-y-2">
-                        <div className="flex justify-between items-center pb-1 mb-1 border-b border-zinc-200 dark:border-zinc-700">
+                        <div className="flex justify-between items-center pb-1 mb-1 border-b border-zinc-200 dark:border-zinc-700 backdrop-blur-2xl">
                           <span className="font-medium">LeaverBuster Status</span>
                           <span className={`px-1.5 py-0.5 rounded text-[10px] ${severityConfig.badge}`}>
                             {severityConfig.label}
@@ -295,29 +292,16 @@ function AccountRow({
                           <span className="text-zinc-500 dark:text-zinc-400">Ranked Restricted:</span>
                           <span className="font-medium">
                             {leaverData.leaverPenalty?.rankRestricted
-                              ? `Yes (${leaverData.leaverPenalty.rankRestrictedGamesRemaining} games)`
+                              ? `Yes`
                               : 'No'}
                           </span>
-
-                          <span className="text-zinc-500 dark:text-zinc-400">Tainted Account:</span>
-                          <span className="font-medium">{leaverData.tainted ? 'Yes' : 'No'}</span>
 
                           <span className="text-zinc-500 dark:text-zinc-400">Last Penalty:</span>
                           <span className="font-medium">
                             {lastPunishmentDate}
-                            {' '}
-                            (
-                            {daysSinceLastPunishment}
-                            {' '}
-                            days ago)
+
                           </span>
 
-                          <span className="text-zinc-500 dark:text-zinc-400">Total Penalties:</span>
-                          <span className="font-medium">
-                            {leaverData.totalPunishedGamesPlayed || 0}
-                            {' '}
-                            games
-                          </span>
                         </div>
                       </div>
                     );
@@ -525,7 +509,15 @@ function AccountsTable({
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Restrictions</th>
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Current Rank</th>
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Previous Rank</th>
-            <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Winrate</th>
+            <th
+
+              className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400 flex"
+              onClick={() => requestSort('winrate')}
+            >
+              Winrate
+              <SortIndicator column="winrate" />
+
+            </th>
             <th
               className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400 cursor-pointer"
               onClick={() => requestSort('LCUchampions')}
@@ -718,7 +710,7 @@ function Accounts() {
               </div>
 
               {/* Champions and Skins */}
-              <div className="grid h-full flex-col gap-4">
+              <div className="flex h-full flex-col gap-4">
 
                 <div>
                   <Label className="text-sm font-medium mb-1.5 block">Specific Champions</Label>
@@ -731,7 +723,11 @@ function Accounts() {
                       avatar: champion.imageUrl,
                     }))}
                     value={selectedChampionIds}
-                    onChange={setSelectedChampionIds}
+                    onChange={(values) => {
+                      setFilters({ ...filters, selectedChampions: values });
+
+                      setSelectedChampionIds(values);
+                    }}
                     renderItem={option => (
                       <div className="flex items-center gap-2">
                         <Avatar className="h-6 w-6">
@@ -778,7 +774,10 @@ function Accounts() {
                       }
                     }}
                     isLoading={isDataDragonLoading}
-                    onChange={setSelectedSkinIds}
+                    onChange={(values) => {
+                      setSelectedSkinIds(values);
+                      setFilters({ ...filters, selectedSkins: values });
+                    }}
                     renderItem={option => (
                       <div className="flex items-center gap-2">
                         <Avatar className="h-6 w-6">
@@ -810,12 +809,14 @@ function Accounts() {
                       </div>
                     )}
                   />
-                  {/* LeaverBuster Filter */}
                 </div>
+              </div>
 
-                <div>
+              <div className="space-y-6 flex flex-col justify-between h-full">
+
+                <div className="grid">
                   <Label className="text-sm font-medium mb-1.5 block">Account Restrictions</Label>
-                  <div className="flex gap-2 mt-1.5">
+                  <div className="grid grid-cols-2 gap-4">
                     {[
                       { value: 'none', label: 'None', icon: Shield, className: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' },
                       { value: 'low', label: 'Low', icon: AlertCircle, className: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800' },
@@ -826,7 +827,7 @@ function Accounts() {
                       const isSelected = filters.leaverStatus?.includes(status.value);
 
                       return (
-                        <div className="w-full flex">
+                        <div key={status.value} className="w-full min-h-[40px] flex">
                           <Badge
 
                             key={status.value}
@@ -848,8 +849,8 @@ function Accounts() {
                               });
                             }}
                           >
-                            <Icon className="h-3.5 w-3.5 mr-1" />
-                            <span>{status.label}</span>
+                            <Icon className="h-6 w-6 mr-1" />
+                            <span className="">{status.label}</span>
                             {isSelected && (
                               <Check className="ml-1 h-3 w-3" />
                             )}
@@ -857,47 +858,6 @@ function Accounts() {
                         </div>
                       );
                     })}
-                  </div>
-                </div>
-              </div>
-
-              {/* Company and Status */}
-              <div className="space-y-6 flex flex-col justify-between h-full">
-                <div>
-                  <Label className="text-sm font-medium mb-1.5 block">Company</Label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {COMPANIES.map(company => (
-                      <div
-                        key={company}
-                        className={cn(
-                          'flex relative flex-col items-center justify-center py-4 rounded-lg border cursor-pointer transition-all',
-                          filters.company === company
-                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                            : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700',
-                        )}
-                        onClick={() =>
-                          setFilters({
-                            ...filters,
-                            company: filters.company === company ? '' : company,
-                          })}
-                      >
-                        <div className=" mb-2">
-                          <img
-                            src={getCompanyIcon(company)}
-                            alt={company}
-                            className="w-8 h-8 rounded-md"
-                          />
-                          {filters.company === company && (
-                            <div
-                              className="absolute top-2 right-2 bg-blue-500 rounded-full p-0.5"
-                            >
-                              <Check className="w-3 h-3 text-white" />
-                            </div>
-                          )}
-                        </div>
-                        <span className="text-xs font-medium text-center">{company}</span>
-                      </div>
-                    ))}
                   </div>
                 </div>
 

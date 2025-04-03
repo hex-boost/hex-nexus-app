@@ -49,6 +49,8 @@ export function getLeaverBusterInfo(account: AccountType) {
 
   return null; // No active penalties
 }
+type SortKey = keyof AccountType | 'coin_price' | 'winrate';
+
 export function useAccounts() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -65,7 +67,7 @@ export function useAccounts() {
   });
 
   const [sortConfig, setSortConfig] = useState<{
-    key: keyof AccountType | null;
+    key: keyof SortKey | null;
     direction: 'ascending' | 'descending' | null;
   }>({
     key: null,
@@ -109,14 +111,16 @@ export function useAccounts() {
 
   const { getRankColor, getEloIcon, getRegionIcon, getGameIcon } = useMapping();
 
-  const requestSort = (key: keyof AccountType) => {
+  const requestSort = (key: SortKey) => {
     let direction: 'ascending' | 'descending' | null = 'ascending';
 
     if (sortConfig.key === key) {
       if (sortConfig.direction === 'ascending') {
         direction = 'descending';
       } else if (sortConfig.direction === 'descending') {
-        direction = null;
+        // Reset to no sort on third click
+        setSortConfig({ key: null, direction: null });
+        return;
       }
     }
 
@@ -132,10 +136,65 @@ export function useAccounts() {
 
     if (sortConfig.key && sortConfig.direction) {
       sortableAccounts.sort((a, b) => {
-        if (a[sortConfig.key!]! < b[sortConfig.key!]!) {
+        // Special case for arrays (champions and skins)
+        if (sortConfig.key === 'LCUchampions' || sortConfig.key === 'LCUskins') {
+          const aLength = a[sortConfig.key]?.length || 0;
+          const bLength = b[sortConfig.key]?.length || 0;
+
+          return sortConfig.direction === 'ascending'
+            ? aLength - bLength
+            : bLength - aLength;
+        }
+
+        // Special case for price sorting
+        if (sortConfig.key === 'coin_price') {
+          // Sort by rank tier which determines price
+          const aRank = a.rankings.find(r => r.queueType === 'soloqueue' && r.type === 'current')?.elo?.toLowerCase() || 'unranked';
+          const bRank = b.rankings.find(r => r.queueType === 'soloqueue' && r.type === 'current')?.elo?.toLowerCase() || 'unranked';
+
+          // Map ranks to numeric values for comparison
+          const rankValues: Record<string, number> = {
+            challenger: 9,
+            grandmaster: 8,
+            master: 7,
+            diamond: 6,
+            platinum: 5,
+            gold: 4,
+            silver: 3,
+            bronze: 2,
+            iron: 1,
+            unranked: 0,
+          };
+
+          const aValue = rankValues[aRank] || 0;
+          const bValue = rankValues[bRank] || 0;
+
+          return sortConfig.direction === 'ascending'
+            ? aValue - bValue
+            : bValue - aValue;
+        }
+
+        // Special case for winrate sorting
+        if (sortConfig.key === 'winrate') {
+          const aRanking = a.rankings.find(r => r.queueType === 'soloqueue' && r.type === 'current');
+          const bRanking = b.rankings.find(r => r.queueType === 'soloqueue' && r.type === 'current');
+
+          const aTotalGames = (aRanking?.wins || 0) + (aRanking?.losses || 0);
+          const bTotalGames = (bRanking?.wins || 0) + (bRanking?.losses || 0);
+
+          const aWinRate = aTotalGames > 0 ? (aRanking?.wins || 0) / aTotalGames : 0;
+          const bWinRate = bTotalGames > 0 ? (bRanking?.wins || 0) / bTotalGames : 0;
+
+          return sortConfig.direction === 'ascending'
+            ? aWinRate - bWinRate
+            : bWinRate - aWinRate;
+        }
+
+        // Default comparison for other properties
+        if (a[sortConfig.key as keyof AccountType] < b[sortConfig.key as keyof AccountType]) {
           return sortConfig.direction === 'ascending' ? -1 : 1;
         }
-        if (a[sortConfig.key!]! > b[sortConfig.key!]!) {
+        if (a[sortConfig.key as keyof AccountType] > b[sortConfig.key as keyof AccountType]) {
           return sortConfig.direction === 'ascending' ? 1 : -1;
         }
         return 0;
@@ -184,16 +243,17 @@ export function useAccounts() {
           return false;
         }
 
+        // Use proper ranges for each severity level
+        // Updated filters with proper categorization
         if (leaverInfo.severity >= 3 && filters.leaverStatus.includes('high')) {
           return true;
         }
-        if (leaverInfo.severity >= 1 && filters.leaverStatus.includes('medium')) {
+        if (leaverInfo.severity >= 1 && leaverInfo.severity < 3 && filters.leaverStatus.includes('medium')) {
           return true;
         }
-        if (leaverInfo.severity < 1 && filters.leaverStatus.includes('low')) {
+        if (leaverInfo.severity === 0 && filters.leaverStatus.includes('low')) {
           return true;
         }
-
         return false;
       }
       return true;
@@ -215,8 +275,8 @@ export function useAccounts() {
     setSortConfig({ key: null, direction: null });
   };
 
-  const SortIndicator = ({ column }: { column: keyof AccountType | 'coin_price' }) => {
-    if (sortConfig.key !== column) {
+  const SortIndicator = ({ column }: { column: SortKey }) => {
+    if (sortConfig.key !== column || sortConfig.direction === null) {
       return <ArrowUpDown className="ml-1 h-4 w-4" />;
     }
 
