@@ -17,9 +17,9 @@ export type PricingPlan = {
   highlighted?: boolean;
 };
 export type SubscriptionRequest = {
-  priceID: string;
-  productID: string;
   subscriptionTier: string;
+  successUrl: string;
+  cancelUrl: string;
 };
 export type PricingProps = {
   isPending: boolean;

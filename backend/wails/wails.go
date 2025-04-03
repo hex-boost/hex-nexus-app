@@ -2,9 +2,11 @@ package wails
 
 import (
 	"embed"
+	"github.com/gen2brain/beeep"
 	"github.com/hex-boost/hex-nexus-app/backend/app"
 	"github.com/hex-boost/hex-nexus-app/backend/discord"
 	"github.com/hex-boost/hex-nexus-app/backend/league"
+	"github.com/hex-boost/hex-nexus-app/backend/protocol"
 	"github.com/hex-boost/hex-nexus-app/backend/repository"
 	"github.com/hex-boost/hex-nexus-app/backend/riot"
 	"github.com/hex-boost/hex-nexus-app/backend/updater"
@@ -12,14 +14,20 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
+	"go.uber.org/zap"
 	"log"
-	"time"
 )
 
-func Init() {
+func Init(protocol *protocol.Protocol) error {
 	if err := godotenv.Load(); err != nil {
 		log.Println("Warning: Error loading .env file:", err)
 	}
+	if err := protocol.Register(); err != nil {
+		log.Println("Warning: Failed to register custom protocol:", err)
+		return err
+	}
+	return nil
+
 }
 
 func SetupSystemTray(app *application.App, window *application.WebviewWindow, icon []byte) *application.SystemTray {
@@ -45,9 +53,15 @@ func SetupSystemTray(app *application.App, window *application.WebviewWindow, ic
 }
 
 func Run(assets embed.FS, icon []byte) {
-	Init()
+	err := beeep.Alert("Title", "Message body", "build/appicon16x16.png")
+	mainLogger := app.App().Log().Wails()
 	mainUpdater := updater.NewUpdater()
 	var mainWindow *application.WebviewWindow
+	appProtocol := protocol.New(app.App().Log().Protocol())
+	err = Init(appProtocol)
+	if err != nil {
+		panic(err)
+	}
 	utilsBind := utils.NewUtils()
 	lcuConn := league.NewLCUConnection(app.App().Log().League())
 	leagueService := league.NewLeagueService(app.App().Log().League())
@@ -67,15 +81,24 @@ func Run(assets embed.FS, icon []byte) {
 		SingleInstance: &application.SingleInstanceOptions{
 			UniqueID: "com.hexboost.nexus.app",
 			OnSecondInstanceLaunch: func(data application.SecondInstanceData) {
-				log.Printf("Second instance detected with args: %v", data.Args)
+				mainLogger.Info("Second instance detected ", zap.Any("args", data.Args))
+				// Check if this is a protocol launch
+				for _, arg := range data.Args {
+					if len(arg) > 8 && arg[:8] == "nexus://" {
+						mainLogger.Info("Protocol open detected")
+						err := appProtocol.Handle(arg)
+						if err != nil {
+							mainLogger.Error("Error handling protocol URL:", zap.Error(err))
+							break
+						}
+						break
+					}
+				}
 				if mainWindow != nil {
 					mainWindow.Restore()
 					mainWindow.Focus()
 				}
-			},
-			AdditionalData: map[string]string{
-				"appVersion": updater.Version,
-				"launchTime": time.Now().Format(time.RFC3339),
+
 			},
 		},
 		Services: []application.Service{
@@ -128,6 +151,7 @@ func Run(assets embed.FS, icon []byte) {
 	)
 	SetupSystemTray(app, mainWindow, icon)
 	clientMonitor.SetWindow(mainWindow)
+	appProtocol.SetWindow(mainWindow)
 	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(ctx *application.WindowEvent) {
 
 		clientMonitor.Start()
@@ -138,7 +162,7 @@ func Run(assets embed.FS, icon []byte) {
 
 	})
 
-	err := app.Run()
+	err = app.Run()
 	if err != nil {
 		log.Fatal(err)
 		return

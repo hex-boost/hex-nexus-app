@@ -60,8 +60,6 @@ function RouteComponent() {
       tier: 'Basic',
       description: 'Perfect for part-time boosters',
       price: 10,
-      productID: 'prod_S1fq7S9IZvkbpZ',
-      priceID: 'price_1R7cVHH5geFvBgszgYr9Jcbw',
       benefits: [
         {
           title: 'Instantly earns 3000 coins',
@@ -81,8 +79,6 @@ function RouteComponent() {
       tier: 'Premium',
       description: 'The ideal solution for serious boosters who accounts.',
       price: 20,
-      productID: 'prod_S1fqyKNDvKHwaf',
-      priceID: 'price_1R7cUzH5geFvBgszpO8iF39D',
       benefits: [
         {
           title: 'Instantly earns 10000 coins',
@@ -100,8 +96,6 @@ function RouteComponent() {
       tier: 'Professional',
       description: 'For full-time professional boosters',
       price: 30,
-      productID: 'prod_RvrOOPilyjlFDb',
-      priceID: 'price_1R1zfKH5geFvBgszzAPRt8o8',
       benefits: [
         {
           title: 'Unlimited coins & accounts',
@@ -135,17 +129,10 @@ function RouteComponent() {
     mutationKey: ['subscription'],
     mutationFn: async (tier: string) => {
       setPendingPlanTier(tier);
-
-      const selectedPlan = pricingPlans.find(plan => plan.tier === tier);
-
-      if (!selectedPlan?.priceID || !selectedPlan?.productID) {
-        throw new Error('Invalid plan selected or free plan');
-      }
-
       return await createSubscription({
-        priceID: selectedPlan.priceID,
-        productID: selectedPlan.productID,
         subscriptionTier: mapDisplayNameToApiTier(tier),
+        successUrl: 'nexus://',
+        cancelUrl: 'nexus://',
       });
     },
     onSuccess: async (data) => {

@@ -12,7 +12,6 @@ import (
 func (rc *RiotClient) IsRunning() bool {
 	_, err := rc.getProcess()
 	if err != nil {
-		rc.logger.Debug("Riot client not found")
 		return false
 	}
 

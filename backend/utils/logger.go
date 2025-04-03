@@ -41,6 +41,7 @@ func NewLogger(prefix string) *Logger {
 	// Create cores for both outputs with same level and encoder style
 	consoleCore := zapcore.NewCore(
 		consoleEncoder,
+
 		zapcore.AddSync(os.Stdout),
 		logLevel,
 	)

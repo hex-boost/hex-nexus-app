@@ -12,6 +12,7 @@ const (
 	LogPrefixWails    = "WLS"
 	LogPrefixWeb      = "WEB"
 	LogPrefixServices = "SEV"
+	LogPrefixProtocol = "PROTOCOL"
 )
 
 type log struct {
@@ -22,6 +23,7 @@ type log struct {
 	web      *utils.Logger
 	repo     *utils.Logger
 	services *utils.Logger
+	protocol *utils.Logger
 }
 
 func NewLogger() *log {
@@ -33,6 +35,7 @@ func NewLogger() *log {
 		wails:    utils.NewLogger(LogPrefixWails),
 		web:      utils.NewLogger(LogPrefixWeb),
 		services: utils.NewLogger(LogPrefixServices),
+		protocol: utils.NewLogger(LogPrefixProtocol),
 	}
 }
 
@@ -52,6 +55,10 @@ func (l *log) Riot() *utils.Logger {
 
 func (l *log) Wails() *utils.Logger {
 	return l.wails
+}
+
+func (l *log) Protocol() *utils.Logger {
+	return l.protocol
 }
 func (l *log) Web() *utils.Logger {
 	return l.web
