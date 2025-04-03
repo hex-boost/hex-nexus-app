@@ -363,8 +363,9 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                   <CardTitle>Rented Account</CardTitle>
                   <CardDescription>This account is currently rented by you</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className=" border-white/10  rounded-md ">
+                <Separator className="mb-4" />
+                <CardContent className="space-y-4 p-0">
+                  <div className=" border-white/10  rounded-md px-6">
                     <div className="flex justify-between text-sm">
                       <span className="text-zinc-600 dark:text-zinc-400 text-sm flex items-center gap-1">
                         Remaining time:
@@ -377,7 +378,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                     </div>
                   </div>
 
-                  <div className=" border-white/10 rounded-md ">
+                  <div className=" border-white/10 rounded-md px-6">
                     <div className="flex justify-between items-center ">
                       <span className="text-zinc-600 dark:text-zinc-400 flex items-center gap-1 text-sm">Refundable amount:</span>
                       <div
@@ -393,7 +394,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                     </div>
                   </div>
                   <Separator />
-                  <div>
+                  <div className="px-6 mb-6">
                     <div className="text-sm mb-2 text-zinc-600 dark:text-zinc-400">Quick extend options</div>
                     <div className="grid grid-cols-3 gap-2">
                       {price.timeMultipliers.map((_option, index) => (
