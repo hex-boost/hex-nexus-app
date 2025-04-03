@@ -1,7 +1,7 @@
 import type { AccountType } from '@/types/types.ts';
 import { Button } from '@/components/ui/button.tsx';
-import { useLeagueEvents } from '@/hooks/useLeagueEvents.tsx';
 import { useLeagueManager } from '@/hooks/useLeagueManager.tsx';
+import { LeagueAuthState } from '@/types/LeagueAuthState.ts';
 import { LeagueClientState } from '@/types/LeagueClientState.ts';
 import { LogIn } from 'lucide-react';
 
@@ -10,12 +10,31 @@ type RentedAccountButtonProps = {
 };
 
 export function RentedAccountButton({ account }: RentedAccountButtonProps) {
-  const { clientInfo } = useLeagueEvents();
-  const { isLaunchRiotClientPending, handleLaunchRiotClient, handleOpenCaptchaWebview } = useLeagueManager({ account });
+  const {
+    isLaunchRiotClientPending,
+    handleLaunchRiotClient,
+    handleOpenCaptchaWebview,
+    clientState,
+    authenticationState: authState,
+  } = useLeagueManager({ account });
 
+  // First check if we're in an auth flow regardless of client state
+  if (authState === LeagueAuthState.WAITING_CAPTCHA || authState === LeagueAuthState.WAITING_LOGIN) {
+    return (
+      <Button
+        disabled
+        loading
+        className="flex-1 bg-blue-600 w-full hover:bg-blue-700 text-white"
+      >
+        {authState === LeagueAuthState.WAITING_CAPTCHA
+          ? 'Waiting captcha to be solved'
+          : 'Authenticating...'}
+      </Button>
+    );
+  }
+
+  // Then handle client state
   const renderButton = () => {
-    const { clientState, authState } = clientInfo;
-
     switch (clientState) {
       case LeagueClientState.CLOSED:
         return (
@@ -39,31 +58,15 @@ export function RentedAccountButton({ account }: RentedAccountButtonProps) {
         );
 
       case LeagueClientState.LOGIN_READY:
+        // Always enable login button in LOGIN_READY state, regardless of auth state
         return (
           <Button
-            disabled={authState !== ''}
-            loading={authState !== ''}
-            className="flex-1 bg-blue-600 w-full hover:bg-blue-700 text-white"
+            variant="default"
+            className="flex-1  bg-blue-600 !w-full hover:bg-blue-700 text-white"
             onClick={() => handleOpenCaptchaWebview()}
           >
-            {authState === 'WAITING_CAPTCHA'
-              ? (
-                  <>Waiting captcha to be solved</>
-                )
-              : authState === 'WAITING_LOGIN'
-                ? (
-                    <>Authenticating...</>
-                  )
-                : authState === 'LOGIN_SUCCESS'
-                  ? (
-                      <>Login successfully</>
-                    )
-                  : (
-                      <>
-                        <LogIn className="mr-2 h-4 w-4" />
-                        Login to account
-                      </>
-                    )}
+            <LogIn className="mr-2 h-4 w-4" />
+            Login to account
           </Button>
         );
 
@@ -72,9 +75,21 @@ export function RentedAccountButton({ account }: RentedAccountButtonProps) {
           <Button
             disabled
             variant="ghost"
-            className="flex-1 w-full border text-white cursor-default"
+            className="flex-1 !w-full border text-white cursor-default"
           >
             Logged in
+          </Button>
+        );
+
+      case LeagueClientState.OPEN:
+        return (
+          <Button
+            loading
+            variant="ghost"
+            disabled
+            className="flex-1 !w-full cursor-none border"
+          >
+            Waiting client...
           </Button>
         );
 
@@ -84,7 +99,7 @@ export function RentedAccountButton({ account }: RentedAccountButtonProps) {
             loading
             variant="ghost"
             disabled
-            className="flex-1 w-full cursor-none border"
+            className="flex-1 !w-full cursor-none border"
           >
             Waiting client...
           </Button>
@@ -92,5 +107,9 @@ export function RentedAccountButton({ account }: RentedAccountButtonProps) {
     }
   };
 
-  return <>{renderButton()}</>;
+  return (
+    <div>
+      {renderButton()}
+    </div>
+  );
 }

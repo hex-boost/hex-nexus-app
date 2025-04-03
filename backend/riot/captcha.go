@@ -21,7 +21,7 @@ func (rc *RiotClient) startCaptchaServer() {
 	}
 
 	mux.HandleFunc("/index.html", func(w http.ResponseWriter, r *http.Request) {
-		
+
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Cache-Control", "no-cache")
 		w.Header().Set("Content-Type", "text/html")
@@ -133,7 +133,7 @@ func (rc *RiotClient) startCaptchaServer() {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
-	
+
 	go func() {
 		rc.logger.Info("Starting captcha server on http://127.0.0.1:6969")
 		if err := captchaServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -152,7 +152,7 @@ func (rc *RiotClient) GetWebView() (gowebview.WebView, error) {
 }
 
 func (rc *RiotClient) CloseWebview() {
-	
+
 }
 func (rc *RiotClient) handleCaptcha() error {
 	rc.logger.Info("Starting captcha handling")
@@ -173,14 +173,29 @@ func (rc *RiotClient) IsAuthStateValid() error {
 	}
 	var getCurrentAuthResult types.RiotIdentityResponse
 	result, err := rc.client.R().SetResult(&getCurrentAuthResult).Get("/rso-authenticator/v1/authentication")
+
 	if err != nil {
 		rc.logger.Error("Authentication failed", zap.Error(err))
 		return err
 	}
+
 	if result.IsError() {
 		rc.logger.Error("Authentication failed",
 			zap.String("message", string(result.Body())),
 			zap.Int("status_code", result.StatusCode()))
+
+		// Parse error response to check for CREDENTIALS_INVALID
+		var errorResponse types.ErrorResponse
+		if err := json.Unmarshal(result.Body(), &errorResponse); err == nil {
+			if errorResponse.ErrorCode == "CREDENTIALS_INVALID" {
+				rc.logger.Info("Detected invalid credentials, attempting to re-initialize client")
+				if err := rc.InitializeRestyClient(); err != nil {
+					return fmt.Errorf("failed to re-initialize client: %w", err)
+				}
+				return errors.New("client re-initialized after invalid credentials")
+			}
+		}
+
 		return fmt.Errorf("authentication failed with status code %d: %s",
 			result.StatusCode(), string(result.Body()))
 	}

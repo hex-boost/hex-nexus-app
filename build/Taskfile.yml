@@ -32,8 +32,7 @@ tasks:
       - task: install:frontend:deps
       - task: generate:bindings
     cmds:
-#      - npm run {{.BUILD_COMMAND}}
-      - npm run build
+      - npm run {{.BUILD_COMMAND}}
     env:
       NODE_ENV: production
       VITE_APP_VERSION: '{{.VERSION}}'

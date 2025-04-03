@@ -32,7 +32,7 @@ type RiotClient struct {
 
 func NewRiotClient(logger *utils.Logger) *RiotClient {
 	return &RiotClient{
-		client:           nil, 
+		client:           nil,
 		logger:           logger,
 		ctx:              context.Background(),
 		hcaptchaResponse: make(chan string),
@@ -42,53 +42,6 @@ func (rc *RiotClient) ResetRestyClient() {
 	rc.client = nil
 }
 
-func (rc *RiotClient) ForceCloseAllClients() error {
-	rc.logger.Info("Forcing close of all Riot clients")
-
-	riotProcesses := []string{
-		"RiotClientCrashHandler.exe",
-		"RiotClientServices.exe",
-		"RiotClientUx.exe",
-		"RiotClientUxRender.exe",
-		"Riot Client.exe",
-		"LeagueCrashHandler.exe",
-		"LeagueCrashHandler64.exe",
-		"LeagueClient.exe",
-		"LeagueClientUx.exe",
-		"LeagueClientUxRender.exe",
-		"VALORANT.exe",
-		"VALORANT-Win64-Shipping.exe",
-	}
-
-	processes, err := ps.Processes()
-	if err != nil {
-		rc.logger.Error("Failed to list processes", zap.Error(err))
-		return fmt.Errorf("failed to list processes: %w", err)
-	}
-
-	for _, process := range processes {
-		processName := process.Executable()
-		for _, riotProcess := range riotProcesses {
-			if processName == riotProcess {
-				cmd := exec.Command("taskkill", "/F", "/PID", fmt.Sprintf("%d", process.Pid()))
-				cmd = cmdUtils.HideConsoleWindow(cmd)
-				if err := cmd.Run(); err != nil {
-					rc.logger.Error("Failed to kill process",
-						zap.String("process", processName),
-						zap.Int("pid", process.Pid()),
-						zap.Error(err))
-				} else {
-					rc.logger.Info("Successfully killed process",
-						zap.String("process", processName),
-						zap.Int("pid", process.Pid()))
-				}
-				break
-			}
-		}
-	}
-	rc.ResetRestyClient()
-	return nil
-}
 func (rc *RiotClient) getProcess() (pid int, err error) {
 	processes, err := ps.Processes()
 	if err != nil {
@@ -100,7 +53,7 @@ func (rc *RiotClient) getProcess() (pid int, err error) {
 		"Riot Client",
 		"Riot Client.exe",
 	}
-	
+
 	for _, process := range processes {
 		exe := process.Executable()
 		for _, name := range riotProcessNames {
@@ -126,7 +79,7 @@ func (rc *RiotClient) getCredentials(riotClientPid int) (port string, authToken 
 	if len(cmdLineParts) > 1 {
 		cmdLine = strings.TrimSpace(cmdLineParts[1])
 	}
-	
+
 	portRegex := regexp.MustCompile(`--app-port=(\d+)`)
 	authRegex := regexp.MustCompile(`--remoting-auth-token=([\w-]+)`)
 
@@ -248,7 +201,7 @@ func (rc *RiotClient) InitializeRestyClient() error {
 	return nil
 }
 func (rc *RiotClient) InitializeCaptchaHandling() error {
-	
+
 	if err := rc.InitializeRestyClient(); err != nil {
 		return err
 	}
@@ -306,3 +259,4 @@ func (rc *RiotClient) getAuthorization() (map[string]interface{}, error) {
 	return authResult, nil
 }
 
+// IsLeagueClientRunning checks if the League client is currently running

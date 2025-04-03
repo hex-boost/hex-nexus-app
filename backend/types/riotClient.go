@@ -30,10 +30,9 @@ type RiotIdentityStartPayload struct {
 	Xbox               interface{} `json:"xbox"`
 }
 type ErrorResponse struct {
-	ErrorCode             string                 `json:"errorCode"`
-	HTTPStatus            int                    `json:"httpStatus"`
-	ImplementationDetails map[string]interface{} `json:"implementationDetails"`
-	Message               string                 `json:"message"`
+	ErrorCode  string `json:"errorCode"`
+	HTTPStatus int    `json:"httpStatus"`
+	Message    string `json:"message"`
 }
 type RiotIdentity struct {
 	Captcha  string      `json:"captcha"`
@@ -43,7 +42,6 @@ type RiotIdentity struct {
 }
 type LoginTokenResponse struct {
 	Type string `json:"type"`
-	
 }
 type LoginTokenRequest struct {
 	AuthenticationType string `json:"authentication_type"`

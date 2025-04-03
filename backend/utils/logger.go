@@ -8,123 +8,61 @@ import (
 )
 
 type Logger struct {
-	*zap.SugaredLogger
+	*zap.Logger
 }
 
 func NewLogger(prefix string) *Logger {
-	
-	encoderConfig := zap.NewProductionEncoderConfig()
-	encoderConfig.TimeKey = "time"
-	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
-
-	consoleCore := zapcore.NewCore(
-		zapcore.NewConsoleEncoder(encoderConfig),
-		zapcore.AddSync(os.Stdout),
-		zap.NewAtomicLevelAt(zap.InfoLevel),
-	)
-
+	// Create logs directory
 	logsDir := "logs"
 	if err := os.MkdirAll(logsDir, os.ModePerm); err != nil {
 		panic(err)
 	}
 
-	infoLogPath := filepath.Join(logsDir, "app.log")
-	debugLogPath := filepath.Join(logsDir, "debug.log")
+	// Configure encoder for both console and file
+	encoderConfig := zap.NewProductionEncoderConfig()
+	encoderConfig.TimeKey = "time"
+	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
 
-	if _, err := os.Stat(infoLogPath); err == nil {
-		os.Remove(infoLogPath) 
-	}
-	if _, err := os.Stat(debugLogPath); err == nil {
-		os.Remove(debugLogPath) 
-	}
+	// Use the same encoder for console and files
+	consoleEncoder := zapcore.NewConsoleEncoder(encoderConfig)
+	fileEncoder := zapcore.NewConsoleEncoder(encoderConfig) // Same as console for consistency
 
-	infoFile, err := os.OpenFile(infoLogPath, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
+	// Log level - DebugLevel to show all logs
+	logLevel := zap.NewAtomicLevelAt(zapcore.DebugLevel)
+
+	// Open log file - using append mode instead of truncating
+	logFilePath := filepath.Join(logsDir, "app.log")
+	logFile, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		panic(err)
 	}
-	debugFile, err := os.OpenFile(debugLogPath, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		panic(err)
-	}
 
-	infoCore := zapcore.NewCore(
-		zapcore.NewJSONEncoder(encoderConfig),
-		zapcore.AddSync(infoFile),
-		zap.NewAtomicLevelAt(zap.InfoLevel),
+	// Create cores for both outputs with same level and encoder style
+	consoleCore := zapcore.NewCore(
+		consoleEncoder,
+		zapcore.AddSync(os.Stdout),
+		logLevel,
 	)
 
-	debugCore := zapcore.NewCore(
-		zapcore.NewJSONEncoder(encoderConfig),
-		zapcore.AddSync(debugFile),
-		zap.NewAtomicLevelAt(zap.DebugLevel),
+	fileCore := zapcore.NewCore(
+		fileEncoder,
+		zapcore.AddSync(logFile),
+		logLevel,
 	)
 
-	core := zapcore.NewTee(consoleCore, infoCore, debugCore)
+	// Combine both cores
+	core := zapcore.NewTee(consoleCore, fileCore)
 
+	// Create the logger
 	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
 
+	// Add prefix if provided
 	if prefix != "" {
 		logger = logger.With(zap.String("module", prefix))
 	}
 
 	return &Logger{
-		SugaredLogger: logger.Sugar(),
-	}
-}
-
-func NewFileLogger(prefix string) *Logger {
-	logsDir := "logs"
-	if err := os.MkdirAll(logsDir, os.ModePerm); err != nil {
-		panic(err)
-	}
-
-	logPath := filepath.Join(logsDir, "app")
-
-	file, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		panic(err)
-	}
-	
-	encoderConfig := zap.NewProductionEncoderConfig()
-	encoderConfig.TimeKey = "time"
-	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
-
-	core := zapcore.NewCore(
-		zapcore.NewJSONEncoder(encoderConfig), 
-		zapcore.AddSync(file),
-		zap.NewAtomicLevelAt(zap.InfoLevel),
-	)
-
-	logger := zap.New(
-		core,
-		zap.AddCaller(),
-		zap.AddCallerSkip(1),
-		zap.AddStacktrace(zapcore.ErrorLevel),
-	)
-
-	if prefix != "" {
-		logger = logger.With(zap.String("module", prefix))
-	}
-
-	return &Logger{
-		SugaredLogger: logger.Sugar(),
-	}
-}
-
-func (l *Logger) WithField(key string, value interface{}) *Logger {
-	return &Logger{
-		SugaredLogger: l.SugaredLogger.With(key, value),
-	}
-}
-
-func (l *Logger) WithFields(fields map[string]interface{}) *Logger {
-	args := make([]interface{}, 0, len(fields)*2)
-	for k, v := range fields {
-		args = append(args, k, v)
-	}
-	return &Logger{
-		SugaredLogger: l.SugaredLogger.With(args...),
+		logger,
 	}
 }

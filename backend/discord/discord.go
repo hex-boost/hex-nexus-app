@@ -13,6 +13,7 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/updater"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/pkg/browser"
+	"go.uber.org/zap"
 	"html/template"
 	"mime/multipart"
 	"net/http"
@@ -51,7 +52,7 @@ func (d *Discord) renderTemplate(w http.ResponseWriter, tmplName string) error {
 	tmplPath := "templates/" + tmplName
 	tmpl, err := template.ParseFS(backend.TemplatesFS, tmplPath)
 	if err != nil {
-		d.logger.Error("Error parsing template", "template", tmplPath, "error", err)
+		d.logger.Sugar().Infow("error parsing template", "template", tmplPath, "error", err)
 		return err
 	}
 	return tmpl.Execute(w, nil)
@@ -60,16 +61,16 @@ func (d *Discord) renderTemplate(w http.ResponseWriter, tmplName string) error {
 func (d *Discord) renderErrorTemplate(w http.ResponseWriter, err error) {
 	w.WriteHeader(http.StatusBadRequest)
 	if err := d.renderTemplate(w, "discord_auth_error.html"); err != nil {
-		d.logger.Error("Error rendering error template", err)
+		d.logger.Error("Error rendering error template", zap.Error(err))
 	}
 	return
 }
 
 func (d *Discord) StartOAuth() (map[string]interface{}, error) {
 	strapiAuthURL := fmt.Sprintf("%s/api/connect/discord", d.config.backendURL)
-	d.logger.Info("Starting OAuth authentication with Discord", "url", strapiAuthURL)
+	d.logger.Sugar().Infow("Starting OAuth authentication with Discord", "url", strapiAuthURL)
 	if err := browser.OpenURL(strapiAuthURL); err != nil {
-		d.logger.Error("Error opening browser for authentication", "error", err)
+		d.logger.Error("Error opening browser for authentication", zap.Error(err))
 		return nil, fmt.Errorf("error opening browser: %v", err)
 	}
 	resultChan := make(chan map[string]interface{}, 1)
@@ -86,7 +87,7 @@ func (d *Discord) StartOAuth() (map[string]interface{}, error) {
 			d.renderErrorTemplate(w, errMsg)
 			errChan <- errMsg
 		}
-		d.logger.Info("Authorization code received", "code_length", len(code))
+		d.logger.Info("Authorization code received", zap.Int("code_length", len(code)))
 		jwt, userData, err := d.authenticateWithStrapiAndProcessAvatar(code)
 		if err != nil {
 			errMsg := errors.New("error in Strapi authentication")
@@ -95,7 +96,7 @@ func (d *Discord) StartOAuth() (map[string]interface{}, error) {
 			return
 		}
 		if err := d.renderTemplate(w, "discord_auth_success.html"); err != nil {
-			d.logger.Error("Error rendering success template", "error", err)
+			d.logger.Error("Error rendering success template", zap.Error(err))
 			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Error rendering success page"))
@@ -112,10 +113,10 @@ func (d *Discord) StartOAuth() (map[string]interface{}, error) {
 			srv.Shutdown(context.Background())
 		}()
 	})
-	d.logger.Info("Starting HTTP server for OAuth callback", "port", discordCallbackPort)
+	d.logger.Info("Starting HTTP server for OAuth callback", zap.Int("port", discordCallbackPort))
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			d.logger.Error("HTTP server error", "error", err)
+			d.logger.Error("HTTP server error", zap.Error(err))
 			errChan <- fmt.Errorf("HTTP server error: %v", err)
 		}
 	}()
@@ -124,10 +125,10 @@ func (d *Discord) StartOAuth() (map[string]interface{}, error) {
 		d.logger.Info("Authentication completed successfully")
 		return result, nil
 	case err := <-errChan:
-		d.logger.Error("Authentication failed", "error", err)
+		d.logger.Error("Authentication failed", zap.Error(err))
 		return nil, err
 	case <-time.After(authWaitTimeout):
-		d.logger.Warn("Authentication timeout exceeded", "timeout", authWaitTimeout)
+		d.logger.Warn("Authentication timeout exceeded", zap.Duration("timeout", authWaitTimeout))
 		srv.Shutdown(context.Background())
 		return nil, fmt.Errorf("authentication timeout exceeded")
 	}
@@ -139,24 +140,24 @@ func (d *Discord) fetchDiscordUserInfo(accessToken string) (*types.DiscordUser, 
 		SetHeader("Authorization", "Bearer "+accessToken).
 		Get(discordApiBaseURL + "/users/@me")
 	if err != nil {
-		d.logger.Error("Failed to fetch Discord user information", "error", err)
+		d.logger.Error("Failed to fetch Discord user information", zap.Error(err))
 		return nil, fmt.Errorf("failed to fetch user information: %v", err)
 	}
 	if resp.StatusCode() != 200 {
-		d.logger.Error("Discord API returned error", "status", resp.StatusCode(), "body", string(resp.Body()))
+		d.logger.Error("Discord API returned error", zap.Int("status", resp.StatusCode()), zap.String("body", string(resp.Body())))
 		return nil, fmt.Errorf("failed to fetch Discord user information: status %d", resp.StatusCode())
 	}
 	var user types.DiscordUser
 	if err := json.Unmarshal(resp.Body(), &user); err != nil {
-		d.logger.Error("Error decoding Discord API response", "error", err)
+		d.logger.Error("Error decoding Discord API response", zap.Error(err))
 		return nil, fmt.Errorf("failed to parse response: %v", err)
 	}
-	d.logger.Info("Discord user information obtained successfully", "user_id", user.ID, "username", user.Username)
+	d.logger.Info("Discord user information obtained successfully", zap.String("user_id", user.ID), zap.String("username", user.Username))
 	return &user, nil
 }
 
 func (d *Discord) authenticateWithStrapiAndProcessAvatar(code string) (string, interface{}, error) {
-	d.logger.Info("Authenticating with Strapi", "backend_url", d.config.backendURL)
+	d.logger.Info("Authenticating with Strapi", zap.String("backend_url", d.config.backendURL))
 	var authResult struct {
 		JWT  string     `json:"jwt"`
 		User types.User `json:"user"`
@@ -167,58 +168,58 @@ func (d *Discord) authenticateWithStrapiAndProcessAvatar(code string) (string, i
 		SetHeader("hwid", utils.NewUtils().GetHWID()).
 		Get(authURL)
 	if err != nil {
-		d.logger.Error("Error in Strapi authentication", "error", err)
+		d.logger.Error("Error in Strapi authentication", zap.Error(err))
 		return "", nil, fmt.Errorf("authentication error: %v", err)
 	}
 	if resp.IsError() {
-		d.logger.Error("error in Strapi authentication", "status", resp.StatusCode(), "response", string(resp.Body()))
+		d.logger.Error("error in Strapi authentication", zap.Int("status", resp.StatusCode()), zap.String("response", string(resp.Body())))
 		return "", nil, fmt.Errorf("authentication error: %d - %s", resp.StatusCode(), string(resp.Body()))
 	}
-	d.logger.Info("Strapi authentication successful", "user_id", authResult.User.Id)
+	d.logger.Info("Strapi authentication successful", zap.Int("user_id", authResult.User.Id))
 	if err := d.uploadDiscordAvatar(code, authResult.JWT, authResult.User.Id); err != nil {
-		d.logger.Warn("Error processing avatar", "error", err, "user_id", authResult.User.Id)
+		d.logger.Warn("Error processing avatar", zap.Error(err), zap.Int("user_id", authResult.User.Id))
 	} else {
-		d.logger.Info("Avatar processed successfully", "user_id", authResult.User.Id)
+		d.logger.Info("Avatar processed successfully", zap.Int("user_id", authResult.User.Id))
 	}
 	userMeURL := fmt.Sprintf("%s/api/users/me", d.config.backendURL)
 	userResp, err := d.config.client.R().
 		SetHeader("Authorization", "Bearer "+authResult.JWT).
 		Get(userMeURL)
 	if err != nil {
-		d.logger.Error("Error fetching user data", "error", err)
+		d.logger.Error("Error fetching user data", zap.Error(err))
 		return authResult.JWT, &authResult.User, nil
 	}
 	var userData map[string]interface{}
 	if err := json.Unmarshal(userResp.Body(), &userData); err != nil {
-		d.logger.Error("Error decoding user response", "error", err)
+		d.logger.Error("Error decoding user response", zap.Error(err))
 		return authResult.JWT, &authResult.User, nil
 	}
 	userId, _ := userData["id"].(float64)
 	username, _ := userData["username"].(string)
-	d.logger.Info("User data fetched successfully after avatar upload", "user_id", userId, "username", username)
+	d.logger.Info("User data fetched successfully after avatar upload", zap.Float64("user_id", userId), zap.String("username", username))
 	return authResult.JWT, &userData, nil
 }
 
 func (d *Discord) uploadDiscordAvatar(accessToken string, userJwt string, userId int) error {
-	d.logger.Debug("Starting Discord avatar upload process", "user_id", userId)
+	d.logger.Debug("Starting Discord avatar upload process", zap.Int("user_id", userId))
 	discordUser, err := d.fetchDiscordUserInfo(accessToken)
 	if err != nil {
 		return err
 	}
 	if discordUser.Avatar == "" {
-		d.logger.Info("User does not have a Discord avatar", "user_id", userId)
+		d.logger.Info("User does not have a Discord avatar", zap.Int("user_id", userId))
 		return fmt.Errorf("user does not have a Discord avatar")
 	}
 	avatarUrl := fmt.Sprintf("https://cdn.discordapp.com/avatars/%s/%s.png", discordUser.ID, discordUser.Avatar)
-	d.logger.Debug("Avatar URL", "url", avatarUrl)
+	d.logger.Debug("Avatar URL", zap.String("url", avatarUrl))
 	d.logger.Debug("Downloading Discord avatar")
 	imgResp, err := d.config.client.R().Get(avatarUrl)
 	if err != nil {
-		d.logger.Error("Error downloading avatar", "error", err)
+		d.logger.Error("Error downloading avatar", zap.Error(err))
 		return fmt.Errorf("error downloading avatar: %v", err)
 	}
 	if imgResp.IsError() {
-		d.logger.Error("Failed to get image", "status", imgResp.StatusCode())
+		d.logger.Error("Failed to get image", zap.Int("status", imgResp.StatusCode()))
 		return fmt.Errorf("failed to get image: %d", imgResp.StatusCode())
 	}
 	contentType := imgResp.Header().Get("Content-Type")
@@ -229,36 +230,36 @@ func (d *Discord) uploadDiscordAvatar(accessToken string, userJwt string, userId
 	if extension == "" {
 		extension = "png"
 	}
-	d.logger.Debug("Avatar content type", "content_type", contentType, "extension", extension)
+	d.logger.Debug("Avatar content type", zap.String("content_type", contentType), zap.String("extension", extension))
 	var requestBody bytes.Buffer
 	multipartWriter := multipart.NewWriter(&requestBody)
 	part, err := multipartWriter.CreateFormFile("files", fmt.Sprintf("avatar-%s.%s", discordUser.ID, extension))
 	if err != nil {
-		d.logger.Error("Error creating multipart", "error", err)
+		d.logger.Error("Error creating multipart", zap.Error(err))
 		return fmt.Errorf("error creating multipart: %v", err)
 	}
 	if _, err = part.Write(imgResp.Body()); err != nil {
-		d.logger.Error("Error writing image data", "error", err)
+		d.logger.Error("Error writing image data", zap.Error(err))
 		return fmt.Errorf("error writing image data: %v", err)
 	}
 	multipartWriter.Close()
-	d.logger.Debug("Sending image to Strapi", "endpoint", "/api/upload")
+	d.logger.Debug("Sending image to Strapi", zap.String("endpoint", "/api/upload"))
 	uploadResp, err := d.config.client.R().
 		SetHeader("Content-Type", multipartWriter.FormDataContentType()).
 		SetHeader("Authorization", "Bearer "+userJwt).
 		SetBody(requestBody.Bytes()).
 		Post(d.config.backendURL + "/api/upload")
 	if err != nil {
-		d.logger.Error("Error sending upload request", "error", err)
+		d.logger.Error("Error sending upload request", zap.Error(err))
 		return fmt.Errorf("error sending upload request: %v", err)
 	}
 	if uploadResp.IsError() {
-		d.logger.Error("Upload failed", "status", uploadResp.StatusCode(), "response", string(uploadResp.Body()))
+		d.logger.Error("Upload failed", zap.Int("status", uploadResp.StatusCode()), zap.String("response", string(uploadResp.Body())))
 		return fmt.Errorf("upload failed: %d - %s", uploadResp.StatusCode(), string(uploadResp.Body()))
 	}
 	var uploadResult []map[string]interface{}
 	if err := json.Unmarshal(uploadResp.Body(), &uploadResult); err != nil {
-		d.logger.Error("Error decoding upload response", "error", err)
+		d.logger.Error("Error decoding upload response", zap.Error(err))
 		return fmt.Errorf("error decoding upload response: %v", err)
 	}
 	if len(uploadResult) == 0 {
@@ -270,27 +271,27 @@ func (d *Discord) uploadDiscordAvatar(accessToken string, userJwt string, userId
 		d.logger.Error("Avatar ID not found in response")
 		return fmt.Errorf("avatar ID not found in response")
 	}
-	d.logger.Debug("Avatar uploaded successfully", "avatar_id", avatarId)
+	d.logger.Debug("Avatar uploaded successfully", zap.Float64("avatar_id", avatarId))
 	updateData := map[string]interface{}{
 		"avatar": avatarId,
 	}
 	updateURL := fmt.Sprintf("%s/api/users/%d", d.config.backendURL, userId)
-	d.logger.Debug("Updating user with new avatar", "url", updateURL)
+	d.logger.Debug("Updating user with new avatar", zap.String("url", updateURL))
 	updateResp, err := d.config.client.R().
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Authorization", "Bearer "+userJwt).
 		SetBody(updateData).
 		Put(updateURL)
 	if err != nil {
-		d.logger.Error("Error sending update request", "error", err)
+		d.logger.Error("Error sending update request", zap.Error(err))
 		return fmt.Errorf("error sending update request: %v", err)
 	}
 	if updateResp.IsError() {
-		d.logger.Error("Failed to update user", "status", updateResp.StatusCode(), "response", string(updateResp.Body()))
+		d.logger.Error("Failed to update user", zap.Int("status", updateResp.StatusCode()), zap.String("response", string(updateResp.Body())))
 		return fmt.Errorf("failed to update user: %d - %s", updateResp.StatusCode(), string(updateResp.Body()))
 	}
 
-	d.logger.Info("Avatar updated successfully", "user_id", userId, "avatar_id", avatarId)
+	d.logger.Info("Avatar updated successfully", zap.Int("user_id", userId), zap.Float64("avatar_id", avatarId))
 	return nil
 }
 
@@ -301,11 +302,11 @@ func (d *Discord) handleDiscordCallback(callback func(token string, err error)) 
 		Handler: router,
 	}
 
-	d.logger.Info("Setting up server for Discord callback", "port", discordCallbackPort)
+	d.logger.Info("Setting up server for Discord callback", zap.Int("port", discordCallbackPort))
 
 	router.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {
 		code := r.URL.Query().Get("access_token")
-		d.logger.Debug("Callback received with token", "token_length", len(code))
+		d.logger.Debug("Callback received with token", zap.Int("token_length", len(code)))
 
 		authURL := fmt.Sprintf("%s/api/auth/discord/callback?access_token=%s", d.config.backendURL, code)
 		resp, err := d.config.client.R().Get(authURL)
@@ -317,17 +318,17 @@ func (d *Discord) handleDiscordCallback(callback func(token string, err error)) 
 			}
 			if jsonErr := json.Unmarshal(resp.Body(), &result); jsonErr == nil {
 				token = result.JWT
-				d.logger.Info("Authentication successful", "token_length", len(token))
+				d.logger.Info("Authentication successful", zap.Int("token_length", len(token)))
 			} else {
 				err = jsonErr
-				d.logger.Error("Error decoding JWT response", "error", jsonErr)
+				d.logger.Error("Error decoding JWT response", zap.Error(jsonErr))
 			}
 		} else {
-			d.logger.Error("Authentication error", "error", err)
+			d.logger.Error("Authentication error", zap.Error(err))
 		}
 
 		if err := d.renderTemplate(w, "discord_auth_success.html"); err != nil {
-			d.logger.Error("Error rendering success template", "error", err)
+			d.logger.Error("Error rendering success template", zap.Error(err))
 		}
 
 		go func() {
@@ -341,7 +342,7 @@ func (d *Discord) handleDiscordCallback(callback func(token string, err error)) 
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			d.logger.Error("HTTP server error", "error", err)
+			d.logger.Error("HTTP server error", zap.Error(err))
 		}
 	}()
 }

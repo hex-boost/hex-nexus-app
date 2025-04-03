@@ -1,5 +1,9 @@
+// frontend/src/hooks/useLeagueManager.tsx
 import type { AccountType } from '@/types/types';
-import { useLeagueEvents } from '@/hooks/useLeagueEvents';
+import { useLeagueState } from '@/hooks/useLeagueState.tsx';
+import { logger } from '@/lib/logger';
+import { LeagueAuthState } from '@/types/LeagueAuthState';
+import { ClientMonitor } from '@league';
 import { RiotClient } from '@riot';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -10,78 +14,122 @@ export function useLeagueManager({
 }: {
   account: AccountType;
 }) {
-  const { clientInfo, updateAuthState } = useLeagueEvents();
+  const { state } = useLeagueState();
+  const logContext = `useLeagueManager:${account.id}`;
 
-  const { mutate: handleOpenCaptchaWebview } = useMutation<any, {}>({
+  logger.info(logContext, 'Hook initialized', {
+    accountId: account.id,
+    username: account.username,
+    currentState: state,
+  });
+
+  const { mutate: handleOpenCaptchaWebview } = useMutation<any, Error>({
     mutationKey: ['account', 'solveCaptcha', account.id],
     mutationFn: async () => {
-      updateAuthState('WAITING_CAPTCHA');
-      await RiotClient.InitializeCaptchaHandling();
+      logger.info(logContext, 'Starting captcha handling flow', { username: account.username });
+
+      // Backend now manages the auth state
+      await ClientMonitor.HandleCaptcha(account.username, account.password);
+
+      logger.info(logContext, 'Opening captcha web view');
       await RiotClient.GetWebView();
 
+      logger.info(logContext, 'Waiting for captcha response (timeout: 120s)');
+
       const captchaResponse = await RiotClient.WaitAndGetCaptchaResponse(Duration.Second * 120);
-      updateAuthState('WAITING_LOGIN');
-      await RiotClient.LoginWithCaptcha(account.username, account.password, captchaResponse);
+      logger.info(logContext, 'Captcha response received', { responseLength: captchaResponse?.length || 0 });
+
+      // Backend now handles login and state updates
+      await ClientMonitor.HandleLogin(account.username, account.password, captchaResponse);
+
+      logger.info(logContext, 'Waiting for user info (timeout: 20s)');
       await RiotClient.WaitUntilUserinfoIsReady(Duration.Second * 20);
+      logger.info(logContext, 'User info ready, login process completed');
     },
     onSuccess: () => {
-      updateAuthState('LOGIN_SUCCESS');
+      logger.info(logContext, 'Login with captcha successful');
       toast.success('Autenticado com sucesso');
     },
-    onError: (error: string) => {
-      updateAuthState('', error as string);
+    onError: (error) => {
+      const errorMessage = error.message || String(error);
+      logger.error(logContext, 'Login with captcha failed', { error: errorMessage });
 
-      if (error === 'captcha_not_allowed') {
+      if (errorMessage === 'captcha_not_allowed') {
+        logger.warn(logContext, 'Captcha expired or rejected');
         toast.error('O captcha expirou ou foi rejeitado', {
           description: 'É necessário resolver novamente o captcha para continuar.',
           action: {
             label: 'Tentar novamente',
-            onClick: () => handleOpenCaptchaWebview(),
+            onClick: () => {
+              logger.info(logContext, 'User requested to retry captcha flow');
+              handleOpenCaptchaWebview();
+            },
           },
           duration: 10000,
         });
       } else {
+        logger.error(logContext, 'Authentication error', { error: errorMessage });
         toast.error('Erro na autenticação', {
-          description: () => <span>{error}</span>,
+          description: () => <span>{errorMessage}</span>,
           action: {
             label: 'Tentar novamente',
-            onClick: () => handleOpenCaptchaWebview(),
+            onClick: () => {
+              logger.info(logContext, 'User requested to retry authentication');
+              handleOpenCaptchaWebview();
+            },
           },
         });
       }
-
-      console.error('erro na autenticação', error);
     },
   });
 
   const { mutate: handleLaunchRiotClient, isPending: isLaunchRiotClientPending } = useMutation({
     mutationKey: ['account', 'login', account.id],
     mutationFn: async () => {
-      updateAuthState('');
-      await RiotClient.Launch();
+      logger.info(logContext, 'Launching Riot Client', { accountId: account.id });
+
+      // Backend now controls state
+      await ClientMonitor.LaunchClient();
+
+      logger.info(logContext, 'Waiting for Riot Client to start running (timeout: 10s)');
       await RiotClient.WaitUntilIsRunning(Duration.Second * 10);
+
+      logger.info(logContext, 'Waiting for authentication to be ready (timeout: 20s)');
       await RiotClient.WaitUntilAuthenticationIsReady(Duration.Second * 20);
+
+      // Force an immediate state check to update the UI
+      await ClientMonitor.GetCurrentState();
+
+      logger.info(logContext, 'Riot Client successfully launched and ready');
     },
     onSuccess: () => {
+      logger.info(logContext, 'Riot Client launch completed successfully');
       toast.success('Riot Client launched successfully');
     },
-    onError: () => {
-      updateAuthState('');
+    onError: (error) => {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error(logContext, 'Failed to launch Riot Client', { error: errorMessage });
+
       toast.error('Ocorreu um erro ao iniciar o Riot Client', {
         description: 'Pode existir outro cliente aberto impedindo a inicialização.',
         action: {
           label: 'Forçar fechamento',
           onClick: async () => {
             try {
+              logger.info(logContext, 'User requested to force close all Riot clients');
               await RiotClient.ForceCloseAllClients();
+              logger.info(logContext, 'Successfully closed all Riot clients');
+
               toast.success('Todos os clientes Riot foram fechados', {
                 description: 'Tente iniciar o cliente novamente agora.',
               });
             } catch (error) {
+              const closeError = error instanceof Error ? error.message : String(error);
+              logger.error(logContext, 'Failed to force close Riot clients', { error: closeError });
+
               toast.error('Erro ao tentar fechar os clientes', {
                 description: 'Tente fechá-los manualmente.',
               });
-              console.error(error);
             }
           },
         },
@@ -93,6 +141,8 @@ export function useLeagueManager({
     isLaunchRiotClientPending,
     handleLaunchRiotClient,
     handleOpenCaptchaWebview,
-    authenticationState: clientInfo.authState,
+    authenticationState: state?.authState || LeagueAuthState.NONE,
+    clientState: state?.clientState || 'CLOSED',
+    errorMessage: state?.errorMessage,
   };
 }

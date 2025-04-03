@@ -2,8 +2,8 @@ import type { Price } from '@/types/price.ts';
 import type { AccountType } from '@/types/types.ts';
 import { ChampionsSkinsTab } from '@/components/ChampionsSkinsTab.tsx';
 import { CoinIcon } from '@/components/coin-icon.tsx';
-import { RentedAccountButton } from '@/components/RentedAccountAction.tsx';
 
+import { RentedAccountButton } from '@/components/RentedAccountAction.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,7 +22,6 @@ import { useAccountActions } from '@/hooks/useAccountActions.ts';
 import { useAccountFilters } from '@/hooks/useAccountFilters.ts';
 import { getLeaverBusterInfo } from '@/hooks/useAccounts.tsx';
 import { useDateTime } from '@/hooks/useDateTime.ts';
-import { LeagueClientProvider } from '@/hooks/useLeagueEvents.tsx';
 import { strapiClient } from '@/lib/strapi.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
 import { cn } from '@/lib/utils.ts';
@@ -99,18 +98,18 @@ function LeaverBusterDisplay({ account, compact = false }: {
   );
 }
 export default function AccountDetails({ account, price, onAccountChange }: {
-  onAccountChange: () => void;
+  onAccountChange: () => Promise<void>;
   price: Price;
   account: AccountType;
 }) {
   const { user } = useUserStore();
   const { championsSearch, setChampionsSearch, skinsSearch, setSkinsSearch, filteredChampions, filteredSkins } = useAccountFilters({ account });
-  const { selectedRentalOptionIndex, setSelectedRentalOptionIndex, handleDropAccount, isRentPending, isDropPending, setIsDropDialogOpen, handleRentAccount, isDropDialogOpen } = useAccountActions({ account, onAccountChange });
+  const { selectedRentalOptionIndex, handleExtendAccount, isExtendPending, setSelectedExtensionIndex, setSelectedRentalOptionIndex, handleDropAccount, isRentPending, isDropPending, setIsDropDialogOpen, handleRentAccount, isDropDialogOpen } = useAccountActions({ account, onAccountChange });
   const [activeTab, setActiveTab] = useState(0);
   const { getCompanyIcon, getGameIcon } = useMapping();
   const hours = [1, 3, 6];
-  const soloQueueRank = account.rankings?.find(rc => rc.queueType === 'soloqueue');
-  const flexQueueRank = account.rankings?.find(rc => rc.queueType === 'flex');
+  const soloQueueRank = account.rankings?.find(lc => lc.queueType === 'soloqueue');
+  const flexQueueRank = account.rankings?.find(lc => lc.queueType === 'flex');
   const { calculateTimeRemaining } = useDateTime();
   const baseElo = soloQueueRank?.elo || 'default';
   const baseEloUpperCase = baseElo.charAt(0).toUpperCase() + baseElo.slice(1).toLowerCase();
@@ -131,7 +130,6 @@ export default function AccountDetails({ account, price, onAccountChange }: {
   return (
     <>
       <div className="lg:col-span-3 space-y-6">
-        {}
         <Card>
           <CardHeader className="border-none justify-center">
             <CardTitle className="flex border-none items-center justify-between">
@@ -152,7 +150,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                 </div>
               </div>
 
-              <div className="flex text-lg rc capitalize items-center gap-2">
+              <div className="flex text-lg lc capitalize items-center gap-2">
                 <img
                   src={getCompanyIcon(account.type)}
                   alt={account.type}
@@ -194,6 +192,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-center gap-3 bg-blue-50 border border-blue-300/20 dark:bg-blue-900/20 p-3 rounded-lg">
                 <div className="w-10 h-10 ">
+                  {/* eslint-disable-next-line jsx-a11y/alt-text */}
                   <img
                     src="https://raw.communitydragon.org/15.2/plugins/rcp-fe-lol-collections/global/default/images/skins-viewer/currencies/icon-blue-essence.png"
                   />
@@ -208,6 +207,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
 
               <div className="flex items-center gap-3 bg-orange-50 dark:bg-yellow-900/20 border border-yellow-300/20 p-3 rounded-lg">
                 <div className="w-10 h-10">
+                  {/* eslint-disable-next-line jsx-a11y/alt-text */}
                   <img src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/icon-rp-72.png" />
                 </div>
                 <div>
@@ -358,7 +358,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Rentedaa Account</CardTitle>
+                  <CardTitle>Rented Account</CardTitle>
                   <CardDescription>This account is currently rented by you</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -393,30 +393,41 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                       </div>
                     </div>
                   </div>
+                  <div className="pt-4 border-b border-zinc-100 dark:border-zinc-800 pb-4">
+                    <div className="text-sm mb-2 text-zinc-600 dark:text-zinc-400">Quick Extend Options:</div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {price.timeMultipliers.map((option, index) => (
+                        <Button
+                          key={index}
+                          variant="outline"
+                          size="sm"
+                          className="flex flex-col items-center gap-1 h-auto py-2"
+                          onClick={() => handleExtendAccount(index)}
+                          loading={isExtendPending && selectedExtensionIndex === index}
+                          disabled={isExtendPending}
+                        >
+                          <span className="text-sm">
+                            {hours[index]}
+                            h
+                          </span>
+                          <div className="flex items-center gap-0.5 text-xs">
+                            <CoinIcon className="w-3 h-3 text-amber-500" />
+                            {rentalOptionsWithPrice[index]?.price.toLocaleString() || 0}
+                          </div>
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
                 </CardContent>
                 <CardFooter className="flex gap-3">
 
-                  <LeagueClientProvider>
-
-                    <RentedAccountButton account={account} />
-                  </LeagueClientProvider>
-                  {/* <Button */}
-                  {/*  disabled={isLoginPending} */}
-                  {/*  loading={isLoginPending} */}
-                  {/*  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white" */}
-                  {/*  onClick={() => handleLoginToAccount()} */}
-                  {/* > */}
-                  {/*  <LogIn className="mr-2 h-4 w-4" /> */}
-                  {/*  Login to */}
-                  {/*  {' '} */}
-                  {/*  {'lol' === 'lol' ? 'LoL' : 'Valorant'} */}
-                  {}
+                  <RentedAccountButton account={account} />
 
                   <Dialog open={isDropDialogOpen} onOpenChange={setIsDropDialogOpen}>
                     <DialogTrigger asChild>
                       <Button variant="outline" className="flex items-center gap-1">
                         <ArrowDownToLine className="h-4 w-4" />
-                        Drop
+                        Confirm drop
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
@@ -448,7 +459,8 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                         <Button
                           variant="destructive"
                           loading={isDropPending}
-                          disabled={isDropPending}
+
+                          disabled={isDropPending || account.user?.documentId !== user?.documentId}
                           onClick={() => handleDropAccount()}
                           className="flex items-center gap-1"
                         >
@@ -470,6 +482,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-3">
                     {price.timeMultipliers.map((option, index) => (
+                      // eslint-disable-next-line jsx-a11y/no-static-element-interactions,jsx-a11y/click-events-have-key-events
                       <div
                         key={index}
                         className={cn('border rounded-lg p-3 cursor-pointer transition-all', selectedRentalOptionIndex === index ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700')}
@@ -538,7 +551,6 @@ export default function AccountDetails({ account, price, onAccountChange }: {
               </Card>
             )}
 
-        {}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

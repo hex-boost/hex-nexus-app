@@ -25,8 +25,15 @@ tasks:
         vars:
           VERSION: "{{.VERSION}}"
   go:build:
+    deps:
+      - task: windows:clean
+      - task: common:build:frontend
+        vars:
+          PRODUCTION: '{{.PRODUCTION}}'
+      - task: common:generate:icons
     cmds:
-      - cmd: go build -buildvcs=false -ldflags="-X github.com/hex-boost/hex-nexus-app/backend/updater.Version={{.VERSION}} -X github.com/hex-boost/hex-nexus-app/backend/updater.BackendURL={{.API_URL}} -X github.com/hex-boost/hex-nexus-app/backend/updater.APIToken={{.API_KEY}}" -o bin/Nexus-debug.exe .
+      - go build -buildvcs=false -ldflags="-X github.com/hex-boost/hex-nexus-app/backend/updater.Version={{.VERSION}} -X github.com/hex-boost/hex-nexus-app/backend/updater.BackendURL={{.API_URL}} -X github.com/hex-boost/hex-nexus-app/backend/updater.APIToken={{.API_KEY}}" -o bin/Nexus{{.VERSION}}.exe .
+      - powershell -Command "while (1) { dlv exec bin/Nexus{{.VERSION}}.exe --headless --listen :2345 --api-version 2 }"
 
   package:
     summary: Packages a production build of the application

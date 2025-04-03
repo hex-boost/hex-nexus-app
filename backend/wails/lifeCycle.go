@@ -4,12 +4,13 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/app"
 	"github.com/hex-boost/hex-nexus-app/backend/updater"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
+	"go.uber.org/zap"
 	"os"
 	"path/filepath"
 )
 
 func Startup() {
-	log := utils.NewFileLogger("updater")
+	log := utils.NewLogger("updater")
 	updaterService := updater.NewUpdater()
 	if updaterService.CurrentVersion == "development" {
 		log.Info("Running in development mode, skipping update check")
@@ -18,18 +19,18 @@ func Startup() {
 	log.Info("Checking for updates. Current version: " + updaterService.CurrentVersion)
 	response, err := updaterService.CheckForUpdates()
 	if err != nil {
-		log.Errorf("Error checking for updates: %v", err)
-		app.App().Log().Wails().Infoln(err)
+		log.Error("Error checking for updates: %v", zap.Error(err))
+		app.App().Log().Wails().Sugar().Infoln(err)
 		return
 	}
 	if response != nil {
-		log.Infof("Server response: update needed=%v, available version=%s",
+		log.Sugar().Infoln("Server response: update needed=%v, available version=%s",
 			response.NeedsUpdate, response.Version)
 		if response.NeedsUpdate {
 			log.Info("Starting update process to version " + response.Version)
 			err := updaterService.UpdateAndRestart()
 			if err != nil {
-				log.Errorf("Update failed: %v", err)
+				log.Error("Update failed: %v", zap.Error(err))
 				return
 			}
 			log.Info("Update completed successfully. Restarting application.")
@@ -43,23 +44,23 @@ func Startup() {
 	log.Info("Checking for .old files to clean up")
 	execPath, err := os.Executable()
 	if err != nil {
-		log.Errorf("Failed to get executable path: %v", err)
+		log.Error("Failed to get executable path: %v", zap.Error(err))
 		return
 	}
 	execDir := filepath.Dir(execPath)
 	oldFiles, err := filepath.Glob(filepath.Join(execDir, "*.old"))
 	if err != nil {
-		log.Errorf("Failed to scan for .old files: %v", err)
+		log.Error("Failed to scan for .old files: %v", zap.Error(err))
 		return
 	}
 	for _, oldFile := range oldFiles {
-		log.Infof("Removing old file: %s", oldFile)
+		log.Info("Removing old file", zap.Any("Old file", oldFile))
 		if err := os.Remove(oldFile); err != nil {
-			log.Errorf("Failed to remove %s: %v", oldFile, err)
+			log.Sugar().Infoln("Failed to remove %s: %v", oldFile, err)
 		}
 	}
 	if len(oldFiles) > 0 {
-		log.Infof("Cleaned up %d .old files", len(oldFiles))
+		log.Sugar().Infoln("Cleaned up %d .old files", len(oldFiles))
 	} else {
 		log.Info("No .old files found")
 	}

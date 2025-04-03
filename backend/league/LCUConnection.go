@@ -30,7 +30,7 @@ func NewLCUConnection(logger *utils.Logger) *LCUConnection {
 }
 
 func (c *LCUConnection) InitializeConnection() error {
-	c.logger.Info("Initializing League client connection")
+	c.logger.Info("Initializing LeagueService client connection")
 
 	port, token, _, err := c.getLeagueCredentials()
 	if err != nil {
@@ -52,7 +52,7 @@ func (c *LCUConnection) InitializeConnection() error {
 }
 func (c *LCUConnection) getProcessCommandLine() ([]byte, error) {
 
-	c.logger.Debug("Looking for League client process")
+	c.logger.Debug("Looking for LeagueService client process")
 	cmd := exec.Command("wmic", "process", "where", "name='LeagueClientUx.exe'", "get", "commandline")
 	cmd = cmdUtils.HideConsoleWindow(cmd)
 	output, err := cmd.Output()
@@ -64,7 +64,7 @@ func (c *LCUConnection) getProcessCommandLine() ([]byte, error) {
 
 func (c *LCUConnection) getLeagueCredentials() (port, token, pid string, err error) {
 	output, err := c.getProcessCommandLine()
-	
+
 	portRegex := regexp.MustCompile(`--app-port=(\d+)`)
 	tokenRegex := regexp.MustCompile(`--remoting-auth-token=([\w-]+)`)
 	pidRegex := regexp.MustCompile(`--app-pid=(\d+)`)
@@ -90,7 +90,7 @@ func (c *LCUConnection) getLeagueCredentials() (port, token, pid string, err err
 	token = tokenMatches[1]
 	pid = pidMatches[1]
 
-	c.logger.Info("Found League client",
+	c.logger.Info("Found LeagueService client",
 		zap.String("port", port),
 		zap.String("pid", pid))
 
@@ -116,7 +116,7 @@ func (c *LCUConnection) WaitInventoryIsReady() {
 }
 
 func (c *LCUConnection) IsInventoryReady() bool {
-	
+
 	if c.client == nil {
 		c.logger.Debug("LCU client not initialized")
 		return false
@@ -140,7 +140,7 @@ func (c *LCUConnection) IsInventoryReady() bool {
 
 func (c *LCUConnection) WaitUntilReady() error {
 	timeout := 60 * time.Second
-	c.logger.Info("Waiting for League client to be ready", zap.Duration("timeout", timeout))
+	c.logger.Info("Waiting for LeagueService client to be ready", zap.Duration("timeout", timeout))
 
 	ctx, cancel := context.WithTimeout(c.ctx, timeout)
 	defer cancel()
@@ -152,15 +152,15 @@ func (c *LCUConnection) WaitUntilReady() error {
 	for {
 		select {
 		case <-ctx.Done():
-			return fmt.Errorf("timeout waiting for League client to be ready after attempts")
+			return fmt.Errorf("timeout waiting for LeagueService client to be ready after attempts")
 		case <-ticker.C:
 			attempts++
 			if _, _, _, err := c.getLeagueCredentials(); err == nil {
-				c.logger.Info("League client process is ready", zap.Int("attempts", attempts))
+				c.logger.Info("LeagueService client process is ready", zap.Int("attempts", attempts))
 				return nil
 			}
 			if attempts%10 == 0 {
-				c.logger.Debug("Still waiting for League client to be ready", zap.Int("attempts", attempts))
+				c.logger.Debug("Still waiting for LeagueService client to be ready", zap.Int("attempts", attempts))
 			}
 
 		}

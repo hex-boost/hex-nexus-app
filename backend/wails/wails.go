@@ -11,6 +11,7 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/joho/godotenv"
 	"github.com/wailsapp/wails/v3/pkg/application"
+	"github.com/wailsapp/wails/v3/pkg/events"
 	"log"
 	"time"
 )
@@ -49,11 +50,12 @@ func Run(assets embed.FS, icon []byte) {
 	var mainWindow *application.WebviewWindow
 	utilsBind := utils.NewUtils()
 	lcuConn := league.NewLCUConnection(app.App().Log().League())
+	leagueService := league.NewLeagueService(app.App().Log().League())
 	leagueRepo := repository.NewLeagueRepository(app.App().Log().Repo())
-	leagueService := league.NewSummonerService(league.NewSummonerClient(lcuConn, app.App().Log().League()), leagueRepo, app.App().Log().League())
+	summonerService := league.NewSummonerService(league.NewSummonerClient(lcuConn, app.App().Log().League()), leagueRepo, app.App().Log().League())
 	riotClient := riot.NewRiotClient(app.App().Log().Riot())
 	discordService := discord.New(app.App().Log().Discord())
-	clientMonitor := league.NewClientMonitor(lcuConn, riotClient)
+	clientMonitor := league.NewClientMonitor(leagueService, riotClient, app.App().Log().League())
 	app := application.New(application.Options{
 		Name:        "Nexus",
 		Description: "Nexus",
@@ -61,6 +63,7 @@ func Run(assets embed.FS, icon []byte) {
 		Windows: application.WindowsOptions{
 			DisableQuitOnLastWindowClosed: true,
 		},
+
 		SingleInstance: &application.SingleInstanceOptions{
 			UniqueID: "com.hexboost.nexus.app",
 			OnSecondInstanceLaunch: func(data application.SecondInstanceData) {
@@ -79,7 +82,7 @@ func Run(assets embed.FS, icon []byte) {
 			application.NewService(app.App()),
 			application.NewService(riotClient),
 			application.NewService(discordService),
-			application.NewService(leagueService),
+			application.NewService(summonerService),
 			application.NewService(clientMonitor),
 			application.NewService(lcuConn),
 			application.NewService(utilsBind),
@@ -91,7 +94,9 @@ func Run(assets embed.FS, icon []byte) {
 	})
 	mainWindow = app.NewWebviewWindowWithOptions(
 		application.WebviewWindowOptions{
-			Name:          "Main",
+			Name:                       "Main",
+			DefaultContextMenuDisabled: false,
+
 			Title:         "Nexus",
 			Width:         1440,
 			Height:        900,
@@ -117,11 +122,22 @@ func Run(assets embed.FS, icon []byte) {
 				Blue:  0,
 				Alpha: 80,
 			},
-			OpenInspectorOnStartup: false,
+			DevToolsEnabled:        true,
+			OpenInspectorOnStartup: true,
 		},
 	)
 	SetupSystemTray(app, mainWindow, icon)
 	clientMonitor.SetWindow(mainWindow)
+	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(ctx *application.WindowEvent) {
+
+		clientMonitor.Start()
+
+	})
+	mainWindow.RegisterHook(events.Common.WindowClosing, func(ctx *application.WindowEvent) {
+		clientMonitor.Stop()
+
+	})
+
 	err := app.Run()
 	if err != nil {
 		log.Fatal(err)

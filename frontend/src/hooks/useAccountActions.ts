@@ -16,6 +16,7 @@ export function useAccountActions({
   const { refetchUser } = useCommonFetch();
   const [selectedRentalOptionIndex, setSelectedRentalOptionIndex] = useState<number>(1);
   const [isDropDialogOpen, setIsDropDialogOpen] = useState(false);
+  const [selectedExtensionIndex, setSelectedExtensionIndex] = useState<number>(1);
 
   const { mutate: handleDropAccount, isPending: isDropPending } = useMutation<{ message: string }, StrapiError>({
     mutationKey: ['accounts', 'drop', account.documentId],
@@ -27,6 +28,34 @@ export function useAccountActions({
     },
     onSuccess: (data) => {
       toast.success(data.message);
+    },
+    onError: (error) => {
+      toast.error(error.error.message);
+    },
+
+  });
+
+  const { mutate: handleExtendAccount, isPending: isExtendPending } = useMutation<
+    { message: string },
+    StrapiError,
+    number
+  >({
+    mutationKey: ['accounts', 'extend', account.documentId],
+    mutationFn: async (timeIndex: number) => {
+      // Implementation will be handled by the user
+      const response = strapiClient.request<{ message: string }>('post', `accounts/${account.documentId}/extend`, {
+        data: {
+          game: 'league',
+          time: timeIndex,
+        },
+      });
+      await refetchUser();
+      await onAccountChange();
+      return response;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message);
+      setIsExtendDialogOpen(false);
     },
     onError: (error) => {
       toast.error(error.error.message);
@@ -59,7 +88,7 @@ export function useAccountActions({
   });
 
   return {
-
+    setSelectedExtensionIndex,
     selectedRentalOptionIndex,
     setSelectedRentalOptionIndex,
     handleRentAccount,
@@ -69,5 +98,7 @@ export function useAccountActions({
     setIsDropDialogOpen,
     handleDropAccount,
     isDropPending,
+    handleExtendAccount,
+    isExtendPending,
   };
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/repository"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
+	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 	"sync"
 )
@@ -148,8 +149,8 @@ func (l *SummonerService) UpdateFromLCU(username string, password string) error 
 		Password:      password,
 		Gamename:      currentSummoner.GameName,
 		Tagline:       currentSummoner.TagLine,
-		Champions:     champions, 
-		ChampionSkins: skins,     
+		Champions:     champions,
+		ChampionSkins: skins,
 		Currencies:    currencies,
 		RankedStats:   rankedStats,
 		Server:        region,
@@ -158,9 +159,9 @@ func (l *SummonerService) UpdateFromLCU(username string, password string) error 
 	summonerJSON, err := json.MarshalIndent(summoner, "", "  ")
 
 	if err != nil {
-		l.logger.Errorf("Failed to marshal summoner to JSON: %v", err)
+		l.logger.Error("Failed to marshal summoner to JSON: %v", zap.Error(err))
 	} else {
-		l.logger.Debugf("Summoner object: %s", string(summonerJSON))
+		l.logger.Debug("Summoner object: ", zap.Any("summoner", summonerJSON))
 	}
 	err = l.repoClient.SaveSummoner(summoner)
 	if err != nil {

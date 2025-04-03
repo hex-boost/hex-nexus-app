@@ -47,7 +47,6 @@ func (rc *RiotClient) IsAuthenticationReady() bool {
 	_, _, err = rc.getCredentials(pid)
 	return err == nil
 }
-
 func (rc *RiotClient) WaitUntilAuthenticationIsReady(timeout time.Duration) error {
 	deadline := time.Now().Add(timeout)
 	checkInterval := 100 * time.Millisecond
@@ -67,10 +66,14 @@ func (rc *RiotClient) WaitUntilAuthenticationIsReady(timeout time.Duration) erro
 		}
 		if !rc.IsClientInitialized() {
 			rc.logger.Info("Riot client is not initialized")
+			_ = rc.InitializeRestyClient()
+			rc.logger.Info("Riot client must be initialized now")
 			continue
 		}
-		time.Sleep(
-			5)
+
+		// Fix: Add proper time unit (e.g., 500 milliseconds)
+		time.Sleep(500 * time.Millisecond)
+
 		err = rc.IsAuthStateValid()
 		if err != nil {
 			rc.logger.Info("Riot client is opened but auth state is invalid")
