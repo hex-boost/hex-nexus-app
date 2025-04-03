@@ -1,55 +1,5 @@
-import type { CheckoutSession } from '@/types/membership.ts';
 import type { Server } from '@/types/types.ts';
 
-export const mockCheckoutSession: CheckoutSession = {
-  id: 'cs_test_123456789abcdefg',
-  object: 'checkout.session',
-  after_expiration: null,
-  allow_promotion_codes: true,
-  amount_subtotal: 2000,
-  amount_total: 2000,
-  automatic_tax: {
-    enabled: false,
-    status: null,
-  },
-  billing_address_collection: 'auto',
-  cancel_url: 'https://seusite.com/cancel',
-  client_reference_id: 'user_123',
-  client_secret: 'cs_test_secret_123456789abcdefghijklm',
-  created: Math.floor(Date.now() / 1000),
-  currency: 'brl',
-  customer: 'cus_123456789',
-  customer_creation: 'always',
-  customer_details: {
-    email: 'cliente@exemplo.com',
-    phone: null,
-    tax_exempt: 'none',
-    tax_ids: [],
-  },
-  customer_email: 'cliente@exemplo.com',
-  expires_at: Math.floor(Date.now() / 1000) + 3600 * 24,
-  livemode: false,
-  locale: 'pt-BR',
-  metadata: {
-    tier: 'tier 2',
-  },
-  mode: 'subscription',
-  payment_intent: null,
-  payment_method_collection: 'always',
-  payment_method_types: ['card'],
-  payment_status: 'unpaid',
-  status: 'open',
-  submit_type: 'pay',
-  subscription: 'sub_123456789',
-  success_url: 'https://seusite.com/success?session_id={CHECKOUT_SESSION_ID}',
-  total_details: {
-    amount_discount: 0,
-    amount_shipping: 0,
-    amount_tax: 0,
-  },
-  ui_mode: 'hosted',
-  url: 'https://checkout.stripe.com/c/pay/cs_test_123456789abcdefg',
-};
 export type Account = {
   id: string;
   game: 'lol' | 'valorant';

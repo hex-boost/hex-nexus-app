@@ -35,11 +35,7 @@ export function useAccountActions({
 
   });
 
-  const { mutate: handleExtendAccount, isPending: isExtendPending } = useMutation<
-    { message: string },
-    StrapiError,
-    number
-  >({
+  const { mutate: handleExtendAccount, isPending: isExtendPending } = useMutation({
     mutationKey: ['accounts', 'extend', account.documentId],
     mutationFn: async (timeIndex: number) => {
       return toast.promise(

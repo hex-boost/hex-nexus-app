@@ -24,7 +24,8 @@ export function RentedAccountButton({ account }: RentedAccountButtonProps) {
       <Button
         disabled
         loading
-        className="flex-1 bg-blue-600 w-full hover:bg-blue-700 text-white"
+        variant="ghost"
+        className="flex-1 w-full text-white"
       >
         {authState === LeagueAuthState.WAITING_CAPTCHA
           ? 'Waiting captcha to be solved'

@@ -256,7 +256,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                 )}
               </div>
 
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 overflow-y-auto overflow-x-hidden max-h-[60vh] ">
+              <div className="grid grid-cols-3 sm:grid-cols-7  md:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-12 gap-2 overflow-y-auto overflow-x-hidden max-h-[60vh] ">
                 {filteredChampions.map(champion => (
                   <div
                     key={champion?.id}

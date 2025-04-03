@@ -110,25 +110,22 @@ export function useLeagueManager({
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error(logContext, 'Failed to launch Riot Client', { error: errorMessage });
 
-      toast.error('Ocorreu um erro ao iniciar o Riot Client', {
-        description: 'Pode existir outro cliente aberto impedindo a inicialização.',
+      toast.error('An error ocurred', {
         action: {
-          label: 'Forçar fechamento',
+          label: 'Force close',
           onClick: async () => {
             try {
               logger.info(logContext, 'User requested to force close all Riot clients');
               await RiotClient.ForceCloseAllClients();
               logger.info(logContext, 'Successfully closed all Riot clients');
 
-              toast.success('Todos os clientes Riot foram fechados', {
-                description: 'Tente iniciar o cliente novamente agora.',
-              });
+              toast.info('All clients closed succesfully');
             } catch (error) {
               const closeError = error instanceof Error ? error.message : String(error);
               logger.error(logContext, 'Failed to force close Riot clients', { error: closeError });
 
-              toast.error('Erro ao tentar fechar os clientes', {
-                description: 'Tente fechá-los manualmente.',
+              toast.error('Error trying to close clients', {
+                description: 'Please restart the app',
               });
             }
           },
