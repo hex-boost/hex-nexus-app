@@ -96,6 +96,7 @@ export function useAccountActions({
 
     isDropDialogOpen,
     setIsDropDialogOpen,
+    selectedExtensionIndex,
     handleDropAccount,
     isDropPending,
     handleExtendAccount,

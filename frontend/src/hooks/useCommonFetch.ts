@@ -20,7 +20,7 @@ export function useCommonFetch() {
     queryKey: ['users', 'me'],
     queryFn: async () => {
       const user = await strapiClient.request<UserType>('get', 'users/me');
-      if (import.meta.env.API_URL !== 'http://localhost:1337') {
+      if (import.meta.env.VITE_API_URL !== 'http://localhost:1337') {
         if (user.hwid !== await Utils.GetHWID()) {
           logout();
           toast.error('You have been logged out due to HWID mismatch');
@@ -34,7 +34,7 @@ export function useCommonFetch() {
     },
     refetchOnMount: true,
     refetchOnWindowFocus: true,
-    enabled: isAuthenticated(),
+    enabled: isAuthenticated,
   },
 
   );

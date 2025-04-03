@@ -41,7 +41,7 @@ export function RentedAccountButton({ account }: RentedAccountButtonProps) {
           <Button
             loading={isLaunchRiotClientPending}
             disabled={isLaunchRiotClientPending}
-            className="flex-1 w-full bg-blue-600 hover:bg-blue-700 text-white"
+            className="flex-1 !w-full bg-blue-600 hover:bg-blue-700 text-white"
             onClick={() => handleLaunchRiotClient()}
           >
             {!isLaunchRiotClientPending
@@ -108,8 +108,8 @@ export function RentedAccountButton({ account }: RentedAccountButtonProps) {
   };
 
   return (
-    <div>
+    <>
       {renderButton()}
-    </div>
+    </>
   );
 }

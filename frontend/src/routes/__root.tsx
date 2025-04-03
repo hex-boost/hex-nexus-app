@@ -53,7 +53,7 @@ function RootLayout() {
     router.navigate({ to: '/login' });
   }
   const isLoading = isAuthenticated() && isUserLoading;
-  const userAvatar = import.meta.env.VITE_API_URL + user?.avatar.url;
+  const userAvatar = import.meta.env.VITE_API_URL + user?.avatar?.url;
   return (
     <>
       <div className="flex flex-col h-screen">

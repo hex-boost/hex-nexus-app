@@ -71,8 +71,7 @@ export function LoginForm({
         });
       },
       onSuccess: async (data) => {
-        setAuthToken(data.jwt);
-        if (import.meta.env.API_URL !== 'http://localhost:1337') {
+        if (import.meta.env.VITE_API_URL !== 'http://localhost:1337') {
           const currentHwid = await Utils.GetHWID();
           if (data.user.hwid && data.user.hwid !== currentHwid) {
             setAuthToken(''); // Clear token
@@ -81,6 +80,7 @@ export function LoginForm({
           }
         }
 
+        setAuthToken(data.jwt);
         await refetchUser();
         router.navigate({ to: '/dashboard' });
       },

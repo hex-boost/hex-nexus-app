@@ -182,7 +182,7 @@ export function UserProfile({
                         }}
                       >
                         <AvatarImage
-                          src={previewAvatar || import.meta.env.VITE_API_URL + user.avatar.url}
+                          src={previewAvatar || import.meta.env.VITE_API_URL + user.avatar?.url}
                           alt={user.username}
                         />
 

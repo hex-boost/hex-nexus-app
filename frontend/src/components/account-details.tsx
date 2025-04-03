@@ -17,6 +17,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog.tsx';
 import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { useAccountActions } from '@/hooks/useAccountActions.ts';
 import { useAccountFilters } from '@/hooks/useAccountFilters.ts';
@@ -104,7 +105,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
 }) {
   const { user } = useUserStore();
   const { championsSearch, setChampionsSearch, skinsSearch, setSkinsSearch, filteredChampions, filteredSkins } = useAccountFilters({ account });
-  const { selectedRentalOptionIndex, handleExtendAccount, isExtendPending, setSelectedExtensionIndex, setSelectedRentalOptionIndex, handleDropAccount, isRentPending, isDropPending, setIsDropDialogOpen, handleRentAccount, isDropDialogOpen } = useAccountActions({ account, onAccountChange });
+  const { selectedRentalOptionIndex, handleExtendAccount, isExtendPending, setSelectedRentalOptionIndex, selectedExtensionIndex, handleDropAccount, isRentPending, isDropPending, setIsDropDialogOpen, handleRentAccount, isDropDialogOpen } = useAccountActions({ account, onAccountChange });
   const [activeTab, setActiveTab] = useState(0);
   const { getCompanyIcon, getGameIcon } = useMapping();
   const hours = [1, 3, 6];
@@ -361,12 +362,10 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                   <CardTitle>Rented Account</CardTitle>
                   <CardDescription>This account is currently rented by you</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Time remaining */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-zinc-600 dark:text-zinc-400 flex items-center gap-1">
-                        <Clock className="h-3.5 w-3.5" />
+                <CardContent className="space-y-3">
+                  <div className=" border-white/10  rounded-md ">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-zinc-600 dark:text-zinc-400 text-sm flex items-center gap-1">
                         Remaining time:
                       </span>
 
@@ -377,31 +376,31 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                  <div className=" border-white/10 rounded-md ">
                     <div className="flex justify-between items-center ">
-                      <span className="text-sm text-zinc-600 dark:text-zinc-400">Refundable Amount</span>
+                      <span className="text-zinc-600 dark:text-zinc-400 flex items-center gap-1 text-sm">Refundable amount:</span>
                       <div
-                        className="flex items-center gap-1 text-lg font-semibold text-zinc-900 dark:text-zinc-50"
+                        className="flex text-sm items-center gap-1 text-lg font-semibold text-zinc-900 dark:text-zinc-50 "
                       >
                         <CoinIcon className="w-4 h-4 text-amber-500 dark:text-amber-400" />
                         {dropRefund
                           ? <>{dropRefund.amount.toLocaleString()}</>
                           : <Skeleton className="w-6 h-4"></Skeleton>}
-
                         {' '}
                         coins
                       </div>
                     </div>
                   </div>
-                  <div className="pt-4 border-b border-zinc-100 dark:border-zinc-800 pb-4">
-                    <div className="text-sm mb-2 text-zinc-600 dark:text-zinc-400">Quick Extend Options:</div>
+                  <Separator />
+                  <div className="">
+                    <div className="text-sm mb-2 text-zinc-600 dark:text-zinc-400">Quick extend options</div>
                     <div className="grid grid-cols-3 gap-2">
                       {price.timeMultipliers.map((option, index) => (
                         <Button
                           key={index}
                           variant="outline"
                           size="sm"
-                          className="flex flex-col items-center gap-1 h-auto py-2"
+                          className="flex border-primary/10 bg-white/[0.001] flex-col items-center gap-1 h-auto py-2"
                           onClick={() => handleExtendAccount(index)}
                           loading={isExtendPending && selectedExtensionIndex === index}
                           disabled={isExtendPending}
@@ -427,7 +426,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                     <DialogTrigger asChild>
                       <Button variant="outline" className="flex items-center gap-1">
                         <ArrowDownToLine className="h-4 w-4" />
-                        Confirm drop
+                        Drop Account
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
@@ -465,7 +464,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                           className="flex items-center gap-1"
                         >
                           <ArrowDownToLine className="h-4 w-4" />
-                          Drop
+                          Confirm
                         </Button>
                       </DialogFooter>
                     </DialogContent>
