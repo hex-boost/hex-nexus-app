@@ -2,7 +2,7 @@ package wails
 
 import (
 	"embed"
-	"github.com/gen2brain/beeep"
+
 	"github.com/hex-boost/hex-nexus-app/backend/app"
 	"github.com/hex-boost/hex-nexus-app/backend/discord"
 	"github.com/hex-boost/hex-nexus-app/backend/league"
@@ -53,12 +53,11 @@ func SetupSystemTray(app *application.App, window *application.WebviewWindow, ic
 }
 
 func Run(assets embed.FS, icon []byte) {
-	err := beeep.Alert("Title", "Message body", "build/appicon16x16.png")
 	mainLogger := app.App().Log().Wails()
 	mainUpdater := updater.NewUpdater()
 	var mainWindow *application.WebviewWindow
 	appProtocol := protocol.New(app.App().Log().Protocol())
-	err = Init(appProtocol)
+	err := Init(appProtocol)
 	if err != nil {
 		panic(err)
 	}
@@ -82,7 +81,6 @@ func Run(assets embed.FS, icon []byte) {
 			UniqueID: "com.hexboost.nexus.app",
 			OnSecondInstanceLaunch: func(data application.SecondInstanceData) {
 				mainLogger.Info("Second instance detected ", zap.Any("args", data.Args))
-				// Check if this is a protocol launch
 				for _, arg := range data.Args {
 					if len(arg) > 8 && arg[:8] == "nexus://" {
 						mainLogger.Info("Protocol open detected")
