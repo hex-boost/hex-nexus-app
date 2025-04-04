@@ -48,7 +48,7 @@ export function useLeagueManager({
     },
     onSuccess: () => {
       logger.info(logContext, 'Login with captcha successful');
-      toast.success('Autenticado com sucesso');
+      toast.success('Authenticated succesfully');
     },
     onError: (error) => {
       const errorMessage = error.message || String(error);
@@ -56,10 +56,10 @@ export function useLeagueManager({
 
       if (errorMessage === 'captcha_not_allowed') {
         logger.warn(logContext, 'Captcha expired or rejected');
-        toast.error('O captcha expirou ou foi rejeitado', {
-          description: 'É necessário resolver novamente o captcha para continuar.',
+        toast.error('Captcha got expired or has been rejected', {
+          description: 'Sometimes it just work in the second try',
           action: {
-            label: 'Tentar novamente',
+            label: 'Try again',
             onClick: () => {
               logger.info(logContext, 'User requested to retry captcha flow');
               handleOpenCaptchaWebview();

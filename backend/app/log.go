@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/hex-boost/hex-nexus-app/backend/config"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 )
 
@@ -26,16 +27,16 @@ type log struct {
 	protocol *utils.Logger
 }
 
-func NewLogger() *log {
+func NewLogger(cfg *config.Config) *log {
 	return &log{
-		discord:  utils.NewLogger(LogPrefixDiscord),
-		repo:     utils.NewLogger(LogPrefixRepo),
-		league:   utils.NewLogger(LogPrefixLeague),
-		riot:     utils.NewLogger(LogPrefixRiot),
-		wails:    utils.NewLogger(LogPrefixWails),
-		web:      utils.NewLogger(LogPrefixWeb),
-		services: utils.NewLogger(LogPrefixServices),
-		protocol: utils.NewLogger(LogPrefixProtocol),
+		discord:  utils.NewLogger(LogPrefixDiscord, cfg),
+		repo:     utils.NewLogger(LogPrefixRepo, cfg),
+		league:   utils.NewLogger(LogPrefixLeague, cfg),
+		riot:     utils.NewLogger(LogPrefixRiot, cfg),
+		wails:    utils.NewLogger(LogPrefixWails, cfg),
+		web:      utils.NewLogger(LogPrefixWeb, cfg),
+		services: utils.NewLogger(LogPrefixServices, cfg),
+		protocol: utils.NewLogger(LogPrefixProtocol, cfg),
 	}
 }
 

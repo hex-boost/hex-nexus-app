@@ -2,7 +2,7 @@ package repository
 
 import (
 	"github.com/go-resty/resty/v2"
-	"github.com/hex-boost/hex-nexus-app/backend/updater"
+	"github.com/hex-boost/hex-nexus-app/backend/config"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 )
 
@@ -14,9 +14,9 @@ type BaseRepository struct {
 }
 
 // NewBaseRepository creates a new base repository with shared client
-func NewBaseRepository(logger *utils.Logger) *BaseRepository {
+func NewBaseRepository(config *config.Config, logger *utils.Logger) *BaseRepository {
 	client := resty.New()
-	client.SetBaseURL(updater.BackendURL)
+	client.SetBaseURL(config.BackendURL)
 	client.SetHeader("Content-Type", "application/json")
 	client.SetHeader("Accept", "application/json")
 	return &BaseRepository{

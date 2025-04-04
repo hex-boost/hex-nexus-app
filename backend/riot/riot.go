@@ -306,3 +306,17 @@ func (rc *RiotClient) ForceCloseAllClients() error {
 	rc.ResetRestyClient()
 	return nil
 }
+
+func (rc *RiotClient) Logout() error {
+	res, err := rc.client.R().Delete("/rso-authenticator/v1/authentication")
+	if err != nil {
+		rc.logger.Error("Error logging out", zap.Error(err))
+		return err
+	}
+	if res.IsError() {
+		rc.logger.Error("Error logging out", zap.String("response", string(res.Body())))
+		return err
+	}
+	return err
+
+}

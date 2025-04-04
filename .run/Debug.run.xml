@@ -5,4 +5,9 @@
     <toRun name="wgo" type="ShConfigurationType" />
     <method v="2" />
   </configuration>
+  <configuration default="false" name="Debug" type="GoRemoteDebugConfigurationType" factoryName="Go Remote">
+    <option name="disconnectOption" value="STOP" />
+    <disconnect value="STOP" />
+    <method v="2" />
+  </configuration>
 </component>

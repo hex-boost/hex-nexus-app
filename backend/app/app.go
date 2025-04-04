@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"github.com/hex-boost/hex-nexus-app/backend/config"
 	"sync"
 )
 
@@ -13,18 +14,23 @@ type app struct {
 	ctx        context.Context
 	oauthState string
 	stateMutex sync.Mutex
+	config     *config.Config
 }
 
-func App() *app {
+func App(cfg *config.Config) *app {
 	_app.once.Do(
 		func() {
-			_app.log = NewLogger()
+			_app.log = NewLogger(cfg)
 			_app.ctx = context.Background()
 			_app.oauthState = ""
+			_app.config = cfg
 			_app.stateMutex = sync.Mutex{}
 
 		})
 	return _app
+}
+func (a *app) Config() *config.Config {
+	return a.config
 }
 func (a *app) Log() *log {
 	return a.log

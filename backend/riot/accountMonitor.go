@@ -9,13 +9,14 @@ import (
 )
 
 type AccountMonitor struct {
-	riotClient    *RiotClient
-	accountRepo   *repository.AccountsRepository
-	logger        *utils.Logger
-	running       bool
-	checkInterval time.Duration
-	stopChan      chan struct{}
-	mutex         sync.Mutex
+	riotClient     *RiotClient
+	accountRepo    *repository.AccountsRepository
+	logger         *utils.Logger
+	running        bool
+	isNexusAccount bool
+	checkInterval  time.Duration
+	stopChan       chan struct{}
+	mutex          sync.Mutex
 }
 
 func NewAccountMonitor(
@@ -24,11 +25,12 @@ func NewAccountMonitor(
 	logger *utils.Logger,
 ) *AccountMonitor {
 	return &AccountMonitor{
-		riotClient:    riotClient,
-		accountRepo:   accountRepo,
-		logger:        logger,
-		checkInterval: 30 * time.Second, // Check every 30 seconds
-		stopChan:      make(chan struct{}),
+		riotClient:     riotClient,
+		accountRepo:    accountRepo,
+		logger:         logger,
+		isNexusAccount: false,
+		checkInterval:  10 * time.Second, // Check every 30 seconds
+		stopChan:       make(chan struct{}),
 	}
 }
 
@@ -94,31 +96,48 @@ func (am *AccountMonitor) checkCurrentAccount() {
 		return
 	}
 
-	// Get user info
-	//userInfo, err := am.riotClient.GetUserinfo()
-	//if err != nil {
-	//	am.logger.Debug("Failed to get user info", zap.Error(err))
-	//	return
-	//}
-	//
-	//// Check if it's a system account
-	//if am.accountRepo.Save(userInfo) {
-	//	am.logger.Info("System account detected, logging out",
-	//		zap.String("account_id", userInfo.Sub),
-	//		zap.String("username", userInfo.Username))
-	//
-	//	// Perform logout
-	//	am.logoutSystemAccount()
-	//}
-}
-
-func (am *AccountMonitor) logoutSystemAccount() {
-	// Delete the authentication session
-	_, err := am.riotClient.client.R().Delete("/rso-authenticator/v1/authentication")
+	userInfo, err := am.riotClient.GetUserinfo()
 	if err != nil {
-		am.logger.Error("Failed to logout system account", zap.Error(err))
+		am.logger.Debug("Failed to get user info", zap.Error(err))
 		return
 	}
 
+	// Check if it's a system account
+
+	allAccounts, err := am.accountRepo.GetAll()
+	if err != nil {
+		am.logger.Error("Failed to get all accounts", zap.Error(err))
+		return
+	}
+
+	userinfoSummonerName := userInfo.Acct.GameName + userInfo.Acct.TagLine
+	isNexusAccount := false
+
+	for _, account := range allAccounts {
+		accountSummonerName := account.Gamename + account.Tagline
+		if accountSummonerName == userinfoSummonerName {
+			isNexusAccount = true
+			break
+		}
+	}
+
+	// Only lock when updating the shared field
+	am.mutex.Lock()
+	am.isNexusAccount = isNexusAccount
+	am.mutex.Unlock()
+}
+
+func (am *AccountMonitor) IsNexusAccount() bool {
+	am.mutex.Lock()
+	defer am.mutex.Unlock()
+	return am.isNexusAccount
+}
+func (am *AccountMonitor) LogoutSystemAccount() error {
+	err := am.riotClient.Logout()
+	if err != nil {
+		am.logger.Error("Failed to logout from the client", zap.Error(err))
+		return err
+	}
 	am.logger.Info("Successfully logged out system account")
+	return nil
 }

@@ -1,20 +1,22 @@
 package utils
 
 import (
+	"fmt"
+	"github.com/hex-boost/hex-nexus-app/backend/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type Logger struct {
 	*zap.Logger
 }
 
-func NewLogger(prefix string) *Logger {
+func NewLogger(prefix string, config *config.Config) *Logger {
 	// Create logs directory
-	logsDir := "logs"
-	if err := os.MkdirAll(logsDir, os.ModePerm); err != nil {
+	if err := os.MkdirAll(config.LogsDirectory, os.ModePerm); err != nil {
 		panic(err)
 	}
 
@@ -27,15 +29,27 @@ func NewLogger(prefix string) *Logger {
 	// Use the same encoder for console and files
 	consoleEncoder := zapcore.NewConsoleEncoder(encoderConfig)
 	fileEncoder := zapcore.NewConsoleEncoder(encoderConfig) // Same as console for consistency
-
+	var zapLogLevel zapcore.Level
+	switch strings.ToLower(config.LogLevel) {
+	case "debug":
+		zapLogLevel = zapcore.DebugLevel
+	case "info":
+		zapLogLevel = zapcore.InfoLevel
+	case "warn", "warning":
+		zapLogLevel = zapcore.WarnLevel
+	case "error":
+		zapLogLevel = zapcore.ErrorLevel
+	default:
+		zapLogLevel = zapcore.InfoLevel
+	}
 	// Log level - DebugLevel to show all logs
-	logLevel := zap.NewAtomicLevelAt(zapcore.DebugLevel)
+	atomicLevel := zap.NewAtomicLevelAt(zapLogLevel)
 
 	// Open log file - using append mode instead of truncating
-	logFilePath := filepath.Join(logsDir, "app.log")
+	logFilePath := filepath.Join(config.LogsDirectory, "app.log")
 	logFile, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		panic(err)
+		panic(fmt.Sprintf("error opening log file %v", err))
 	}
 
 	// Create cores for both outputs with same level and encoder style
@@ -43,13 +57,13 @@ func NewLogger(prefix string) *Logger {
 		consoleEncoder,
 
 		zapcore.AddSync(os.Stdout),
-		logLevel,
+		atomicLevel,
 	)
 
 	fileCore := zapcore.NewCore(
 		fileEncoder,
 		zapcore.AddSync(logFile),
-		logLevel,
+		atomicLevel,
 	)
 
 	// Combine both cores
