@@ -13,12 +13,12 @@ import (
 
 type SummonerService struct {
 	summonerClient *SummonerClient
-	repoClient     *repository.LeagueRepository
+	repoClient     *repository.AccountsRepository
 
 	logger *utils.Logger
 }
 
-func NewSummonerService(summonerClient *SummonerClient, repoClient *repository.LeagueRepository, logger *utils.Logger) *SummonerService {
+func NewSummonerService(summonerClient *SummonerClient, repoClient *repository.AccountsRepository, logger *utils.Logger) *SummonerService {
 	return &SummonerService{
 		summonerClient: summonerClient,
 		repoClient:     repoClient,
@@ -163,7 +163,7 @@ func (l *SummonerService) UpdateFromLCU(username string, password string) error 
 	} else {
 		l.logger.Debug("Summoner object: ", zap.Any("summoner", summonerJSON))
 	}
-	err = l.repoClient.SaveSummoner(summoner)
+	err = l.repoClient.Save(summoner)
 	if err != nil {
 		l.logger.Error("Failed to save summoner")
 		return err

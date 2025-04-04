@@ -69,10 +69,10 @@ export function useLeagueManager({
         });
       } else {
         logger.error(logContext, 'Authentication error', { error: errorMessage });
-        toast.error('Erro na autenticação', {
-          description: () => <span>{errorMessage}</span>,
+        toast.warning('Error on authentication', {
+          description: () => <span>Don't </span>,
           action: {
-            label: 'Tentar novamente',
+            label: 'Try again',
             onClick: () => {
               logger.info(logContext, 'User requested to retry authentication');
               handleOpenCaptchaWebview();

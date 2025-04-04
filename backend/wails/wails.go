@@ -2,7 +2,6 @@ package wails
 
 import (
 	"embed"
-
 	"github.com/hex-boost/hex-nexus-app/backend/app"
 	"github.com/hex-boost/hex-nexus-app/backend/discord"
 	"github.com/hex-boost/hex-nexus-app/backend/league"
@@ -64,9 +63,12 @@ func Run(assets embed.FS, icon []byte) {
 	utilsBind := utils.NewUtils()
 	lcuConn := league.NewLCUConnection(app.App().Log().League())
 	leagueService := league.NewLeagueService(app.App().Log().League())
-	leagueRepo := repository.NewLeagueRepository(app.App().Log().Repo())
-	summonerService := league.NewSummonerService(league.NewSummonerClient(lcuConn, app.App().Log().League()), leagueRepo, app.App().Log().League())
+	baseRepo := repository.NewBaseRepository(app.App().Log().Repo())
+	apiRepository := repository.NewAPIRepository(baseRepo)
+	accountsRepository := repository.NewAccountsRepository(apiRepository)
+	summonerService := league.NewSummonerService(league.NewSummonerClient(lcuConn, app.App().Log().League()), accountsRepository, app.App().Log().League())
 	riotClient := riot.NewRiotClient(app.App().Log().Riot())
+	accountMonitor := riot.NewAccountMonitor(riotClient, accountsRepository, app.App().Log().Riot())
 	discordService := discord.New(app.App().Log().Discord())
 	clientMonitor := league.NewClientMonitor(leagueService, riotClient, app.App().Log().League())
 	app := application.New(application.Options{
@@ -107,6 +109,7 @@ func Run(assets embed.FS, icon []byte) {
 			application.NewService(clientMonitor),
 			application.NewService(lcuConn),
 			application.NewService(utilsBind),
+			application.NewService(accountsRepository),
 			application.NewService(mainUpdater),
 		},
 		Assets: application.AssetOptions{
@@ -150,12 +153,19 @@ func Run(assets embed.FS, icon []byte) {
 	SetupSystemTray(app, mainWindow, icon)
 	clientMonitor.SetWindow(mainWindow)
 	appProtocol.SetWindow(mainWindow)
-	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(ctx *application.WindowEvent) {
 
+	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(ctx *application.WindowEvent) {
+		accountMonitor.Start()
 		clientMonitor.Start()
 
 	})
 	mainWindow.RegisterHook(events.Common.WindowClosing, func(ctx *application.WindowEvent) {
+		accountMonitor.Stop()
+		err := riotClient.ForceCloseAllClients()
+		if err != nil {
+			return
+		}
+
 		clientMonitor.Stop()
 
 	})
