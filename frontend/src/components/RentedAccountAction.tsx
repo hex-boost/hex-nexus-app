@@ -28,7 +28,7 @@ export function RentedAccountButton({ account }: RentedAccountButtonProps) {
         className="flex-1 w-full text-white"
       >
         {authState === LeagueAuthState.WAITING_CAPTCHA
-          ? 'Waiting captcha to be solved'
+          ? 'Waiting captcha solve'
           : 'Authenticating...'}
       </Button>
     );
@@ -53,7 +53,7 @@ export function RentedAccountButton({ account }: RentedAccountButtonProps) {
                   </>
                 )
               : (
-                  'Starting Riot Client...'
+                  'Opening league...'
                 )}
           </Button>
         );
@@ -81,19 +81,6 @@ export function RentedAccountButton({ account }: RentedAccountButtonProps) {
             Logged in
           </Button>
         );
-
-      case LeagueClientState.OPEN:
-        return (
-          <Button
-            loading
-            variant="ghost"
-            disabled
-            className="flex-1 !w-full cursor-none border"
-          >
-            Waiting client...
-          </Button>
-        );
-
       default:
         return (
           <Button
@@ -102,7 +89,7 @@ export function RentedAccountButton({ account }: RentedAccountButtonProps) {
             disabled
             className="flex-1 !w-full cursor-none border"
           >
-            Waiting client...
+            Waiting...
           </Button>
         );
     }

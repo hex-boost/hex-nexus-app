@@ -28,19 +28,10 @@ export function useLeagueManager({
     mutationFn: async () => {
       logger.info(logContext, 'Starting captcha handling flow', { username: account.username });
 
-      // Backend now manages the auth state
-      await ClientMonitor.HandleCaptcha(account.username, account.password);
+      logger.info(logContext, 'Opening captcha web view and waiting for token');
+      const captchaToken = await ClientMonitor.OpenWebviewAndGetToken(account.username);
 
-      logger.info(logContext, 'Opening captcha web view');
-      await ClientMonitor.OpenCaptchaWebview();
-
-      logger.info(logContext, 'Waiting for captcha response (timeout: 120s)');
-
-      const captchaResponse = await RiotClient.WaitAndGetCaptchaResponse(Duration.Second * 120);
-      logger.info(logContext, 'Captcha response received', { responseLength: captchaResponse?.length || 0 });
-
-      // Backend now handles login and state updates
-      await ClientMonitor.HandleLogin(account.username, account.password, captchaResponse);
+      await ClientMonitor.HandleLogin(account.username, account.password, captchaToken);
 
       logger.info(logContext, 'Waiting for user info (timeout: 20s)');
       await RiotClient.WaitUntilUserinfoIsReady(Duration.Second * 20);
@@ -69,8 +60,7 @@ export function useLeagueManager({
         });
       } else {
         logger.error(logContext, 'Authentication error', { error: errorMessage });
-        toast.warning('Error on authentication', {
-          description: () => <span>Don't </span>,
+        toast.warning('Error authenticating', {
           action: {
             label: 'Try again',
             onClick: () => {
@@ -78,6 +68,7 @@ export function useLeagueManager({
               handleOpenCaptchaWebview();
             },
           },
+          duration: 10000,
         });
       }
     },
@@ -96,7 +87,7 @@ export function useLeagueManager({
 
       logger.info(logContext, 'Waiting for authentication to be ready (timeout: 20s)');
       await RiotClient.WaitUntilAuthenticationIsReady(Duration.Second * 20);
-
+      await new Promise(resolve => setTimeout(resolve, 3000));
       // Force an immediate state check to update the UI
       await ClientMonitor.GetCurrentState();
 

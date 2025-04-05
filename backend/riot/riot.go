@@ -202,7 +202,7 @@ func (rc *RiotClient) InitializeRestyClient() error {
 	rc.client = client
 	return nil
 }
-func (rc *RiotClient) InitializeCaptchaHandling() error {
+func (rc *RiotClient) InitializeCaptchaHandling(ctx context.Context) error {
 
 	if err := rc.InitializeRestyClient(); err != nil {
 		return err
@@ -211,7 +211,8 @@ func (rc *RiotClient) InitializeCaptchaHandling() error {
 	if err != nil {
 		return err
 	}
-	rc.captcha.startServer(rqdata)
+	rc.captcha.setRqData(rqdata)
+	rc.captcha.startServer()
 	return nil
 }
 

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
-	"github.com/inkeliz/gowebview"
+	"github.com/wailsapp/wails/v3/pkg/application"
 	"go.uber.org/zap"
 	"net/http"
 	"time"
@@ -15,32 +15,37 @@ import (
 
 // Captcha handles all captcha-related functionality
 type Captcha struct {
-	client     *resty.Client
-	logger     *utils.Logger
-	cancel     context.CancelFunc
-	response   chan string
-	webview    gowebview.WebView
-	ctx        context.Context
-	httpServer *http.Server
+	client        *resty.Client
+	logger        *utils.Logger
+	cancel        context.CancelFunc
+	window        *application.WebviewWindow
+	response      chan string
+	captchaServer *http.Server
+	rqdata        string
 }
 
 func NewCaptcha(logger *utils.Logger) *Captcha {
-	ctx, cancel := context.WithCancel(context.Background())
 
 	return &Captcha{
 		logger:   logger,
 		response: make(chan string),
-		ctx:      ctx,
-		cancel:   cancel,
 	}
 }
-func (c *Captcha) startServer(rqdata string) {
+func (c *Captcha) setRqData(rqdata string) {
+	c.rqdata = rqdata
+}
+func (c *Captcha) startServer() {
+	if c.captchaServer != nil {
+		c.logger.Info("Captcha server already started")
+		return
+	}
 	mux := http.NewServeMux()
 
 	captchaServer := &http.Server{
 		Addr:    ":6969",
 		Handler: mux,
 	}
+	c.captchaServer = captchaServer
 
 	mux.HandleFunc("/index.html", func(w http.ResponseWriter, r *http.Request) {
 
@@ -111,7 +116,7 @@ func (c *Captcha) startServer(rqdata string) {
 	mux.HandleFunc("/api/captcha/data", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-
+		rqdata := c.rqdata
 		c.logger.Info("sending captcha token from the endpoint", zap.String("rqdata", rqdata))
 		response := map[string]string{
 			"rqdata": rqdata,
@@ -138,20 +143,8 @@ func (c *Captcha) startServer(rqdata string) {
 			}
 			c.logger.Info("Received captcha token", zap.String("token_length", fmt.Sprintf("%d", len(tokenData.Token))))
 			if tokenData.Token != "" {
-				go func() {
-					select {
-					case <-c.ctx.Done():
-						c.logger.Info("Context already canceled, not sending token")
-					default:
-						c.response <- tokenData.Token
-						c.logger.Info("token sent to channel")
-					}
-					err := c.httpServer.Shutdown(context.Background())
-					if err != nil {
-						c.logger.Error("Error shutting down HTTP server", zap.Error(err))
-					}
-					c.webview.Terminate()
-				}()
+				c.SetResponse(tokenData.Token)
+				c.logger.Info("token sent to channel")
 			}
 
 			json.NewEncoder(w).Encode(map[string]string{"status": "success"})
@@ -168,60 +161,17 @@ func (c *Captcha) startServer(rqdata string) {
 }
 
 func (c *Captcha) SetResponse(response string) {
-	select {
-	case <-c.ctx.Done():
-		c.logger.Info("Context already canceled, not sending response")
-	default:
-		c.response <- response
-	}
+	c.response <- response
 }
-func (c *Captcha) GetWebView() (gowebview.WebView, error) {
-	// Reset context for a new captcha session
-	c.ctx, c.cancel = context.WithCancel(context.Background())
+func (c *Captcha) SetWindow(window *application.WebviewWindow) {
+	c.window = window
 
-	// Initialize and create webview
-	webviewConfig := &gowebview.Config{
-		WindowConfig: &gowebview.WindowConfig{
-			Title: "Nexus HCaptcha",
-		},
-		URL: "http://127.0.0.1:6969/index.html",
-	}
+}
+func (c *Captcha) GetWebView() (*application.WebviewWindow, error) {
 
-	webview, err := gowebview.New(webviewConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create webview: %w", err)
-	}
-
-	c.webview = webview
-
-	// Set up monitoring of the webview
-	go func() {
-		// This will block until the webview is terminated
-		webview.Run()
-
-		// When webview is closed by the user, cancel the context
-		c.logger.Info("Webview was closed by user")
-		c.cancel()
-
-		// Clean up resources
-		if c.httpServer != nil {
-			ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
-			defer cancel()
-			if err := c.httpServer.Shutdown(ctx); err != nil {
-				c.logger.Error("Error shutting down HTTP server", zap.Error(err))
-			}
-		}
-
-		// Send an empty response to unblock any waiters
-		select {
-		case c.response <- "":
-			c.logger.Info("Sent empty captcha response due to webview closure")
-		default:
-			c.logger.Info("Response channel already processed or closed")
-		}
-	}()
-
-	return webview, nil
+	c.window.SetURL("http://127.0.0.1:6969/index.html")
+	c.window.Show()
+	return c.window, nil
 }
 
 func (c *Captcha) WaitAndGetCaptchaResponse(timeout time.Duration) (string, error) {
@@ -234,9 +184,6 @@ func (c *Captcha) WaitAndGetCaptchaResponse(timeout time.Duration) (string, erro
 		}
 		c.logger.Info("Captcha successfully resolved", zap.String("token_length", fmt.Sprintf("%d", len(token))))
 		return token, nil
-	case <-c.ctx.Done():
-		c.logger.Info("Captcha context canceled (webview closed)")
-		return "", errors.New("captcha_cancelled")
 	case <-time.After(timeout):
 		c.logger.Info("Timeout waiting for captcha resolution")
 		return "", errors.New("captcha_timeout")

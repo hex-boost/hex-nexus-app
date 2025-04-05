@@ -2,9 +2,11 @@ package league
 
 import (
 	"context"
+	"errors"
 	"github.com/hex-boost/hex-nexus-app/backend/riot"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/wailsapp/wails/v3/pkg/application"
+	"github.com/wailsapp/wails/v3/pkg/events"
 	"go.uber.org/zap"
 	"sync"
 	"time"
@@ -27,7 +29,6 @@ const (
 	AuthStateWaitingCaptcha LeagueAuthStateType = "WAITING_CAPTCHA"
 	AuthStateWaitingLogin   LeagueAuthStateType = "WAITING_LOGIN"
 	AuthStateLoginSuccess   LeagueAuthStateType = "LOGIN_SUCCESS"
-	AuthStateLoginFailed    LeagueAuthStateType = "LOGIN_FAILED"
 )
 
 type LeagueClientState struct {
@@ -235,45 +236,66 @@ func (cm *ClientMonitor) Start() {
 }
 
 // Backend methods for frontend actions
-func (cm *ClientMonitor) HandleCaptcha(username string, password string) error {
-	cm.UpdateAuthState(AuthStateWaitingCaptcha, "", username)
+func (cm *ClientMonitor) OpenWebviewAndGetToken(username string) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
 
-	// Existing captcha handling logic...
-	err := cm.riotClient.InitializeCaptchaHandling()
+	cm.UpdateAuthState(AuthStateWaitingCaptcha, "", username)
+	err := cm.riotClient.InitializeCaptchaHandling(ctx)
 	if err != nil {
-		cm.UpdateAuthState(AuthStateLoginFailed, err.Error(), username)
-		return err
+		cm.UpdateAuthState(AuthStateNone, "Error while opening server", username)
+		return "", err
 	}
 
-	return nil
-}
-func (cm *ClientMonitor) OpenCaptchaWebview() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
 	webview, err := cm.captcha.GetWebView()
 	if err != nil {
 		cm.logger.Error("Error opening captcha webview", zap.Error(err))
-		return err
+		cm.UpdateAuthState(AuthStateNone, "", username)
+		return "", err
 	}
 
+	// Create a channel to signal when the webview closes
+	closedChan := make(chan struct{})
+
+	// Set up a callback for when the webview closes that actually sends a signal
+	webview.RegisterHook(events.Windows.WindowClosing, func(eventCtx *application.WindowEvent) {
+		cm.logger.Info("Window closing event triggered")
+		eventCtx.Cancel()
+		webview.Hide()
+		close(closedChan) // Signal that the window was closed
+	})
+
+	tokenChan := make(chan string)
+	errChan := make(chan error, 1)
 	go func() {
-		// Blocking call to run the webview
 		webview.Run()
-
-		// This code runs after webview is closed
-		cm.logger.Info("Webview was closed by user")
-		cancel() // Cancel the context
-
-		// Notify that captcha flow was interrupted
-		select {
-		case <-ctx.Done():
-			cm.logger.Info("Sent empty captcha response due to webview closure")
-		default:
-			cm.logger.Info("Captcha response channel already processed")
+		captchaResponse, err := cm.captcha.WaitAndGetCaptchaResponse(30 * time.Second)
+		webview.Hide()
+		if err != nil {
+			cm.logger.Error("Error or cancellation in captcha flow", zap.Error(err))
+			cm.UpdateAuthState(AuthStateNone, "", username)
+			errChan <- err
+			return
 		}
+		tokenChan <- captchaResponse
 	}()
-	return nil
 
+	// Wait for either a token, context timeout, or webview close
+	select {
+	case <-ctx.Done():
+		cm.logger.Info("Captcha flow timed out, shutting down server")
+		return "", errors.New("captcha_timeout")
+	case err := <-errChan:
+		return "", err
+	case token := <-tokenChan:
+		return token, nil
+	case <-closedChan:
+		// Handle the case when webview is closed by the user
+		cm.logger.Info("Webview was closed by user, canceling captcha flow")
+		cancel() // Cancel the context
+		cm.UpdateAuthState(AuthStateNone, "Captcha window closed", username)
+		return "", errors.New("captcha_cancelled_by_user")
+	}
 }
 func (cm *ClientMonitor) SetWindow(window *application.WebviewWindow) {
 	cm.app = window
@@ -293,11 +315,9 @@ func (cm *ClientMonitor) HandleLogin(username string, password string, captchaTo
 	// Existing login logic...
 	_, err := cm.riotClient.LoginWithCaptcha(username, password, captchaToken)
 	if err != nil {
-		cm.UpdateAuthState(AuthStateLoginFailed, err.Error(), username)
 		return err
 	}
 
-	// Update state will happen in the polling routine once login is detected
 	return nil
 }
 

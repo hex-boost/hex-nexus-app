@@ -136,8 +136,17 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 			Handler: application.AssetFileServerFS(assets),
 		},
 	})
+	captchaWindow := app.NewWebviewWindowWithOptions(
+		application.WebviewWindowOptions{
+			Hidden:        true,
+			Name:          "Captcha",
+			DisableResize: true,
+			Title:         "Nexus Captcha",
+		},
+	)
 	mainWindow = app.NewWebviewWindowWithOptions(
 		application.WebviewWindowOptions{
+
 			Name:                       "Main",
 			DefaultContextMenuDisabled: false,
 
@@ -173,6 +182,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 	SetupSystemTray(app, mainWindow, icon16)
 	clientMonitor.SetWindow(mainWindow)
 	appProtocol.SetWindow(mainWindow)
+	captcha.SetWindow(captchaWindow)
 
 	accountMonitor.Start()
 	clientMonitor.Start()
@@ -196,6 +206,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		accountMonitor.Stop()
 
 	})
+
 	mainWindow.RegisterHook(events.Windows.WindowClosing, func(ctx *application.WindowEvent) {
 
 		mainLogger.Info("Window closing event has been called")
