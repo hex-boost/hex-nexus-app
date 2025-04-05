@@ -1,7 +1,8 @@
-package riot
+package league
 
 import (
 	"github.com/hex-boost/hex-nexus-app/backend/repository"
+	"github.com/hex-boost/hex-nexus-app/backend/riot"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"go.uber.org/zap"
 	"sync"
@@ -9,27 +10,31 @@ import (
 )
 
 type AccountMonitor struct {
-	riotClient     *RiotClient
+	riotClient     *riot.RiotClient
 	accountRepo    *repository.AccountsRepository
 	logger         *utils.Logger
 	running        bool
 	isNexusAccount bool
 	checkInterval  time.Duration
 	stopChan       chan struct{}
+	leagueService  *LeagueService
 	mutex          sync.Mutex
 }
 
 func NewAccountMonitor(
-	riotClient *RiotClient,
-	accountRepo *repository.AccountsRepository,
 	logger *utils.Logger,
+	leagueService *LeagueService,
+	riotClient *riot.RiotClient,
+	accountRepo *repository.AccountsRepository,
+
 ) *AccountMonitor {
 	return &AccountMonitor{
+		leagueService:  leagueService,
 		riotClient:     riotClient,
 		accountRepo:    accountRepo,
 		logger:         logger,
 		isNexusAccount: false,
-		checkInterval:  10 * time.Second, // Check every 30 seconds
+		checkInterval:  1 * time.Second, // Check every 30 seconds
 		stopChan:       make(chan struct{}),
 	}
 }
@@ -91,9 +96,13 @@ func (am *AccountMonitor) checkCurrentAccount() {
 	}
 
 	// Check authentication state
-	if err := am.riotClient.IsAuthStateValid(); err != nil {
-		am.logger.Debug("Auth state invalid", zap.Error(err))
+	authState, err := am.riotClient.GetAuthenticationState()
+	if err != nil {
+		am.logger.Debug("error while checking user authentication", zap.Error(err))
 		return
+	}
+	if authState.Type == "success" {
+		am.logger.Debug("User is logged in", zap.Any("authState", authState))
 	}
 
 	userInfo, err := am.riotClient.GetUserinfo()
@@ -104,7 +113,7 @@ func (am *AccountMonitor) checkCurrentAccount() {
 
 	// Check if it's a system account
 
-	allAccounts, err := am.accountRepo.GetAll()
+	allAccounts, err := am.accountRepo.GetAllRented()
 	if err != nil {
 		am.logger.Error("Failed to get all accounts", zap.Error(err))
 		return
@@ -112,9 +121,8 @@ func (am *AccountMonitor) checkCurrentAccount() {
 
 	userinfoSummonerName := userInfo.Acct.GameName + userInfo.Acct.TagLine
 	isNexusAccount := false
-
 	for _, account := range allAccounts {
-		accountSummonerName := account.Gamename + account.Tagline
+		accountSummonerName := account.GameName + account.Tagline
 		if accountSummonerName == userinfoSummonerName {
 			isNexusAccount = true
 			break
@@ -132,7 +140,8 @@ func (am *AccountMonitor) IsNexusAccount() bool {
 	defer am.mutex.Unlock()
 	return am.isNexusAccount
 }
-func (am *AccountMonitor) LogoutSystemAccount() error {
+func (am *AccountMonitor) LogoutNexusAccount() error {
+	am.leagueService.Logout()
 	err := am.riotClient.Logout()
 	if err != nil {
 		am.logger.Error("Failed to logout from the client", zap.Error(err))

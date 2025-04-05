@@ -1,16 +1,18 @@
-import type { AccountType } from '@/types/types';
+import type { AccountType, UserType } from '@/types/types';
 import type { StrapiError } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
 import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
 import { strapiClient } from '@/lib/strapi';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
 export function useAccountActions({
   account,
   onAccountChange,
+  user,
 }: {
   account: AccountType;
+  user?: UserType;
   onAccountChange: () => Promise<void>;
 }) {
   const { refetchUser } = useCommonFetch();
@@ -18,9 +20,19 @@ export function useAccountActions({
   const [isDropDialogOpen, setIsDropDialogOpen] = useState(false);
   const [selectedExtensionIndex, setSelectedExtensionIndex] = useState<number>(1);
 
+  const {
+    data: dropRefund,
+  } = useQuery({
+    queryKey: ['accounts', 'refund', account.id],
+    queryFn: () => strapiClient.find<{ amount: number }>(`accounts/${account?.documentId}/refund`).then(res => res.data),
+    enabled: account.user?.documentId === user?.documentId,
+    staleTime: 0,
+  });
   const { mutate: handleDropAccount, isPending: isDropPending } = useMutation<{ message: string }, StrapiError>({
     mutationKey: ['accounts', 'drop', account.documentId],
     mutationFn: async () => {
+      setIsDropDialogOpen(false);
+
       const response = await strapiClient.request<{ message: string }>('post', `accounts/${account.documentId}/drop`);
       await refetchUser();
       await onAccountChange();
@@ -53,7 +65,7 @@ export function useAccountActions({
         {
           loading: 'Extending account...',
           success: data => data.message || 'Account extended successfully',
-          error: error => error.error?.message || 'Failed to extend account',
+          error: error => error.error?.message || 'This feature is not implemented yet',
         },
       );
     },
@@ -66,6 +78,8 @@ export function useAccountActions({
   >({
     mutationKey: ['accounts', 'rent', account.documentId],
     mutationFn: async (timeIndex: number) => {
+      setIsDropDialogOpen(false);
+
       const response = strapiClient.request<{ message: string }>('post', `accounts/${account.documentId}/rentals`, {
         data: {
           game: 'league',
@@ -99,5 +113,6 @@ export function useAccountActions({
     isDropPending,
     handleExtendAccount,
     isExtendPending,
+    dropRefund,
   };
 }

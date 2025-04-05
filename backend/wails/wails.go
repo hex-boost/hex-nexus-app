@@ -54,12 +54,8 @@ func SetupSystemTray(app *application.App, window *application.WebviewWindow, ic
 // fmt.Println("  League of Legends client detected!")
 // }
 // }
-func Run(assets embed.FS, icon []byte) {
+func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 	cfg, err := config.LoadConfig()
-
-	if err != nil && cfg.Environment == "development" {
-		log.Fatal("Failed to load configuration: ", err)
-	}
 
 	appInstance := app.App(cfg)
 	updater.NewUpdater(cfg, appInstance.Log().Wails()).Start()
@@ -72,23 +68,37 @@ func Run(assets embed.FS, icon []byte) {
 	var mainWindow *application.WebviewWindow
 	utilsBind := utils.NewUtils()
 	lcuConn := league.NewLCUConnection(appInstance.Log().League())
-	leagueService := league.NewLeagueService(appInstance.Log().League())
+	leagueService := league.NewLeagueService()
 	baseRepo := repository.NewBaseRepository(cfg, appInstance.Log().Repo())
 	apiRepository := repository.NewAPIRepository(baseRepo)
 	accountsRepository := repository.NewAccountsRepository(apiRepository)
 	summonerService := league.NewSummonerService(league.NewSummonerClient(lcuConn, appInstance.Log().League()), accountsRepository, appInstance.Log().League())
-	riotClient := riot.NewRiotClient(appInstance.Log().Riot())
-	accountMonitor := riot.NewAccountMonitor(riotClient, accountsRepository, appInstance.Log().Riot())
+	captcha := riot.NewCaptcha(appInstance.Log().Riot())
+	riotClient := riot.NewRiotClient(appInstance.Log().Riot(), captcha)
+	accountMonitor := league.NewAccountMonitor(appInstance.Log().Riot(), leagueService, riotClient, accountsRepository)
 	discordService := discord.New(appInstance.Log().Discord())
-	clientMonitor := league.NewClientMonitor(leagueService, riotClient, appInstance.Log().League())
+	clientMonitor := league.NewClientMonitor(leagueService, riotClient, appInstance.Log().League(), captcha)
 	app := application.New(application.Options{
 		Name:        "Nexus",
 		Description: "Nexus",
-		Icon:        icon,
+		Icon:        icon256,
 		Windows: application.WindowsOptions{
 			DisableQuitOnLastWindowClosed: true,
 		},
-
+		// In the application.New options where you see "KeyBindings:"
+		KeyBindings: map[string]func(window *application.WebviewWindow){
+			"F12": func(window *application.WebviewWindow) {
+				if window != nil {
+					window.OpenDevTools()
+				}
+			},
+			// Optional: Add Ctrl+Shift+I as an alternative
+			"ctrl+shift+i": func(window *application.WebviewWindow) {
+				if window != nil {
+					window.OpenDevTools()
+				}
+			},
+		},
 		SingleInstance: &application.SingleInstanceOptions{
 			UniqueID: "com.hexboost.nexus.app",
 			OnSecondInstanceLaunch: func(data application.SecondInstanceData) {
@@ -115,8 +125,10 @@ func Run(assets embed.FS, icon []byte) {
 			application.NewService(riotClient),
 			application.NewService(discordService),
 			application.NewService(summonerService),
+			application.NewService(leagueService),
 			application.NewService(clientMonitor),
 			application.NewService(lcuConn),
+			application.NewService(baseRepo),
 			application.NewService(utilsBind),
 			application.NewService(accountsRepository),
 		},
@@ -158,22 +170,17 @@ func Run(assets embed.FS, icon []byte) {
 			OpenInspectorOnStartup: true,
 		},
 	)
-	SetupSystemTray(app, mainWindow, icon)
+	SetupSystemTray(app, mainWindow, icon16)
 	clientMonitor.SetWindow(mainWindow)
 	appProtocol.SetWindow(mainWindow)
 
-	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(ctx *application.WindowEvent) {
-		accountMonitor.Start()
-		clientMonitor.Start()
-
-	})
-
-	app.OnEvent("nexus:shutdown", func(event *application.CustomEvent) {
-		app.Hide()
+	accountMonitor.Start()
+	clientMonitor.Start()
+	app.OnShutdown(func() {
 		mainLogger.Info("nexus shutdown event has been called")
 		if accountMonitor.IsNexusAccount() {
 			mainLogger.Info("Logging out system account")
-			err = accountMonitor.LogoutSystemAccount()
+			err = accountMonitor.LogoutNexusAccount()
 
 			if err != nil {
 				mainLogger.Error("Failed to logout system account", zap.Error(err))
@@ -194,7 +201,7 @@ func Run(assets embed.FS, icon []byte) {
 		mainLogger.Info("Window closing event has been called")
 		if accountMonitor.IsNexusAccount() {
 			mainLogger.Info("Logging out system account")
-			err = accountMonitor.LogoutSystemAccount()
+			err = accountMonitor.LogoutNexusAccount()
 
 			if err != nil {
 				mainLogger.Error("Failed to logout system account", zap.Error(err))

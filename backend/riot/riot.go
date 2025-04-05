@@ -24,16 +24,18 @@ import (
 type RiotClient struct {
 	client           *resty.Client
 	logger           *utils.Logger
+	captcha          *Captcha
 	hcaptchaResponse chan string
 	ctx              context.Context
 	captchaData      string
 	webview          gowebview.WebView
 }
 
-func NewRiotClient(logger *utils.Logger) *RiotClient {
+func NewRiotClient(logger *utils.Logger, captcha *Captcha) *RiotClient {
 	return &RiotClient{
 		client:           nil,
 		logger:           logger,
+		captcha:          captcha,
 		ctx:              context.Background(),
 		hcaptchaResponse: make(chan string),
 	}
@@ -205,10 +207,11 @@ func (rc *RiotClient) InitializeCaptchaHandling() error {
 	if err := rc.InitializeRestyClient(); err != nil {
 		return err
 	}
-	if err := rc.handleCaptcha(); err != nil {
+	rqdata, err := rc.getCaptchaData()
+	if err != nil {
 		return err
 	}
-	rc.startCaptchaServer()
+	rc.captcha.startServer(rqdata)
 	return nil
 }
 
@@ -319,4 +322,84 @@ func (rc *RiotClient) Logout() error {
 	}
 	return err
 
+}
+func (rc *RiotClient) GetAuthenticationState() (*types.RiotIdentityResponse, error) {
+	if rc.client == nil {
+		return nil, errors.New("client is not initialized")
+	}
+	var getCurrentAuthResult types.RiotIdentityResponse
+	result, err := rc.client.R().SetResult(&getCurrentAuthResult).Get("/rso-authenticator/v1/authentication")
+
+	if err != nil {
+		rc.logger.Error("Authentication failed", zap.Error(err))
+		return nil, err
+	}
+
+	if result.IsError() {
+		rc.logger.Error("Authentication failed",
+			zap.String("message", string(result.Body())),
+			zap.Int("status_code", result.StatusCode()))
+
+		// Parse error response to check for CREDENTIALS_INVALID
+		var errorResponse types.ErrorResponse
+		if err := json.Unmarshal(result.Body(), &errorResponse); err == nil {
+			if errorResponse.ErrorCode == "CREDENTIALS_INVALID" {
+				rc.logger.Info("Detected invalid credentials, attempting to re-initialize client")
+				if err := rc.InitializeRestyClient(); err != nil {
+					return nil, fmt.Errorf("failed to re-initialize client: %w", err)
+				}
+				return nil, errors.New("client re-initialized after invalid credentials")
+			}
+		}
+
+		return nil, fmt.Errorf("authentication failed with status code %d: %s",
+			result.StatusCode(), string(result.Body()))
+	}
+	return &getCurrentAuthResult, nil
+}
+func (rc *RiotClient) IsAuthStateValid() error {
+	currentAuth, err := rc.GetAuthenticationState()
+	if err != nil {
+		rc.logger.Error("Failed to get authentication state", zap.Error(err))
+		return err
+	}
+	if currentAuth.Type != "auth" {
+		return errors.New("invalid authentication state")
+	}
+	return nil
+}
+
+func (rc *RiotClient) getCaptchaData() (string, error) {
+	err := rc.IsAuthStateValid()
+	if err != nil {
+		rc.logger.Error("Invalid authentication state", zap.Error(err))
+		return "", err
+	}
+	_, err = rc.client.R().
+		Delete("/rso-authenticator/v1/authentication")
+	if err != nil {
+		rc.logger.Error("Error in authentication delete session", zap.Error(err))
+		return "", err
+	}
+	var startAuthResult types.RiotIdentityResponse
+	startAuthRes, err := rc.client.R().
+		SetBody(getRiotIdentityStartPayload()).
+		SetResult(&startAuthResult).
+		Post("/rso-authenticator/v1/authentication/riot-identity/start")
+	if err != nil {
+		rc.logger.Error("Error in authentication start request", zap.Error(err))
+		return "", err
+	}
+	if startAuthRes.IsError() {
+		var errorResponse types.ErrorResponse
+		if err := json.Unmarshal(startAuthRes.Body(), &errorResponse); err != nil {
+			rc.logger.Error("Failed to parse error response", zap.Error(err))
+		}
+		rc.logger.Error("Authentication failed", zap.String("message", errorResponse.Message))
+		return "", errors.New(errorResponse.Message)
+	}
+	if startAuthResult.Captcha.Hcaptcha.Data == "" {
+		return "", errors.New("no captcha data")
+	}
+	return startAuthResult.Captcha.Hcaptcha.Data, nil
 }

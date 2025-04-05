@@ -18,6 +18,10 @@ type app struct {
 }
 
 func App(cfg *config.Config) *app {
+	if cfg == nil {
+		// Handle nil config case - either return an error or use a default config
+		panic("nil config provided to App()")
+	}
 	_app.once.Do(
 		func() {
 			_app.log = NewLogger(cfg)

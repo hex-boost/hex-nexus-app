@@ -17,7 +17,7 @@ type Logger struct {
 func NewLogger(prefix string, config *config.Config) *Logger {
 	// Create logs directory
 	if err := os.MkdirAll(config.LogsDirectory, os.ModePerm); err != nil {
-		panic(err)
+		panic(fmt.Sprintf("panic creting logs dir %v", err))
 	}
 
 	// Configure encoder for both console and file

@@ -32,7 +32,7 @@ export function useLeagueManager({
       await ClientMonitor.HandleCaptcha(account.username, account.password);
 
       logger.info(logContext, 'Opening captcha web view');
-      await RiotClient.GetWebView();
+      await ClientMonitor.OpenCaptchaWebview();
 
       logger.info(logContext, 'Waiting for captcha response (timeout: 120s)');
 

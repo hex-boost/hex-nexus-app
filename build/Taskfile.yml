@@ -32,7 +32,8 @@ tasks:
       - task: install:frontend:deps
       - task: generate:bindings
     cmds:
-      - npm run {{.BUILD_COMMAND}}
+      - echo "Starting frontend build..."
+      - npm run {{.BUILD_COMMAND}} --loglevel verbose
     env:
       NODE_ENV: production
       VITE_APP_VERSION: '{{.VERSION}}'

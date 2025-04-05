@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"log"
 	"os"
 	"time"
 
@@ -46,7 +47,7 @@ func LoadConfig() (*Config, error) {
 	// Load .env file if exists
 	err := godotenv.Load()
 	if err != nil {
-		return nil, err
+		log.Println("Error loading .env file")
 	}
 
 	// Default configuration

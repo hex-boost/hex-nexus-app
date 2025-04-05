@@ -1,7 +1,7 @@
 import { CoinIcon } from '@/components/coin-icon.tsx';
 import { ErrorPage } from '@/components/error-page.tsx';
-
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
+
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { UserProfile } from '@/components/UserProfile.tsx';

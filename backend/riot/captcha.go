@@ -5,14 +5,36 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/hex-boost/hex-nexus-app/backend/types"
+	"github.com/go-resty/resty/v2"
+	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/inkeliz/gowebview"
 	"go.uber.org/zap"
 	"net/http"
 	"time"
 )
 
-func (rc *RiotClient) startCaptchaServer() {
+// Captcha handles all captcha-related functionality
+type Captcha struct {
+	client     *resty.Client
+	logger     *utils.Logger
+	cancel     context.CancelFunc
+	response   chan string
+	webview    gowebview.WebView
+	ctx        context.Context
+	httpServer *http.Server
+}
+
+func NewCaptcha(logger *utils.Logger) *Captcha {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	return &Captcha{
+		logger:   logger,
+		response: make(chan string),
+		ctx:      ctx,
+		cancel:   cancel,
+	}
+}
+func (c *Captcha) startServer(rqdata string) {
 	mux := http.NewServeMux()
 
 	captchaServer := &http.Server{
@@ -90,9 +112,9 @@ func (rc *RiotClient) startCaptchaServer() {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 
-		rc.logger.Info("sending captcha token from the endpoint", zap.String("token_length", rc.captchaData))
+		c.logger.Info("sending captcha token from the endpoint", zap.String("rqdata", rqdata))
 		response := map[string]string{
-			"rqdata": rc.captchaData,
+			"rqdata": rqdata,
 		}
 
 		err := json.NewEncoder(w).Encode(response)
@@ -114,17 +136,21 @@ func (rc *RiotClient) startCaptchaServer() {
 				http.Error(w, "Invalid request", http.StatusBadRequest)
 				return
 			}
-			rc.logger.Info("Received captcha token", zap.String("token_length", fmt.Sprintf("%d", len(tokenData.Token))))
+			c.logger.Info("Received captcha token", zap.String("token_length", fmt.Sprintf("%d", len(tokenData.Token))))
 			if tokenData.Token != "" {
-
 				go func() {
-					rc.hcaptchaResponse <- tokenData.Token
-					rc.logger.Info("token sent to channel")
-					err := captchaServer.Shutdown(context.Background())
-					if err != nil {
-						return
+					select {
+					case <-c.ctx.Done():
+						c.logger.Info("Context already canceled, not sending token")
+					default:
+						c.response <- tokenData.Token
+						c.logger.Info("token sent to channel")
 					}
-					rc.webview.Terminate()
+					err := c.httpServer.Shutdown(context.Background())
+					if err != nil {
+						c.logger.Error("Error shutting down HTTP server", zap.Error(err))
+					}
+					c.webview.Terminate()
 				}()
 			}
 
@@ -133,119 +159,86 @@ func (rc *RiotClient) startCaptchaServer() {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
-
 	go func() {
-		rc.logger.Info("Starting captcha server on http://127.0.0.1:6969")
+		c.logger.Info("Starting captcha server on http://127.0.0.1:6969")
 		if err := captchaServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			rc.logger.Error("Failed to start captcha server", zap.Error(err))
+			c.logger.Error("Failed to start captcha server", zap.Error(err))
 		}
 	}()
 }
 
-func (rc *RiotClient) GetWebView() (gowebview.WebView, error) {
-	webview, err := gowebview.New(&gowebview.Config{URL: "http://127.0.0.1:6969/index.html"})
-	if err != nil {
-		return nil, err
+func (c *Captcha) SetResponse(response string) {
+	select {
+	case <-c.ctx.Done():
+		c.logger.Info("Context already canceled, not sending response")
+	default:
+		c.response <- response
 	}
-	rc.webview = webview
-	return webview, nil
 }
+func (c *Captcha) GetWebView() (gowebview.WebView, error) {
+	// Reset context for a new captcha session
+	c.ctx, c.cancel = context.WithCancel(context.Background())
 
-func (rc *RiotClient) CloseWebview() {
+	// Initialize and create webview
+	webviewConfig := &gowebview.Config{
+		WindowConfig: &gowebview.WindowConfig{
+			Title: "Nexus HCaptcha",
+		},
+		URL: "http://127.0.0.1:6969/index.html",
+	}
 
-}
-func (rc *RiotClient) handleCaptcha() error {
-	rc.logger.Info("Starting captcha handling")
-
-	captchaData, err := rc.getCaptchaData()
+	webview, err := gowebview.New(webviewConfig)
 	if err != nil {
-		rc.logger.Error("Failed to get captcha data", zap.Error(err))
-		return err
+		return nil, fmt.Errorf("failed to create webview: %w", err)
 	}
 
-	rc.captchaData = captchaData
+	c.webview = webview
 
-	return nil
-}
-func (rc *RiotClient) IsAuthStateValid() error {
-	if rc.client == nil {
-		return errors.New("client is not initialized")
-	}
-	var getCurrentAuthResult types.RiotIdentityResponse
-	result, err := rc.client.R().SetResult(&getCurrentAuthResult).Get("/rso-authenticator/v1/authentication")
+	// Set up monitoring of the webview
+	go func() {
+		// This will block until the webview is terminated
+		webview.Run()
 
-	if err != nil {
-		rc.logger.Error("Authentication failed", zap.Error(err))
-		return err
-	}
+		// When webview is closed by the user, cancel the context
+		c.logger.Info("Webview was closed by user")
+		c.cancel()
 
-	if result.IsError() {
-		rc.logger.Error("Authentication failed",
-			zap.String("message", string(result.Body())),
-			zap.Int("status_code", result.StatusCode()))
-
-		// Parse error response to check for CREDENTIALS_INVALID
-		var errorResponse types.ErrorResponse
-		if err := json.Unmarshal(result.Body(), &errorResponse); err == nil {
-			if errorResponse.ErrorCode == "CREDENTIALS_INVALID" {
-				rc.logger.Info("Detected invalid credentials, attempting to re-initialize client")
-				if err := rc.InitializeRestyClient(); err != nil {
-					return fmt.Errorf("failed to re-initialize client: %w", err)
-				}
-				return errors.New("client re-initialized after invalid credentials")
+		// Clean up resources
+		if c.httpServer != nil {
+			ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+			defer cancel()
+			if err := c.httpServer.Shutdown(ctx); err != nil {
+				c.logger.Error("Error shutting down HTTP server", zap.Error(err))
 			}
 		}
 
-		return fmt.Errorf("authentication failed with status code %d: %s",
-			result.StatusCode(), string(result.Body()))
-	}
-	if getCurrentAuthResult.Type != "auth" {
-		return errors.New("invalid authentication state")
-	}
-	return nil
-}
-func (rc *RiotClient) getCaptchaData() (string, error) {
-	err := rc.IsAuthStateValid()
-	if err != nil {
-		rc.logger.Error("Invalid authentication state", zap.Error(err))
-		return "", err
-	}
-	_, err = rc.client.R().
-		Delete("/rso-authenticator/v1/authentication")
-	if err != nil {
-		rc.logger.Error("Error in authentication delete session", zap.Error(err))
-		return "", err
-	}
-	var startAuthResult types.RiotIdentityResponse
-	startAuthRes, err := rc.client.R().
-		SetBody(getRiotIdentityStartPayload()).
-		SetResult(&startAuthResult).
-		Post("/rso-authenticator/v1/authentication/riot-identity/start")
-	if err != nil {
-		rc.logger.Error("Error in authentication start request", zap.Error(err))
-		return "", err
-	}
-	if startAuthRes.IsError() {
-		var errorResponse types.ErrorResponse
-		if err := json.Unmarshal(startAuthRes.Body(), &errorResponse); err != nil {
-			rc.logger.Error("Failed to parse error response", zap.Error(err))
+		// Send an empty response to unblock any waiters
+		select {
+		case c.response <- "":
+			c.logger.Info("Sent empty captcha response due to webview closure")
+		default:
+			c.logger.Info("Response channel already processed or closed")
 		}
-		rc.logger.Error("Authentication failed", zap.String("message", errorResponse.Message))
-		return "", errors.New(errorResponse.Message)
-	}
-	if startAuthResult.Captcha.Hcaptcha.Data == "" {
-		return "", errors.New("no captcha data")
-	}
-	return startAuthResult.Captcha.Hcaptcha.Data, nil
+	}()
+
+	return webview, nil
 }
 
-func (rc *RiotClient) WaitAndGetCaptchaResponse(timeout time.Duration) (string, error) {
-	rc.logger.Info("Waiting for captcha resolution", zap.Duration("timeout", timeout))
+func (c *Captcha) WaitAndGetCaptchaResponse(timeout time.Duration) (string, error) {
+	c.logger.Info("Waiting for captcha resolution", zap.Duration("timeout", timeout))
 	select {
-	case token := <-rc.hcaptchaResponse:
-		rc.logger.Info("Captcha successfully resolved", zap.String("token_length", fmt.Sprintf("%d", len(token))))
+	case token := <-c.response:
+		if token == "" {
+			c.logger.Info("Received empty captcha token, webview was likely closed")
+			return "", errors.New("captcha_cancelled")
+		}
+		c.logger.Info("Captcha successfully resolved", zap.String("token_length", fmt.Sprintf("%d", len(token))))
 		return token, nil
+	case <-c.ctx.Done():
+		c.logger.Info("Captcha context canceled (webview closed)")
+		return "", errors.New("captcha_cancelled")
 	case <-time.After(timeout):
-		return "", errors.New("timeout waiting for captcha resolution")
+		c.logger.Info("Timeout waiting for captcha resolution")
+		return "", errors.New("captcha_timeout")
 	}
 }

@@ -14,16 +14,16 @@ func NewAccountsRepository(api *APIRepository) *AccountsRepository {
 	}
 }
 
-func (s *AccountsRepository) Save(summoner types.Summoner) error {
-	_, err := s.api.Put("/accounts/refresh", summoner, nil)
+func (s *AccountsRepository) Save(summoner types.SummonerRented) error {
+	_, err := s.api.Put("/api/accounts/refresh", summoner, nil)
 	return err
 }
-func (s *AccountsRepository) GetAll() ([]types.Summoner, error) {
-	var summoners []types.Summoner
-	_, err := s.api.Get("/accounts", &summoners)
+func (s *AccountsRepository) GetAllRented() ([]types.SummonerRented, error) {
+	var summoners types.RentedAccountsResponse
+	_, err := s.api.Get("/api/accounts/rented", &summoners)
 	if err != nil {
 		return nil, err
 	}
-	return summoners, nil
+	return summoners.Data, nil
 
 }

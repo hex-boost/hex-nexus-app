@@ -92,9 +92,6 @@ func (rc *RiotClient) WaitUntilAuthenticationIsReady(timeout time.Duration) erro
 func (rc *RiotClient) IsClientInitialized() bool {
 	return rc.client != nil
 }
-func (rc *RiotClient) Disconnect() {
-
-}
 func (rc *RiotClient) GetUserinfo() (*types.UserInfo, error) {
 	var rawResponse types.RCUUserinfo
 	resp, err := rc.client.R().SetResult(&rawResponse).Get("/rso-auth/v1/authorization/userinfo")

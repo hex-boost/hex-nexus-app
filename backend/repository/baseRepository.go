@@ -31,3 +31,8 @@ func (b *BaseRepository) SetJWT(jwt string) {
 	b.JWT = jwt
 	b.Client.SetHeader("Authorization", "Bearer "+jwt)
 }
+
+func (b *BaseRepository) ClearJWT() {
+	b.JWT = ""
+	b.Client.Header.Del("Authorization") // Remove the Authorization header completely
+}

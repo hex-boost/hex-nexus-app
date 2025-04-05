@@ -144,17 +144,22 @@ func (l *SummonerService) UpdateFromLCU(username string, password string) error 
 		}
 	}
 
-	summoner := types.Summoner{
-		Username:      username,
-		Password:      password,
-		Gamename:      currentSummoner.GameName,
-		Tagline:       currentSummoner.TagLine,
-		Champions:     champions,
-		ChampionSkins: skins,
-		Currencies:    currencies,
-		RankedStats:   rankedStats,
-		Server:        region,
-		AccountLevel:  currentSummoner.SummonerLevel,
+	summoner := types.SummonerRented{
+		SummonerBase: types.SummonerBase{
+			Tagline:      currentSummoner.TagLine,
+			LCUchampions: champions,
+			LCUskins:     skins,
+			//RP:             currencies.RP,
+			//LolBlueEssence: currencies.LolBlueEssence,
+			//RankedStats:    rankedStats,
+			Server: region,
+
+			//AccountLevel: currentSummoner.SummonerLevel,
+		},
+		GameName: currentSummoner.GameName,
+
+		Username: username,
+		Password: password,
 	}
 	summonerJSON, err := json.MarshalIndent(summoner, "", "  ")
 

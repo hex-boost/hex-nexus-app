@@ -2,20 +2,37 @@
 ; Unicode is recommended for better compatibility with special characters
 Unicode True
 
+
+!define SIGNTOOL "signtool.exe"
+!define SIGNCMD '${SIGNTOOL} sign /tr http://timestamp.digicert.com /td sha256 /fd sha256 /a'
+
+# Before creating the installer
+!system '${SIGNCMD} "${ARG_WAILS_AMD64_BINARY}"'
+
+# After creating the installer
+!finalize '${SIGNCMD} "${OUTFILE}"'
+!uninstfinalize
+
 ; Application settings
 !define PRODUCT_NAME "Nexus"
-!define PRODUCT_VERSION "1.0.0"
+!define PRODUCT_VERSION "1.0.12"
 !define PRODUCT_PUBLISHER "Hex Inc."
 !define PRODUCT_WEB_SITE "https://hexinc.com"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\Nexus.exe"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
+
+VIProductVersion "${PRODUCT_VERSION}.0"
+VIAddVersionKey "ProductName" "${PRODUCT_NAME}"
+VIAddVersionKey "CompanyName" "${PRODUCT_PUBLISHER}"
+VIAddVersionKey "FileDescription" "${PRODUCT_NAME} Installer"
+VIAddVersionKey "FileVersion" "${PRODUCT_VERSION}"
+VIAddVersionKey "LegalCopyright" "© ${PRODUCT_PUBLISHER}"
 
 ; Compression settings (LZMA is better for final size)
 SetCompressor /SOLID lzma
 
 ; Installer icon
 !define MUI_ICON "icon.ico"
-!define MUI_UNICON "uninstall.ico"
 
 ; Custom background image (optional)
 ; !define MUI_WELCOMEFINISHPAGE_BITMAP "welcome.bmp"

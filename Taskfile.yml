@@ -13,8 +13,7 @@ vars:
   DIST_DIR: "dist"
   API_URL: '{{.API_URL | default "http://localhost:1337"}}'
   VITE_PORT: '{{.WAILS_VITE_PORT | default 9245}}'
-#  VERSION: '{{.VERSION | default "development"}}'
-  API_KEY: '{{.API_KEY | default "development"}}'
+  VERSION: '{{.VERSION | default "dev"}}'
   ENV_FILE: '.env'
 
 tasks:
@@ -32,7 +31,7 @@ tasks:
           PRODUCTION: '{{.PRODUCTION}}'
       - task: common:generate:icons
     cmds:
-      - go build -tags production -trimpath -buildvcs=false -ldflags="-X github.com/hex-boost/hex-nexus-app/backend/config.Version=1.0.2 -X github.com/hex-boost/hex-nexus-app/backend/config.BackendURL={{.API_URL}}" -o bin/Nexus.exe .
+      - go build -tags development -gcflags="all=-N -l" -ldflags="-X github.com/hex-boost/hex-nexus-app/backend/config.Version=dev -X github.com/hex-boost/hex-nexus-app/backend/config.BackendURL={{.API_URL}}" -o bin/Nexus.exe .
       - powershell -Command "while (1) { dlv exec bin/Nexus.exe --headless --listen :2345 --api-version 2 }"
 
   package:

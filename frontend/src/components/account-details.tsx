@@ -23,11 +23,9 @@ import { useAccountActions } from '@/hooks/useAccountActions.ts';
 import { useAccountFilters } from '@/hooks/useAccountFilters.ts';
 import { getLeaverBusterInfo } from '@/hooks/useAccounts.tsx';
 import { useDateTime } from '@/hooks/useDateTime.ts';
-import { strapiClient } from '@/lib/strapi.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
 import { cn } from '@/lib/utils.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
-import { useQuery } from '@tanstack/react-query';
 import {
   AlertCircle,
   AlertOctagon,
@@ -105,7 +103,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
 }) {
   const { user } = useUserStore();
   const { championsSearch, setChampionsSearch, skinsSearch, setSkinsSearch, filteredChampions, filteredSkins } = useAccountFilters({ account });
-  const { selectedRentalOptionIndex, handleExtendAccount, isExtendPending, setSelectedRentalOptionIndex, selectedExtensionIndex, handleDropAccount, isRentPending, isDropPending, setIsDropDialogOpen, handleRentAccount, isDropDialogOpen } = useAccountActions({ account, onAccountChange });
+  const { dropRefund, selectedRentalOptionIndex, handleExtendAccount, isExtendPending, setSelectedRentalOptionIndex, selectedExtensionIndex, handleDropAccount, isRentPending, isDropPending, setIsDropDialogOpen, handleRentAccount, isDropDialogOpen } = useAccountActions({ account, onAccountChange, user: user as any });
   const [activeTab, setActiveTab] = useState(0);
   const { getCompanyIcon, getGameIcon } = useMapping();
   const hours = [1, 3, 6];
@@ -121,14 +119,6 @@ export default function AccountDetails({ account, price, onAccountChange }: {
     hours: hours[index], // Use the predefined hours array
     price: percentage === 0 ? basePrice : basePrice * (1 + percentage / 100),
   }));
-  const {
-    data: dropRefund,
-  } = useQuery({
-    queryKey: ['accounts', 'refund', account.id],
-    queryFn: () => strapiClient.find<{ amount: number }>(`accounts/${account?.documentId}/refund`).then(res => res.data),
-    enabled: account.user?.documentId === user?.documentId,
-    staleTime: 0,
-  });
   return (
     <>
       <div className="lg:col-span-3 space-y-6">

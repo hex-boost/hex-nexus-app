@@ -21,7 +21,7 @@ type SummonerClient struct {
 
 func NewSummonerClient(lcu *LCUConnection, logger *utils.Logger) *SummonerClient {
 	return &SummonerClient{
-		lcu:    lcu, 
+		lcu:    lcu,
 		logger: logger,
 		ctx:    context.Background(),
 	}
@@ -276,6 +276,6 @@ func (s *SummonerClient) GetRegion() (string, error) {
 		return "UNKNOWN", errors.New("could not parse region")
 	}
 
-	s.logger.Info("Account region retrieved", zap.String("region", region))
+	s.logger.Info("Summoner region retrieved", zap.String("region", region))
 	return region, nil
 }

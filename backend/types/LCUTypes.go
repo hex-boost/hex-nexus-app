@@ -292,10 +292,6 @@ type Restriction struct {
 	Data   map[string]interface{} `json:"dat"`
 }
 
-type Ban struct {
-	Restrictions []Restriction `json:"restrictions"`
-}
-
 type Region struct {
 	Locales []string `json:"locales"`
 	ID      string   `json:"id"`

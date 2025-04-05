@@ -96,47 +96,6 @@ func (c *LCUConnection) getLeagueCredentials() (port, token, pid string, err err
 
 	return port, token, pid, nil
 }
-func (c *LCUConnection) WaitInventoryIsReady() {
-	c.logger.Info("Waiting for inventory system to be ready")
-
-	attempts := 0
-	for {
-		if c.IsInventoryReady() {
-			c.logger.Info("Inventory system is ready", zap.Int("attempts", attempts))
-			return
-		}
-
-		attempts++
-		if attempts%10 == 0 {
-			c.logger.Debug("Still waiting for inventory system to be ready", zap.Int("attempts", attempts))
-		}
-
-		time.Sleep(1 * time.Second)
-	}
-}
-
-func (c *LCUConnection) IsInventoryReady() bool {
-
-	if c.client == nil {
-		c.logger.Debug("LCU client not initialized")
-		return false
-	}
-
-	var result bool
-	resp, err := c.client.R().SetResult(&result).Get("/lol-inventory/v1/initial-configuration-complete")
-
-	if err != nil {
-		c.logger.Debug("LCU client connection test failed", zap.Error(err))
-		return false
-	}
-
-	if resp.IsError() {
-		c.logger.Debug("LCU client ready and accepting API requests")
-		return false
-	}
-	c.logger.Debug("LCU client not ready", zap.Int("statusCode", resp.StatusCode()))
-	return result
-}
 
 func (c *LCUConnection) WaitUntilReady() error {
 	timeout := 60 * time.Second
