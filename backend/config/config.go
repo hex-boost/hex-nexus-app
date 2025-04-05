@@ -61,7 +61,7 @@ func LoadConfig() (*Config, error) {
 		LogsDirectory:     getEnv("LOGS_DIR", "./logs"),
 		DataDirectory:     getEnv("DATA_DIR", "./data"),
 		CaptchaServerPort: getEnv("CAPTCHA_SERVER_PORT", "6969"),
-		LogLevel:          getEnv("LOG_LEVEL", "info"),
+		LogLevel:          getEnv("LOG_LEVEL", "debug"),
 	}
 
 	// Try to load from config file if specified

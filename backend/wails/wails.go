@@ -72,10 +72,11 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 	baseRepo := repository.NewBaseRepository(cfg, appInstance.Log().Repo())
 	apiRepository := repository.NewAPIRepository(baseRepo)
 	accountsRepository := repository.NewAccountsRepository(apiRepository)
-	summonerService := league.NewSummonerService(league.NewSummonerClient(lcuConn, appInstance.Log().League()), accountsRepository, appInstance.Log().League())
+	summonerClient := league.NewSummonerClient(lcuConn, appInstance.Log().League())
+	summonerService := league.NewSummonerService(summonerClient, accountsRepository, appInstance.Log().League())
 	captcha := riot.NewCaptcha(appInstance.Log().Riot())
 	riotClient := riot.NewRiotClient(appInstance.Log().Riot(), captcha)
-	accountMonitor := league.NewAccountMonitor(appInstance.Log().Riot(), leagueService, riotClient, accountsRepository)
+	accountMonitor := league.NewAccountMonitor(appInstance.Log().Riot(), leagueService, riotClient, accountsRepository, summonerClient, lcuConn)
 	discordService := discord.New(appInstance.Log().Discord())
 	clientMonitor := league.NewClientMonitor(leagueService, riotClient, appInstance.Log().League(), captcha)
 	app := application.New(application.Options{
@@ -184,20 +185,19 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 	appProtocol.SetWindow(mainWindow)
 	captcha.SetWindow(captchaWindow)
 
-	accountMonitor.Start()
-	clientMonitor.Start()
 	app.OnShutdown(func() {
 		mainLogger.Info("nexus shutdown event has been called")
 		if accountMonitor.IsNexusAccount() {
+
+			err = riotClient.ForceCloseAllClients()
+			if err != nil {
+				mainLogger.Error("Failed to close all clients", zap.Error(err))
+			}
 			mainLogger.Info("Logging out system account")
 			err = accountMonitor.LogoutNexusAccount()
 
 			if err != nil {
 				mainLogger.Error("Failed to logout system account", zap.Error(err))
-			}
-			err = riotClient.ForceCloseAllClients()
-			if err != nil {
-				mainLogger.Error("Failed to close all clients", zap.Error(err))
 			}
 
 			mainLogger.Info("logging out operation finished without errors")
@@ -206,26 +206,9 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		accountMonitor.Stop()
 
 	})
-
-	mainWindow.RegisterHook(events.Windows.WindowClosing, func(ctx *application.WindowEvent) {
-
-		mainLogger.Info("Window closing event has been called")
-		if accountMonitor.IsNexusAccount() {
-			mainLogger.Info("Logging out system account")
-			err = accountMonitor.LogoutNexusAccount()
-
-			if err != nil {
-				mainLogger.Error("Failed to logout system account", zap.Error(err))
-			}
-			err = riotClient.ForceCloseAllClients()
-			if err != nil {
-				mainLogger.Error("Failed to close all clients", zap.Error(err))
-			}
-
-			mainLogger.Info("logging out operation finished without errors")
-		}
-		clientMonitor.Stop()
-		accountMonitor.Stop()
+	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(ctx *application.WindowEvent) {
+		accountMonitor.Start()
+		clientMonitor.Start()
 
 	})
 

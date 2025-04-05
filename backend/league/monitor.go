@@ -237,7 +237,7 @@ func (cm *ClientMonitor) Start() {
 
 // Backend methods for frontend actions
 func (cm *ClientMonitor) OpenWebviewAndGetToken(username string) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
 
 	cm.UpdateAuthState(AuthStateWaitingCaptcha, "", username)

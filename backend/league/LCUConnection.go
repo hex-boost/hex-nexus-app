@@ -36,7 +36,7 @@ func (c *LCUConnection) InitializeConnection() error {
 	if err != nil {
 		return err
 	}
-	encodedAuth := base64.StdEncoding.EncodeToString([]byte("riotClient:" + token))
+	encodedAuth := base64.StdEncoding.EncodeToString([]byte("riot:" + token))
 
 	client := resty.New().
 		SetBaseURL(fmt.Sprintf("https://127.0.0.1:%s", port)).

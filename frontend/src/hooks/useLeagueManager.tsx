@@ -34,7 +34,7 @@ export function useLeagueManager({
       await ClientMonitor.HandleLogin(account.username, account.password, captchaToken);
 
       logger.info(logContext, 'Waiting for user info (timeout: 20s)');
-      await RiotClient.WaitUntilUserinfoIsReady(Duration.Second * 20);
+      await RiotClient.WaitUntilUserinfoIsReady(Duration.Second * 10);
       logger.info(logContext, 'User info ready, login process completed');
     },
     onSuccess: () => {
@@ -88,8 +88,6 @@ export function useLeagueManager({
       logger.info(logContext, 'Waiting for authentication to be ready (timeout: 20s)');
       await RiotClient.WaitUntilAuthenticationIsReady(Duration.Second * 20);
       await new Promise(resolve => setTimeout(resolve, 3000));
-      // Force an immediate state check to update the UI
-      await ClientMonitor.GetCurrentState();
 
       logger.info(logContext, 'Riot Client successfully launched and ready');
     },

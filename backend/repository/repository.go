@@ -27,3 +27,12 @@ func (s *AccountsRepository) GetAllRented() ([]types.SummonerRented, error) {
 	return summoners.Data, nil
 
 }
+func (s *AccountsRepository) GetAll() ([]types.SummonerBase, error) {
+	var summoners []types.SummonerBase
+	_, err := s.api.Get("/api/accounts/available", &summoners)
+	if err != nil {
+		return nil, err
+	}
+	return summoners, nil
+
+}
