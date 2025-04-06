@@ -1,7 +1,8 @@
+import { CloseConfirmationHandler } from '@/components/CloseConfirmation.tsx';
 import { CoinIcon } from '@/components/coin-icon.tsx';
 import { ErrorPage } from '@/components/error-page.tsx';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
 
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { UserProfile } from '@/components/UserProfile.tsx';
@@ -56,6 +57,7 @@ function RootLayout() {
   const userAvatar = import.meta.env.VITE_API_URL + user?.avatar?.url;
   return (
     <>
+      <CloseConfirmationHandler />
       <div className="flex flex-col h-screen">
         <div
           className={cls(' bg-card border-b', isAuthenticated() && 'ml-[89px] ')}

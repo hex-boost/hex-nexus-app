@@ -6,6 +6,7 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/repository"
 	"github.com/hex-boost/hex-nexus-app/backend/riot"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
+	"github.com/hex-boost/hex-nexus-app/backend/watchdog"
 	"go.uber.org/zap"
 	"sync"
 	"time"
@@ -21,8 +22,14 @@ type AccountMonitor struct {
 	stopChan       chan struct{}
 	leagueService  *LeagueService
 	mutex          sync.Mutex
-	summoner       *SummonerClient
-	LCUConnection  *LCUConnection
+	watchdogState  *watchdog.Watchdog // Add this field to access watchdog
+
+	summoner      *SummonerClient
+	LCUConnection *LCUConnection
+}
+
+func (am *AccountMonitor) SetWatchdog(watchdog *watchdog.Watchdog) {
+	am.watchdogState = watchdog
 }
 
 func NewAccountMonitor(
@@ -162,6 +169,8 @@ func (am *AccountMonitor) getSummonerNameByLeagueClient() (string, error) {
 	return currentSummoner.GameName + "#" + currentSummoner.TagLine, nil
 
 }
+
+// UpdateWatchdogAccountStatus updates the account status in the watchdog state file
 func (am *AccountMonitor) checkCurrentAccount() {
 	// Skip if Riot client is not running
 	if !am.riotClient.IsRunning() && !am.leagueService.IsRunning() {
@@ -220,44 +229,56 @@ func (am *AccountMonitor) checkCurrentAccount() {
 	am.isNexusAccount = isNexusAccount
 	am.mutex.Unlock()
 
+	// Replace the watchdogState block in the checkCurrentAccount() function with this:
+	// Replace the watchdogState block in the checkCurrentAccount() function with this:
 	if previousState != isNexusAccount {
 		am.logger.Info("Nexus account status changed",
 			zap.Bool("previousStatus", previousState),
 			zap.Bool("currentStatus", isNexusAccount),
 			zap.String("summonerName", currentUsername))
+
+		// Update watchdog via named pipe
+		err := watchdog.UpdateWatchdogAccountStatus(isNexusAccount)
+		if err != nil {
+			am.logger.Error("Failed to update watchdog status via named pipe", zap.Error(err))
+		} else {
+			am.logger.Debug("Updated watchdog state with new account status via named pipe",
+				zap.Bool("isNexusAccount", isNexusAccount))
+		}
 	}
 }
 
-func (am *AccountMonitor) LogoutNexusAccount() error {
-	am.logger.Info("Attempting to logout Nexus-managed account")
-
-	am.logger.Debug("Calling League service logout")
-	am.leagueService.Logout()
-	am.logger.Debug("League service logout completed")
-
-	am.logger.Debug("Calling Riot client logout")
-	err := am.riotClient.Logout()
-	if err != nil {
-		am.logger.Error("Failed to logout from Riot client",
-			zap.Error(err),
-			zap.String("errorType", fmt.Sprintf("%T", err)))
-		return fmt.Errorf("riot client logout failed: %w", err)
-	}
-
-	am.logger.Info("Successfully logged out Nexus-managed account")
-
-	// Update the status after logout
-	am.mutex.Lock()
-	wasNexusAccount := am.isNexusAccount
-	am.isNexusAccount = false
-	am.mutex.Unlock()
-
-	am.logger.Debug("Updated Nexus account status after logout",
-		zap.Bool("previousStatus", wasNexusAccount),
-		zap.Bool("currentStatus", false))
-
-	return nil
-}
+//	func (am *AccountMonitor) LogoutNexusAccount() error {
+//		am.logger.Info("Attempting to logout Nexus-managed account")
+//
+//		am.logger.Debug("Calling League service logout")
+//		am.leagueService.Logout()
+//		am.logger.Debug("League service logout completed")
+//
+//		am.logger.Debug("Calling Riot client logout")
+//		err := am.riotClient.Logout()
+//		if err != nil {
+//			am.logger.Error("Failed to logout from Riot client",
+//				zap.Error(err),
+//				zap.String("errorType", fmt.Sprintf("%T", err)))
+//			return fmt.Errorf("riot client logout failed: %w", err)
+//		}
+//
+//		am.logger.Info("Successfully logged out Nexus-managed account")
+//
+//		// Update the status after logout
+//		//previousState := am.IsNexusAccount()
+//
+//		am.mutex.Lock()
+//		wasNexusAccount := am.isNexusAccount
+//		am.isNexusAccount = false
+//		am.mutex.Unlock()
+//
+//		am.logger.Debug("Updated Nexus account status after logout",
+//			zap.Bool("previousStatus", wasNexusAccount),
+//			zap.Bool("currentStatus", false))
+//		return nil
+//	}
 func (am *AccountMonitor) IsNexusAccount() bool {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()

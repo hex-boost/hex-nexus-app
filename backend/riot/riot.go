@@ -263,54 +263,6 @@ func (rc *RiotClient) getAuthorization() (map[string]interface{}, error) {
 	return authResult, nil
 }
 
-func (rc *RiotClient) ForceCloseAllClients() error {
-	rc.logger.Info("Forcing close of all Riot clients")
-
-	riotProcesses := []string{
-		"RiotClientCrashHandler.exe",
-		"RiotClientServices.exe",
-		"RiotClientUx.exe",
-		"RiotClientUxRender.exe",
-		"Riot Client.exe",
-		"LeagueCrashHandler.exe",
-		"LeagueCrashHandler64.exe",
-		"LeagueClient.exe",
-		"LeagueClientUx.exe",
-		"LeagueClientUxRender.exe",
-		"VALORANT.exe",
-		"VALORANT-Win64-Shipping.exe",
-	}
-
-	processes, err := ps.Processes()
-	if err != nil {
-		rc.logger.Error("Failed to list processes", zap.Error(err))
-		return fmt.Errorf("failed to list processes: %w", err)
-	}
-
-	for _, process := range processes {
-		processName := process.Executable()
-		for _, riotProcess := range riotProcesses {
-			if processName == riotProcess {
-				cmd := exec.Command("taskkill", "/F", "/PID", fmt.Sprintf("%d", process.Pid()))
-				cmd = cmdUtils.HideConsoleWindow(cmd)
-				if err := cmd.Run(); err != nil {
-					rc.logger.Error("Failed to kill process",
-						zap.String("process", processName),
-						zap.Int("pid", process.Pid()),
-						zap.Error(err))
-				} else {
-					rc.logger.Info("Successfully killed process",
-						zap.String("process", processName),
-						zap.Int("pid", process.Pid()))
-				}
-				break
-			}
-		}
-	}
-	rc.ResetRestyClient()
-	return nil
-}
-
 func (rc *RiotClient) Logout() error {
 	res, err := rc.client.R().Delete("/rso-authenticator/v1/authentication")
 	if err != nil {

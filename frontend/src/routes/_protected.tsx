@@ -7,7 +7,7 @@ export const Route = createFileRoute('/_protected')({
 });
 
 function DashboardLayout() {
-  Events.On(Events.Types.Common.WindowClosing, async (ev) => {
+  Events.On(Events.Types.Windows.WindowClosing, async (ev) => {
     console.log(ev);
   });
   return (

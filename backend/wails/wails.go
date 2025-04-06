@@ -2,6 +2,7 @@ package wails
 
 import (
 	"embed"
+	"fmt"
 	"github.com/hex-boost/hex-nexus-app/backend/app"
 	"github.com/hex-boost/hex-nexus-app/backend/config"
 	"github.com/hex-boost/hex-nexus-app/backend/discord"
@@ -11,10 +12,17 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/riot"
 	"github.com/hex-boost/hex-nexus-app/backend/updater"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
+	"github.com/hex-boost/hex-nexus-app/backend/watchdog"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
 	"go.uber.org/zap"
 	"log"
+	"os"
+	"os/signal"
+	"strconv"
+	"sync"
+	"syscall"
+	"time"
 )
 
 func SetupSystemTray(app *application.App, window *application.WebviewWindow, icon []byte) *application.SystemTray {
@@ -24,7 +32,7 @@ func SetupSystemTray(app *application.App, window *application.WebviewWindow, ic
 	menu.AddSeparator()
 	sairItem := menu.Add("Exit Nexus")
 	sairItem.OnClick(func(ctx *application.Context) {
-		app.Quit()
+
 	})
 	systray.SetLabel("Nexus")
 	systray.SetIcon(icon)
@@ -54,8 +62,93 @@ func SetupSystemTray(app *application.App, window *application.WebviewWindow, ic
 // fmt.Println("  League of Legends client detected!")
 // }
 // }
+// StartWatchdog spawns a watchdog process that will monitor the main application
+// and perform cleanup if the main application crashes
+// Add this to your wails.go package-level variables
 
+func StartWatchdog() error {
+	execPath, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("failed to get executable path: %w", err)
+	}
+
+	_, err = watchdog.LaunchStealthyWatchdog(execPath, os.Getpid())
+	if err != nil {
+		return fmt.Errorf("failed to start watchdog: %w", err)
+	}
+
+	return nil
+}
 func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
+
+	utilsBind := utils.NewUtils()
+	if len(os.Args) >= 3 && os.Args[1] == "--watchdog" {
+		mainPID, err := strconv.Atoi(os.Args[2])
+		if err != nil {
+			log.Fatalf("Invalid PID: %v", err)
+		}
+
+		watchdog := watchdog.NewWatchdog(mainPID, os.Args[0])
+
+		// Add cleanup functions
+		watchdog.AddCleanupFunction(func() {
+			// Load state to check if account was active
+			state, err := watchdog.LoadState()
+			if err == nil && state.AccountActive {
+				err := utilsBind.ForceCloseAllClients()
+				if err != nil {
+					fmt.Println(fmt.Errorf("error closing clients: %v", err))
+					return
+				}
+				log.Println("Performing emergency league client logout for Nexus account")
+			}
+		})
+
+		// Start watchdog
+		if err := watchdog.Start(); err != nil {
+			log.Fatalf("Failed to start watchdog: %v", err)
+		}
+
+		// Instead of select{}, use a WaitGroup
+		var wg sync.WaitGroup
+		wg.Add(1)
+
+		// Add signal handling for graceful shutdown
+		sigChan := make(chan os.Signal, 1)
+		signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
+
+		go func() {
+			defer wg.Done()
+			select {
+			case <-sigChan:
+				log.Println("Watchdog received termination signal")
+				watchdog.Stop() // Gracefully stop the watchdog
+			}
+		}()
+
+		// Also set up a monitor for our own PID to detect forceful termination
+		go func() {
+			ticker := time.NewTicker(5 * time.Second)
+			defer ticker.Stop()
+
+			for {
+				<-ticker.C
+				if !watchdog.IsRunning() {
+					log.Println("Main process exited, watchdog shutting down")
+					os.Exit(0)
+				}
+			}
+		}()
+
+		wg.Wait()
+		return
+	}
+	// Normal application startup
+	err := StartWatchdog()
+	if err != nil {
+		panic(fmt.Sprintf("error starting watchdog %v", err))
+		return
+	} // Start the watchdog process
 	cfg, err := config.LoadConfig()
 
 	appInstance := app.App(cfg)
@@ -67,7 +160,6 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		panic(err)
 	}
 	var mainWindow *application.WebviewWindow
-	utilsBind := utils.NewUtils()
 	lcuConn := league.NewLCUConnection(appInstance.Log().League())
 	leagueService := league.NewLeagueService()
 	baseRepo := repository.NewBaseRepository(cfg, appInstance.Log().Repo())
@@ -84,12 +176,6 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		Name:        "Nexus",
 		Description: "Nexus",
 		Icon:        icon256,
-		ShouldQuit: func() bool {
-			mainLogger.Info("Should quit called")
-			//return shouldQuit(dialogWindow, mainLogger, accountMonitor, clientMonitor, riotClient)
-
-			return false
-		},
 		Windows: application.WindowsOptions{
 			DisableQuitOnLastWindowClosed: true,
 		},
@@ -189,20 +275,25 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 			OpenInspectorOnStartup: true,
 		},
 	)
+	mainWindow.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
+		app.Logger.Info("Window closing event triggered")
 
+		// Check if force close is enabled
+		if !utilsBind.ShouldForceClose() && accountMonitor.IsNexusAccount() {
+			e.Cancel()
+			mainWindow.EmitEvent("nexus:confirm-close")
+			return
+		}
+
+		app.Logger.Info("Forced close requested, shutting down")
+		accountMonitor.Stop()
+		clientMonitor.Stop()
+	})
+	utilsBind.SetApp(app)
 	SetupSystemTray(app, mainWindow, icon16)
 	clientMonitor.SetWindow(mainWindow)
 	appProtocol.SetWindow(mainWindow)
 	captcha.SetWindow(captchaWindow)
-	mainWindow.RegisterHook(events.Common.WindowClosing, func(ctx *application.WindowEvent) {
-		mainLogger.Info("Window closing")
-		//if !shouldQuit(dialogWindow, mainLogger, accountMonitor, clientMonitor, riotClient) {
-		//	ctx.Cancel()
-		//
-		//}
-		return
-
-	})
 	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(ctx *application.WindowEvent) {
 		accountMonitor.Start()
 		clientMonitor.Start()

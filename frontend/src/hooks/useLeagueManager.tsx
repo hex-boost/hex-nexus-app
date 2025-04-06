@@ -1,5 +1,6 @@
 // frontend/src/hooks/useLeagueManager.tsx
 import type { AccountType } from '@/types/types';
+import { useGoFunctions } from '@/hooks/useGoBindings.ts';
 import { useLeagueState } from '@/hooks/useLeagueState.tsx';
 import { logger } from '@/lib/logger';
 import { LeagueAuthState } from '@/types/LeagueAuthState';
@@ -14,6 +15,7 @@ export function useLeagueManager({
 }: {
   account: AccountType;
 }) {
+  const { Utils } = useGoFunctions();
   const { state } = useLeagueState();
   const logContext = `useLeagueManager:${account.id}`;
 
@@ -105,7 +107,7 @@ export function useLeagueManager({
           onClick: async () => {
             try {
               logger.info(logContext, 'User requested to force close all Riot clients');
-              await RiotClient.ForceCloseAllClients();
+              await Utils.ForceCloseAllClients();
               logger.info(logContext, 'Successfully closed all Riot clients');
 
               toast.info('All clients closed succesfully');
