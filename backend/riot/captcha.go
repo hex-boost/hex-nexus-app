@@ -105,7 +105,6 @@ func (c *Captcha) startServer() {
 <div id="fds" style="display: none;">not selected</div>
 <form action="/" method="POST" id="hcaptcha-form">
     <div id="hcaptcha-container"></div>
-    <input type="submit" value="SEND">
 </form>
 </body>
 </html>`

@@ -169,16 +169,8 @@ func (am *AccountMonitor) getSummonerNameByLeagueClient() (string, error) {
 	return currentSummoner.GameName + "#" + currentSummoner.TagLine, nil
 
 }
-
-// UpdateWatchdogAccountStatus updates the account status in the watchdog state file
-func (am *AccountMonitor) checkCurrentAccount() {
-	// Skip if Riot client is not running
-	if !am.riotClient.IsRunning() && !am.leagueService.IsRunning() {
-		am.logger.Debug("Skipping account check - Riot client not running")
-		return
-	}
+func (am *AccountMonitor) GetLoggedInSummonerName() string {
 	var currentUsername string
-	// Initialize client if needed
 	if am.riotClient.IsRunning() {
 		currentUsername = am.getSummonerNameByRiotClient()
 	} else if am.leagueService.IsRunning() {
@@ -187,10 +179,26 @@ func (am *AccountMonitor) checkCurrentAccount() {
 			am.logger.Error("Failed to get current summoner from League client",
 				zap.Error(err),
 				zap.String("errorType", fmt.Sprintf("%T", err)))
-			return
+			return ""
 		}
 		currentUsername = leagueCurrentUsername
 	}
+	return currentUsername
+}
+
+// UpdateWatchdogAccountStatus updates the account status in the watchdog state file
+func (am *AccountMonitor) checkCurrentAccount() {
+	// Skip if Riot client is not running
+	if !am.riotClient.IsRunning() && !am.leagueService.IsRunning() {
+		am.logger.Debug("Skipping account check - Riot client not running")
+		return
+	}
+	currentUsername := am.GetLoggedInSummonerName()
+	if currentUsername == "" {
+		am.logger.Debug("Skipping account check - no logged-in account found, username is empty")
+		return
+	}
+	// Initialize client if needed
 
 	am.logger.Debug("Current logged-in account", zap.String("summonerNameWithTag", currentUsername))
 	// Check authentication state

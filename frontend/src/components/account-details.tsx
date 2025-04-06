@@ -1,9 +1,10 @@
 import type { Price } from '@/types/price.ts';
+
 import type { AccountType } from '@/types/types.ts';
 import { ChampionsSkinsTab } from '@/components/ChampionsSkinsTab.tsx';
 import { CoinIcon } from '@/components/coin-icon.tsx';
-
 import { RentedAccountButton } from '@/components/RentedAccountAction.tsx';
+
 import { Badge } from '@/components/ui/badge.tsx';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -103,7 +104,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
 }) {
   const { user } = useUserStore();
   const { championsSearch, setChampionsSearch, skinsSearch, setSkinsSearch, filteredChampions, filteredSkins } = useAccountFilters({ account });
-  const { dropRefund, selectedRentalOptionIndex, handleExtendAccount, isExtendPending, setSelectedRentalOptionIndex, selectedExtensionIndex, handleDropAccount, isRentPending, isDropPending, setIsDropDialogOpen, handleRentAccount, isDropDialogOpen } = useAccountActions({ account, onAccountChange, user: user as any });
+  const { dropRefund, selectedRentalOptionIndex, handleExtendAccount, isExtendPending, setSelectedRentalOptionIndex, selectedExtensionIndex, handleDropAccount, isRentPending, isDropPending, setIsDropDialogOpen, handleRentAccount, isDropDialogOpen, handleDropDialogOpen, isNexusAccount } = useAccountActions({ account, onAccountChange, user: user as any });
   const [activeTab, setActiveTab] = useState(0);
   const { getCompanyIcon, getGameIcon } = useMapping();
   const hours = [1, 3, 6];
@@ -372,7 +373,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                     <div className="flex justify-between items-center ">
                       <span className="text-zinc-600 dark:text-zinc-400 flex items-center gap-1 text-sm">Refundable amount:</span>
                       <div
-                        className="flex text-sm items-center gap-1 text-lg font-semibold text-zinc-900 dark:text-zinc-50 "
+                        className="flex  items-center gap-1 text-lg font-semibold text-zinc-900 dark:text-zinc-50 "
                       >
                         <CoinIcon className="w-4 h-4 text-amber-500 dark:text-amber-400" />
                         {dropRefund
@@ -414,7 +415,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
 
                   <RentedAccountButton account={account} />
 
-                  <Dialog defaultOpen={false} open={isDropDialogOpen} onOpenChange={setIsDropDialogOpen}>
+                  <Dialog defaultOpen={false} open={isDropDialogOpen} onOpenChange={handleDropDialogOpen}>
                     <DialogTrigger asChild>
                       <Button variant="outline" className="flex items-center gap-1">
                         <ArrowDownToLine className="h-4 w-4" />
@@ -435,14 +436,21 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                           coins.
                         </DialogDescription>
                       </DialogHeader>
-                      <div
-                        className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md p-3 text-sm text-amber-800 dark:text-amber-300"
-                      >
-                        <p>
-                          This action cannot be undone. The account will be immediately returned to
-                          the available pool.
-                        </p>
-                      </div>
+                      {
+
+                        isNexusAccount
+                        && (
+                          <div
+                            className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md p-3 text-sm text-amber-800 dark:text-amber-300"
+                          >
+
+                            <p>
+                              Your client will be logged out of the league will close.
+                            </p>
+                          </div>
+
+                        )
+                      }
                       <DialogFooter className="flex gap-3 sm:justify-end">
                         <Button variant="outline" onClick={() => setIsDropDialogOpen(false)}>
                           Cancel

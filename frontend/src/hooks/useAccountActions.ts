@@ -1,7 +1,9 @@
 import type { AccountType, UserType } from '@/types/types';
 import type { StrapiError } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
 import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
+import { useGoFunctions } from '@/hooks/useGoBindings.ts';
 import { strapiClient } from '@/lib/strapi';
+import { AccountMonitor } from '@league';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -16,10 +18,24 @@ export function useAccountActions({
   onAccountChange: () => Promise<void>;
 }) {
   const { refetchUser } = useCommonFetch();
+  const { Utils } = useGoFunctions();
+
+  const [isNexusAccount, setIsNexusAccount] = useState(false);
   const [selectedRentalOptionIndex, setSelectedRentalOptionIndex] = useState<number>(1);
   const [isDropDialogOpen, setIsDropDialogOpen] = useState(false);
   const [selectedExtensionIndex, setSelectedExtensionIndex] = useState<number>(1);
 
+  async function handleDropDialogOpen(open: boolean) {
+    const isNexusAccountLogged = await AccountMonitor.IsNexusAccount();
+    if (isNexusAccountLogged) {
+      const droppedAccountSummonername = `${account.gamename}#${account.tagline}`;
+      const currentLoggedInSummonerName = await AccountMonitor.GetLoggedInSummonerName();
+      if (droppedAccountSummonername === currentLoggedInSummonerName) {
+        setIsNexusAccount(true);
+      }
+    }
+    setIsDropDialogOpen(open);
+  }
   const {
     data: dropRefund,
   } = useQuery({
@@ -39,6 +55,7 @@ export function useAccountActions({
       return response;
     },
     onSuccess: (data) => {
+      Utils.ForceCloseAllClients();
       toast.success(data.message);
     },
     onError: (error) => {
@@ -114,5 +131,7 @@ export function useAccountActions({
     handleExtendAccount,
     isExtendPending,
     dropRefund,
+    isNexusAccount,
+    handleDropDialogOpen,
   };
 }

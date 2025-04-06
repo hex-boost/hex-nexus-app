@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useGoFunctions } from '@/hooks/useGoBindings.ts';
-import { Events } from '@wailsio/runtime';
+import { Events, Window } from '@wailsio/runtime';
 import { useEffect, useState } from 'react';
 
 export function CloseConfirmationHandler() {
@@ -34,7 +34,15 @@ export function CloseConfirmationHandler() {
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={() => setShowCloseDialog(false)}>Cancel</Button>
-          <Button variant="destructive" onClick={() => Utils.ForceCloseAndQuit()}>Close Nexus</Button>
+          <Button
+            variant="destructive"
+            onClick={() => {
+              Window.Hide();
+              Utils.ForceCloseAndQuit();
+            }}
+          >
+            Confirm
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -25,13 +25,21 @@ import (
 	"time"
 )
 
-func SetupSystemTray(app *application.App, window *application.WebviewWindow, icon []byte) *application.SystemTray {
+func SetupSystemTray(app *application.App, window *application.WebviewWindow, icon []byte, monitor *league.AccountMonitor, utils *utils.Utils) *application.SystemTray {
 	systray := app.NewSystemTray()
 	menu := application.NewMenu()
 	menu.Add("Nexus").SetBitmap(icon).SetEnabled(false)
 	menu.AddSeparator()
 	sairItem := menu.Add("Exit Nexus")
 	sairItem.OnClick(func(ctx *application.Context) {
+		if monitor.IsNexusAccount() {
+			window.Show()
+			window.Focus()
+			window.EmitEvent("nexus:confirm-close")
+		} else {
+			utils.SetForceClose(true)
+			app.Quit()
+		}
 
 	})
 	systray.SetLabel("Nexus")
@@ -171,6 +179,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 	riotClient := riot.NewRiotClient(appInstance.Log().Riot(), captcha)
 	accountMonitor := league.NewAccountMonitor(appInstance.Log().Riot(), leagueService, riotClient, accountsRepository, summonerClient, lcuConn)
 	discordService := discord.New(appInstance.Log().Discord())
+
 	clientMonitor := league.NewClientMonitor(leagueService, riotClient, appInstance.Log().League(), captcha)
 	app := application.New(application.Options{
 		Name:        "Nexus",
@@ -226,6 +235,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 			application.NewService(baseRepo),
 			application.NewService(utilsBind),
 			application.NewService(accountsRepository),
+			application.NewService(accountMonitor),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
@@ -290,7 +300,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		clientMonitor.Stop()
 	})
 	utilsBind.SetApp(app)
-	SetupSystemTray(app, mainWindow, icon16)
+	SetupSystemTray(app, mainWindow, icon16, accountMonitor, utilsBind)
 	clientMonitor.SetWindow(mainWindow)
 	appProtocol.SetWindow(mainWindow)
 	captcha.SetWindow(captchaWindow)
