@@ -53,6 +53,10 @@
       ],
       "@utils": [
         "bindings/github.com/hex-boost/hex-nexus-app/backend/utils"
+      ],
+
+      "@stripe": [
+        "bindings/github.com/hex-boost/hex-nexus-app/backend/stripe"
       ]
     }
   },

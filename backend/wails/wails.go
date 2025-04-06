@@ -10,6 +10,7 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/protocol"
 	"github.com/hex-boost/hex-nexus-app/backend/repository"
 	"github.com/hex-boost/hex-nexus-app/backend/riot"
+	"github.com/hex-boost/hex-nexus-app/backend/stripe"
 	"github.com/hex-boost/hex-nexus-app/backend/updater"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/hex-boost/hex-nexus-app/backend/watchdog"
@@ -168,6 +169,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		panic(err)
 	}
 	var mainWindow *application.WebviewWindow
+	stripeService := stripe.NewStripe(appInstance.Log().Stripe())
 	lcuConn := league.NewLCUConnection(appInstance.Log().League())
 	leagueService := league.NewLeagueService()
 	baseRepo := repository.NewBaseRepository(cfg, appInstance.Log().Repo())
@@ -236,6 +238,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 			application.NewService(utilsBind),
 			application.NewService(accountsRepository),
 			application.NewService(accountMonitor),
+			application.NewService(stripeService),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),

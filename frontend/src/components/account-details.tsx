@@ -445,7 +445,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                           >
 
                             <p>
-                              Your client will be logged out of the league will close.
+                              Your client will be logged out and the league will close.
                             </p>
                           </div>
 

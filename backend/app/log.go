@@ -9,6 +9,7 @@ const (
 	LogPrefixLeague   = "LOL"
 	LogPrefixRepo     = "REPO"
 	LogPrefixDiscord  = "DISC"
+	LogPrefixStripe   = "STRIPE"
 	LogPrefixRiot     = "RIOT"
 	LogPrefixWails    = "WLS"
 	LogPrefixWeb      = "WEB"
@@ -24,6 +25,7 @@ type log struct {
 	web      *utils.Logger
 	repo     *utils.Logger
 	services *utils.Logger
+	stripe   *utils.Logger
 	protocol *utils.Logger
 }
 
@@ -34,6 +36,7 @@ func NewLogger(cfg *config.Config) *log {
 		league:   utils.NewLogger(LogPrefixLeague, cfg),
 		riot:     utils.NewLogger(LogPrefixRiot, cfg),
 		wails:    utils.NewLogger(LogPrefixWails, cfg),
+		stripe:   utils.NewLogger(LogPrefixStripe, cfg),
 		web:      utils.NewLogger(LogPrefixWeb, cfg),
 		services: utils.NewLogger(LogPrefixServices, cfg),
 		protocol: utils.NewLogger(LogPrefixProtocol, cfg),
@@ -45,6 +48,10 @@ func (l *log) Discord() *utils.Logger {
 }
 func (l *log) League() *utils.Logger {
 	return l.league
+}
+
+func (l *log) Stripe() *utils.Logger {
+	return l.stripe
 }
 func (l *log) Repo() *utils.Logger {
 	return l.repo

@@ -2,6 +2,7 @@ import type { CheckoutSession, PricingPlan, SubscriptionRequest } from '@/types/
 import { Badge } from '@/components/ui/badge';
 import { Pricing } from '@/components/ui/pricing-cards.tsx';
 import { strapiClient } from '@/lib/strapi.ts';
+import { Stripe } from '@stripe';
 import { useMutation } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { Browser } from '@wailsio/runtime';
@@ -128,10 +129,15 @@ function RouteComponent() {
     mutationKey: ['subscription'],
     mutationFn: async (tier: string) => {
       setPendingPlanTier(tier);
+
+      // 1. First get callback URLs from local Go server
+      const [successUrl, cancelUrl] = await Stripe.GetCallbackURLs();
+
+      // 2. Then pass these URLs to Strapi for subscription creation
       return await createSubscription({
         subscriptionTier: mapDisplayNameToApiTier(tier),
-        successUrl: 'nexus://',
-        cancelUrl: 'nexus://',
+        successUrl,
+        cancelUrl,
       });
     },
     onSuccess: async (data) => {
@@ -143,7 +149,6 @@ function RouteComponent() {
       setPendingPlanTier(null);
     },
   });
-
   return (
     <div>
       <div className="w-full">

@@ -1,6 +1,7 @@
 import type { AccountType } from '@/types/types.ts';
 import { Button } from '@/components/ui/button.tsx';
 import { useLeagueManager } from '@/hooks/useLeagueManager.tsx';
+import { useUserStore } from '@/stores/useUserStore.ts';
 import { LeagueAuthState } from '@/types/LeagueAuthState.ts';
 import { LeagueClientState } from '@/types/LeagueClientState.ts';
 import { LogIn } from 'lucide-react';
@@ -17,7 +18,7 @@ export function RentedAccountButton({ account }: RentedAccountButtonProps) {
     clientState,
     authenticationState: authState,
   } = useLeagueManager({ account });
-
+  const { user } = useUserStore();
   // First check if we're in an auth flow regardless of client state
   if (authState === LeagueAuthState.WAITING_CAPTCHA || authState === LeagueAuthState.WAITING_LOGIN) {
     return (
@@ -63,6 +64,7 @@ export function RentedAccountButton({ account }: RentedAccountButtonProps) {
         return (
           <Button
             variant="default"
+            disabled={account.user?.documentId !== user?.documentId}
             className="flex-1  bg-blue-600 !w-full hover:bg-blue-700 text-white"
             onClick={() => handleOpenCaptchaWebview()}
           >

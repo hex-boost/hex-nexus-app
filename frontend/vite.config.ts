@@ -5,10 +5,8 @@ import TanStackRouterVite from '@tanstack/router-plugin/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-
 
 export default defineConfig({
   plugins: [
@@ -31,6 +29,7 @@ export default defineConfig({
       '@updater': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/updater'),
       '@events': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/events'),
       '@utils': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/utils'),
+      '@stripe': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/stripe'),
     },
 
   },
