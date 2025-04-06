@@ -114,12 +114,11 @@ function RouteComponent() {
 
   async function createSubscription(data: SubscriptionRequest): Promise<CheckoutSession> {
     try {
-      const response = await strapiClient.create<CheckoutSession>(
-        'stripe/subscription',
+      const response = await strapiClient.request<CheckoutSession>('post', 'stripe/subscription', {
         data,
-      );
+      });
 
-      return response.data;
+      return response;
     } catch (error) {
       console.error('Subscription creation failed:', error);
       throw new Error('Failed to create subscription');

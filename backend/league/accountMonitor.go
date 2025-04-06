@@ -1,6 +1,7 @@
 package league
 
 import (
+	"errors"
 	"fmt"
 	"github.com/hex-boost/hex-nexus-app/backend/repository"
 	"github.com/hex-boost/hex-nexus-app/backend/riot"
@@ -141,17 +142,24 @@ func (am *AccountMonitor) getSummonerNameByRiotClient() string {
 	// Check if it's a system account
 }
 
-func (am *AccountMonitor) getSummonerNameByLeagueClient() string {
+func (am *AccountMonitor) getSummonerNameByLeagueClient() (string, error) {
 
-	_ = am.LCUConnection.InitializeConnection()
+	err := am.LCUConnection.InitializeConnection()
+	if err != nil || am.LCUConnection.client == nil {
+		am.logger.Error("Failed to initialize League client connection",
+			zap.Error(err),
+			zap.String("errorType", fmt.Sprintf("%T", err)))
+		return "", errors.New("failed to initialize League client connection")
+	}
+
 	currentSummoner, err := am.summoner.GetCurrentSummoner()
 	if err != nil {
 		am.logger.Error("Failed to get current summoner",
 			zap.Error(err),
 			zap.String("errorType", fmt.Sprintf("%T", err)))
-		return ""
+		return "", errors.New("failed to get current summoner")
 	}
-	return currentSummoner.GameName + "#" + currentSummoner.TagLine
+	return currentSummoner.GameName + "#" + currentSummoner.TagLine, nil
 
 }
 func (am *AccountMonitor) checkCurrentAccount() {
@@ -165,7 +173,14 @@ func (am *AccountMonitor) checkCurrentAccount() {
 	if am.riotClient.IsRunning() {
 		currentUsername = am.getSummonerNameByRiotClient()
 	} else if am.leagueService.IsRunning() {
-		currentUsername = am.getSummonerNameByLeagueClient()
+		leagueCurrentUsername, err := am.getSummonerNameByLeagueClient()
+		if err != nil {
+			am.logger.Error("Failed to get current summoner from League client",
+				zap.Error(err),
+				zap.String("errorType", fmt.Sprintf("%T", err)))
+			return
+		}
+		currentUsername = leagueCurrentUsername
 	}
 
 	am.logger.Debug("Current logged-in account", zap.String("summonerNameWithTag", currentUsername))

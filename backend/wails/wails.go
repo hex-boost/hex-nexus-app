@@ -24,7 +24,7 @@ func SetupSystemTray(app *application.App, window *application.WebviewWindow, ic
 	menu.AddSeparator()
 	sairItem := menu.Add("Exit Nexus")
 	sairItem.OnClick(func(ctx *application.Context) {
-		app.EmitEvent("nexus:shutdown", nil)
+		app.Quit()
 	})
 	systray.SetLabel("Nexus")
 	systray.SetIcon(icon)
@@ -54,6 +54,7 @@ func SetupSystemTray(app *application.App, window *application.WebviewWindow, ic
 // fmt.Println("  League of Legends client detected!")
 // }
 // }
+
 func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 	cfg, err := config.LoadConfig()
 
@@ -83,6 +84,12 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		Name:        "Nexus",
 		Description: "Nexus",
 		Icon:        icon256,
+		ShouldQuit: func() bool {
+			mainLogger.Info("Should quit called")
+			//return shouldQuit(dialogWindow, mainLogger, accountMonitor, clientMonitor, riotClient)
+
+			return false
+		},
 		Windows: application.WindowsOptions{
 			DisableQuitOnLastWindowClosed: true,
 		},
@@ -100,6 +107,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 				}
 			},
 		},
+
 		SingleInstance: &application.SingleInstanceOptions{
 			UniqueID: "com.hexboost.nexus.app",
 			OnSecondInstanceLaunch: func(data application.SecondInstanceData) {
@@ -137,6 +145,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 			Handler: application.AssetFileServerFS(assets),
 		},
 	})
+
 	captchaWindow := app.NewWebviewWindowWithOptions(
 		application.WebviewWindowOptions{
 			Hidden:        true,
@@ -180,30 +189,18 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 			OpenInspectorOnStartup: true,
 		},
 	)
+
 	SetupSystemTray(app, mainWindow, icon16)
 	clientMonitor.SetWindow(mainWindow)
 	appProtocol.SetWindow(mainWindow)
 	captcha.SetWindow(captchaWindow)
-
-	app.OnShutdown(func() {
-		mainLogger.Info("nexus shutdown event has been called")
-		if accountMonitor.IsNexusAccount() {
-
-			err = riotClient.ForceCloseAllClients()
-			if err != nil {
-				mainLogger.Error("Failed to close all clients", zap.Error(err))
-			}
-			mainLogger.Info("Logging out system account")
-			err = accountMonitor.LogoutNexusAccount()
-
-			if err != nil {
-				mainLogger.Error("Failed to logout system account", zap.Error(err))
-			}
-
-			mainLogger.Info("logging out operation finished without errors")
-		}
-		clientMonitor.Stop()
-		accountMonitor.Stop()
+	mainWindow.RegisterHook(events.Common.WindowClosing, func(ctx *application.WindowEvent) {
+		mainLogger.Info("Window closing")
+		//if !shouldQuit(dialogWindow, mainLogger, accountMonitor, clientMonitor, riotClient) {
+		//	ctx.Cancel()
+		//
+		//}
+		return
 
 	})
 	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(ctx *application.WindowEvent) {
