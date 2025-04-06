@@ -258,16 +258,8 @@
 
     // Function to retry payment
     function retryPayment() {
-        // In a real implementation, this would redirect to the payment flow
-        const button = document.querySelector('.try-again-btn');
-        button.textContent = 'Redirecting...';
-        button.disabled = true;
 
-        // Replace with your actual redirect logic
-        setTimeout(() => {
             window.close();
-            // Or redirect: window.location.href = 'your-payment-url';
-        }, 1000);
     }
 
     // Initialize particles when the page loads

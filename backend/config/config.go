@@ -36,9 +36,6 @@ type Config struct {
 	LogsDirectory string `json:"logsDirectory"`
 	DataDirectory string `json:"dataDirectory"`
 
-	// System settings
-	CaptchaServerPort string `json:"captchaServerPort"`
-
 	// Logging
 	LogLevel string `json:"logLevel"`
 }
@@ -52,16 +49,15 @@ func LoadConfig() (*Config, error) {
 
 	// Default configuration
 	config := &Config{
-		Version:           getEnv("VERSION", Version),
-		BackendURL:        getEnv("API_URL", BackendURL),
-		RiotAPIBaseURL:    getEnv("RIOT_API_URL", "https://127.0.0.1"),
-		RequestTimeout:    getDurationEnv("REQUEST_TIMEOUT", 10*time.Second),
-		DebugMode:         getBoolEnv("DEBUG_MODE", false),
-		Environment:       getEnv("ENVIRONMENT", "development"),
-		LogsDirectory:     getEnv("LOGS_DIR", "./logs"),
-		DataDirectory:     getEnv("DATA_DIR", "./data"),
-		CaptchaServerPort: getEnv("CAPTCHA_SERVER_PORT", "6969"),
-		LogLevel:          getEnv("LOG_LEVEL", "debug"),
+		Version:        getEnv("VERSION", Version),
+		BackendURL:     getEnv("API_URL", BackendURL),
+		RiotAPIBaseURL: getEnv("RIOT_API_URL", "https://127.0.0.1"),
+		RequestTimeout: getDurationEnv("REQUEST_TIMEOUT", 10*time.Second),
+		DebugMode:      getBoolEnv("DEBUG_MODE", false),
+		Environment:    getEnv("ENVIRONMENT", "development"),
+		LogsDirectory:  getEnv("LOGS_DIR", "./logs"),
+		DataDirectory:  getEnv("DATA_DIR", "./data"),
+		LogLevel:       getEnv("LOG_LEVEL", "info"),
 	}
 
 	// Try to load from config file if specified

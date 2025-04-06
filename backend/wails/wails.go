@@ -257,7 +257,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		application.WebviewWindowOptions{
 
 			Name:                       "Main",
-			DefaultContextMenuDisabled: false,
+			DefaultContextMenuDisabled: true,
 
 			Title:         "Nexus",
 			Width:         1440,

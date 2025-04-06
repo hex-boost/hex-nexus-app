@@ -171,7 +171,7 @@ func (s *Stripe) handleSuccess(w http.ResponseWriter, r *http.Request) {
 func (s *Stripe) handleCancelled(w http.ResponseWriter, r *http.Request) {
 	s.logger.Info("Payment cancelled")
 
-	if err := s.renderTemplate(w, "stripe_payment_cancelled.html"); err != nil {
+	if err := s.renderTemplate(w, "stripe_payment_cancel.html"); err != nil {
 		s.logger.Error("Error rendering cancellation template", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Error rendering cancellation page"))
@@ -195,9 +195,8 @@ func (s *Stripe) GetCallbackURLs() (string, string, error) {
 		return "", "", fmt.Errorf("failed to start callback server: %w", err)
 	}
 
-	successURL := fmt.Sprintf("http://127.0.0.1:%d/stripe_payment_success", port)
-	cancelURL := fmt.Sprintf("http://127.0.0.1:%d/stripe_payment_cancelled", port)
-
+	successURL := fmt.Sprintf("http://nexus.localhost:%d/stripe_payment_success", port)
+	cancelURL := fmt.Sprintf("http://nexus.localhost:%d/stripe_payment_cancelled", port)
 	s.logger.Info("Callback URLs created",
 		zap.String("successUrl", successURL),
 		zap.String("cancelUrl", cancelURL))
