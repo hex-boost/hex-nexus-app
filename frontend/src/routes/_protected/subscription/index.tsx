@@ -2,12 +2,14 @@ import type { CheckoutSession, PricingPlan, SubscriptionRequest } from '@/types/
 import { Badge } from '@/components/ui/badge';
 import { Pricing } from '@/components/ui/pricing-cards.tsx';
 import { strapiClient } from '@/lib/strapi.ts';
+import { useUserStore } from '@/stores/useUserStore.ts';
 import { Stripe } from '@stripe';
 import { useMutation } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { Browser } from '@wailsio/runtime';
 import { MoveRight } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 export const Route = createFileRoute('/_protected/subscription/')({
   component: RouteComponent,
@@ -16,6 +18,7 @@ export const Route = createFileRoute('/_protected/subscription/')({
 function RouteComponent() {
   const [currentApiTier] = useState<string | undefined>('tier 2');
   const [pendingPlanTier, setPendingPlanTier] = useState<string | null>(null);
+  const { user } = useUserStore();
 
   const mapTierToDisplayName = (tier: string | undefined): string => {
     switch (tier) {
@@ -128,6 +131,10 @@ function RouteComponent() {
   const { mutate: selectPlan } = useMutation({
     mutationKey: ['subscription'],
     mutationFn: async (tier: string) => {
+      if (user?.premium?.tier) {
+        toast.warning('You already have a plan');
+        return;
+      }
       setPendingPlanTier(tier);
 
       // 1. First get callback URLs from local Go server

@@ -23,6 +23,14 @@ export type RouterContext = {
   };
 };
 
+// const geistSans = Geist({
+//   subsets: ['latin'],
+//   variable: '--font-sans',
+// });
+// const geistMono = Geist_Mono({
+//   subsets: ['latin'],
+//   variable: '--font-mono',
+// });
 export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootLayout,
   errorComponent: ErrorPage,

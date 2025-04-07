@@ -1,4 +1,5 @@
 import antfu from '@antfu/eslint-config';
+import pluginRouter from '@tanstack/eslint-plugin-router';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 
 export default antfu({
@@ -21,7 +22,7 @@ export default antfu({
     'next-env.d.ts',
     'src/types/generated/*',
   ],
-}, jsxA11y.flatConfigs.recommended, {
+}, ...pluginRouter.configs['flat/recommended'], jsxA11y.flatConfigs.recommended, {
 }, {
   files: [
     '**/*.test.ts?(x)',
