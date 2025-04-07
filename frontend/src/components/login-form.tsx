@@ -71,7 +71,7 @@ export function LoginForm({
         });
       },
       onSuccess: async (data) => {
-        if (import.meta.env.VITE_API_URL !== 'http://localhost:1337') {
+        if (import.meta.env.VITE_NODE_ENV !== 'development') {
           const currentHwid = await Utils.GetHWID();
           if (data.user.hwid && data.user.hwid !== currentHwid) {
             setAuthToken(''); // Clear token

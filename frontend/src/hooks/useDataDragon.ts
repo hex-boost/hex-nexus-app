@@ -1,7 +1,7 @@
 import type { ChampionById, DDragonChampionsData } from '@/types/ddragon.ts';
 import { useQuery } from '@tanstack/react-query';
 import { openDB } from 'idb';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 
 const CACHE_DB_NAME = 'nexus_ddragon_cache';
 const CACHE_STORE_NAME = 'cache_store';
@@ -46,7 +46,7 @@ async function clearCache() {
   await tx.done;
 }
 
-export function useAllDataDragon(enabled = true) {
+export function useAllDataDragon() {
   const versionQuery = useQuery({
     queryKey: ['ddragon-version'],
     queryFn: async () => {
@@ -68,7 +68,6 @@ export function useAllDataDragon(enabled = true) {
       return latestVersion;
     },
     staleTime: 60 * 60 * 1000,
-    enabled,
   });
 
   const championsQuery = useQuery({
@@ -133,12 +132,6 @@ export function useAllDataDragon(enabled = true) {
     enabled: !!versionQuery.data && !!championsQuery.data,
   });
 
-  useEffect(() => {
-    if (enabled && !versionQuery.data) {
-      versionQuery.refetch();
-    }
-  }, [enabled]);
-
   const determineRarity = (skin: any): string => {
     if (skin.name.includes('Ultimate')) {
       return 'Ultimate';
@@ -187,9 +180,9 @@ export function useAllDataDragon(enabled = true) {
         id: Number.parseInt(skin.id),
         name: skin.name || 'Default',
         champion: champion.name,
-        imageAvatarUrl: `https://ddragon.leagueoflegends.com/cdn/img/champion/loading/${champion.id}_${skin.num}.jpg`,
+        imageAvatarUrl: `https://ddragon.leagueoflegends.com/cdn/img/champion/loading/${champion.name}_${skin.num}.jpg`,
         rarity: determineRarity(skin),
-        imageUrl: `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${champion.id}_${skin.num}.jpg`,
+        imageUrl: `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${champion.name}_${skin.num}.jpg`,
       }));
     });
   }, [versionQuery.data, allChampionDetailsQuery.data]);

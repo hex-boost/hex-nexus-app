@@ -1,12 +1,14 @@
 import { CloseConfirmationHandler } from '@/components/CloseConfirmation.tsx';
 import { CoinIcon } from '@/components/coin-icon.tsx';
-import { ErrorPage } from '@/components/error-page.tsx';
+import { DefaultContextMenu } from '@/components/DefaultContextMenu.tsx';
 
+import { ErrorPage } from '@/components/error-page.tsx';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { UserProfile } from '@/components/UserProfile.tsx';
 import { WindowControls } from '@/components/WindowControls.tsx';
+import { ContextMenuProvider } from '@/contexts/ContextMenuContext.tsx';
 import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
 import { Route as DashboardRoute } from '@/routes/_protected/dashboard/index.tsx';
 import { useUserStore } from '@/stores/useUserStore';
@@ -130,8 +132,11 @@ function RootLayout() {
             <WindowControls className="px-4 py-2" />
           </div>
         </div>
-
-        <Outlet />
+        <ContextMenuProvider>
+          <DefaultContextMenu>
+            <Outlet />
+          </DefaultContextMenu>
+        </ContextMenuProvider>
       </div>
       <TanStackRouterDevtools />
     </>

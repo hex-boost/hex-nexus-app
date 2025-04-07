@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { useVirtualizer } from '@tanstack/react-virtual';
 
 import { Check, ChevronsUpDown, X } from 'lucide-react';
-import React, { cloneElement, useCallback, useEffect, useState } from 'react';
+import React, { cloneElement, useCallback, useEffect, useMemo, useState } from 'react';
 
 export type BaseOption = {
   label: string;
@@ -45,15 +45,36 @@ export const MultiSelectCombobox = <T extends BaseOption>({
   const [open, setOpen] = useState(false);
   const [renderLoading, setRenderLoading] = useState(false);
   const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
+  const [searchValue, setSearchValue] = useState('');
+
+  const filteredOptions = useMemo(() => {
+    if (!searchValue) {
+      return options;
+    }
+    return options.filter(option =>
+      option.label.toLowerCase().includes(searchValue.toLowerCase()),
+    );
+  }, [options, searchValue]);
 
   const parentRef = React.useRef<HTMLDivElement>(null);
   const rowVirtualizer = useVirtualizer({
-    count: options.length,
+    count: filteredOptions.length, // Use filtered options
     getScrollElement: () => parentRef.current,
     estimateSize: () => 36,
     overscan: 100,
-
   });
+
+  // Reset scroll position when filtered results change
+  useEffect(() => {
+    if (rowVirtualizer.scrollToIndex) {
+      rowVirtualizer.scrollToIndex(0);
+    }
+  }, [filteredOptions.length]);
+
+  // Handle search input changes
+  const handleSearchChange = (value: string) => {
+    setSearchValue(value);
+  };
   const handleChange = (currentValue: string) => {
     onChange(value.includes(currentValue) ? value.filter(val => val !== currentValue) : [...value, currentValue]);
   };
@@ -163,6 +184,8 @@ export const MultiSelectCombobox = <T extends BaseOption>({
           <CommandInput
             placeholder={placeholder || `Search ${label}...`}
             aria-label={`Search ${label}`}
+            onValueChange={handleSearchChange}
+
           />
 
           { isLoading || renderLoading
@@ -170,7 +193,7 @@ export const MultiSelectCombobox = <T extends BaseOption>({
                 <div className="flex flex-col items-center justify-center p-2 space-y-2 w-[348px] bg-card-bg ">
                   {
                     Array.from({ length: 9 }).map((_, index) => (
-                      <div key={index} className="flex w-full items-center gap-4">
+                      <div key={index} className="flex w-full items-center gap-2">
                         <Skeleton className="rounded-full w-7 h-7" />
                         <Skeleton className="rounded-md w-32 h-6" />
 
@@ -192,7 +215,7 @@ export const MultiSelectCombobox = <T extends BaseOption>({
                   <div ref={parentRef} style={{ height: '300px', overflow: 'auto' }}>
                     <CommandGroup style={{ height: `${rowVirtualizer.getTotalSize()}px`, position: 'relative' }}>
                       {rowVirtualizer.getVirtualItems().map((virtualItem) => {
-                        const option = options[virtualItem.index];
+                        const option = filteredOptions[virtualItem.index];
                         return (
                           <CommandItem
                             key={`${option.value}-${virtualItem.index}`}

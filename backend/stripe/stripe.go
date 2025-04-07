@@ -196,7 +196,7 @@ func (s *Stripe) GetCallbackURLs() (string, string, error) {
 	}
 
 	successURL := fmt.Sprintf("http://nexus.localhost:%d/stripe_payment_success", port)
-	cancelURL := fmt.Sprintf("http://nexus.localhost:%d/stripe_payment_cancelled", port)
+	cancelURL := fmt.Sprintf("http://nexus.localhost:%d/stripe_payment_cancel", port)
 	s.logger.Info("Callback URLs created",
 		zap.String("successUrl", successURL),
 		zap.String("cancelUrl", cancelURL))

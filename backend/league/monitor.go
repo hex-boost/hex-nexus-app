@@ -280,7 +280,7 @@ func (cm *ClientMonitor) OpenWebviewAndGetToken(username string) (string, error)
 		tokenChan <- captchaResponse
 	}()
 
-	// Wait for either a token, context timeout, or webview close
+	// Wait for either a token, contexts timeout, or webview close
 	select {
 	case <-ctx.Done():
 		cm.logger.Info("Captcha flow timed out, shutting down server")
@@ -292,7 +292,7 @@ func (cm *ClientMonitor) OpenWebviewAndGetToken(username string) (string, error)
 	case <-closedChan:
 		// Handle the case when webview is closed by the user
 		cm.logger.Info("Webview was closed by user, canceling captcha flow")
-		cancel() // Cancel the context
+		cancel() // Cancel the contexts
 		cm.UpdateAuthState(AuthStateNone, "Captcha window closed", username)
 		return "", errors.New("captcha_cancelled_by_user")
 	}

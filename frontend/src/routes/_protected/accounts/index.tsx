@@ -32,7 +32,6 @@ import {
   Search,
   Shield,
 } from 'lucide-react';
-import { useState } from 'react';
 
 export const Route = createFileRoute('/_protected/accounts/')({
   component: Accounts,
@@ -593,13 +592,14 @@ function Accounts() {
     getEloIcon,
     getRegionIcon,
     availableRegions,
+    setSelectedSkinIds,
+    setSelectedChampionIds,
+    selectedChampionIds,
+    selectedSkinIds,
   } = useAccounts();
 
   const { getCompanyIcon } = useMapping();
-  const [loadDragonData, setLoadDragonData] = useState(false);
-  const { allChampions, allSkins, isLoading: isDataDragonLoading } = useAllDataDragon(loadDragonData);
-  const [selectedChampionIds, setSelectedChampionIds] = useState<string[]>([]);
-  const [selectedSkinIds, setSelectedSkinIds] = useState<string[]>([]);
+  const { allChampions, allSkins, isLoading: isDataDragonLoading } = useAllDataDragon();
   const { price, isPriceLoading } = usePrice();
 
   return (
@@ -757,15 +757,10 @@ function Accounts() {
                       .filter(skin => skin.name !== 'default')
                       .map(skin => ({
                         label: skin.name,
-                        value: skin.champion.toString(),
+                        value: skin.id.toString(),
                         avatar: skin.imageAvatarUrl,
                       }))}
                     value={selectedSkinIds}
-                    onOpenChange={(open) => {
-                      if (open) {
-                        setLoadDragonData(true);
-                      }
-                    }}
                     isLoading={isDataDragonLoading}
                     onChange={(values) => {
                       setSelectedSkinIds(values);
@@ -905,7 +900,7 @@ function Accounts() {
                 </div>
 
                 <Button variant="outline" size="lg" className="" onClick={resetFilters}>
-                  Reset All Filters
+                  Reset Filters
                 </Button>
               </div>
             </div>

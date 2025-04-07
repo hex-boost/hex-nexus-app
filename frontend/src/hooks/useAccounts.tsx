@@ -51,6 +51,9 @@ type SortKey = keyof AccountType | 'coin_price' | 'winrate';
 export function useAccounts() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+
+  const [selectedChampionIds, setSelectedChampionIds] = useState<string[]>([]);
+  const [selectedSkinIds, setSelectedSkinIds] = useState<string[]>([]);
   const [filters, setFilters] = useState({
     leaverStatus: [] as string[],
     game: '',
@@ -282,12 +285,15 @@ export function useAccounts() {
   }, [sortedAccounts, searchQuery, filters]);
 
   const resetFilters = () => {
+    setSelectedSkinIds([]);
+    setSelectedChampionIds([]);
     setFilters({
       minBlueEssence: 0,
       game: '',
       division: '',
       rank: '',
       region: '',
+
       company: '',
       status: '',
       selectedChampions: [],
@@ -343,5 +349,9 @@ export function useAccounts() {
     resetFilters,
     SortIndicator,
     handleViewAccountDetails,
+    selectedChampionIds,
+    setSelectedChampionIds,
+    setSelectedSkinIds,
+    selectedSkinIds,
   };
 }
