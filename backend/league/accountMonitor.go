@@ -199,7 +199,20 @@ func (am *AccountMonitor) checkCurrentAccount() {
 		return
 	}
 	// Initialize client if needed
+	am.mutex.Lock()
+	static := struct {
+		lastCheckedUsername string
+	}{}
 
+	// Only perform the expensive check if the username has changed
+	if currentUsername == static.lastCheckedUsername {
+		am.mutex.Unlock()
+		am.logger.Debug("Skipping account lookup - same username as previous check")
+		return
+	}
+	// Update the last checked username
+	static.lastCheckedUsername = currentUsername
+	am.mutex.Unlock()
 	am.logger.Debug("Current logged-in account", zap.String("summonerNameWithTag", currentUsername))
 	// Check authentication state
 	allAccounts, err := am.accountRepo.GetAllRented()
@@ -237,8 +250,6 @@ func (am *AccountMonitor) checkCurrentAccount() {
 	am.isNexusAccount = isNexusAccount
 	am.mutex.Unlock()
 
-	// Replace the watchdogState block in the checkCurrentAccount() function with this:
-	// Replace the watchdogState block in the checkCurrentAccount() function with this:
 	if previousState != isNexusAccount {
 		am.logger.Info("Nexus account status changed",
 			zap.Bool("previousStatus", previousState),

@@ -144,9 +144,7 @@ func (cm *ClientMonitor) checkClientState() {
 		Username:     currentState.Username,
 	}
 
-	// Special case: If LeagueService client is running and we were previously logged in,
-	// maintain the logged in state even if Riot client is closed
-	if isLeagueClientRunning && currentState.ClientState == ClientStateLoggedIn {
+	if isLeagueClientRunning {
 		cm.logger.Sugar().Infow("LeagueService client running with previous logged-in state, maintaining state",
 			"leagueClientRunning", isLeagueClientRunning,
 			"riotClientRunning", isRiotClientRunning)
