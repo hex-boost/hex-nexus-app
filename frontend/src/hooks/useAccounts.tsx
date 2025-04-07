@@ -174,7 +174,6 @@ export function useAccounts() {
     };
 
     setSearchQuery(initialState.searchQuery);
-    setShowFilters(initialState.showFilters);
     setSelectedChampionIds(initialState.selectedChampionIds);
     setSelectedSkinIds(initialState.selectedSkinIds);
     setFilters(initialState.filters);

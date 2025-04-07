@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/fynelabs/selfupdate"
 	"github.com/go-resty/resty/v2"
-	cmdUtils "github.com/hex-boost/hex-nexus-app/backend/cmd"
 	"github.com/hex-boost/hex-nexus-app/backend/config"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"go.uber.org/zap"
@@ -23,10 +22,12 @@ var (
 type Updater struct {
 	config *config.Config
 	log    *utils.Logger
+	utils  *utils.Utils
 }
 
 func NewUpdater(cfg *config.Config, log *utils.Logger) *Updater {
 	return &Updater{
+		utils:  utils.NewUtils(),
 		config: cfg,
 		log:    log,
 	}
@@ -140,7 +141,7 @@ func (u *Updater) restartApplication(args []string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
-	cmd = cmdUtils.HideConsoleWindow(cmd)
+	cmd = u.utils.HideConsoleWindow(cmd)
 	if err := cmd.Start(); err != nil {
 		return err
 	}

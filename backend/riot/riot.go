@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-resty/resty/v2"
-	cmdUtils "github.com/hex-boost/hex-nexus-app/backend/cmd"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/inkeliz/gowebview"
@@ -29,10 +28,12 @@ type RiotClient struct {
 	ctx              context.Context
 	captchaData      string
 	webview          gowebview.WebView
+	utils            *utils.Utils
 }
 
 func NewRiotClient(logger *utils.Logger, captcha *Captcha) *RiotClient {
 	return &RiotClient{
+		utils:            utils.NewUtils(),
 		client:           nil,
 		logger:           logger,
 		captcha:          captcha,
@@ -71,7 +72,7 @@ func (rc *RiotClient) getCredentials(riotClientPid int) (port string, authToken 
 	var cmdLine string
 
 	cmd := exec.Command("wmic", "process", "where", fmt.Sprintf("ProcessId=%d", riotClientPid), "get", "CommandLine", "/format:list")
-	cmd = cmdUtils.HideConsoleWindow(cmd)
+	cmd = rc.utils.HideConsoleWindow(cmd)
 	output, err := cmd.Output()
 	if err != nil {
 		return "", "", fmt.Errorf("failed to get command line: %w", err)
@@ -175,7 +176,7 @@ func (rc *RiotClient) Launch() error {
 		zap.Strings("args", args))
 	cmd := exec.Command(clientInstalls.RcDefault, args...)
 	rc.logger.Info("Starting Riot client process")
-	cmd = cmdUtils.HideConsoleWindow(cmd)
+	cmd = rc.utils.HideConsoleWindow(cmd)
 	if err := cmd.Start(); err != nil {
 		rc.logger.Error("Failed to start Riot client", zap.Error(err))
 		return fmt.Errorf("failed to start Riot client: %w", err)
