@@ -5,13 +5,13 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	cmdUtils "github.com/hex-boost/hex-nexus-app/backend/cmd"
 	"github.com/mitchellh/go-ps"
 	"github.com/pkg/browser"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"go.uber.org/zap"
 	"os/exec"
 	"sync"
+	"syscall"
 )
 
 type Utils struct {
@@ -26,7 +26,7 @@ func (u *Utils) GetHWID() string {
 	const xx = "cmd.exe"
 	var stdout bytes.Buffer
 	cmd := exec.Command(xx, "/c", "wmic csproduct get uuid")
-	cmd = cmdUtils.HideConsoleWindow(cmd)
+	cmd = u.HideConsoleWindow(cmd)
 	cmd.Stdout = &stdout
 	cmd.Run()
 	out := stdout.String()
@@ -90,7 +90,7 @@ func (u *Utils) ForceCloseAllClients() error {
 		for _, riotProcess := range riotProcesses {
 			if processName == riotProcess {
 				cmd := exec.Command("taskkill", "/F", "/PID", fmt.Sprintf("%d", process.Pid()))
-				cmd = cmdUtils.HideConsoleWindow(cmd)
+				cmd = u.HideConsoleWindow(cmd)
 				if err := cmd.Run(); err != nil {
 					fmt.Println(fmt.Sprintf("Failed to kill process",
 						zap.String("process", processName),
@@ -109,4 +109,11 @@ func (u *Utils) ForceCloseAllClients() error {
 }
 func (u *Utils) SetClipboard(text string) {
 	u.app.Clipboard().SetText(text)
+}
+func (u *Utils) HideConsoleWindow(cmd *exec.Cmd) *exec.Cmd {
+	if cmd.SysProcAttr == nil {
+		cmd.SysProcAttr = &syscall.SysProcAttr{}
+	}
+	cmd.SysProcAttr.CreationFlags = 0x08000000
+	return cmd
 }
