@@ -13,16 +13,17 @@ import (
 )
 
 type AccountMonitor struct {
-	riotClient     *riot.RiotClient
-	accountRepo    *repository.AccountsRepository
-	logger         *utils.Logger
-	running        bool
-	isNexusAccount bool
-	checkInterval  time.Duration
-	stopChan       chan struct{}
-	leagueService  *LeagueService
-	mutex          sync.Mutex
-	watchdogState  *watchdog.Watchdog // Add this field to access watchdog
+	riotClient          *riot.RiotClient
+	accountRepo         *repository.AccountsRepository
+	logger              *utils.Logger
+	lastCheckedUsername string
+	running             bool
+	isNexusAccount      bool
+	checkInterval       time.Duration
+	stopChan            chan struct{}
+	leagueService       *LeagueService
+	mutex               sync.Mutex
+	watchdogState       *watchdog.Watchdog // Add this field to access watchdog
 
 	summoner      *SummonerClient
 	LCUConnection *LCUConnection
@@ -199,22 +200,19 @@ func (am *AccountMonitor) checkCurrentAccount() {
 		return
 	}
 	// Initialize client if needed
+	// Then use it to check if username has changed
 	am.mutex.Lock()
-	static := struct {
-		lastCheckedUsername string
-	}{}
-
-	// Only perform the expensive check if the username has changed
-	if currentUsername == static.lastCheckedUsername {
+	if currentUsername == am.lastCheckedUsername {
 		am.mutex.Unlock()
 		am.logger.Debug("Skipping account lookup - same username as previous check")
 		return
 	}
+
 	// Update the last checked username
-	static.lastCheckedUsername = currentUsername
+	am.lastCheckedUsername = currentUsername
 	am.mutex.Unlock()
-	am.logger.Debug("Current logged-in account", zap.String("summonerNameWithTag", currentUsername))
-	// Check authentication state
+
+	am.logger.Debug("Current logged-in account", zap.String("summonerNameWithTag", currentUsername)) // Check authentication state
 	allAccounts, err := am.accountRepo.GetAllRented()
 	if err != nil {
 		am.logger.Error("Failed to retrieve Nexus-managed accounts from repository",
