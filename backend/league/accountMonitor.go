@@ -256,37 +256,6 @@ func (am *AccountMonitor) checkCurrentAccount() {
 	}
 }
 
-//	func (am *AccountMonitor) LogoutNexusAccount() error {
-//		am.logger.Info("Attempting to logout Nexus-managed account")
-//
-//		am.logger.Debug("Calling League service logout")
-//		am.leagueService.Logout()
-//		am.logger.Debug("League service logout completed")
-//
-//		am.logger.Debug("Calling Riot client logout")
-//		err := am.riotClient.Logout()
-//		if err != nil {
-//			am.logger.Error("Failed to logout from Riot client",
-//				zap.Error(err),
-//				zap.String("errorType", fmt.Sprintf("%T", err)))
-//			return fmt.Errorf("riot client logout failed: %w", err)
-//		}
-//
-//		am.logger.Info("Successfully logged out Nexus-managed account")
-//
-//		// Update the status after logout
-//		//previousState := am.IsNexusAccount()
-//
-//		am.mutex.Lock()
-//		wasNexusAccount := am.isNexusAccount
-//		am.isNexusAccount = false
-//		am.mutex.Unlock()
-//
-//		am.logger.Debug("Updated Nexus account status after logout",
-//			zap.Bool("previousStatus", wasNexusAccount),
-//			zap.Bool("currentStatus", false))
-//		return nil
-//	}
 func (am *AccountMonitor) IsNexusAccount() bool {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()

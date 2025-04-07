@@ -129,7 +129,7 @@ export function LoginForm({
   const isLoading = activeTab === 'login' ? loginMutation.isPending : registerMutation.isPending;
   return (
 
-    <div className="flex h-screen w-screen   bg-background">
+    <div className="flex h-full w-screen   bg-background">
       <div className="w-full h-full  bg-background ">
         <div
           className={cn('flex justify-center h-full items-center  flex-col gap-6', className)}
@@ -254,6 +254,7 @@ export function LoginForm({
                         id="email"
                         type="email"
                         placeholder="example@email.com"
+                        className="!bg-background"
                         required
                         value={formData.email}
                         onChange={e => setFormData({ ...formData, email: e.target.value })}

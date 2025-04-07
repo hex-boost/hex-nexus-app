@@ -26,10 +26,15 @@ export function useAccountActions({
   const [selectedExtensionIndex, setSelectedExtensionIndex] = useState<number>(1);
 
   async function handleDropDialogOpen(open: boolean) {
-    const isNexusAccountLogged = await AccountMonitor.IsNexusAccount();
-    if (isNexusAccountLogged) {
+    const isNexusAccount = await AccountMonitor.IsNexusAccount();
+    console.log('isNexusAccount', isNexusAccount);
+    if (isNexusAccount) {
       const droppedAccountSummonername = `${account.gamename}#${account.tagline}`;
+
+      console.log('droppedAccountSummonername', droppedAccountSummonername);
       const currentLoggedInSummonerName = await AccountMonitor.GetLoggedInSummonerName();
+
+      console.log('currentLoggedInSummoner', currentLoggedInSummonerName);
       if (droppedAccountSummonername === currentLoggedInSummonerName) {
         setIsNexusAccount(true);
       }
