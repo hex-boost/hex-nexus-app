@@ -205,7 +205,7 @@ export const MultiSelectCombobox = <T extends BaseOption>({
                 </div>
               )
             : (
-                <CommandList className="w-[348px]">
+                <CommandList className="w-[454.672px]">
                   <CommandEmpty>
                     No
                     {label}

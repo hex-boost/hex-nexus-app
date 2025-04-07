@@ -1,7 +1,7 @@
 import type { ChampionById, DDragonChampionsData } from '@/types/ddragon.ts';
 import { useQuery } from '@tanstack/react-query';
 import { openDB } from 'idb';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 const CACHE_DB_NAME = 'nexus_ddragon_cache';
 const CACHE_STORE_NAME = 'cache_store';
@@ -47,6 +47,33 @@ async function clearCache() {
 }
 
 export function useAllDataDragon() {
+  const [shouldFetch, setShouldFetch] = useState(false);
+
+  useEffect(() => {
+    const checkCache = async () => {
+      try {
+        // Check if version exists in cache
+        const db = await getDB();
+        const tx = db.transaction(CACHE_STORE_NAME, 'readonly');
+        const cachedVersionItem = await tx.store.get('cached_version');
+
+        if (cachedVersionItem) {
+          // Cache exists, start fetching immediately
+          setShouldFetch(true);
+        } else {
+          // No cache, delay the fetching
+          setTimeout(() => {
+            setShouldFetch(true);
+          }, 2000);
+        }
+      } catch (error) {
+        // If any error, just start fetching after delay
+        setTimeout(() => setShouldFetch(true), 2000);
+      }
+    };
+
+    checkCache();
+  }, []);
   const versionQuery = useQuery({
     queryKey: ['ddragon-version'],
     queryFn: async () => {
@@ -68,6 +95,8 @@ export function useAllDataDragon() {
       return latestVersion;
     },
     staleTime: 60 * 60 * 1000,
+    enabled: shouldFetch, // Only run when shouldFetch is true
+
   });
 
   const championsQuery = useQuery({

@@ -779,16 +779,22 @@ function Accounts() {
                         {option.label}
                       </div>
                     )}
+                    // For Skins section - fix the renderSelectedItem function
                     renderSelectedItem={selectedValues => (
                       <div className="flex -space-x-2">
-                        {selectedValues.map((champion) => {
-                          const skin = allSkins.find(s => s.champion.toString() === champion);
+                        {selectedValues.map((skinId) => {
+                          // Fix the lookup logic to find skins by their ID, not by champion
+                          const skin = allSkins.find(s => s.id.toString() === skinId);
                           return (
                             <Avatar
-                              key={champion}
+                              key={skinId}
                               className="h-6 w-6 border-2 border-background"
                             >
-                              <AvatarImage src={skin?.imageAvatarUrl} alt={skin?.name} />
+                              <AvatarImage
+                                src={skin?.imageAvatarUrl} // Make sure this matches the property used in the options
+                                alt={skin?.name}
+                                className="object-cover object-top scale-150"
+                              />
                               <AvatarFallback>{skin?.name?.[0] || 'S'}</AvatarFallback>
                             </Avatar>
                           );
