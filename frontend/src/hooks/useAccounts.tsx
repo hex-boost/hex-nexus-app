@@ -1,10 +1,10 @@
 import type { AccountType, RankingType } from '@/types/types';
 import { strapiClient } from '@/lib/strapi.ts';
 import { useMapping } from '@/lib/useMapping';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 export function getLeaverBusterInfo(account: AccountType) {
   if (!account.leaverBuster?.leaverBusterEntryDto) {
@@ -46,36 +46,143 @@ export function getLeaverBusterInfo(account: AccountType) {
 
   return null; // No active penalties
 }
+
 type SortKey = keyof AccountType | 'coin_price' | 'winrate';
 
 export function useAccounts() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
+  const queryClient = useQueryClient();
 
-  const [selectedChampionIds, setSelectedChampionIds] = useState<string[]>([]);
-  const [selectedSkinIds, setSelectedSkinIds] = useState<string[]>([]);
+  const persistedState: any = queryClient.getQueryData(['accounts-filter-state']) || {
+    searchQuery: '',
+    showFilters: false,
+    selectedChampionIds: [], // Ensure this is always an array
+    selectedSkinIds: [], // Ensure this is always an array
+    filters: {
+      leaverStatus: [],
+      game: '',
+      division: '',
+      rank: '',
+      region: '',
+      company: '',
+      status: '',
+      selectedChampions: [], // Ensure this is always an array
+      minBlueEssence: 0,
+      selectedSkins: [], // Ensure this is always an array
+    },
+    sortConfig: {
+      key: null,
+      direction: null,
+    },
+  };
+
+  // Initialize state with persisted values and ensure arrays
+  const [searchQuery, setSearchQuery] = useState(persistedState.searchQuery || '');
+  const [showFilters, setShowFilters] = useState(persistedState.showFilters || false);
+  const [selectedChampionIds, setSelectedChampionIds] = useState(Array.isArray(persistedState.selectedChampionIds) ? persistedState.selectedChampionIds : []);
+  const [selectedSkinIds, setSelectedSkinIds] = useState(Array.isArray(persistedState.selectedSkinIds) ? persistedState.selectedSkinIds : []);
   const [filters, setFilters] = useState({
-    leaverStatus: [] as string[],
-    game: '',
-    division: '',
-    rank: '',
-    region: '',
-    company: '',
-    status: '',
-    selectedChampions: [] as string[],
-    minBlueEssence: 0,
-
-    selectedSkins: [] as string[],
+    ...persistedState.filters,
+    selectedChampions: Array.isArray(persistedState.filters?.selectedChampions) ? persistedState.filters.selectedChampions : [],
+    selectedSkins: Array.isArray(persistedState.filters?.selectedSkins) ? persistedState.filters.selectedSkins : [],
+    leaverStatus: Array.isArray(persistedState.filters?.leaverStatus) ? persistedState.filters.leaverStatus : [],
   });
+  const [sortConfig, setSortConfig] = useState(persistedState.sortConfig || { key: null, direction: null });
 
-  const [sortConfig, setSortConfig] = useState<{
-    key: SortKey | null;
-    direction: 'ascending' | 'descending' | null;
-  }>({
-    key: null,
-    direction: null,
-  });
+  const { getRankColor, getEloIcon, getRegionIcon, getGameIcon } = useMapping();
+  // Update persisted state when filters change
+  const updatePersistedState = useCallback(() => {
+    queryClient.setQueryData(['accounts-filter-state'], {
+      searchQuery,
+      showFilters,
+      selectedChampionIds,
+      selectedSkinIds,
+      filters,
+      sortConfig,
+    });
+  }, [queryClient, searchQuery, showFilters, selectedChampionIds, selectedSkinIds, filters, sortConfig]);
 
+  // Custom setters that update both local state and persisted state
+  const setSearchQueryPersisted = useCallback((value: string) => {
+    setSearchQuery(value);
+    queryClient.setQueryData(['accounts-filter-state'], (old: any) => ({ ...old, searchQuery: value }));
+  }, [queryClient]);
+
+  const setShowFiltersPersisted = useCallback((value: boolean) => {
+    setShowFilters(value);
+    queryClient.setQueryData(['accounts-filter-state'], (old: any) => ({ ...old, showFilters: value }));
+  }, [queryClient]);
+
+  const setFiltersPersisted = useCallback((value: typeof filters) => {
+    setFilters(value);
+    queryClient.setQueryData(['accounts-filter-state'], (old: any) => ({ ...old, filters: value }));
+  }, [queryClient]);
+
+  const setSelectedChampionIdsPersisted = useCallback((value: string[]) => {
+    const safeValue = Array.isArray(value) ? value : [];
+    setSelectedChampionIds(safeValue);
+    queryClient.setQueryData(['accounts-filter-state'], (old: any) => ({ ...old, selectedChampionIds: safeValue }));
+  }, [queryClient]);
+
+  const setSelectedSkinIdsPersisted = useCallback((value: string[]) => {
+    const safeValue = Array.isArray(value) ? value : [];
+    setSelectedSkinIds(safeValue);
+    queryClient.setQueryData(['accounts-filter-state'], (old: any) => ({ ...old, selectedSkinIds: safeValue }));
+  }, [queryClient]);
+
+  // Update persisted sort config
+  const requestSort = useCallback((key: SortKey) => {
+    let direction: 'ascending' | 'descending' | null = 'ascending';
+
+    if (sortConfig.key === key) {
+      if (sortConfig.direction === 'ascending') {
+        direction = 'descending';
+      } else if (sortConfig.direction === 'descending') {
+        const newConfig = { key: null, direction: null };
+        setSortConfig(newConfig);
+        queryClient.setQueryData(['accounts-filter-state'], (old: any) => ({ ...old, sortConfig: newConfig }));
+        return;
+      }
+    }
+
+    const newConfig = { key, direction };
+    setSortConfig(newConfig);
+    queryClient.setQueryData(['accounts-filter-state'], (old: any) => ({ ...old, sortConfig: newConfig }));
+  }, [sortConfig, queryClient]);
+
+  const resetFilters = useCallback(() => {
+    const initialState = {
+      searchQuery: '',
+      showFilters: false,
+      selectedChampionIds: [],
+      selectedSkinIds: [],
+      filters: {
+        minBlueEssence: 0,
+        game: '',
+        division: '',
+        rank: '',
+        region: '',
+        company: '',
+        status: '',
+        selectedChampions: [],
+        selectedSkins: [],
+        leaverStatus: [],
+      },
+      sortConfig: {
+        key: null,
+        direction: null,
+      },
+    };
+
+    setSearchQuery(initialState.searchQuery);
+    setShowFilters(initialState.showFilters);
+    setSelectedChampionIds(initialState.selectedChampionIds);
+    setSelectedSkinIds(initialState.selectedSkinIds);
+    setFilters(initialState.filters);
+    setSortConfig(initialState.sortConfig);
+
+    // Reset persisted state
+    queryClient.setQueryData(['accounts-filter-state'], initialState);
+  }, [queryClient]);
   const router = useRouter();
   const { data: accounts, isLoading } = useQuery({
     queryKey: ['accounts'],
@@ -110,23 +217,6 @@ export function useAccounts() {
     },
   });
 
-  const { getRankColor, getEloIcon, getRegionIcon, getGameIcon } = useMapping();
-
-  const requestSort = (key: SortKey) => {
-    let direction: 'ascending' | 'descending' | null = 'ascending';
-
-    if (sortConfig.key === key) {
-      if (sortConfig.direction === 'ascending') {
-        direction = 'descending';
-      } else if (sortConfig.direction === 'descending') {
-        setSortConfig({ key: null, direction: null });
-        return;
-      }
-    }
-
-    setSortConfig({ key, direction });
-  };
-
   const sortedAccounts = useMemo(() => {
     if (!accounts) {
       return [];
@@ -134,7 +224,8 @@ export function useAccounts() {
 
     const sortableAccounts = [...accounts];
 
-    if (sortConfig.key && sortConfig.direction) {
+    // Add null/undefined check before accessing properties
+    if (sortConfig?.key && sortConfig?.direction) {
       sortableAccounts.sort((a, b) => {
         if (sortConfig.key === 'LCUchampions' || sortConfig.key === 'LCUskins') {
           const aArray = a[sortConfig.key as keyof AccountType] as unknown as any[] || [];
@@ -284,28 +375,9 @@ export function useAccounts() {
     });
   }, [sortedAccounts, searchQuery, filters]);
 
-  const resetFilters = () => {
-    setSelectedSkinIds([]);
-    setSelectedChampionIds([]);
-    setFilters({
-      minBlueEssence: 0,
-      game: '',
-      division: '',
-      rank: '',
-      region: '',
-
-      company: '',
-      status: '',
-      selectedChampions: [],
-      selectedSkins: [],
-      leaverStatus: [],
-    });
-    setSearchQuery('');
-    setSortConfig({ key: null, direction: null });
-  };
-
   const SortIndicator = ({ column }: { column: SortKey }) => {
-    if (sortConfig.key !== column || sortConfig.direction === null) {
+    // Add null check here too
+    if (!sortConfig || sortConfig.key !== column || sortConfig.direction === null) {
       return <ArrowUpDown className="ml-1 h-4 w-4" />;
     }
 
@@ -346,12 +418,19 @@ export function useAccounts() {
     sortedAccounts,
     filteredAccounts,
     requestSort,
+    setSearchQueryPersisted,
+    setSelectedChampionIdsPersisted,
+    setSelectedSkinIdsPersisted,
     resetFilters,
     SortIndicator,
     handleViewAccountDetails,
     selectedChampionIds,
+    setFiltersPersisted,
     setSelectedChampionIds,
     setSelectedSkinIds,
+    setShowFiltersPersisted,
     selectedSkinIds,
+    updatePersistedState,
+
   };
 }

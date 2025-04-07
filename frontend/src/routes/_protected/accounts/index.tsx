@@ -1,6 +1,7 @@
 import type { Price } from '@/types/price.ts';
 import type { AccountType, RankingType } from '@/types/types.ts';
 import { DIVISIONS, LOL_TIERS, VALORANT_TIERS } from '@/components/accountsMock.ts';
+import { AccountsPagination } from '@/components/AccountsPagination';
 import { CoinIcon } from '@/components/coin-icon';
 import { AccountGameIcon } from '@/components/GameComponents';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
@@ -32,6 +33,7 @@ import {
   Search,
   Shield,
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 export const Route = createFileRoute('/_protected/accounts/')({
   component: Accounts,
@@ -478,6 +480,8 @@ type AccountsTableProps = {
   getRegionIcon: (region: string) => React.ReactNode;
   getCompanyIcon: (company: string) => string;
   getRankColor: (elo: string) => string;
+  currentPage: number;
+  itemsPerPage: number;
 };
 
 function AccountsTable({
@@ -492,7 +496,14 @@ function AccountsTable({
   getRegionIcon,
   getCompanyIcon,
   getRankColor,
+  currentPage,
+  itemsPerPage,
 }: AccountsTableProps) {
+  // Calculate pagination slice
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedAccounts = filteredAccounts.slice(startIndex, endIndex);
+
   return (
     <div className="overflow-x-auto rounded-lg border">
       <table className="w-full border-collapse">
@@ -507,13 +518,11 @@ function AccountsTable({
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Current Rank</th>
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Previous Rank</th>
             <th
-
               className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400 flex"
               onClick={() => requestSort('winrate')}
             >
               Winrate
               <SortIndicator column="winrate" />
-
             </th>
             <th
               className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400 cursor-pointer"
@@ -533,7 +542,6 @@ function AccountsTable({
                 <SortIndicator column="LCUskins" />
               </div>
             </th>
-
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Blue Essence</th>
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Status</th>
             <th
@@ -554,7 +562,7 @@ function AccountsTable({
                 <AccountTableSkeleton />
               )
             : (
-                filteredAccounts.map(account => (
+                paginatedAccounts.map(account => (
                   <AccountRow
                     key={account.id}
                     account={account}
@@ -573,17 +581,18 @@ function AccountsTable({
     </div>
   );
 }
+
 function Accounts() {
   const {
     isLoading,
     accounts,
     filteredAccounts,
     filters,
-    setFilters,
+    setFiltersPersisted,
     showFilters,
-    setShowFilters,
+    setShowFiltersPersisted,
     searchQuery,
-    setSearchQuery,
+    setSearchQueryPersisted,
     requestSort,
     resetFilters,
     SortIndicator,
@@ -592,8 +601,8 @@ function Accounts() {
     getEloIcon,
     getRegionIcon,
     availableRegions,
-    setSelectedSkinIds,
-    setSelectedChampionIds,
+    setSelectedSkinIdsPersisted,
+    setSelectedChampionIdsPersisted,
     selectedChampionIds,
     selectedSkinIds,
   } = useAccounts();
@@ -602,14 +611,30 @@ function Accounts() {
   const { allChampions, allSkins, isLoading: isDataDragonLoading } = useAllDataDragon();
   const { price, isPriceLoading } = usePrice();
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(filteredAccounts.length / itemsPerPage);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters, searchQuery]);
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <>
       <h1 className="text-3xl font-semibold pb-6 ">Accounts Available</h1>
 
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row gap-4 justify-between">
-          <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
-          <FilterButton showFilters={showFilters} setShowFilters={setShowFilters} />
+          <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQueryPersisted} />
+          <FilterButton showFilters={showFilters} setShowFilters={setShowFiltersPersisted} />
         </div>
 
         {showFilters && (
@@ -626,7 +651,7 @@ function Accounts() {
                   </Label>
                   <Select
                     value={filters.rank}
-                    onValueChange={value => setFilters({ ...filters, rank: value })}
+                    onValueChange={value => setFiltersPersisted({ ...filters, rank: value })}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Any rank" />
@@ -648,7 +673,7 @@ function Accounts() {
                   </Label>
                   <Select
                     value={filters.division}
-                    onValueChange={value => setFilters({ ...filters, division: value })}
+                    onValueChange={value => setFiltersPersisted({ ...filters, division: value })}
                     disabled={['Master', 'Grandmaster', 'Challenger', 'Radiant'].includes(filters.division)}
                   >
                     <SelectTrigger className="w-full">
@@ -672,7 +697,7 @@ function Accounts() {
                   <Select
                     defaultValue="any"
                     value={filters.region}
-                    onValueChange={value => setFilters({ ...filters, region: value })}
+                    onValueChange={value => setFiltersPersisted({ ...filters, region: value })}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Any Server" />
@@ -717,9 +742,9 @@ function Accounts() {
                     }))}
                     value={selectedChampionIds}
                     onChange={(values) => {
-                      setFilters({ ...filters, selectedChampions: values });
+                      setFiltersPersisted({ ...filters, selectedChampions: values });
 
-                      setSelectedChampionIds(values);
+                      setSelectedChampionIdsPersisted(values);
                     }}
                     renderItem={option => (
                       <div className="flex items-center gap-2">
@@ -763,8 +788,8 @@ function Accounts() {
                     value={selectedSkinIds}
                     isLoading={isDataDragonLoading}
                     onChange={(values) => {
-                      setSelectedSkinIds(values);
-                      setFilters({ ...filters, selectedSkins: values });
+                      setSelectedSkinIdsPersisted(values);
+                      setFiltersPersisted({ ...filters, selectedSkins: values });
                     }}
                     renderItem={option => (
                       <div className="flex items-center gap-2">
@@ -820,7 +845,7 @@ function Accounts() {
                           'h-7 px-2  text-xs',
                           filters.minBlueEssence === value ? 'bg-blue-100 dark:bg-blue-900/20 border-blue-500' : '',
                         )}
-                        onClick={() => setFilters({
+                        onClick={() => setFiltersPersisted({
                           ...filters,
                           minBlueEssence: value,
                         })}
@@ -834,7 +859,7 @@ function Accounts() {
                       variant="outline"
                       size="sm"
                       className="h-7 px-2 text-xs"
-                      onClick={() => setFilters({
+                      onClick={() => setFiltersPersisted({
                         ...filters,
                         minBlueEssence: 0,
                       })}
@@ -848,7 +873,7 @@ function Accounts() {
                     max={30000}
                     step={100}
                     onValueChange={value =>
-                      setFilters({
+                      setFiltersPersisted({
                         ...filters,
                         minBlueEssence: value[0],
                       })}
@@ -887,7 +912,7 @@ function Accounts() {
                                 ? currentStatuses.filter(s => s !== status.value)
                                 : [...currentStatuses, status.value];
 
-                              setFilters({
+                              setFiltersPersisted({
                                 ...filters,
                                 leaverStatus: newStatuses,
                               });
@@ -928,7 +953,20 @@ function Accounts() {
           getRegionIcon={getRegionIcon}
           getCompanyIcon={getCompanyIcon}
           getRankColor={getRankColor}
+          currentPage={currentPage}
+          itemsPerPage={itemsPerPage}
         />
+
+        {/* Pagination component */}
+        {totalPages > 1 && (
+          <div className="mt-6">
+            <AccountsPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          </div>
+        )}
       </div>
     </>
   );

@@ -3,8 +3,9 @@ import type { Price } from '@/types/price.ts';
 import type { AccountType } from '@/types/types.ts';
 import { ChampionsSkinsTab } from '@/components/ChampionsSkinsTab.tsx';
 import { CoinIcon } from '@/components/coin-icon.tsx';
-import { RentedAccountButton } from '@/components/RentedAccountAction.tsx';
+import { CopyToClipboard } from '@/components/CopyToClipboard.tsx';
 
+import { RentedAccountButton } from '@/components/RentedAccountAction.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -136,7 +137,12 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                     {
                       account.gamename
 
-                        ? <span className="text-sm text-muted-foreground   transition-all duration-200">{`${account.gamename}#${account.tagline}`}</span>
+                        ? (
+                            <div className="flex gap-4 items-center ">
+                              <span className="text-sm text-muted-foreground   transition-all duration-200">{`${account.gamename}#${account.tagline}`}</span>
+                              <CopyToClipboard className="bg-transparent p-0 w-0 h-0" text={`${account.gamename}#${account.tagline}`} />
+                            </div>
+                          )
                         : <span className="text-sm text-muted-foreground blur-[2px] select-none transition-all duration-200">Summoner Name</span>
                     }
                   </div>

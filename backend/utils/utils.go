@@ -107,3 +107,6 @@ func (u *Utils) ForceCloseAllClients() error {
 	}
 	return nil
 }
+func (u *Utils) SetClipboard(text string) {
+	u.app.Clipboard().SetText(text)
+}

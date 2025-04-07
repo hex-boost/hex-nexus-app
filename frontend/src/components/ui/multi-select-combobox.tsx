@@ -34,12 +34,11 @@ export const MultiSelectCombobox = <T extends BaseOption>({
   label,
   renderItem,
   renderSelectedItem,
-  isLoading,
-  options,
-  value,
+  isLoading = false,
+  options = [],
+  value = [], // Add default empty array
   onOpenChange,
   onChange,
-
   placeholder,
 }: Props<T>) => {
   const [open, setOpen] = useState(false);
@@ -76,7 +75,8 @@ export const MultiSelectCombobox = <T extends BaseOption>({
     setSearchValue(value);
   };
   const handleChange = (currentValue: string) => {
-    onChange(value.includes(currentValue) ? value.filter(val => val !== currentValue) : [...value, currentValue]);
+    const safeValue = Array.isArray(value) ? value : [];
+    onChange(safeValue.includes(currentValue) ? safeValue.filter(val => val !== currentValue) : [...safeValue, currentValue]);
   };
 
   const handleImageLoad = useCallback((id: string) => {
@@ -159,10 +159,10 @@ export const MultiSelectCombobox = <T extends BaseOption>({
           {}
 
           <div className="flex-1 text-muted-foreground overflow-hidden">
-            {value.length > 0 ? renderSelectedItem(value) : `Select ${label}...`}
+            {Array.isArray(value) && value.length > 0 ? renderSelectedItem(value) : `Select ${label}...`}
           </div>
           <span className="z-10 ml-auto flex items-center gap-2">
-            {value.length > 0 && (
+            {Array.isArray(value) && value.length > 0 && (
               <button
                 type="button"
                 aria-label="Clear selection"
@@ -222,7 +222,7 @@ export const MultiSelectCombobox = <T extends BaseOption>({
 
                             value={option.label}
                             onSelect={() => handleChange(option.value)}
-                            aria-selected={value.includes(option.value)}
+                            aria-selected={Array.isArray(value) && value.includes(option.value)}
                             style={{
                               position: 'absolute',
                               top: 0,
@@ -234,7 +234,7 @@ export const MultiSelectCombobox = <T extends BaseOption>({
                           >
                             {renderItemWithImageHandling(option)}
                             <Check
-                              className={cn('ml-auto h-4 w-4', value.includes(option.value) ? 'opacity-100' : 'opacity-0')}
+                              className={cn('ml-auto h-4 w-4', Array.isArray(value) && value.includes(option.value) ? 'opacity-100' : 'opacity-0')}
                               aria-hidden="true"
                             />
                           </CommandItem>
