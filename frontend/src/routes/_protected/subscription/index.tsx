@@ -148,7 +148,7 @@ function RouteComponent() {
       });
     },
     onSuccess: async (data) => {
-      await Browser.OpenURL(data.url!);
+      await Browser.OpenURL(data?.url!);
       setPendingPlanTier(null);
     },
     onError: (error) => {
