@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/hex-boost/hex-nexus-app/backend/repository"
 	"github.com/hex-boost/hex-nexus-app/backend/riot"
+	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/hex-boost/hex-nexus-app/backend/watchdog"
 	"go.uber.org/zap"
@@ -20,6 +21,9 @@ type AccountMonitor struct {
 	running             bool
 	isNexusAccount      bool
 	checkInterval       time.Duration
+	cachedAccounts      []types.SummonerRented
+	lastAccountsFetch   time.Time
+	accountCacheTTL     time.Duration
 	stopChan            chan struct{}
 	leagueService       *LeagueService
 	mutex               sync.Mutex
@@ -43,18 +47,66 @@ func NewAccountMonitor(
 
 ) *AccountMonitor {
 	return &AccountMonitor{
-		leagueService:  leagueService,
-		LCUConnection:  LCUConnection,
-		riotClient:     riotClient,
-		summoner:       summoner,
-		accountRepo:    accountRepo,
-		logger:         logger,
-		isNexusAccount: false,
-		checkInterval:  1 * time.Second, // Check every 30 seconds
-		stopChan:       make(chan struct{}),
+		leagueService:   leagueService,
+		LCUConnection:   LCUConnection,
+		riotClient:      riotClient,
+		summoner:        summoner,
+		accountRepo:     accountRepo,
+		logger:          logger,
+		isNexusAccount:  false,
+		accountCacheTTL: 5 * time.Minute, // Adjust the cache duration as needed
+
+		checkInterval: 1 * time.Second, // Check every 30 seconds
+		stopChan:      make(chan struct{}),
 	}
 }
+func (am *AccountMonitor) refreshAccountCache() error {
+	am.mutex.Lock()
+	defer am.mutex.Unlock()
 
+	accounts, err := am.accountRepo.GetAllRented()
+	if err != nil {
+		return err
+	}
+
+	am.cachedAccounts = accounts
+	am.lastAccountsFetch = time.Now()
+	am.logger.Debug("Forcibly refreshed account cache",
+		zap.Int("accountCount", len(accounts)),
+		zap.Time("cacheTimestamp", am.lastAccountsFetch))
+
+	return nil
+}
+func (am *AccountMonitor) getAccountsWithCache() ([]types.SummonerRented, error) {
+	am.mutex.Lock()
+	defer am.mutex.Unlock()
+
+	// Check if we need to refresh the cache
+	needsRefresh := len(am.cachedAccounts) == 0 ||
+		time.Since(am.lastAccountsFetch) > am.accountCacheTTL
+
+	// If cache is empty or expired, fetch fresh data
+	if needsRefresh {
+		am.logger.Debug("Fetching fresh account data from repository")
+		accounts, err := am.accountRepo.GetAllRented()
+		if err != nil {
+			return nil, err
+		}
+
+		am.cachedAccounts = accounts
+		am.lastAccountsFetch = time.Now()
+		am.logger.Debug("Updated account cache",
+			zap.Int("accountCount", len(accounts)),
+			zap.Time("cacheTimestamp", am.lastAccountsFetch))
+	} else {
+		am.logger.Debug("Using cached account data",
+			zap.Int("accountCount", len(am.cachedAccounts)),
+			zap.Time("cacheTimestamp", am.lastAccountsFetch),
+			zap.Duration("age", time.Since(am.lastAccountsFetch)))
+	}
+
+	return am.cachedAccounts, nil
+}
 func (am *AccountMonitor) Start() {
 	fmt.Println("Starting account monitor")
 	am.mutex.Lock()
@@ -146,11 +198,11 @@ func (am *AccountMonitor) getSummonerNameByRiotClient() string {
 		zap.String("gameName", userInfo.Acct.GameName),
 		zap.String("tagLine", userInfo.Acct.TagLine),
 		zap.String("puuid", userInfo.Sub))
-	return userInfo.Acct.GameName + "#" + userInfo.Acct.TagLine
+	return userInfo.Username
 	// Check if it's a system account
 }
 
-func (am *AccountMonitor) getSummonerNameByLeagueClient() (string, error) {
+func (am *AccountMonitor) getUsernameByLeagueClient() (string, error) {
 
 	err := am.LCUConnection.InitializeConnection()
 	if err != nil || am.LCUConnection.client == nil {
@@ -160,22 +212,22 @@ func (am *AccountMonitor) getSummonerNameByLeagueClient() (string, error) {
 		return "", errors.New("failed to initialize League client connection")
 	}
 
-	currentSummoner, err := am.summoner.GetCurrentSummoner()
+	currentSummoner, err := am.summoner.GetLoginSession()
 	if err != nil {
 		am.logger.Error("Failed to get current summoner",
 			zap.Error(err),
 			zap.String("errorType", fmt.Sprintf("%T", err)))
 		return "", errors.New("failed to get current summoner")
 	}
-	return currentSummoner.GameName + "#" + currentSummoner.TagLine, nil
+	return currentSummoner.Username, nil
 
 }
-func (am *AccountMonitor) GetLoggedInSummonerName() string {
+func (am *AccountMonitor) GetLoggedInUsername() string {
 	var currentUsername string
 	if am.riotClient.IsRunning() {
 		currentUsername = am.getSummonerNameByRiotClient()
 	} else if am.leagueService.IsRunning() {
-		leagueCurrentUsername, err := am.getSummonerNameByLeagueClient()
+		leagueCurrentUsername, err := am.getUsernameByLeagueClient()
 		if err != nil {
 			am.logger.Error("Failed to get current summoner from League client",
 				zap.Error(err),
@@ -194,46 +246,57 @@ func (am *AccountMonitor) checkCurrentAccount() {
 		am.logger.Debug("Skipping account check - Riot client not running")
 		return
 	}
-	currentUsername := am.GetLoggedInSummonerName()
+
+	currentUsername := am.GetLoggedInUsername()
 	if currentUsername == "" {
 		am.logger.Debug("Skipping account check - no logged-in account found, username is empty")
 		return
 	}
-	// Initialize client if needed
-	// Then use it to check if username has changed
-	am.mutex.Lock()
-	if currentUsername == am.lastCheckedUsername {
-		am.mutex.Unlock()
-		am.logger.Debug("Skipping account lookup - same username as previous check")
-		return
-	}
 
-	// Update the last checked username
-	am.lastCheckedUsername = currentUsername
-	am.mutex.Unlock()
+	am.logger.Debug("Current logged-in account", zap.String("summonerNameWithTag", currentUsername))
 
-	am.logger.Debug("Current logged-in account", zap.String("summonerNameWithTag", currentUsername)) // Check authentication state
-	allAccounts, err := am.accountRepo.GetAllRented()
+	// Use cached accounts instead of fetching every time
+	accounts, err := am.getAccountsWithCache()
 	if err != nil {
-		am.logger.Error("Failed to retrieve Nexus-managed accounts from repository",
+		am.logger.Error("Failed to retrieve Nexus-managed accounts",
 			zap.Error(err),
 			zap.String("errorType", fmt.Sprintf("%T", err)))
 		return
 	}
-	am.logger.Debug("Retrieved Nexus-managed accounts", zap.Int("accountCount", len(allAccounts)))
 
 	isNexusAccount := false
-	for _, account := range allAccounts {
-		accountSummonerName := account.GameName + "#" + account.Tagline
+	for _, account := range accounts {
+		accountUsername := account.Username
 		am.logger.Debug("Comparing with Nexus account",
 			zap.String("currrentUsername", currentUsername),
-			zap.String("nexusSummonerName", accountSummonerName))
+			zap.String("nexusSummonerName", accountUsername))
 
-		if accountSummonerName == currentUsername {
+		if accountUsername == currentUsername {
 			isNexusAccount = true
 			am.logger.Info("Match found! Current account is a Nexus-managed account",
 				zap.String("summonerName", currentUsername))
 			break
+		}
+	}
+
+	// If no match is found, consider refreshing the cache once
+	// This handles the case where a new account was just added
+	if !isNexusAccount && len(accounts) > 0 {
+		am.logger.Debug("Account not found in cache, refreshing account data")
+		if err := am.refreshAccountCache(); err != nil {
+			am.logger.Error("Failed to refresh account cache", zap.Error(err))
+		} else {
+			// Try again with fresh data
+			accounts = am.cachedAccounts
+			for _, account := range accounts {
+				accountSummonerName := account.GameName + "#" + account.Tagline
+				if accountSummonerName == currentUsername {
+					isNexusAccount = true
+					am.logger.Info("Match found after cache refresh! Current account is a Nexus-managed account",
+						zap.String("summonerName", currentUsername))
+					break
+				}
+			}
 		}
 	}
 
@@ -242,19 +305,20 @@ func (am *AccountMonitor) checkCurrentAccount() {
 			zap.String("summonerName", currentUsername))
 	}
 
-	// Only lock when updating the shared field
+	// Rest of your existing code for updating state
 	previousState := am.IsNexusAccount()
 	am.mutex.Lock()
 	am.isNexusAccount = isNexusAccount
 	am.mutex.Unlock()
 
+	// Update watchdog if state changed
 	if previousState != isNexusAccount {
+		// Your existing watchdog update code
 		am.logger.Info("Nexus account status changed",
 			zap.Bool("previousStatus", previousState),
 			zap.Bool("currentStatus", isNexusAccount),
 			zap.String("summonerName", currentUsername))
 
-		// Update watchdog via named pipe
 		err := watchdog.UpdateWatchdogAccountStatus(isNexusAccount)
 		if err != nil {
 			am.logger.Error("Failed to update watchdog status via named pipe", zap.Error(err))
@@ -264,7 +328,6 @@ func (am *AccountMonitor) checkCurrentAccount() {
 		}
 	}
 }
-
 func (am *AccountMonitor) IsNexusAccount() bool {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()

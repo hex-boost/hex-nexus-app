@@ -99,7 +99,8 @@
   --color-card-bg: var(--color-card-bg);
   --color-card-darker: var(--card-darker);
   --card-darker-active: var(--card-darker-active);
-  --card-darker-border-active: var(--card-darker-border-active) --color-card-foreground: var(--card-foreground);
+  --card-darker-border-active: var(--card-darker-border-active);
+    --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
@@ -131,10 +132,12 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+      @apply bg-background text-foreground;
   }
 }
-
+body {
+    font-family: 'Geist Variable', sans-serif;
+}
 [class*='after:absolute'],
 [class*='before:absolute'] {
   pointer-events: none;

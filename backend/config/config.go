@@ -57,7 +57,7 @@ func LoadConfig() (*Config, error) {
 		Environment:    getEnv("ENVIRONMENT", "development"),
 		LogsDirectory:  getEnv("LOGS_DIR", "./logs"),
 		DataDirectory:  getEnv("DATA_DIR", "./data"),
-		LogLevel:       getEnv("LOG_LEVEL", "info"),
+		LogLevel:       getEnv("LOG_LEVEL", "debug"),
 	}
 
 	// Try to load from config file if specified
