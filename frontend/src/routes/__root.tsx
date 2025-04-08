@@ -13,9 +13,12 @@ import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
 import { Route as DashboardRoute } from '@/routes/_protected/dashboard/index.tsx';
 import { useUserStore } from '@/stores/useUserStore';
 import { createRootRouteWithContext, Outlet, redirect, useRouter } from '@tanstack/react-router';
+
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
+
 import React from 'react';
 import { cls } from 'react-image-crop';
+import 'non.geist';
 
 export type RouterContext = {
   auth: {
@@ -23,14 +26,6 @@ export type RouterContext = {
   };
 };
 
-// const geistSans = Geist({
-//   subsets: ['latin'],
-//   variable: '--font-sans',
-// });
-// const geistMono = Geist_Mono({
-//   subsets: ['latin'],
-//   variable: '--font-mono',
-// });
 export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootLayout,
   errorComponent: ErrorPage,
