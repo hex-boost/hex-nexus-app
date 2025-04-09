@@ -206,7 +206,7 @@ export function useMapping() {
       case 'OC1':
         return 'OCE';
       case 'ME1':
-        return 'MEA';
+        return 'MENA';
       case 'EUN1':
         return 'EUNE';
       default:

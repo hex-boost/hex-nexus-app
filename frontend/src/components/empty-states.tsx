@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { Filter, Gamepad2, History, RefreshCw, Search, ShieldAlert, ShoppingCart, User2 } from 'lucide-react';
+import { Filter, Gamepad2, History, RefreshCw, Search, ShieldAlert, ShoppingCart, Star, User2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 function SearchAnimation() {
@@ -328,6 +328,54 @@ function SkinsAnimation() {
   );
 }
 
+function BadSmileAnimation() {
+  return (
+    <motion.div
+      className="relative w-28 h-28"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+
+      {/* Face container */}
+      <motion.div
+        className="absolute w-16 h-16 rounded-full border-2 border-zinc-300 dark:border-muted-foreground left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+        animate={{
+          rotate: [-5, 5, -5],
+        }}
+        transition={{
+          duration: 4,
+          repeat: Number.POSITIVE_INFINITY,
+          repeatType: 'loop',
+        }}
+      >
+        {/* Eyes */}
+        <motion.div className="absolute w-2 h-2 bg-blue-500 dark:bg-blue-400 rounded-full left-4 top-5" />
+        <motion.div className="absolute w-2 h-2 bg-blue-500 dark:bg-blue-400 rounded-full right-4 top-5" />
+
+        {/* Sad mouth */}
+        <motion.div
+          className="absolute w-8 h-3 left-1/2 bottom-3 -translate-x-1/2"
+          initial={{ scale: 1 }}
+          animate={{
+            scaleY: [1, 1.2, 1],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Number.POSITIVE_INFINITY,
+            repeatType: 'loop',
+          }}
+        >
+          <motion.div
+            className="w-8 h-3 border-b-2 border-blue-500 dark:border-blue-400 rounded-full"
+            style={{ transform: 'rotate(180deg)' }}
+          />
+        </motion.div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 type EmptyStateProps = {
   type:
     | 'no-accounts'
@@ -336,7 +384,8 @@ type EmptyStateProps = {
     | 'no-active-accounts'
     | 'no-rental-history'
     | 'no-champions'
-    | 'no-skins';
+    | 'no-skins'
+    | 'no-favorites';
   searchQuery?: string;
   onAction?: () => void;
   onReset?: () => void;
@@ -413,25 +462,26 @@ export default function EmptyState({ type, searchQuery = '', onAction, onReset }
       resetLabel: 'Clear Search',
       showReset: !!searchQuery,
     },
+    'no-favorites': { animation: <BadSmileAnimation />, iconFallback: <Star className="h-12 w-12 text-zinc-400" />, title: 'No favorite accounts', description: 'You haven\'t added any accounts to your favorites yet. Browse accounts and star the ones you like most.', actionLabel: '', resetLabel: '', showReset: false },
   };
 
   const { animation, iconFallback, title, description, actionLabel, resetLabel, showReset } = content[type];
 
   return (
-    <div className="flex flex-col items-center justify-center text-center py-12 px-4 space-y-6 bg-white dark:bg-transparent border-zinc-100 dark:border-zinc-800 rounded-lg">
+    <div className="flex flex-col items-center justify-center text-center py-4 px-1 space-y-6  rounded-lg">
 
-      <div className="bg-zinc-100 dark:bg-zinc-800 rounded-2xl p-4 flex items-center justify-center min-h-[120px] min-w-[120px]">
+      <div className="bg-transparent border !border-primary/20 rounded-2xl flex items-center justify-center min-h-[50px] min-w-[50px]">
         {animation || iconFallback}
       </div>
 
       <div className="space-y-2 max-w-md">
-        <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{title}</h3>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">{description}</p>
+        <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+        <p className="text-sm text-muted-foreground">{description}</p>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
         {actionLabel && (
-          <Button onClick={onAction} className="bg-blue-600 hover:bg-blue-700 text-white">
+          <Button onClick={onAction} className="bg-primary hover:bg-primary/90 text-primary-foreground">
             {actionLabel}
           </Button>
         )}
@@ -499,4 +549,12 @@ export function NoSkinsFound({
   onReset: () => void;
 }) {
   return <EmptyState type="no-skins" searchQuery={searchQuery} onReset={onReset} />;
+}
+
+export function NoFavoritesFound({
+  onBrowse,
+}: {
+  onBrowse: () => void;
+}) {
+  return <EmptyState type="no-favorites" onAction={onBrowse} />;
 }

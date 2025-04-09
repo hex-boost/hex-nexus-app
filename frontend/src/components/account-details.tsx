@@ -1,10 +1,10 @@
-import type { Price } from '@/types/price.ts';
-
 import type { AccountType } from '@/types/types.ts';
 import { ChampionsSkinsTab } from '@/components/ChampionsSkinsTab.tsx';
 import { CoinIcon } from '@/components/coin-icon.tsx';
 import { CopyToClipboard } from '@/components/CopyToClipboard.tsx';
 import { DropAccountAction } from '@/components/DropAccountAction';
+import { FavoriteAccountNote } from '@/components/FavoriteAccountNote.tsx';
+import { FavoriteStar } from '@/components/FavoriteStar.tsx';
 import { RentedAccountButton } from '@/components/RentedAccountAction.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import { useAccountActions } from '@/hooks/useAccountActions.ts';
 import { useAccountFilters } from '@/hooks/useAccountFilters.ts';
 import { getLeaverBusterInfo } from '@/hooks/useAccounts.tsx';
 import { useDateTime } from '@/hooks/useDateTime.ts';
+import { usePrice } from '@/hooks/usePrice.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
 import { cn } from '@/lib/utils.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
@@ -78,9 +79,8 @@ function LeaverBusterDisplay({ account, compact = false }: {
     </div>
   );
 }
-export default function AccountDetails({ account, price, onAccountChange }: {
+export default function AccountDetails({ account, onAccountChange }: {
   onAccountChange: () => Promise<void>;
-  price: Price;
   account: AccountType;
 }) {
   const { user } = useUserStore();
@@ -88,19 +88,11 @@ export default function AccountDetails({ account, price, onAccountChange }: {
   const { dropRefund, selectedRentalOptionIndex, handleExtendAccount, isExtendPending, setSelectedRentalOptionIndex, selectedExtensionIndex, isRentPending, handleRentAccount } = useAccountActions({ account, onAccountChange, user: user as any });
   const [activeTab, setActiveTab] = useState(0);
   const { getCompanyIcon, getGameIcon } = useMapping();
-  const hours = [1, 3, 6];
   const soloQueueRank = account.rankings?.find(lc => lc.queueType === 'soloqueue');
   const flexQueueRank = account.rankings?.find(lc => lc.queueType === 'flex');
   const { calculateTimeRemaining } = useDateTime();
-  const baseElo = soloQueueRank?.elo || 'Unranked';
-  const baseEloUpperCase = baseElo.charAt(0).toUpperCase() + baseElo.slice(1).toLowerCase();
-  const basePrice = price.league[baseEloUpperCase] || 105; // Default to Unranked price instead of 666
+  const { price, getAccountPrice, isPriceLoading } = usePrice();
 
-  // Map the hours correctly to the multipliers
-  const rentalOptionsWithPrice = price.timeMultipliers.map((percentage, index) => ({
-    hours: hours[index], // Use the predefined hours array
-    price: percentage === 0 ? basePrice : basePrice * (1 + percentage / 100),
-  }));
   return (
     <>
       <div className="lg:col-span-3 space-y-6">
@@ -111,9 +103,18 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                 <div className="flex items-center gap-2">
                   {getGameIcon('lol', { size: 48 })}
                   <div className="flex flex-col gap-1">
-                    <span>
-                      {account.documentId.slice(0, 10)}
-                    </span>
+                    <div className=" space-x-3">
+                      <span className="">
+
+                        {account.documentId.slice(0, 10)}
+
+                      </span>
+
+                      <CopyToClipboard className="bg-transparent border-none h-4 w-4 !p-0 " text={account.documentId} />
+
+                      <FavoriteStar account={account} />
+                      <FavoriteAccountNote account={account} />
+                    </div>
                     {
                       account.gamename
 
@@ -374,26 +375,31 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                   <div className="px-6 mb-6">
                     <div className="text-sm mb-2 text-zinc-600 dark:text-zinc-400">Quick extend options</div>
                     <div className="grid grid-cols-3 gap-2">
-                      {price.timeMultipliers.map((_option, index) => (
-                        <Button
-                          key={index}
-                          variant="outline"
-                          size="sm"
-                          className="flex border-primary/10 bg-white/[0.001] flex-col items-center gap-1 h-auto py-2"
-                          onClick={() => handleExtendAccount(index)}
-                          loading={isExtendPending && selectedExtensionIndex === index}
-                          disabled={isExtendPending}
-                        >
-                          <span className="text-sm">
-                            {hours[index]}
-                            h
-                          </span>
-                          <div className="flex items-center gap-0.5 text-xs">
-                            <CoinIcon className="w-3 h-3 text-amber-500" />
-                            {rentalOptionsWithPrice[index]?.price.toLocaleString() || 0}
-                          </div>
-                        </Button>
-                      ))}
+                      {isPriceLoading
+                        ? Array.from({ length: 3 }).map((_, index) => (
+                            <Skeleton key={index} className="h-12 w-full" />
+                          ))
+                        : (price && getAccountPrice(price, soloQueueRank?.elo).map((option, index) => (
+                            <Button
+                              key={index}
+                              variant="outline"
+                              size="sm"
+                              className="flex border-primary/10 bg-white/[0.001] flex-col items-center gap-1 h-auto py-2"
+                              onClick={() => handleExtendAccount(index)}
+                              loading={isExtendPending && selectedExtensionIndex === index}
+                              disabled={isExtendPending}
+                            >
+                              <span className="text-sm">
+                                {option.hours}
+                                h
+                              </span>
+                              <div className="flex items-center gap-0.5 text-xs">
+                                <CoinIcon className="w-3 h-3 text-amber-500" />
+                                {option.price.toLocaleString()}
+                              </div>
+                            </Button>
+                          ))
+                          )}
                     </div>
                   </div>
                 </CardContent>
@@ -418,7 +424,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-3">
-                    {price.timeMultipliers.map((option, index) => (
+                    {!isPriceLoading && price && getAccountPrice(price, soloQueueRank?.elo) && getAccountPrice(price, soloQueueRank?.elo).map((option, index) => (
                       // eslint-disable-next-line jsx-a11y/no-static-element-interactions,jsx-a11y/click-events-have-key-events
                       <div
                         key={index}
@@ -429,9 +435,9 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                           <div className="flex items-center gap-1.5">
                             <Clock className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
                             <span className="font-medium text-zinc-900 dark:text-zinc-50">
-                              {hours[index]}
+                              {option.hours}
                               {' '}
-                              {option === 0 ? 'hour' : 'hours'}
+                              {option.hours === 1 ? 'hour' : 'hours'}
                             </span>
                           </div>
                           {selectedRentalOptionIndex === index && (
@@ -444,11 +450,11 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                           className="flex items-center gap-1 text-sm font-medium text-zinc-900 dark:text-zinc-50"
                         >
                           <CoinIcon className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
-                          {rentalOptionsWithPrice[index]?.price.toLocaleString() || 0}
+                          {option.price.toLocaleString()}
                           {' '}
                           coins
                         </div>
-                        {option === 24 && (
+                        {option.hours === 6 && (
                           <Badge
                             variant="outline"
                             className="mt-2 text-xs bg-blue-50 dark:bg-blue-900/20"
@@ -457,6 +463,9 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                           </Badge>
                         )}
                       </div>
+                    ))}
+                    {isPriceLoading && Array.from({ length: 3 }).fill(0).map((_, index) => (
+                      <Skeleton key={index} className="h-24 w-full" />
                     ))}
                   </div>
 
@@ -467,17 +476,16 @@ export default function AccountDetails({ account, price, onAccountChange }: {
                         className="flex items-center gap-1 text-lg font-semibold text-zinc-900 dark:text-zinc-50"
                       >
                         <CoinIcon className="w-4 h-4 text-amber-500 dark:text-amber-400" />
-                        {(() => {
-                          const selectedOption = rentalOptionsWithPrice[selectedRentalOptionIndex];
-                          return selectedOption ? selectedOption.price.toLocaleString() : '0';
-                        })()}
+                        {!isPriceLoading && price && getAccountPrice(price, soloQueueRank?.elo) && selectedRentalOptionIndex !== undefined
+                          ? getAccountPrice(price, soloQueueRank?.elo)[selectedRentalOptionIndex]?.price.toLocaleString() || '0'
+                          : <Skeleton className="w-10 h-6" />}
                         {' '}
                         coins
                       </div>
                     </div>
                     <Button
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                      disabled={!rentalOptionsWithPrice[selectedRentalOptionIndex] || isRentPending}
+                      disabled={!price || (price && !getAccountPrice(price, soloQueueRank?.elo)) || isPriceLoading || isRentPending || selectedRentalOptionIndex == null}
                       loading={isRentPending}
                       onClick={() => handleRentAccount(selectedRentalOptionIndex)}
                     >

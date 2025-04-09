@@ -4,7 +4,6 @@ import AccountDetails from '@/components/account-details.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
-import { usePrice } from '@/hooks/usePrice.ts';
 import { strapiClient } from '@/lib/strapi.ts';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, useParams } from '@tanstack/react-router';
@@ -21,7 +20,6 @@ export const Route = createFileRoute('/_protected/accounts/$id')({
 
 function AccountByID() {
   const { id } = useParams({ from: '/_protected/accounts/$id' });
-  const { price, isPriceLoading } = usePrice();
   const queryClient = useQueryClient();
 
   const {
@@ -49,7 +47,7 @@ function AccountByID() {
     || availableAccounts?.find(acc => acc.documentId === id)
     || null;
 
-  const isLoading = isAvailableLoading || isRentedLoading || isPriceLoading;
+  const isLoading = isAvailableLoading || isRentedLoading;
 
   return (
     <>
@@ -144,8 +142,6 @@ function AccountByID() {
           : (
               <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                 <AccountDetails
-
-                  price={price!}
                   account={account}
                   onAccountChange={refetchAccount}
                 />

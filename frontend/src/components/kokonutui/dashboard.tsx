@@ -99,16 +99,17 @@ export default function Dashboard({ user }: { user: UserType }) {
               : <CurrentlyRentedAccounts accounts={user.rentedAccounts} />
           }
         </div>
-        <div className="bg-white dark:bg-black/20 flex flex-col items-start rounded-xl  border border-gray-200 dark:border-[#1F1F23]">
+        <div className="bg-white dark:bg-black/20 flex flex-col items-start rounded-xl border border-gray-200 dark:border-[#1F1F23]">
           <h2 className="text-xl font-bold w-full px-6 pt-6  text-gray-900 dark:text-white mb-4 text-left flex items-center gap-2">
             <Star className="w-4 h-4 text-zinc-900 dark:text-zinc-50 " />
             Favorite Accounts
           </h2>
           <Separator className="mb-4" />
-          <FavoriteAccounts onViewAll={() => console.error} user={user} />
+          <div className="min-h-[300px] w-full overflow-hidden">
+            <FavoriteAccounts user={user} />
+          </div>
         </div>
       </div>
-
     </div>
   );
 }
