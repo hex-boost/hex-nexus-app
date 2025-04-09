@@ -911,7 +911,7 @@ function Accounts() {
           </div>
         )}
 
-        <ResultsCount filteredCount={filteredAccounts.length} totalCount={accounts?.length} />
+        <ResultsCount filteredCount={filteredAccounts.length > itemsPerPage ? itemsPerPage : filteredAccounts.length} totalCount={accounts?.length} />
 
         <AccountsTable
           isLoading={isLoading}

@@ -37,7 +37,6 @@ export function GameRankDisplay({
                   {' '}
                 </>
               )}
-
               {ranking?.division}
               {' '}
               {

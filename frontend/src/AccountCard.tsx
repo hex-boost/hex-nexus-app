@@ -1,4 +1,4 @@
-import type { Server } from '@/types/types.ts';
+import type { AccountType, RankingType, Server, UserType } from '@/types/types.ts';
 import { CoinIcon } from '@/components/coin-icon.tsx';
 import { DropAccountAction } from '@/components/DropAccountAction';
 import { AccountGameIcon } from '@/components/GameComponents';
@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useDateTime } from '@/hooks/useDateTime.ts';
+import { useFavorites } from '@/hooks/useFavorites';
+import { useRiotAccount } from '@/hooks/useRiotAccount.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
 import { cn } from '@/lib/utils';
 import { useUserStore } from '@/stores/useUserStore.ts';
@@ -22,7 +24,7 @@ export type AccountCardProps = {
   id: string;
   documentId: string;
   gameType: string;
-  ranking: any;
+  ranking: RankingType;
   server: Server;
   championsCount: number;
   skinsCount: number;
@@ -44,8 +46,8 @@ export type AccountCardProps = {
   onRemoveFromFavorites?: (e: React.MouseEvent) => void;
 
   // Account object for DropAccountAction
-  account?: any;
-  user?: any;
+  account: AccountType;
+  user: UserType;
   onAccountChange?: () => Promise<void>;
 };
 
@@ -53,7 +55,6 @@ export function AccountCard({
   id,
   documentId,
   gameType,
-  ranking,
   server,
   championsCount,
   skinsCount,
@@ -70,10 +71,12 @@ export function AccountCard({
   account,
   onAccountChange,
 }: AccountCardProps) {
+  const { currentRanking } = useRiotAccount({ account });
   const { getFormattedServer } = useMapping();
   const { getFormattedTimeRemaining } = useDateTime();
   const { getStatusColor } = useMapping();
   const { user } = useUserStore();
+  const { addFavorite } = useFavorites();
   const cardContent = (
     <div
       className={cn(
@@ -141,7 +144,7 @@ export function AccountCard({
           {/* Bottom row: rank, server, champions, skins */}
           <div className="text-xs font-medium justify-between w-full items-center text-zinc-600 dark:text-zinc-400 flex gap-2">
             <div className="min-w-fit flex gap-2 items-center">
-              <GameRankDisplay imageClass="w-4.5 h-4.5" showLP={false} ranking={ranking} />
+              <GameRankDisplay imageClass="w-4.5 h-4.5" showLP={false} ranking={currentRanking} />
               <div className="w-1 h-1 rounded-full bg-shade4"></div>
               <div className="py-1 px-1.5 text-[9px] bg-muted text-shade1 rounded-sm font-bold">
                 {getFormattedServer(server)}
@@ -184,8 +187,13 @@ export function AccountCard({
                 </DropAccountAction>
               </DropdownMenuItem>
             )}
+
             <DropdownMenuItem onClick={onEditNote}>
               {note ? 'Edit Note' : 'Add Note'}
+            </DropdownMenuItem>
+
+            <DropdownMenuItem onClick={() => addFavorite.mutate({ riotAccountId: account.id })}>
+              Add to favorites
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={onRemoveFromFavorites}

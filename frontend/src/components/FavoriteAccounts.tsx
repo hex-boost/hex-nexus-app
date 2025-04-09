@@ -1,5 +1,6 @@
 'use client';
 
+import type { AccountType, UserType } from '@/types/types.ts';
 import type React from 'react';
 import { AccountCard } from '@/AccountCard.tsx';
 import { Button } from '@/components/ui/button';
@@ -12,134 +13,103 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea.tsx';
+import { useFavorites } from '@/hooks/useFavorites';
 import { cn } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
 import { ArrowRight } from 'lucide-react';
 import { useState } from 'react';
 
-// Update the FavoriteAccount interface to include notes
-type FavoriteAccount = {
-  id: string;
-  tier: string;
-  rank: string;
-  region: string;
-  champions: number;
-  skins: number;
-  price: number;
-  status: 'Available' | 'Rented' | 'Reserved' | 'Maintenance';
-  documentId?: string;
-  note?: string;
-};
-
 type FavoriteAccountsProps = {
-  accounts?: FavoriteAccount[];
+  accounts?: AccountType[];
   className?: string;
   onViewAll?: () => void;
-  user?: any; // Add user prop
+  user?: UserType; // Add user prop
 };
 
-// Update the sample data to include notes for some accounts
-const FAVORITE_ACCOUNTS: FavoriteAccount[] = [
-  {
-    id: 'E3X8V6',
-    tier: 'Challenger',
-    rank: '',
-    region: 'NA1',
-    champions: 162,
-    skins: 130,
-    price: 7500,
-    status: 'Available',
-    note: 'Great account for high-level play. Has all the meta champions.',
-  },
-  {
-    id: 'C2G7T4',
-    tier: 'Master',
-    rank: '',
-    region: 'KR1',
-    champions: 158,
-    skins: 112,
-    price: 5000,
-    status: 'Available',
-    note: 'Korean server account with good MMR.',
-  },
-  {
-    id: 'A7F9P2',
-    tier: 'Diamond',
-    rank: 'II',
-    region: 'EUW1',
-    champions: 145,
-    skins: 78,
-    price: 3200,
-    status: 'Rented',
-  },
-];
-
 export default function FavoriteAccounts({
-  accounts = FAVORITE_ACCOUNTS,
+  accounts,
   className,
   user, // Receive user prop
 }: FavoriteAccountsProps) {
   // State for managing the note dialog
   const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false);
-  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
+  const [selectedAccount, setSelectedAccount] = useState<AccountType | null>(null);
   const [noteText, setNoteText] = useState('');
-
-  // Handle view account details
+  // Use the favorites hook
+  const { updateFavoriteNote, removeFavorite } = useFavorites();
 
   // Handle opening the note dialog
-  const handleOpenNoteDialog = (e: React.MouseEvent, account: FavoriteAccount) => {
+  const handleOpenNoteDialog = (e: React.MouseEvent, account: AccountType) => {
     e.stopPropagation();
-    setSelectedAccountId(account.id);
+    setSelectedAccount(account);
     setNoteText(account.note || '');
     setIsNoteDialogOpen(true);
   };
 
   // Handle removing from favorites
-  const handleRemoveFromFavorites = (e: React.MouseEvent, accountId: string) => {
+  const handleRemoveFromFavorites = (e: React.MouseEvent, account: AccountType) => {
     e.stopPropagation();
-    // In a real app, this would remove the account from favorites
-    console.log(`Removing account ${accountId} from favorites`);
+    if (!account.favoriteId) {
+      console.error('No favoriteId available');
+      return;
+    }
+    removeFavorite.mutate(account.favoriteId);
   };
 
   // Handle saving the note
   const handleSaveNote = () => {
-    // In a real app, this would update the note in the database
-    console.log(`Saving note for account ${selectedAccountId}: ${noteText}`);
-    setIsNoteDialogOpen(false);
+    if (!selectedAccount?.favoriteId) {
+      console.error('No favoriteId available');
+      return;
+    }
+
+    updateFavoriteNote.mutate({
+      favoriteId: selectedAccount.favoriteId,
+      note: noteText,
+    }, {
+      onSuccess: () => {
+        setIsNoteDialogOpen(false);
+      },
+    });
   };
 
   // Function to handle account changes (needed for onAccountChange prop)
   const handleAccountChange = async () => {
-    // In a real app, this would refresh the favorites list
-    console.log('Account changed, should refresh favorites');
+    // This will be handled by the React Query cache invalidation
   };
+
+  // Helper function to get solo queue ranking
 
   return (
     <div className={cn('w-full', className)}>
       <div className="space-y-3 px-6">
-        {accounts.slice(0, 3).map(account => (
-          <AccountCard
-            key={account.id}
-            id={account.id}
-            documentId={account.documentId!}
-            gameType="lol"
-            ranking={{ tier: account.tier, division: account.rank }}
-            server={account.region as any}
-            championsCount={account.champions}
-            skinsCount={account.skins}
-            mode="favorite"
-            isFavorite
-            price={account.price}
-            status={account.status === 'Reserved' || account.status === 'Maintenance' ? 'Available' : account.status}
-            note={account.note}
-            onClick={() => void 0}
-            onEditNote={e => handleOpenNoteDialog(e, account)}
-            onRemoveFromFavorites={e => handleRemoveFromFavorites(e, account.id)}
-            account={account} // Pass the account object
-            user={user} // Pass the user object
-            onAccountChange={handleAccountChange}
-          />
-        ))}
+        {accounts && accounts.slice(0, 3).map((account) => {
+          const ranking = getSoloQueueRanking(account);
+
+          return (
+            <AccountCard
+              key={account.id}
+              id={account.id}
+              documentId={account.documentId}
+              gameType="lol"
+              ranking={ranking}
+              server={account.server || account.tagline}
+              championsCount={account.LCUchampions?.length || 0}
+              skinsCount={account.LCUskins?.length || 0}
+              mode="favorite"
+              isFavorite
+              price={account.price}
+              status={account.status === 'Reserved' || account.status === 'Maintenance' ? 'Available' : account.status || 'Available'}
+              note={account.note}
+              onClick={() => void 0}
+              onEditNote={e => handleOpenNoteDialog(e, account)}
+              onRemoveFromFavorites={e => handleRemoveFromFavorites(e, account)}
+              account={account} // Pass the account object
+              user={user} // Pass the user object
+              onAccountChange={handleAccountChange}
+            />
+          );
+        })}
       </div>
 
       <Link
@@ -168,10 +138,19 @@ export default function FavoriteAccounts({
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsNoteDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsNoteDialogOpen(false)}
+              disabled={updateFavoriteNote.isPending}
+            >
               Cancel
             </Button>
-            <Button onClick={handleSaveNote}>Save Note</Button>
+            <Button
+              onClick={handleSaveNote}
+              disabled={updateFavoriteNote.isPending}
+            >
+              Save Note
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

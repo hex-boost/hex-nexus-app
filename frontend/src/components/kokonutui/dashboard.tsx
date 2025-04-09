@@ -105,7 +105,7 @@ export default function Dashboard({ user }: { user: UserType }) {
             Favorite Accounts
           </h2>
           <Separator className="mb-4" />
-          <FavoriteAccounts onViewAll={() => console.error} />
+          <FavoriteAccounts onViewAll={() => console.error} user={user} />
         </div>
       </div>
 

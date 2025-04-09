@@ -58,7 +58,7 @@ export function DropAccountAction({
         const isAccountNexus = await AccountMonitor.IsNexusAccount();
         if (isAccountNexus) {
           const droppedAccountSummonername = `${account.gamename}#${account.tagline}`;
-          const currentLoggedInSummonerName = await AccountMonitor.GetLoggedInSummonerName();
+          const currentLoggedInSummonerName = await AccountMonitor.GetLoggedInUsername();
 
           if (droppedAccountSummonername === currentLoggedInSummonerName) {
             setIsNexusAccount(true);

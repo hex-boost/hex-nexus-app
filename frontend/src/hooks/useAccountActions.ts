@@ -29,13 +29,10 @@ export function useAccountActions({
     const isAccountNexus = await AccountMonitor.IsNexusAccount();
     console.log('isNexusAccount', isAccountNexus);
     if (isAccountNexus) {
-      const droppedAccountSummonername = `${account.gamename}#${account.tagline}`;
-
-      console.log('droppedAccountSummonername', droppedAccountSummonername);
-      const currentLoggedInSummonerName = await AccountMonitor.GetLoggedInSummonerName();
+      const currentLoggedInSummonerName = await AccountMonitor.GetLoggedInUsername();
 
       console.log('currentLoggedInSummoner', currentLoggedInSummonerName);
-      if (droppedAccountSummonername === currentLoggedInSummonerName) {
+      if (currentLoggedInSummonerName === account.username) {
         setIsNexusAccount(true);
       }
     }
