@@ -46,10 +46,37 @@ export function useLeagueManager({
     onError: (error) => {
       const errorMessage = error.message || String(error);
       logger.error(logContext, 'Login with captcha failed', { error: errorMessage });
-
+      if (errorMessage === 'captcha_timeout') {
+        logger.warn(logContext, 'Captcha timed out');
+        toast.info('Captcha timed out', {
+          description: 'Do you want to try again?',
+          action: {
+            label: 'Try again',
+            onClick: () => {
+              logger.info(logContext, 'User requested to retry captcha flow');
+              handleOpenCaptchaWebview();
+            },
+          },
+          duration: 10000,
+        });
+      }
+      if (errorMessage === 'captcha_cancelled_by_user') {
+        logger.warn(logContext, 'Captcha cancelled by user');
+        toast.info('Window has been closed', {
+          description: 'Do you want to try again?',
+          action: {
+            label: 'Try again',
+            onClick: () => {
+              logger.info(logContext, 'User requested to retry captcha flow');
+              handleOpenCaptchaWebview();
+            },
+          },
+          duration: 10000,
+        });
+      }
       if (errorMessage === 'captcha_not_allowed') {
         logger.warn(logContext, 'Captcha expired or rejected');
-        toast.error('Captcha got expired or has been rejected', {
+        toast.warning('Captcha got expired or has been rejected', {
           description: 'Sometimes it just work in the second try',
           action: {
             label: 'Try again',

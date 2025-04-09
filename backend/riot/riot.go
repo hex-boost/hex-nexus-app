@@ -317,9 +317,13 @@ func (rc *RiotClient) IsAuthStateValid() error {
 		rc.logger.Error("Failed to get authentication state", zap.Error(err))
 		return err
 	}
-	if currentAuth.Type != "auth" {
-		return errors.New("invalid authentication state")
+	if currentAuth.Type == "auth" {
+		return nil
 	}
+	if currentAuth.Type == "error" && currentAuth.Captcha.Hcaptcha.Data != "" {
+		return nil
+	}
+
 	return nil
 }
 

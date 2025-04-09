@@ -35,7 +35,7 @@ export default function SubscriptionStatus({ className, subscription }: Subscrip
     return expiryDate > today;
   }
   return (
-    <div className={cn('w-full', className)}>
+    <div className={cn('w-full px-6 pb-6', className)}>
       <div className="bg-zinc-50 dark:bg-white/[0.01] rounded-xl p-5 mb-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">

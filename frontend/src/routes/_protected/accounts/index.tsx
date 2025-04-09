@@ -4,8 +4,9 @@ import { DIVISIONS, LOL_TIERS, VALORANT_TIERS } from '@/components/accountsMock.
 import { AccountsPagination } from '@/components/AccountsPagination';
 import { CoinIcon } from '@/components/coin-icon';
 import { AccountGameIcon } from '@/components/GameComponents';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
+import { GameRankDisplay } from '@/components/GameRankDisplay.tsx';
 
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -159,9 +160,7 @@ function AccountRow({
   isPriceLoading,
   price,
   onViewDetails,
-  getEloIcon,
   getRegionIcon,
-  getRankColor,
 }: AccountRowProps) {
   const currentSoloqueueRank = account.rankings.find(
     ranking => ranking.queueType === 'soloqueue' && ranking.type === 'current' && ranking.elo !== '',
@@ -175,7 +174,7 @@ function AccountRow({
     losses: 0,
   } as RankingType;
   const previousSoloqueueRank = account.rankings.find(ranking => ranking.queueType === 'soloqueue' && ranking.type === 'previous')!;
-
+  const { getFormattedServer } = useMapping();
   return (
     <tr
       className="border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/30 cursor-pointer"
@@ -191,17 +190,7 @@ function AccountRow({
         <div className="flex items-center gap-2">
           <div className="w-6 h-6">{getRegionIcon(account.server)}</div>
           <span className="text-sm text-zinc-600 dark:text-zinc-400">
-            {
-              account.server === 'LA1'
-                ? 'LAN'
-                : account.server === 'OC1'
-                  ? 'OCE'
-                  : account.server === 'ME1'
-                    ? 'MEA'
-                    : account.server === 'EUN1'
-                      ? 'EUNE'
-                      : account.server.slice(0, account.server.length - 1)
-            }
+            {getFormattedServer(account.server)}
           </span>
         </div>
       </td>
@@ -315,31 +304,16 @@ function AccountRow({
         })()}
       </td>
       <td className="p-3">
-        <div className="flex items-center gap-1">
-          <img className="w-6 h-6" alt={currentSoloqueueRank?.elo} src={getEloIcon(currentSoloqueueRank?.elo || 'unranked')} />
-          <span className={`text-sm capitalize font-medium ${getRankColor(currentSoloqueueRank?.elo || 'unranked')}`}>
-            {currentSoloqueueRank?.division}
-            {' '}
-            {
-              currentSoloqueueRank.elo.toLowerCase() !== 'unranked'
-              && (
-                <span className="text-[10px]">
-                  {currentSoloqueueRank?.points}
-                  {' '}
-                  LP
-                </span>
-              )
-            }
-          </span>
-        </div>
+        <GameRankDisplay
+
+          ranking={currentSoloqueueRank}
+        />
       </td>
       <td className="p-3">
-        <div className="flex items-center gap-2">
-          <img className="w-6 h-6" alt={previousSoloqueueRank.elo} src={getEloIcon(previousSoloqueueRank.elo)} />
-          <span className={`text-sm capitalize font-medium ${getRankColor(previousSoloqueueRank?.elo)}`}>
-            {previousSoloqueueRank?.division}
-          </span>
-        </div>
+        <GameRankDisplay
+          showLP={false}
+          ranking={previousSoloqueueRank}
+        />
       </td>
 
       <td className="p-3">
@@ -624,7 +598,6 @@ function Accounts() {
   // Handle page change
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (

@@ -68,7 +68,7 @@ function RootLayout() {
         <DefaultContextMenu>
           <div className="flex flex-col h-screen">
             <div
-              className={cls(' bg-card border-b', isAuthenticated() && 'ml-[89px] ')}
+              className={cls('sticky top-0 z-50 bg-card border-b', isAuthenticated() && 'ml-[89px] ')}
               style={{ '--wails-draggable': 'drag' } as React.CSSProperties}
             >
               <div className="flex justify-end items-center gap-6 py-2">

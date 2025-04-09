@@ -9,6 +9,7 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/events"
 	"go.uber.org/zap"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -255,12 +256,19 @@ func (cm *ClientMonitor) OpenWebviewAndGetToken(username string) (string, error)
 	// Create a channel to signal when the webview closes
 	closedChan := make(chan struct{})
 
-	// Set up a callback for when the webview closes that actually sends a signal
+	// Track if the channel has been closed to prevent double close
+	var channelClosed atomic.Bool
+
+	// Register closing hook with safer channel handling
 	webview.RegisterHook(events.Windows.WindowClosing, func(eventCtx *application.WindowEvent) {
 		cm.logger.Info("Window closing event triggered")
 		eventCtx.Cancel()
 		webview.Hide()
-		close(closedChan) // Signal that the window was closed
+
+		// Only close the channel if it hasn't been closed already
+		if !channelClosed.Swap(true) {
+			close(closedChan)
+		}
 	})
 
 	tokenChan := make(chan string)

@@ -4,20 +4,11 @@ import type { AccountType } from '@/types/types.ts';
 import { ChampionsSkinsTab } from '@/components/ChampionsSkinsTab.tsx';
 import { CoinIcon } from '@/components/coin-icon.tsx';
 import { CopyToClipboard } from '@/components/CopyToClipboard.tsx';
-
+import { DropAccountAction } from '@/components/DropAccountAction';
 import { RentedAccountButton } from '@/components/RentedAccountAction.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog.tsx';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
@@ -28,18 +19,7 @@ import { useDateTime } from '@/hooks/useDateTime.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
 import { cn } from '@/lib/utils.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
-import {
-  AlertCircle,
-  AlertOctagon,
-  AlertTriangle,
-  ArrowDownToLine,
-  Check,
-  CircleCheckBig,
-  Clock,
-  Search,
-  Shield,
-  X,
-} from 'lucide-react';
+import { AlertCircle, AlertOctagon, AlertTriangle, Check, CircleCheckBig, Clock, Search, Shield, X } from 'lucide-react';
 import { useState } from 'react';
 import AccountInfoDisplay from './account-info-display';
 
@@ -105,7 +85,7 @@ export default function AccountDetails({ account, price, onAccountChange }: {
 }) {
   const { user } = useUserStore();
   const { championsSearch, setChampionsSearch, skinsSearch, setSkinsSearch, filteredChampions, filteredSkins } = useAccountFilters({ account });
-  const { dropRefund, selectedRentalOptionIndex, handleExtendAccount, isExtendPending, setSelectedRentalOptionIndex, selectedExtensionIndex, handleDropAccount, isRentPending, isDropPending, setIsDropDialogOpen, handleRentAccount, isDropDialogOpen, handleDropDialogOpen, isNexusAccount } = useAccountActions({ account, onAccountChange, user: user as any });
+  const { dropRefund, selectedRentalOptionIndex, handleExtendAccount, isExtendPending, setSelectedRentalOptionIndex, selectedExtensionIndex, isRentPending, handleRentAccount } = useAccountActions({ account, onAccountChange, user: user as any });
   const [activeTab, setActiveTab] = useState(0);
   const { getCompanyIcon, getGameIcon } = useMapping();
   const hours = [1, 3, 6];
@@ -421,60 +401,12 @@ export default function AccountDetails({ account, price, onAccountChange }: {
 
                   <RentedAccountButton account={account} />
 
-                  <Dialog defaultOpen={false} open={isDropDialogOpen} onOpenChange={handleDropDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" className="flex items-center gap-1">
-                        <ArrowDownToLine className="h-4 w-4" />
-                        Drop Account
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Drop Account </DialogTitle>
-                        <DialogDescription>
-                          Are you sure you want to drop this account?
-                          <br />
-                          {' '}
-                          You will be refunded
-                          {' '}
-                          <span className="text-blue-300">{dropRefund?.amount.toLocaleString()}</span>
-                          {' '}
-                          coins.
-                        </DialogDescription>
-                      </DialogHeader>
-                      {
-
-                        isNexusAccount
-                        && (
-                          <div
-                            className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md p-3 text-sm text-amber-800 dark:text-amber-300"
-                          >
-
-                            <p>
-                              Your client will be logged out and the league will close.
-                            </p>
-                          </div>
-
-                        )
-                      }
-                      <DialogFooter className="flex gap-3 sm:justify-end">
-                        <Button variant="outline" onClick={() => setIsDropDialogOpen(false)}>
-                          Cancel
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          loading={isDropPending}
-
-                          disabled={isDropPending || account.user?.documentId !== user?.documentId}
-                          onClick={() => handleDropAccount()}
-                          className="flex items-center gap-1"
-                        >
-                          <ArrowDownToLine className="h-4 w-4" />
-                          Confirm
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
+                  <DropAccountAction
+                    account={account}
+                    user={user!}
+                    onSuccess={onAccountChange}
+                    buttonVariant="outline"
+                  />
                 </CardFooter>
               </Card>
             )

@@ -1,6 +1,8 @@
 import type { UserType } from '@/types/types';
+import FavoriteAccounts from '@/components/FavoriteAccounts.tsx';
+import { Separator } from '@/components/ui/separator.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
-import { Activity, Shield } from 'lucide-react';
+import { Activity, Shield, Star } from 'lucide-react';
 import CurrentlyRentedAccounts from './currently-rented-accounts';
 import SubscriptionStatus from './subscription-status';
 
@@ -65,11 +67,13 @@ export default function Dashboard({ user }: { user: UserType }) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-black/20 rounded-xl p-6 border border-gray-200 dark:border-[#1F1F23]">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 text-left flex items-center gap-2 ">
+        <div className="bg-white dark:bg-black/20 rounded-xl border border-gray-200 dark:border-[#1F1F23]">
+          <h2 className="text-xl px-6 pt-6   font-bold text-gray-900 dark:text-white mb-4 text-left flex items-center gap-2 ">
             <Shield className="w-4 h-4 text-zinc-900 dark:text-zinc-50" />
             Subscription Status
           </h2>
+          <Separator className="mb-4" />
+
           {
             !user
               ? (
@@ -79,18 +83,29 @@ export default function Dashboard({ user }: { user: UserType }) {
               : <SubscriptionStatus subscription={user.premium} />
           }
         </div>
+
         <div
-          className="bg-white dark:bg-black/20 flex flex-col items-start rounded-xl p-6 border border-gray-200 dark:border-[#1F1F23]"
+          className="bg-white dark:bg-black/20  pt-6 pb-4 flex flex-col items-start rounded-xl border border-gray-200 dark:border-[#1F1F23]"
         >
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 text-left flex items-center gap-2">
+          <h2 className="text-xl px-6 font-bold text-gray-900 dark:text-white mb-4 text-left flex items-center gap-2">
             <Activity className="w-4 h-4 text-zinc-900 dark:text-zinc-50" />
             Currently Rented Accounts
           </h2>
+          <Separator className="mb-4" />
+
           {
             !user
               ? <CurrentlyRentedAccountsSkeleton />
               : <CurrentlyRentedAccounts accounts={user.rentedAccounts} />
           }
+        </div>
+        <div className="bg-white dark:bg-black/20 flex flex-col items-start rounded-xl  border border-gray-200 dark:border-[#1F1F23]">
+          <h2 className="text-xl font-bold w-full px-6 pt-6  text-gray-900 dark:text-white mb-4 text-left flex items-center gap-2">
+            <Star className="w-4 h-4 text-zinc-900 dark:text-zinc-50 " />
+            Favorite Accounts
+          </h2>
+          <Separator className="mb-4" />
+          <FavoriteAccounts onViewAll={() => console.error} />
         </div>
       </div>
 

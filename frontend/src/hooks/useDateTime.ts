@@ -17,9 +17,9 @@ export function useDateTime() {
     if (diffHours > 0) {
       return `${diffHours}h ${diffMinutes}m remaining`;
     } else if (diffMinutes > 0) {
-      return `${diffMinutes}m remaining`;
+      return `${diffMinutes}m left`;
     } else {
-      return `${diffSeconds}s remaining`;
+      return `${diffSeconds}s left`;
     }
   }
   function calculateTimeRemaining(account: AccountType): string {
@@ -30,6 +30,6 @@ export function useDateTime() {
   }
   return {
     calculateTimeRemaining,
-
+    getFormattedTimeRemaining,
   };
 }

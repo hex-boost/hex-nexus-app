@@ -45,6 +45,7 @@ type Stripe struct {
 	mu         sync.Mutex
 	ctx        context.Context
 	cancel     context.CancelFunc
+	serverUsed bool // Tracks if the current server has received a callback
 }
 
 // NewStripe creates a new Stripe handler
@@ -55,6 +56,7 @@ func NewStripe(logger *utils.Logger) *Stripe {
 		callbackCh: make(chan PaymentResult, 1),
 		ctx:        ctx,
 		cancel:     cancel,
+		serverUsed: false,
 	}
 }
 
@@ -72,6 +74,31 @@ func findFreePort() (int, error) {
 	defer l.Close()
 
 	return l.Addr().(*net.TCPAddr).Port, nil
+}
+
+// resetServer stops the current server and prepares for a new one if needed
+func (s *Stripe) resetServer() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.server != nil && s.serverUsed {
+		// If server exists and was used, shut it down
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		err := s.server.Shutdown(ctx)
+		s.server = nil
+		s.port = 0
+		if err != nil {
+			return err
+		}
+	}
+
+	// Reset context and server used flag
+	s.ctx, s.cancel = context.WithCancel(context.Background())
+	s.serverUsed = false
+
+	return nil
 }
 
 // StartServer initializes and starts the HTTP server
@@ -124,8 +151,8 @@ func (s *Stripe) StopServer() error {
 	defer cancel()
 
 	err := s.server.Shutdown(ctx)
-	s.server = nil
-	s.port = 0
+	s.server = nil // Make sure this is set to nil
+	s.port = 0     // Reset port
 
 	return err
 }
@@ -144,6 +171,10 @@ func (s *Stripe) renderTemplate(w http.ResponseWriter, tmplName string) error {
 
 // handleSuccess processes successful payment callbacks
 func (s *Stripe) handleSuccess(w http.ResponseWriter, r *http.Request) {
+	s.mu.Lock()
+	s.serverUsed = true
+	s.mu.Unlock()
+
 	sessionID := r.URL.Query().Get("session_id")
 	s.logger.Info("Payment successful", zap.String("session_id", sessionID))
 
@@ -169,6 +200,10 @@ func (s *Stripe) handleSuccess(w http.ResponseWriter, r *http.Request) {
 
 // handleCancelled processes cancelled payment callbacks
 func (s *Stripe) handleCancelled(w http.ResponseWriter, r *http.Request) {
+	s.mu.Lock()
+	s.serverUsed = true
+	s.mu.Unlock()
+
 	s.logger.Info("Payment cancelled")
 
 	if err := s.renderTemplate(w, "stripe_payment_cancel.html"); err != nil {
@@ -189,7 +224,21 @@ func (s *Stripe) handleCancelled(w http.ResponseWriter, r *http.Request) {
 		s.StopServer()
 	}()
 }
+
 func (s *Stripe) GetCallbackURLs() (string, string, error) {
+	// Reset server if it's been used
+	if err := s.resetServer(); err != nil {
+		return "", "", fmt.Errorf("failed to reset server: %w", err)
+	}
+
+	// Clear any pending results from the channel
+	select {
+	case <-s.callbackCh:
+		// Drain channel if there's a pending result
+	default:
+		// Channel already empty, do nothing
+	}
+
 	port, err := s.StartServer()
 	if err != nil {
 		return "", "", fmt.Errorf("failed to start callback server: %w", err)

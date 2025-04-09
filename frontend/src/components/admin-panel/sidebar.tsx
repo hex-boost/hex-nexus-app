@@ -15,13 +15,13 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        'fixed bg-black/20 border-r-1 top-0 left-0 z-20 h-screen translate-x-0 transition-[width] ease-in-out duration-300',
+        'fixed bg-black/20 border-r-1 top-0 left-0 z-[51] h-screen translate-x-0 transition-[width] ease-in-out duration-300',
         !getOpenState() ? 'w-[90px]' : 'w-72',
         settings.disabled && 'hidden',
       )}
     >
       <div
-        className="relative h-full flex flex-col px-3 py-4 overflow-y-hidden shadow-md dark:shadow-muted"
+        className="relative  h-full flex flex-col px-3 py-4 overflow-y-hidden shadow-md dark:shadow-muted"
       >
         <Button
           className={cn(

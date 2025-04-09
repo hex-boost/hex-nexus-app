@@ -1,11 +1,38 @@
 import type { AccountType } from '@/types/types.ts';
+import { AccountCard } from '@/AccountCard.tsx';
 import { Button } from '@/components/ui/button.tsx';
-import { useMapping } from '@/lib/useMapping.tsx';
+import { useRiotAccount } from '@/hooks/useRiotAccount.ts';
 import { cn } from '@/lib/utils';
-import { Link, useRouter } from '@tanstack/react-router';
+import { useUserStore } from '@/stores/useUserStore.ts';
+import { useRouter } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
-import { Clock, Gamepad2, ShoppingCart } from 'lucide-react';
-import { AccountGameIcon } from '../GameComponents';
+import { Gamepad2, ShoppingCart } from 'lucide-react';
+
+// Extracted component for each account item
+function AccountItem({ account, user, onAccountChange }: { account: AccountType; user: any; onAccountChange: () => Promise<void> }) {
+  const { currentRanking } = useRiotAccount({ account });
+  const mostRecentAction = account.actionHistory.reduce((latest, current) =>
+    new Date(latest.createdAt) > new Date(current.createdAt) ? latest : current,
+  );
+
+  return (
+    <AccountCard
+      key={account.id}
+      id={account.documentId}
+      documentId={account.documentId}
+      gameType="lol"
+      ranking={currentRanking}
+      server={account.server}
+      championsCount={account.LCUchampions.length}
+      skinsCount={account.LCUskins.length}
+      mode="rented"
+      expirationDate={mostRecentAction.expirationDate.toString()}
+      account={account} // Pass the account object
+      user={user} // Pass the user object
+      onAccountChange={onAccountChange} // Pass the callback
+    />
+  );
+}
 
 type CurrentlyRentedAccountsProps = {
   className?: string;
@@ -13,95 +40,27 @@ type CurrentlyRentedAccountsProps = {
 };
 
 export default function CurrentlyRentedAccounts({ accounts, className }: CurrentlyRentedAccountsProps) {
-  const { getRankColor } = useMapping();
   const router = useRouter();
-  const getFormattedTimeRemaining = (expiryDateStr: string): string => {
-    const expiryDate = new Date(expiryDateStr);
-    const now = new Date();
-    const diffMs = expiryDate.getTime() - now.getTime();
 
-    if (diffMs <= 0) {
-      return 'Expired';
-    }
-
-    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-
-    if (days > 0) {
-      return `${days}d ${hours}h left`;
-    } else if (hours > 0) {
-      return `${hours}h left`;
-    } else {
-      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-      return `${minutes}m left`;
-    }
+  // Function to refresh accounts after dropping one
+  const handleAccountChange = async () => {
+    // In a real app, this would refresh the account list
+    console.log('Account changed, should refresh account list');
   };
+  const { user } = useUserStore();
+
   return (
-    <div className={cn('w-full flex h-full flex-col justify-between', className)}>
-      <div className="space-y-1 mb-4">
+    <div className={cn('w-full px-6 max-h-[240px] flex h-full flex-col gap-4  overflow-y-auto', className)}>
+      <div className="">
         {accounts.length > 0
-          ? accounts.map((account) => {
-              const mostRecentAction = account.actionHistory.reduce((latest, current) =>
-                new Date(latest.createdAt) > new Date(current.createdAt) ? latest : current,
-              );
-
-              const currentRanking = account.rankings.find(ranking => ranking.type === 'current')!;
-              const rankColor = getRankColor(currentRanking?.elo?.toLowerCase());
-              return (
-                <Link
-                  to={`/accounts/${account.documentId}`}
-                  key={account.id}
-                  className={cn(
-                    'group flex items-center justify-between',
-                    'px-4 py-3 rounded-lg',
-                    'hover:bg-zinc-100 dark:hover:bg-primary/10 cursor-pointer',
-                    'transition-all duration-200',
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <AccountGameIcon size={32} game="lol" />
-                    <div>
-                      <h3 className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
-                        {account.id}
-                      </h3>
-                      <div className="flex items-center gap-1">
-                        <span className={`text-[11px] font-medium ${rankColor} capitalize`}>
-                          {currentRanking.elo}
-                          {' '}
-                          {currentRanking.division}
-                        </span>
-                        <span className="text-[11px] text-zinc-600 dark:text-zinc-400">
-                          •
-                          {' '}
-                          {account.LCUchampions.length}
-                          {' '}
-                          Champions •
-                          {' '}
-                          {account.LCUskins.length}
-                          {' '}
-                          Skins
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="text-right flex flex-col items-end">
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-amber-500 dark:text-amber-400" />
-                      <span className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100">
-
-                        {getFormattedTimeRemaining(mostRecentAction.expirationDate.toString())}
-                      </span>
-                    </div>
-                    <p
-                      className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline"
-                    >
-                      View Account
-                    </p>
-                  </div>
-                </Link>
-              );
-            })
+          ? accounts.map(account => (
+              <AccountItem
+                key={account.id}
+                account={account}
+                user={user}
+                onAccountChange={handleAccountChange}
+              />
+            ))
           : (
               <div className="flex flex-col items-center justify-center text-center py-4 px-2 space-y-3 rounded-lg">
                 <motion.div
@@ -130,11 +89,6 @@ export default function CurrentlyRentedAccounts({ accounts, className }: Current
               </div>
             )}
       </div>
-
-      {}
-      {}
-      {}
-      {}
     </div>
   );
 }

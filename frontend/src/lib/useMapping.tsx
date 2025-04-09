@@ -25,24 +25,27 @@ export function useMapping() {
   const getRankColor = (tier: string) => {
     switch (tier?.toLowerCase() || '') {
       case 'iron':
+        return 'text-stone-700 dark:text-stone-500';
       case 'bronze':
-        return 'text-zinc-600 dark:text-zinc-400';
+        return 'text-amber-700 dark:text-amber-700';
       case 'silver':
-        return 'text-zinc-400 dark:text-zinc-300';
+        return 'text-slate-400 dark:text-slate-300';
       case 'gold':
-        return 'text-amber-500 dark:text-amber-400';
-      case 'platinum':
-        return 'text-cyan-500 dark:text-cyan-400';
-      case 'diamond':
-        return 'text-blue-500 dark:text-blue-400';
-      case 'master':
-        return 'text-purple-500 dark:text-purple-400';
-      case 'grandmaster':
-        return 'text-red-500 dark:text-red-400';
-      case 'challenger':
         return 'text-yellow-500 dark:text-yellow-400';
+      case 'emerald':
+        return 'text-emerald-500 dark:text-emerald-400';
+      case 'platinum':
+        return 'text-sky-400 dark:text-sky-300';
+      case 'diamond':
+        return 'text-blue-400 dark:text-blue-300';
+      case 'master':
+        return 'text-fuchsia-500 dark:text-fuchsia-400';
+      case 'grandmaster':
+        return 'text-red-600 dark:text-red-500';
+      case 'challenger':
+        return 'text-amber-400 dark:text-amber-300';
       default:
-        return 'text-zinc-600 dark:text-zinc-400';
+        return 'text-stone-600 dark:text-stone-400';
     }
   };
   function getEloIcon(rank: string) {
@@ -195,6 +198,21 @@ export function useMapping() {
       return <ValorantIcon />;
     }
   };
+
+  const getFormattedServer = (server: Server): string => {
+    switch (server) {
+      case 'LA1':
+        return 'LAN';
+      case 'OC1':
+        return 'OCE';
+      case 'ME1':
+        return 'MEA';
+      case 'EUN1':
+        return 'EUNE';
+      default:
+        return server.slice(0, server.length - 1);
+    }
+  };
   return {
     getRegionIcon,
     getCompanyIcon,
@@ -203,5 +221,6 @@ export function useMapping() {
     getGameIcon,
     getStatusColor,
     getSkinRarityColor,
+    getFormattedServer,
   };
 }

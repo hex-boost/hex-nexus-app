@@ -25,7 +25,7 @@ export function useCommonFetch() {
           logout();
           toast.error('You have been logged out due to HWID mismatch');
           router.navigate({ to: '/login' });
-          throw new Error('HWID mismatch');
+          throw new Error('HWID mismatch error, if this is a mistake, please contact support');
         }
       }
 
