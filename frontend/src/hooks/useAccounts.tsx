@@ -1,4 +1,4 @@
-import type { AccountType } from '@/types/types';
+import type { AccountType, Server } from '@/types/types';
 import type { StrapiResponse } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
 import { strapiClient } from '@/lib/strapi.ts';
 import { useMapping } from '@/lib/useMapping';
@@ -6,8 +6,23 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
 
-type SortKey = keyof AccountType | 'coin_price' | 'winrate';
-
+export const availableRegions: Server[] = [
+  'NA1',
+  'EUW1',
+  'EUN1',
+  'OC1',
+  'BR1',
+  'JP1',
+  'LA1',
+  'LA2',
+  'RU',
+  'TR1',
+  'ME1',
+  'SG2',
+  'PH2',
+  'VN2',
+  'TH2',
+];
 export function getLeaverBusterInfo(account: AccountType) {
   if (!account.leaverBuster?.leaverBusterEntryDto) {
     return null;
@@ -325,24 +340,6 @@ export function useAccounts(page = 1, pageSize = 10) {
   const handlePageChange = useCallback((newPage: number) => {
     setPaginationPersisted({ ...pagination, page: newPage });
   }, [pagination, setPaginationPersisted]);
-
-  const availableRegions = [
-    'NA1',
-    'EUW1',
-    'EUN1',
-    'OC1',
-    'BR1',
-    'JP1',
-    'LA1',
-    'LA2',
-    'RU',
-    'TR1',
-    'ME1',
-    'SG2',
-    'PH2',
-    'VN2',
-    'TH2',
-  ];
 
   return {
     availableRegions,
