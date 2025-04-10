@@ -19,6 +19,7 @@ export function useAccountActions({
 }) {
   const { refetchUser } = useCommonFetch();
   const { Utils } = useGoFunctions();
+  const queryClient = useQueryClient();
 
   const [isNexusAccount, setIsNexusAccount] = useState(false);
   const [selectedRentalOptionIndex, setSelectedRentalOptionIndex] = useState<number>(1);
@@ -38,47 +39,59 @@ export function useAccountActions({
     }
     setIsDropDialogOpen(open);
   }
+
+  // Helper function to consistently invalidate all related queries
+  const invalidateRelatedQueries = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['accounts'] });
+
+    await queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
+  };
+
   const {
     data: dropRefund,
   } = useQuery({
     queryKey: ['accounts', 'refund', account.id],
-    queryFn: () => strapiClient.find<{ amount: number }>(`accounts/${account?.documentId}/refund`).then(res => res.data),
+    queryFn: () => strapiClient.find<{
+      amount: number;
+    }>(`accounts/${account?.documentId}/refund`).then(res => res.data),
     enabled: account.user?.documentId === user?.documentId,
     staleTime: 0,
   });
+
   const { mutate: handleDropAccount, isPending: isDropPending } = useMutation<{ message: string }, StrapiError>({
     mutationKey: ['accounts', 'drop', account.documentId],
     mutationFn: async () => {
       setIsDropDialogOpen(false);
 
-      const response = await strapiClient.request<{ message: string }>('post', `accounts/${account.documentId}/drop`);
-      await refetchUser();
-      await onAccountChange();
+      const response = await strapiClient.request<{
+        message: string;
+      }>('post', `accounts/${account.documentId}/drop`);
+
       return response;
     },
     onSuccess: (data) => {
       Utils.ForceCloseAllClients();
+      invalidateRelatedQueries();
       toast.success(data.message);
     },
     onError: (error) => {
       toast.error(error.error.message);
     },
-
   });
-  const queryClient = useQueryClient();
+
   const { mutate: handleExtendAccount, isPending: isExtendPending } = useMutation({
     mutationKey: ['accounts', 'extend', account.documentId],
     mutationFn: async (timeIndex: number) => {
       return toast.promise(
         (async () => {
-          const response = await strapiClient.request<{ message: string }>('post', `accounts/${account.documentId}/extend`, {
+          const response = await strapiClient.request<{
+            message: string;
+          }>('post', `accounts/${account.documentId}/extend`, {
             data: {
               game: 'league',
               time: timeIndex,
             },
           });
-          await refetchUser();
-          await onAccountChange();
           return response;
         })(),
         {
@@ -87,6 +100,9 @@ export function useAccountActions({
           error: error => error.error?.message || 'This feature is not implemented yet',
         },
       );
+    },
+    onSuccess: () => {
+      invalidateRelatedQueries();
     },
   });
 
@@ -99,19 +115,19 @@ export function useAccountActions({
     mutationFn: async (timeIndex: number) => {
       setIsDropDialogOpen(false);
 
-      const response = strapiClient.request<{ message: string }>('post', `accounts/${account.documentId}/rentals`, {
+      const response = strapiClient.request<{
+        message: string;
+      }>('post', `accounts/${account.documentId}/rentals`, {
         data: {
           game: 'league',
           time: timeIndex,
         },
       });
-      await refetchUser();
-      await queryClient.cancelQueries({ queryKey: ['users', 'me'] });
-      await queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
 
       return response;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
+      await invalidateRelatedQueries();
       toast.success(data.message);
       setIsDropDialogOpen(false); // Reset dialog state after successful rental
     },

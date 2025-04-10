@@ -43,8 +43,8 @@ function AccountByID() {
   });
 
   const refetchAccount = async () => {
-    await queryClient.invalidateQueries({ queryKey: ['accounts', 'available'] });
-    await queryClient.invalidateQueries({ queryKey: ['accounts', 'rented'] });
+    // Invalidate all queries that start with 'accounts' with a single call
+    await queryClient.invalidateQueries({ queryKey: ['accounts'] });
   };
 
   const account = rentedAccounts?.find(acc => acc.documentId === id)

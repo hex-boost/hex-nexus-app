@@ -215,14 +215,14 @@ export function useAccounts(page = 1, pageSize = 10) {
       // Champions filter
       if (filters.selectedChampions && filters.selectedChampions.length > 0) {
         strapiFilters.LCUchampions = {
-          $contains: filters.selectedChampions.map(id => Number.parseInt(id)),
+          $containsi: filters.selectedChampions.map(id => Number.parseInt(id)),
         };
       }
 
       // Skins filter
       if (filters.selectedSkins && filters.selectedSkins.length > 0) {
         strapiFilters.LCUskins = {
-          $contains: filters.selectedSkins.map(id => Number.parseInt(id)),
+          $containsi: filters.selectedSkins.map(id => Number.parseInt(id)),
         };
       }
 
@@ -285,17 +285,17 @@ export function useAccounts(page = 1, pageSize = 10) {
               strapiFilters.type = filters.company;
             }
 
-            // Champions filter
+            // Champions filter - use comma-separated array instead of $and conditions
             if (filters.selectedChampions && filters.selectedChampions.length > 0) {
               strapiFilters.LCUchampions = {
-                $contains: filters.selectedChampions.map(id => Number.parseInt(id)),
+                $containsi: filters.selectedChampions.map(id => Number.parseInt(id)),
               };
             }
 
-            // Skins filter
+            // Skins filter - use comma-separated array instead of $and conditions
             if (filters.selectedSkins && filters.selectedSkins.length > 0) {
               strapiFilters.LCUskins = {
-                $contains: filters.selectedSkins.map(id => Number.parseInt(id)),
+                $containsi: filters.selectedSkins.map(id => Number.parseInt(id)),
               };
             }
 
@@ -331,7 +331,63 @@ export function useAccounts(page = 1, pageSize = 10) {
     }
   }, [data, filters, pagination, queryClient, searchQuery]);
 
-  // Simply use the API data directly without sorting
+  // Add new useEffect to validate search results
+  useEffect(() => {
+    if (data?.data && (filters.selectedChampions.length > 0 || filters.selectedSkins.length > 0)) {
+      console.log('Validating search results for champions and skins...');
+
+      // Convert selected IDs to numbers for comparison
+      const searchedChampionIds = filters.selectedChampions.map(id => Number(id));
+      const searchedSkinIds = filters.selectedSkins.map(id => Number(id));
+
+      let allAccountsMatchCriteria = true;
+
+      // Check each account
+      data.data.forEach((account, index) => {
+        const accountChampions = account.LCUchampions || [];
+        const accountSkins = account.LCUskins || [];
+
+        // Check champions
+        if (searchedChampionIds.length > 0) {
+          const hasAllChampions = searchedChampionIds.every(id =>
+            accountChampions.includes(id));
+
+          if (!hasAllChampions) {
+            console.error(`Account ${account.id || account.documentId} (index ${index}) is missing some champions!`);
+            console.error(`- Searched for: ${searchedChampionIds.join(', ')}`);
+            console.error(`- Account has: ${accountChampions.join(', ')}`);
+            const missingChampions = searchedChampionIds.filter(id => !accountChampions.includes(id));
+            console.error(`- Missing: ${missingChampions.join(', ')}`);
+            allAccountsMatchCriteria = false;
+          }
+        }
+
+        // Check skins
+        if (searchedSkinIds.length > 0) {
+          const hasAllSkins = searchedSkinIds.every(id =>
+            accountSkins.includes(id));
+
+          if (!hasAllSkins) {
+            console.error(`Account ${account.id || account.documentId} (index ${index}) is missing some skins!`);
+            console.error(`- Searched for: ${searchedSkinIds.join(', ')}`);
+            console.error(`- Account has: ${accountSkins.join(', ')}`);
+            const missingSkins = searchedSkinIds.filter(id => !accountSkins.includes(id));
+            console.error(`- Missing: ${missingSkins.join(', ')}`);
+            allAccountsMatchCriteria = false;
+          }
+        }
+      });
+
+      if (allAccountsMatchCriteria) {
+        console.log('✅ SUCCESS: All accounts match the selected champions and skins criteria!');
+        console.log(`- Filtered for champions: ${searchedChampionIds.join(', ')}`);
+        console.log(`- Filtered for skins: ${searchedSkinIds.join(', ')}`);
+        console.log(`- Total matching accounts: ${data.data.length}`);
+      } else {
+        console.warn('❌ WARNING: Some accounts do not match the search criteria. Check errors above.');
+      }
+    }
+  }, [data, filters.selectedChampions, filters.selectedSkins]);
 
   const handleViewAccountDetails = (accountId: string) => {
     router.navigate({ to: `/accounts/${accountId}` });
