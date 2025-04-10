@@ -12,6 +12,7 @@ vars:
   BIN_DIR: "bin"
   DIST_DIR: "dist"
   API_URL: '{{.API_URL | default "http://localhost:1337"}}'
+  REFRESH_API_KEY: '{{.REFRESH_API_KEY}}'
   VITE_PORT: '{{.WAILS_VITE_PORT | default 9245}}'
   VERSION: '{{.VERSION | default "dev"}}'
   ENV_FILE: '.env'
@@ -31,7 +32,7 @@ tasks:
           PRODUCTION: '{{.PRODUCTION}}'
       - task: common:generate:icons
     cmds:
-      - go build -tags development  -gcflags="all=-N -l" -ldflags="-X github.com/hex-boost/hex-nexus-app/backend/config.Version=dev -X github.com/hex-boost/hex-nexus-app/backend/config.BackendURL={{.API_URL}}" -o bin/Nexus.exe .
+      - go build -tags development  -gcflags="all=-N -l" -ldflags="-X github.com/hex-boost/hex-nexus-app/backend/config.Version=dev -X github.com/hex-boost/hex-nexus-app/backend/config.BackendURL={{.API_URL}} -X github.com/hex-boost/hex-nexus-app/backend/config.RefreshApiKey={{.REFRESH_API_KEY}}" -o bin/Nexus.exe .
       - powershell -Command "while (1) { dlv exec bin/Nexus.exe --headless --listen :2345 --api-version 2 }"
 
   go:build:prod:
@@ -42,7 +43,7 @@ tasks:
           PRODUCTION: '{{.PRODUCTION}}'
       - task: common:generate:icons
     cmds:
-      - cmd: go build -tags production -trimpath -buildvcs=false -ldflags="-X github.com/hex-boost/hex-nexus-app/backend/config.Version={{.VERSION}} -X github.com/hex-boost/hex-nexus-app/backend/config.BackendURL={{.API_URL}}  -w -s -H windowsgui" -o bin/Nexus{{.VERSION}}.exe .
+      - go build -tags production -trimpath -buildvcs=false -ldflags="-X github.com/hex-boost/hex-nexus-app/backend/config.Version={{.VERSION}} -X github.com/hex-boost/hex-nexus-app/backend/config.BackendURL={{.API_URL}} -X github.com/hex-boost/hex-nexus-app/backend/config.RefreshApiKey={{.REFRESH_API_KEY}}" -w -s -H windowsgui" -o bin/Nexus{{.VERSION}}.exe .
       - powershell -Command "while (1) { dlv exec bin/Nexus.exe --headless --listen :2345 --api-version 2 }"
   package:
     summary: Packages a production build of the application

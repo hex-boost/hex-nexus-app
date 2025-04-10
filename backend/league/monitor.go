@@ -15,6 +15,10 @@ import (
 
 type LeagueClientStateType string
 type LeagueAuthStateType string
+type AccountUpdateStatus struct {
+	Username  string
+	IsUpdated bool
+}
 
 // Define client state constants
 const (
@@ -46,36 +50,43 @@ const (
 )
 
 type ClientMonitor struct {
-	app           *application.WebviewWindow
-	riotClient    *riot.RiotClient
-	isRunning     bool
-	pollingTicker *time.Ticker
-	logger        *utils.Logger
-	captcha       *riot.Captcha
-
-	leagueService *LeagueService
+	accountUpdateStatus AccountUpdateStatus
+	app                 *application.WebviewWindow
+	riotClient          *riot.RiotClient
+	isRunning           bool
+	pollingTicker       *time.Ticker
+	logger              *utils.Logger
+	captcha             *riot.Captcha
+	accountMonitor      *AccountMonitor
+	leagueService       *LeagueService
 	// State management
 	stateMutex   sync.RWMutex
 	currentState *LeagueClientState
 }
 
-func NewClientMonitor(leagueService *LeagueService, riotClient *riot.RiotClient, logger *utils.Logger, captcha *riot.Captcha) *ClientMonitor {
+func NewClientMonitor(logger *utils.Logger, accountMonitor *AccountMonitor, leagueService *LeagueService, riotClient *riot.RiotClient, captcha *riot.Captcha) *ClientMonitor {
 	logger.Info("Creating new client monitor")
 	initialState := &LeagueClientState{
 		ClientState: ClientStateClosed,
 		AuthState:   AuthStateNone,
+
 		LastUpdated: time.Now(),
 	}
 
 	return &ClientMonitor{
-		app:           nil,
-		captcha:       captcha,
-		logger:        logger,
-		leagueService: leagueService,
-		riotClient:    riotClient,
-		isRunning:     false,
-		currentState:  initialState,
-		stateMutex:    sync.RWMutex{},
+		accountUpdateStatus: AccountUpdateStatus{
+			Username:  "",
+			IsUpdated: false,
+		},
+		app:            nil,
+		accountMonitor: accountMonitor,
+		captcha:        captcha,
+		logger:         logger,
+		leagueService:  leagueService,
+		riotClient:     riotClient,
+		isRunning:      false,
+		currentState:   initialState,
+		stateMutex:     sync.RWMutex{},
 	}
 }
 
@@ -149,7 +160,18 @@ func (cm *ClientMonitor) checkClientState() {
 		cm.logger.Sugar().Infow("LeagueService client running with previous logged-in state, maintaining state",
 			"leagueClientRunning", isLeagueClientRunning,
 			"riotClientRunning", isRiotClientRunning)
+		if !cm.accountUpdateStatus.IsUpdated {
+			loggedInUsername := cm.accountMonitor.GetLoggedInUsername()
+			err := cm.leagueService.UpdateFromLCU(loggedInUsername)
+			if err != nil {
+				cm.logger.Error("Error updating account from LCU", zap.Error(err))
+			}
+
+		}
 		return
+	} else {
+		cm.accountUpdateStatus.Username = ""
+		cm.accountUpdateStatus.IsUpdated = false
 	}
 
 	// Get detailed client state if running

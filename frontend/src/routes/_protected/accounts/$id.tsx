@@ -26,8 +26,10 @@ function AccountByID() {
     data: availableAccounts,
     isLoading: isAvailableLoading,
   } = useQuery({
-    queryKey: ['accounts', 'available'],
-    queryFn: () => strapiClient.find<AccountType[]>('accounts/available').then(res => res.data),
+    queryKey: ['accounts', 'available', id],
+    queryFn: () => strapiClient.find<AccountType[]>('accounts/available', {
+      filters: { documentId: id },
+    }).then(res => res.data),
   });
 
   const {
@@ -35,7 +37,9 @@ function AccountByID() {
     isLoading: isRentedLoading,
   } = useQuery({
     queryKey: ['accounts', 'rented'],
-    queryFn: () => strapiClient.find<AccountType[]>('accounts/rented').then(res => res.data),
+    queryFn: () => strapiClient.find<AccountType[]>('accounts/rented', {
+      filters: { documentId: id },
+    }).then(res => res.data),
   });
 
   const refetchAccount = async () => {

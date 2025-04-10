@@ -10,13 +10,15 @@ import (
 )
 
 var (
-	Version    = "dev"
-	BackendURL = "http://127.0.0.1:1337"
+	Version       = "dev"
+	BackendURL    = "http://127.0.0.1:1337"
+	RefreshApiKey = ""
 )
 
 type Config struct {
 	Version string `json:"version"`
 	// API URLs
+	RefreshApiKey  string `json:"refresh_api_key"`
 	BackendURL     string `json:"backendUrl"`
 	RiotAPIBaseURL string `json:"riotApiBaseUrl"`
 
@@ -50,6 +52,7 @@ func LoadConfig() (*Config, error) {
 	// Default configuration
 	config := &Config{
 		Version:        getEnv("VERSION", Version),
+		RefreshApiKey:  getEnv("REFRESH_API_KEY", RefreshApiKey),
 		BackendURL:     getEnv("API_URL", BackendURL),
 		RiotAPIBaseURL: getEnv("RIOT_API_URL", "https://127.0.0.1"),
 		RequestTimeout: getDurationEnv("REQUEST_TIMEOUT", 10*time.Second),

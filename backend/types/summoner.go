@@ -2,30 +2,31 @@ package types
 
 type SummonerRented struct {
 	SummonerBase
-	Username string `json:"username"`
+	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
-	GameName string `json:"gamename"`
+	GameName string `json:"gamename,omitempty"`
 }
+
 type SummonerBase struct {
-	ID              int           `json:"id"`
-	DocumentID      string        `json:"documentId"`
-	LCUchampions    interface{}   `json:"LCUchampions"`
-	LCUskins        interface{}   `json:"LCUskins"`
-	Type            string        `json:"type"`
-	LeaverBuster    interface{}   `json:"leaverBuster"`
-	Tagline         string        `json:"tagline"`
-	Server          interface{}   `json:"server"`
-	CreatedAt       string        `json:"createdAt"`
-	UpdatedAt       string        `json:"updatedAt"`
-	PublishedAt     string        `json:"publishedAt"`
-	Locale          interface{}   `json:"locale"`
-	BlueEssence     interface{}   `json:"blueEssence"`
-	RiotPoints      interface{}   `json:"riotPoints"`
-	Ban             Ban           `json:"ban"`
-	IsPhoneVerified bool          `json:"isPhoneVerified"`
-	IsEmailVerified bool          `json:"isEmailVerified"`
-	Rankings        []interface{} `json:"rankings"`
-	User            User          `json:"user"`
+	ID              int         `json:"id,omitempty"`
+	DocumentID      string      `json:"documentId,omitempty"`
+	LCUchampions    interface{} `json:"LCUchampions,omitempty"`
+	LCUskins        interface{} `json:"LCUskins,omitempty"`
+	Type            string      `json:"type,omitempty"`
+	LeaverBuster    interface{} `json:"leaverBuster,omitempty"`
+	Tagline         string      `json:"tagline,omitempty"`
+	Server          interface{} `json:"server,omitempty"`
+	CreatedAt       string      `json:"createdAt,omitempty"`
+	UpdatedAt       string      `json:"updatedAt,omitempty"`
+	PublishedAt     string      `json:"publishedAt,omitempty"`
+	Locale          interface{} `json:"locale,omitempty"`
+	BlueEssence     interface{} `json:"blueEssence,omitempty"`
+	RiotPoints      interface{} `json:"riotPoints,omitempty"`
+	Ban             Ban         `json:"ban,omitempty"`
+	IsPhoneVerified bool        `json:"isPhoneVerified,omitempty"`
+	IsEmailVerified bool        `json:"isEmailVerified,omitempty"`
+	Rankings        RankedStats `json:"rankings,omitempty"`
+	User            User        `json:"user,omitempty"`
 }
 
 // Ban represents the ban information for an account

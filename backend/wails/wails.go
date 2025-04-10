@@ -163,6 +163,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 	appInstance := app.App(cfg)
 	updater.NewUpdater(cfg, appInstance.Log().Wails()).Start()
 	mainLogger := appInstance.Log().Wails()
+	mainLogger.Info(fmt.Sprintf("Initializing with version %s and backendUrl %s and apiToken %s", cfg.Version, cfg.BackendURL, cfg.RefreshApiKey))
 	appProtocol := protocol.New(appInstance.Log().Protocol())
 	if err := appProtocol.Register(); err != nil {
 		mainLogger.Info("Warning: Failed to register custom protocol", zap.Error(err))
@@ -171,18 +172,18 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 	var mainWindow *application.WebviewWindow
 	stripeService := stripe.NewStripe(appInstance.Log().Stripe())
 	lcuConn := league.NewLCUConnection(appInstance.Log().League())
-	leagueService := league.NewLeagueService()
 	baseRepo := repository.NewBaseRepository(cfg, appInstance.Log().Repo())
 	apiRepository := repository.NewAPIRepository(baseRepo)
 	accountsRepository := repository.NewAccountsRepository(apiRepository)
 	summonerClient := league.NewSummonerClient(lcuConn, appInstance.Log().League())
 	summonerService := league.NewSummonerService(summonerClient, accountsRepository, appInstance.Log().League())
 	captcha := riot.NewCaptcha(appInstance.Log().Riot())
+	leagueService := league.NewLeagueService(appInstance.Log().Riot(), accountsRepository, summonerService, lcuConn)
 	riotClient := riot.NewRiotClient(appInstance.Log().Riot(), captcha)
 	accountMonitor := league.NewAccountMonitor(appInstance.Log().Riot(), leagueService, riotClient, accountsRepository, summonerClient, lcuConn)
 	discordService := discord.New(appInstance.Log().Discord())
 
-	clientMonitor := league.NewClientMonitor(leagueService, riotClient, appInstance.Log().League(), captcha)
+	clientMonitor := league.NewClientMonitor(appInstance.Log().League(), accountMonitor, leagueService, riotClient, captcha)
 	app := application.New(application.Options{
 		Name:        "Nexus",
 		Description: "Nexus",

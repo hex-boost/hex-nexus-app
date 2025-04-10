@@ -368,6 +368,7 @@ function AccountRow({
       <td className="p-3 flex gap-2 items-center text-sm text-zinc-600 dark:text-zinc-400">
         <div className="w-6 h-6">
           <img
+            alt="blue essence"
             src="https://raw.communitydragon.org/15.2/plugins/rcp-fe-lol-collections/global/default/images/skins-viewer/currencies/icon-blue-essence.png"
           />
         </div>
@@ -454,8 +455,6 @@ type AccountsTableProps = {
   getRegionIcon: (region: string) => React.ReactNode;
   getCompanyIcon: (company: string) => string;
   getRankColor: (elo: string) => string;
-  currentPage: number;
-  itemsPerPage: number;
 };
 
 function AccountsTable({
@@ -470,14 +469,7 @@ function AccountsTable({
   getRegionIcon,
   getCompanyIcon,
   getRankColor,
-  currentPage,
-  itemsPerPage,
 }: AccountsTableProps) {
-  // Calculate pagination slice
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedAccounts = filteredAccounts.slice(startIndex, endIndex);
-
   return (
     <div className="overflow-x-auto rounded-lg border">
       <table className="w-full border-collapse">
@@ -536,7 +528,7 @@ function AccountsTable({
                 <AccountTableSkeleton />
               )
             : (
-                paginatedAccounts.map(account => (
+                filteredAccounts.map(account => (
                   <AccountRow
                     key={account.id}
                     account={account}
@@ -557,9 +549,11 @@ function AccountsTable({
 }
 
 function Accounts() {
+  const [pageSize] = useState(10); // Fixed page size
+  const [currentPage, setCurrentPage] = useState(1);
+
   const {
     isLoading,
-    accounts,
     filteredAccounts,
     filters,
     setFiltersPersisted,
@@ -579,25 +573,25 @@ function Accounts() {
     setSelectedChampionIdsPersisted,
     selectedChampionIds,
     selectedSkinIds,
-  } = useAccounts();
+    handlePageChange,
+    totalPages,
+    totalItems,
+    sortConfig,
+  } = useAccounts(currentPage, pageSize);
 
   const { getCompanyIcon } = useMapping();
   const { allChampions, allSkins, isLoading: isDataDragonLoading } = useAllDataDragon();
   const { price, isPriceLoading } = usePrice();
 
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
-  const totalPages = Math.ceil(filteredAccounts.length / itemsPerPage);
-
-  // Reset to first page when filters change
+  // Reset to first page when filters or sorting change
   useEffect(() => {
     setCurrentPage(1);
-  }, [filters, searchQuery]);
+  }, [filters, searchQuery, sortConfig]);
 
-  // Handle page change
-  const handlePageChange = (page: number) => {
+  // Updated page change handler that triggers the API fetch
+  const onPageChange = (page: number) => {
     setCurrentPage(page);
+    handlePageChange(page);
   };
 
   return (
@@ -805,7 +799,7 @@ function Accounts() {
                 <div>
                   <Label className="text-sm font-medium mb-1.5 block">
                     Blue Essence (
-                    {filters.minBlueEssence.toLocaleString()}
+                    {filters.minBlueEssence?.toLocaleString() || '0'}
                     )
                   </Label>
                   <div className="flex flex-wrap gap-2 my-2">
@@ -911,7 +905,7 @@ function Accounts() {
           </div>
         )}
 
-        <ResultsCount filteredCount={filteredAccounts.length > itemsPerPage ? itemsPerPage : filteredAccounts.length} totalCount={accounts?.length} />
+        <ResultsCount filteredCount={filteredAccounts.length} totalCount={totalItems} />
 
         <AccountsTable
           isLoading={isLoading}
@@ -920,14 +914,11 @@ function Accounts() {
           price={price}
           requestSort={requestSort}
           SortIndicator={SortIndicator}
-
           handleViewAccountDetails={handleViewAccountDetails}
           getEloIcon={getEloIcon}
           getRegionIcon={getRegionIcon}
           getCompanyIcon={getCompanyIcon}
           getRankColor={getRankColor}
-          currentPage={currentPage}
-          itemsPerPage={itemsPerPage}
         />
 
         {/* Pagination component */}
@@ -936,7 +927,7 @@ function Accounts() {
             <AccountsPagination
               currentPage={currentPage}
               totalPages={totalPages}
-              onPageChange={handlePageChange}
+              onPageChange={onPageChange}
             />
           </div>
         )}

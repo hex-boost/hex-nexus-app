@@ -1,7 +1,11 @@
 package repository
 
 import (
+	"fmt"
+	"github.com/go-resty/resty/v2"
+	"github.com/hex-boost/hex-nexus-app/backend/config"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
+	"go.uber.org/zap"
 )
 
 type AccountsRepository struct {
@@ -15,8 +19,25 @@ func NewAccountsRepository(api *APIRepository) *AccountsRepository {
 }
 
 func (s *AccountsRepository) Save(summoner types.SummonerRented) error {
-	_, err := s.api.Put("/api/accounts/refresh", summoner, nil)
-	return err
+	client := resty.New()
+	client.SetBaseURL(config.BackendURL)
+	client.SetHeader("Content-Type", "application/json")
+	client.SetHeader("Accept", "application/json")
+	client.SetAuthToken(config.RefreshApiKey)
+	req := client.R().SetBody(summoner)
+
+	// Make the request manually instead of using s.api.Put
+	resp, err := req.Put("/api/accounts/refresh")
+	if err != nil {
+		s.api.Logger.Error("error saving summoner", zap.Error(err), zap.Int("statusCode", resp.StatusCode()), zap.Any("body", resp.String()))
+		return err
+	}
+	if resp.IsError() {
+		s.api.Logger.Error("error saving summoner", zap.Int("statusCode", resp.StatusCode()), zap.Any("body", resp.String()))
+		return fmt.Errorf("error saving summoner: %d - %s", resp.StatusCode(), resp.String())
+	}
+
+	return nil
 }
 func (s *AccountsRepository) GetAllRented() ([]types.SummonerRented, error) {
 	var summoners types.RentedAccountsResponse

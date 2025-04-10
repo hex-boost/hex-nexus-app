@@ -2,11 +2,9 @@ package league
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/hex-boost/hex-nexus-app/backend/repository"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
-	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 	"sync"
 )
@@ -26,7 +24,7 @@ func NewSummonerService(summonerClient *SummonerClient, repoClient *repository.A
 	}
 }
 
-func (l *SummonerService) UpdateFromLCU(username string, password string) error {
+func (l *SummonerService) UpdateFromLCU(username string) (*types.SummonerRented, error) {
 	var (
 		currentSummoner types.CurrentSummoner
 		champions       []int
@@ -112,7 +110,7 @@ func (l *SummonerService) UpdateFromLCU(username string, password string) error 
 	})
 
 	if err := eg.Wait(); err != nil {
-		return err
+		return nil, err
 	}
 
 	currencies := types.Currencies{}
@@ -144,36 +142,19 @@ func (l *SummonerService) UpdateFromLCU(username string, password string) error 
 		}
 	}
 
-	summoner := types.SummonerRented{
+	summoner := &types.SummonerRented{
+		Username: username,
 		SummonerBase: types.SummonerBase{
 			Tagline:      currentSummoner.TagLine,
 			LCUchampions: champions,
 			LCUskins:     skins,
-			//RP:             currencies.RP,
-			//LolBlueEssence: currencies.LolBlueEssence,
-			//RankedStats:    rankedStats,
-			Server: region,
-
-			//AccountLevel: currentSummoner.SummonerLevel,
+			BlueEssence:  currencies.LolBlueEssence,
+			RiotPoints:   currencies.RP,
+			Rankings:     rankedStats,
+			Server:       region,
 		},
 		GameName: currentSummoner.GameName,
-
-		Username: username,
-		Password: password,
-	}
-	summonerJSON, err := json.MarshalIndent(summoner, "", "  ")
-
-	if err != nil {
-		l.logger.Error("Failed to marshal summoner to JSON: %v", zap.Error(err))
-	} else {
-		l.logger.Debug("Summoner object: ", zap.Any("summoner", summonerJSON))
-	}
-	err = l.repoClient.Save(summoner)
-	if err != nil {
-		l.logger.Error("Failed to save summoner")
-		return err
 	}
 
-	l.logger.Info("Successfully updated summoner from LCU")
-	return nil
+	return summoner, nil
 }

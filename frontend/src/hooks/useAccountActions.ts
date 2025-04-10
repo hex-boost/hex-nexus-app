@@ -4,7 +4,7 @@ import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
 import { useGoFunctions } from '@/hooks/useGoBindings.ts';
 import { strapiClient } from '@/lib/strapi';
 import { AccountMonitor } from '@league';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -65,7 +65,7 @@ export function useAccountActions({
     },
 
   });
-
+  const queryClient = useQueryClient();
   const { mutate: handleExtendAccount, isPending: isExtendPending } = useMutation({
     mutationKey: ['accounts', 'extend', account.documentId],
     mutationFn: async (timeIndex: number) => {
@@ -106,7 +106,9 @@ export function useAccountActions({
         },
       });
       await refetchUser();
-      await onAccountChange();
+      await queryClient.cancelQueries({ queryKey: ['users', 'me'] });
+      await queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
+
       return response;
     },
     onSuccess: (data) => {
