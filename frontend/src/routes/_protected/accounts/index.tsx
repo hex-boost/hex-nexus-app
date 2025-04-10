@@ -448,8 +448,6 @@ type AccountsTableProps = {
   filteredAccounts: any[];
   isPriceLoading: boolean;
   price: any;
-  requestSort: (column: string) => void;
-  SortIndicator: React.FC<{ column: string }>;
   handleViewAccountDetails: (id: string) => void;
   getEloIcon: (elo: string) => string;
   getRegionIcon: (region: string) => React.ReactNode;
@@ -462,8 +460,6 @@ function AccountsTable({
   filteredAccounts,
   isPriceLoading,
   price,
-  requestSort,
-  SortIndicator,
   handleViewAccountDetails,
   getEloIcon,
   getRegionIcon,
@@ -483,41 +479,19 @@ function AccountsTable({
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Restrictions</th>
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Current Rank</th>
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Previous Rank</th>
-            <th
-              className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400 flex"
-              onClick={() => requestSort('winrate')}
-            >
+            <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">
               Winrate
-              <SortIndicator column="winrate" />
             </th>
-            <th
-              className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400 cursor-pointer"
-              onClick={() => requestSort('LCUchampions')}
-            >
-              <div className="flex items-center">
-                Champions
-                <SortIndicator column="LCUchampions" />
-              </div>
+            <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+              Champions
             </th>
-            <th
-              className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400 cursor-pointer"
-              onClick={() => requestSort('LCUskins')}
-            >
-              <div className="flex items-center">
-                Skins
-                <SortIndicator column="LCUskins" />
-              </div>
+            <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+              Skins
             </th>
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Blue Essence</th>
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Status</th>
-            <th
-              className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400 cursor-pointer"
-              onClick={() => requestSort('coin_price')}
-            >
-              <div className="flex relative items-center">
-                Price
-                <SortIndicator column="coin_price" />
-              </div>
+            <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+              Price
             </th>
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400"></th>
           </tr>
@@ -561,9 +535,7 @@ function Accounts() {
     setShowFiltersPersisted,
     searchQuery,
     setSearchQueryPersisted,
-    requestSort,
     resetFilters,
-    SortIndicator,
     handleViewAccountDetails,
     getRankColor,
     getEloIcon,
@@ -576,17 +548,16 @@ function Accounts() {
     handlePageChange,
     totalPages,
     totalItems,
-    sortConfig,
   } = useAccounts(currentPage, pageSize);
 
   const { getCompanyIcon } = useMapping();
   const { allChampions, allSkins, isLoading: isDataDragonLoading } = useAllDataDragon();
   const { price, isPriceLoading } = usePrice();
 
-  // Reset to first page when filters or sorting change
+  // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [filters, searchQuery, sortConfig]);
+  }, [filters, searchQuery]);
 
   // Updated page change handler that triggers the API fetch
   const onPageChange = (page: number) => {
@@ -912,8 +883,6 @@ function Accounts() {
           filteredAccounts={filteredAccounts}
           isPriceLoading={isPriceLoading}
           price={price}
-          requestSort={requestSort}
-          SortIndicator={SortIndicator}
           handleViewAccountDetails={handleViewAccountDetails}
           getEloIcon={getEloIcon}
           getRegionIcon={getRegionIcon}
