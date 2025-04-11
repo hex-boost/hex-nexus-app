@@ -126,4 +126,3 @@ func (c *LCUConnection) WaitUntilReady() error {
 		}
 	}
 }
-func (c *LCUConnection)
