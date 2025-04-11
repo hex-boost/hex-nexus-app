@@ -62,8 +62,8 @@ func CreateGameOverlay(app *application.App) *application.WebviewWindow {
 		application.WebviewWindowOptions{
 			Name:          "GameOverlay",
 			Title:         "Nexus Overlay",
-			Width:         250,
-			Height:        140,
+			Width:         400,
+			Height:        260,
 			DisableResize: true,
 			AlwaysOnTop:   true,
 			Hidden:        true,
@@ -136,13 +136,13 @@ func (m *GameOverlayManager) initializeOverlay() {
             overflow: hidden;
             color: white;
             font-family: Arial, sans-serif;
-            width: 250px;
-            height: 140px;
+            width: 400px;
+            height: 260px;
         }
         .overlay-content {
             background-color: rgba(0,0,0,0.8);
             border-radius: 5px;
-            border: 1px solid #00a8ff;
+			padding:20px;
             display: inline-block;
             text-shadow: 1px 1px 2px black;
             --wails-draggable: drag;  /* Make content draggable */

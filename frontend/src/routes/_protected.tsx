@@ -15,6 +15,7 @@ import { Events } from '@wailsio/runtime';
 
 export const Route = createFileRoute('/_protected')({
   component: DashboardLayout,
+
 });
 
 function DashboardLayout() {

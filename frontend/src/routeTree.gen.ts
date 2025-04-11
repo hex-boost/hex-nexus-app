@@ -11,15 +11,23 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as OverlayImport } from './routes/overlay'
 import { Route as LoginImport } from './routes/login'
 import { Route as ProtectedImport } from './routes/_protected'
 import { Route as IndexImport } from './routes/index'
+import { Route as ProtectedToolsIndexImport } from './routes/_protected/tools/index'
 import { Route as ProtectedSubscriptionIndexImport } from './routes/_protected/subscription/index'
 import { Route as ProtectedDashboardIndexImport } from './routes/_protected/dashboard/index'
 import { Route as ProtectedAccountsIndexImport } from './routes/_protected/accounts/index'
 import { Route as ProtectedAccountsIdImport } from './routes/_protected/accounts/$id'
 
 // Create/Update Routes
+
+const OverlayRoute = OverlayImport.update({
+  id: '/overlay',
+  path: '/overlay',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const LoginRoute = LoginImport.update({
   id: '/login',
@@ -36,6 +44,12 @@ const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRoute,
+} as any)
+
+const ProtectedToolsIndexRoute = ProtectedToolsIndexImport.update({
+  id: '/tools/',
+  path: '/tools/',
+  getParentRoute: () => ProtectedRoute,
 } as any)
 
 const ProtectedSubscriptionIndexRoute = ProtectedSubscriptionIndexImport.update(
@@ -89,6 +103,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginImport
       parentRoute: typeof rootRoute
     }
+    '/overlay': {
+      id: '/overlay'
+      path: '/overlay'
+      fullPath: '/overlay'
+      preLoaderRoute: typeof OverlayImport
+      parentRoute: typeof rootRoute
+    }
     '/_protected/accounts/$id': {
       id: '/_protected/accounts/$id'
       path: '/accounts/$id'
@@ -117,6 +138,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedSubscriptionIndexImport
       parentRoute: typeof ProtectedImport
     }
+    '/_protected/tools/': {
+      id: '/_protected/tools/'
+      path: '/tools'
+      fullPath: '/tools'
+      preLoaderRoute: typeof ProtectedToolsIndexImport
+      parentRoute: typeof ProtectedImport
+    }
   }
 }
 
@@ -127,6 +155,7 @@ interface ProtectedRouteChildren {
   ProtectedAccountsIndexRoute: typeof ProtectedAccountsIndexRoute
   ProtectedDashboardIndexRoute: typeof ProtectedDashboardIndexRoute
   ProtectedSubscriptionIndexRoute: typeof ProtectedSubscriptionIndexRoute
+  ProtectedToolsIndexRoute: typeof ProtectedToolsIndexRoute
 }
 
 const ProtectedRouteChildren: ProtectedRouteChildren = {
@@ -134,6 +163,7 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedAccountsIndexRoute: ProtectedAccountsIndexRoute,
   ProtectedDashboardIndexRoute: ProtectedDashboardIndexRoute,
   ProtectedSubscriptionIndexRoute: ProtectedSubscriptionIndexRoute,
+  ProtectedToolsIndexRoute: ProtectedToolsIndexRoute,
 }
 
 const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(
@@ -144,20 +174,24 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '': typeof ProtectedRouteWithChildren
   '/login': typeof LoginRoute
+  '/overlay': typeof OverlayRoute
   '/accounts/$id': typeof ProtectedAccountsIdRoute
   '/accounts': typeof ProtectedAccountsIndexRoute
   '/dashboard': typeof ProtectedDashboardIndexRoute
   '/subscription': typeof ProtectedSubscriptionIndexRoute
+  '/tools': typeof ProtectedToolsIndexRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '': typeof ProtectedRouteWithChildren
   '/login': typeof LoginRoute
+  '/overlay': typeof OverlayRoute
   '/accounts/$id': typeof ProtectedAccountsIdRoute
   '/accounts': typeof ProtectedAccountsIndexRoute
   '/dashboard': typeof ProtectedDashboardIndexRoute
   '/subscription': typeof ProtectedSubscriptionIndexRoute
+  '/tools': typeof ProtectedToolsIndexRoute
 }
 
 export interface FileRoutesById {
@@ -165,10 +199,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_protected': typeof ProtectedRouteWithChildren
   '/login': typeof LoginRoute
+  '/overlay': typeof OverlayRoute
   '/_protected/accounts/$id': typeof ProtectedAccountsIdRoute
   '/_protected/accounts/': typeof ProtectedAccountsIndexRoute
   '/_protected/dashboard/': typeof ProtectedDashboardIndexRoute
   '/_protected/subscription/': typeof ProtectedSubscriptionIndexRoute
+  '/_protected/tools/': typeof ProtectedToolsIndexRoute
 }
 
 export interface FileRouteTypes {
@@ -177,28 +213,34 @@ export interface FileRouteTypes {
     | '/'
     | ''
     | '/login'
+    | '/overlay'
     | '/accounts/$id'
     | '/accounts'
     | '/dashboard'
     | '/subscription'
+    | '/tools'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | ''
     | '/login'
+    | '/overlay'
     | '/accounts/$id'
     | '/accounts'
     | '/dashboard'
     | '/subscription'
+    | '/tools'
   id:
     | '__root__'
     | '/'
     | '/_protected'
     | '/login'
+    | '/overlay'
     | '/_protected/accounts/$id'
     | '/_protected/accounts/'
     | '/_protected/dashboard/'
     | '/_protected/subscription/'
+    | '/_protected/tools/'
   fileRoutesById: FileRoutesById
 }
 
@@ -206,12 +248,14 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ProtectedRoute: typeof ProtectedRouteWithChildren
   LoginRoute: typeof LoginRoute
+  OverlayRoute: typeof OverlayRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ProtectedRoute: ProtectedRouteWithChildren,
   LoginRoute: LoginRoute,
+  OverlayRoute: OverlayRoute,
 }
 
 export const routeTree = rootRoute
@@ -226,7 +270,8 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/_protected",
-        "/login"
+        "/login",
+        "/overlay"
       ]
     },
     "/": {
@@ -238,11 +283,15 @@ export const routeTree = rootRoute
         "/_protected/accounts/$id",
         "/_protected/accounts/",
         "/_protected/dashboard/",
-        "/_protected/subscription/"
+        "/_protected/subscription/",
+        "/_protected/tools/"
       ]
     },
     "/login": {
       "filePath": "login.tsx"
+    },
+    "/overlay": {
+      "filePath": "overlay.tsx"
     },
     "/_protected/accounts/$id": {
       "filePath": "_protected/accounts/$id.tsx",
@@ -258,6 +307,10 @@ export const routeTree = rootRoute
     },
     "/_protected/subscription/": {
       "filePath": "_protected/subscription/index.tsx",
+      "parent": "/_protected"
+    },
+    "/_protected/tools/": {
+      "filePath": "_protected/tools/index.tsx",
       "parent": "/_protected"
     }
   }
