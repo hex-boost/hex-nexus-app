@@ -181,6 +181,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 	leagueService := league.NewLeagueService(appInstance.Log().Riot(), accountsRepository, summonerService, lcuConn)
 	riotClient := riot.NewRiotClient(appInstance.Log().Riot(), captcha)
 	accountMonitor := league.NewAccountMonitor(appInstance.Log().Riot(), leagueService, riotClient, accountsRepository, summonerClient, lcuConn)
+	websocketService := league.NewWebSocketService(appInstance.Log().League(), accountMonitor, leagueService)
 	discordService := discord.New(appInstance.Log().Discord())
 
 	clientMonitor := league.NewClientMonitor(appInstance.Log().League(), accountMonitor, leagueService, riotClient, captcha)
@@ -302,13 +303,17 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		app.Logger.Info("Forced close requested, shutting down")
 		accountMonitor.Stop()
 		clientMonitor.Stop()
+		websocketService.Stop()
+
 	})
 	utilsBind.SetApp(app)
 	SetupSystemTray(app, mainWindow, icon16, accountMonitor, utilsBind)
 	clientMonitor.SetWindow(mainWindow)
 	appProtocol.SetWindow(mainWindow)
 	captcha.SetWindow(captchaWindow)
+	websocketService.SetWindow(app)
 	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(ctx *application.WindowEvent) {
+		websocketService.Start()
 		accountMonitor.Start()
 		clientMonitor.Start()
 

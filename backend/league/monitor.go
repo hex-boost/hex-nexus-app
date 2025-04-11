@@ -158,34 +158,49 @@ func (cm *ClientMonitor) checkClientState() {
 	}
 
 	if isLeagueClientRunning {
-
 		loggedInUsername := cm.accountMonitor.GetLoggedInUsername()
 
-		if cm.accountUpdateStatus.Username != loggedInUsername {
-			cm.accountUpdateStatus.IsUpdated = false
-		}
-		if !cm.accountUpdateStatus.IsUpdated && cm.leagueService.IsLCUConnectionReady() {
-			cm.logger.Info("Updating account for first time",
-				zap.String("username", loggedInUsername), zap.Any("updateStatus", cm.accountUpdateStatus))
+		if cm.leagueService.IsLCUConnectionReady() &&
+			loggedInUsername != "" &&
+			(!cm.accountUpdateStatus.IsUpdated || cm.accountUpdateStatus.Username != loggedInUsername) {
 
-			err := cm.leagueService.UpdateFromLCU(loggedInUsername)
-			if err != nil {
-				cm.logger.Error("Error updating account from LCU", zap.Error(err))
-			} else {
-				// Only mark as updated on success
-				cm.accountUpdateStatus.IsUpdated = true
-				cm.accountUpdateStatus.Username = loggedInUsername
-				cm.logger.Info("Account successfully updated on first login",
-					zap.String("username", cm.accountUpdateStatus.Username))
+			cm.logger.Sugar().Infow("Checking account update status",
+				"currentUsername", loggedInUsername,
+				"lastUpdatedUsername", cm.accountUpdateStatus.Username,
+				"isUpdated", cm.accountUpdateStatus.IsUpdated)
+
+			// Only update if this is a different account or not already updated
+			if cm.accountUpdateStatus.Username != loggedInUsername || !cm.accountUpdateStatus.IsUpdated {
+				cm.logger.Info("Updating account",
+					zap.String("username", loggedInUsername),
+					zap.Any("updateStatus", cm.accountUpdateStatus))
+
+				err := cm.leagueService.UpdateFromLCU(loggedInUsername)
+				if err != nil {
+					cm.logger.Error("Error updating account from LCU", zap.Error(err))
+					// Don't update status on failure so we can retry
+				} else {
+					// Store both values atomically to prevent race condition
+					cm.stateMutex.Lock()
+					cm.accountUpdateStatus.IsUpdated = true
+					cm.accountUpdateStatus.Username = loggedInUsername
+					cm.stateMutex.Unlock()
+
+					cm.logger.Info("Account successfully updated",
+						zap.String("username", loggedInUsername))
+				}
 			}
 		}
-	} else if cm.accountUpdateStatus.Username != "" && cm.accountUpdateStatus.IsUpdated {
-		cm.logger.Info("reseting account update status",
+	} else if cm.accountUpdateStatus.IsUpdated {
+		// Reset update status when league client is closed
+		cm.logger.Info("Resetting account update status",
 			zap.Any("oldUpdateStatus", cm.accountUpdateStatus))
+
+		cm.stateMutex.Lock()
 		cm.accountUpdateStatus.IsUpdated = false
 		cm.accountUpdateStatus.Username = ""
+		cm.stateMutex.Unlock()
 	}
-
 	// Get detailed client state if running
 	if isRiotClientRunning {
 		if !cm.riotClient.IsClientInitialized() {
@@ -222,11 +237,8 @@ func (cm *ClientMonitor) checkClientState() {
 		clientState = ClientStateOpen
 	}
 
-	// Handle state transitions and auth state resets
 	previousClientState := currentState.ClientState
 
-	// Special case: Reset auth state when transitioning from LOGGED_IN to any other state
-	// But only if LeagueService client is not running
 	if previousClientState == ClientStateLoggedIn && clientState != ClientStateLoggedIn && !isLeagueClientRunning {
 		cm.logger.Debug("Client was logged in but now requires login again, resetting auth state")
 		newState.AuthState = AuthStateNone

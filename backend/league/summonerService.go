@@ -26,39 +26,24 @@ func NewSummonerService(summonerClient *SummonerClient, repoClient *repository.A
 
 func (l *SummonerService) UpdateFromLCU(username string) (*types.SummonerRented, error) {
 	var (
-		currentSummoner types.CurrentSummoner
-		champions       []int
-		skins           []int
-		currencyMap     map[string]interface{}
-		rankingMap      *types.RankedStats
-		region          string
-		mu              sync.Mutex
-		ban             types.Ban
+		champions   []int
+		skins       []int
+		currencyMap map[string]interface{}
+		rankingMap  *types.RankedStats
+		userinfo    types.UserInfo
+		mu          sync.Mutex
 	)
 
 	eg, _ := errgroup.WithContext(context.Background())
 	eg.Go(func() error {
 
-		userinfo, err := l.summonerClient.GetUserInfo()
+		userinfoResponse, err := l.summonerClient.GetUserInfo()
 		if err != nil {
 			l.logger.Error("Failed to get current summoner")
 			return err
 		}
 		mu.Lock()
-		ban = userinfo.Ban
-		mu.Unlock()
-		return nil
-	})
-
-	eg.Go(func() error {
-
-		summoner, err := l.summonerClient.GetCurrentSummoner()
-		if err != nil {
-			l.logger.Error("Failed to get current summoner")
-			return err
-		}
-		mu.Lock()
-		currentSummoner = *summoner
+		userinfo = *userinfoResponse
 		mu.Unlock()
 		return nil
 	})
@@ -111,18 +96,6 @@ func (l *SummonerService) UpdateFromLCU(username string) (*types.SummonerRented,
 		return nil
 	})
 
-	eg.Go(func() error {
-		friendPresence, err := l.summonerClient.GetLolChat()
-		if err != nil {
-			l.logger.Error("Failed to get region")
-			return err
-		}
-		mu.Lock()
-		region = friendPresence.PlatformId
-		mu.Unlock()
-		return nil
-	})
-
 	if err := eg.Wait(); err != nil {
 		return nil, err
 	}
@@ -142,17 +115,17 @@ func (l *SummonerService) UpdateFromLCU(username string) (*types.SummonerRented,
 	summoner := &types.SummonerRented{
 		Username: username,
 		SummonerBase: types.SummonerBase{
-			Tagline:      currentSummoner.TagLine,
+			Tagline:      userinfo.Acct.TagLine,
 			LCUchampions: champions,
 
 			LCUskins:    skins,
 			BlueEssence: currencies.LolBlueEssence,
 			RiotPoints:  currencies.RP,
 			Rankings:    *rankingMap,
-			Server:      region,
-			Ban:         ban,
+			Server:      userinfo.LOL.CPID,
+			Ban:         userinfo.Ban,
 		},
-		GameName: currentSummoner.GameName,
+		GameName: userinfo.Acct.GameName,
 	}
 
 	return summoner, nil
