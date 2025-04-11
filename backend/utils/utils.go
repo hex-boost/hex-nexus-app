@@ -70,6 +70,7 @@ func (u *Utils) ForceCloseAllClients() error {
 		"RiotClientUx.exe",
 		"RiotClientUxRender.exe",
 		"Riot Client.exe",
+		//"League of Legends.exe",
 		"LeagueCrashHandler.exe",
 		"LeagueCrashHandler64.exe",
 		"LeagueClient.exe",

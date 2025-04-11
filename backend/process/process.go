@@ -166,3 +166,22 @@ func CleanupCache() {
 		}
 	}
 }
+
+// Run processChan, stop := process.MonitorProcesses(false, 500*time.Millisecond)
+// defer stop()
+//
+// fmt.Println("Monitoring for new processes. Press Ctrl+C to exit.")
+//
+// // Read from channel until program is terminated
+// for process := range processChan {
+// fmt.Printf("New process: %s (PID: %d)\n", process.Name, process.PID)
+// if process.CommandLine != "" {
+// fmt.Printf("  Command Line: %s\n", process.CommandLine)
+// }
+// if process.IsLeagueClient {
+// fmt.Println("  League of Legends client detected!")
+// }
+// }
+// StartWatchdog spawns a watchdog process that will monitor the main application
+// and perform cleanup if the main application crashes
+// Add this to your wails.go package-level variables

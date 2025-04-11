@@ -7,6 +7,7 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/config"
 	"github.com/hex-boost/hex-nexus-app/backend/discord"
 	"github.com/hex-boost/hex-nexus-app/backend/league"
+	gameOverlay "github.com/hex-boost/hex-nexus-app/backend/overlay"
 	"github.com/hex-boost/hex-nexus-app/backend/protocol"
 	"github.com/hex-boost/hex-nexus-app/backend/repository"
 	"github.com/hex-boost/hex-nexus-app/backend/riot"
@@ -14,6 +15,7 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/updater"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/hex-boost/hex-nexus-app/backend/watchdog"
+
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
 	"go.uber.org/zap"
@@ -55,25 +57,6 @@ func SetupSystemTray(app *application.App, window *application.WebviewWindow, ic
 	systray.SetMenu(menu)
 	return systray
 }
-
-// Run processChan, stop := process.MonitorProcesses(false, 500*time.Millisecond)
-// defer stop()
-//
-// fmt.Println("Monitoring for new processes. Press Ctrl+C to exit.")
-//
-// // Read from channel until program is terminated
-// for process := range processChan {
-// fmt.Printf("New process: %s (PID: %d)\n", process.Name, process.PID)
-// if process.CommandLine != "" {
-// fmt.Printf("  Command Line: %s\n", process.CommandLine)
-// }
-// if process.IsLeagueClient {
-// fmt.Println("  League of Legends client detected!")
-// }
-// }
-// StartWatchdog spawns a watchdog process that will monitor the main application
-// and perform cleanup if the main application crashes
-// Add this to your wails.go package-level variables
 
 func StartWatchdog() error {
 	execPath, err := os.Executable()
@@ -199,6 +182,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 					window.OpenDevTools()
 				}
 			},
+
 			// Optional: Add Ctrl+Shift+I as an alternative
 			"ctrl+shift+i": func(window *application.WebviewWindow) {
 				if window != nil {
@@ -290,6 +274,9 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 			OpenInspectorOnStartup: true,
 		},
 	)
+
+	overlayWindow := gameOverlay.CreateGameOverlay(app)
+	overlayManager := gameOverlay.NewGameOverlayManager(overlayWindow, appInstance.Log().League())
 	mainWindow.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
 		app.Logger.Info("Window closing event triggered")
 
@@ -304,6 +291,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		accountMonitor.Stop()
 		clientMonitor.Stop()
 		websocketService.Stop()
+		overlayManager.Stop() // Stop the overlay manager
 
 	})
 	utilsBind.SetApp(app)
@@ -317,6 +305,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		websocketService.Start()
 		accountMonitor.Start()
 		clientMonitor.Start()
+		overlayManager.Start()
 
 	})
 
