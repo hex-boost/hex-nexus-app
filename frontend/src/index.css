@@ -150,3 +150,47 @@ body {
 }
 
 
+.game-overlay-shadow {
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+}
+
+.game-overlay-gradient {
+    background: linear-gradient(135deg, rgba(30, 58, 138, 0.9), rgba(37, 99, 235, 0.9));
+}
+
+/* Blitz.gg style overlay */
+.blitz-overlay {
+    background-color: rgba(17, 24, 39, 0.85);
+    border: 1px solid rgba(55, 65, 81, 0.5);
+}
+
+.blitz-stat {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 8px;
+}
+
+.blitz-stat:not(:last-child) {
+    border-bottom: 1px solid rgba(55, 65, 81, 0.5);
+}
+
+.blitz-label {
+    color: rgba(209, 213, 219, 0.9);
+    font-weight: 600;
+}
+
+.blitz-value {
+    font-weight: 700;
+}
+
+.blitz-value.positive {
+    color: rgb(52, 211, 153);
+}
+
+.blitz-value.negative {
+    color: rgb(239, 68, 68);
+}
+
+.blitz-value.neutral {
+    color: rgb(96, 165, 250);
+}
