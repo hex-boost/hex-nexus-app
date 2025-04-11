@@ -60,14 +60,15 @@ func IsWindowVisible(hwnd windows.HWND) bool {
 func CreateGameOverlay(app *application.App) *application.WebviewWindow {
 	overlay := app.NewWebviewWindowWithOptions(
 		application.WebviewWindowOptions{
-			Name:          "GameOverlay",
+			Name:          "Overlay",
 			Title:         "Nexus Overlay",
 			Width:         400,
 			Height:        260,
 			DisableResize: true,
 			AlwaysOnTop:   true,
-			Hidden:        true,
+			Hidden:        false,
 			Frameless:     true,
+			URL:           "/?target=overlay",
 
 			Windows: application.WindowsWindow{
 				Theme:                             1, // Use dark theme
@@ -124,48 +125,14 @@ func (m *GameOverlayManager) savePosition(x, y int) error {
 
 	return os.WriteFile(m.configPath, data, 0644)
 }
-func (m *GameOverlayManager) initializeOverlay() {
-	m.overlay.SetHTML(`<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        body {
-            background-color: transparent;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            color: white;
-            font-family: Arial, sans-serif;
-            width: 400px;
-            height: 260px;
-        }
-        .overlay-content {
-            background-color: rgba(0,0,0,0.8);
-            border-radius: 5px;
-			padding:20px;
-            display: inline-block;
-            text-shadow: 1px 1px 2px black;
-            --wails-draggable: drag;  /* Make content draggable */
-        }
-    </style>
-</head>
-<body>
-<div class="overlay-content">
-    <h3 id="status">Nexus Overlay Active</h3>
-    <p id="game-text">Press Ctrl+Shift+B to toggle visibility</p>
-    <p>Press Ctrl+Shift+M to toggle click-through</p>
-</div>
 
-<script>
-    window.runtime.EventsOn("overlay:update", (message) => {
-        document.getElementById("game-text").textContent = message;
-    });
-</script>
-</body>
-</html>`)
-}
+//	func (m *GameOverlayManager) initializeOverlay() {
+//		m.overlay.OnWindowEvent(events.Common.WindowRuntimeReady, func(event *application.WindowEvent) {
+//			m.overlay.EmitEvent("overlay:navigate")
+//		})
+//	}
 func (m *GameOverlayManager) Start() {
-	m.initializeOverlay()
+	//m.initializeOverlay()
 	m.overlay.IsIgnoreMouseEvents()
 
 	// Register frontend bindings

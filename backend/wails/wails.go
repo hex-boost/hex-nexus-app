@@ -227,7 +227,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 			application.NewService(stripeService),
 		},
 		Assets: application.AssetOptions{
-			Handler: application.AssetFileServerFS(assets),
+			Handler: application.BundledAssetFileServer(assets),
 		},
 	})
 

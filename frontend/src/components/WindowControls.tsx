@@ -11,6 +11,7 @@ type Position = {
 
 export function WindowControls({ className }: { className?: string }) {
   const window = Window;
+  Window.Get('fodase');
   const [isMaximized, setIsMaximized] = useState(false);
   const [previousSize, setPreviousSize] = useState<any | null>(null);
   const [previousPosition, setPreviousPosition] = useState<Position | null>();
