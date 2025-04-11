@@ -97,7 +97,7 @@ export function useLeagueManager({
               handleOpenCaptchaWebview();
             },
           },
-          duration: 10000,
+          duration: 100000000,
         });
       }
     },

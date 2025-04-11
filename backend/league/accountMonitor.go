@@ -206,7 +206,7 @@ func (am *AccountMonitor) getUsernameByLeagueClient() (string, error) {
 
 	err := am.LCUConnection.InitializeConnection()
 	if err != nil || am.LCUConnection.client == nil {
-		am.logger.Error("Failed to initialize League client connection",
+		am.logger.Debug("Failed to initialize League client connection",
 			zap.Error(err),
 			zap.String("errorType", fmt.Sprintf("%T", err)))
 		return "", errors.New("failed to initialize League client connection")
@@ -214,7 +214,7 @@ func (am *AccountMonitor) getUsernameByLeagueClient() (string, error) {
 
 	currentSummoner, err := am.summoner.GetLoginSession()
 	if err != nil {
-		am.logger.Error("Failed to get current summoner",
+		am.logger.Debug("Failed to get current summoner",
 			zap.Error(err),
 			zap.String("errorType", fmt.Sprintf("%T", err)))
 		return "", errors.New("failed to get current summoner")
@@ -229,7 +229,7 @@ func (am *AccountMonitor) GetLoggedInUsername() string {
 	} else if am.leagueService.IsRunning() {
 		leagueCurrentUsername, err := am.getUsernameByLeagueClient()
 		if err != nil {
-			am.logger.Error("Failed to get current summoner from League client",
+			am.logger.Debug("Failed to get current summoner from League client",
 				zap.Error(err),
 				zap.String("errorType", fmt.Sprintf("%T", err)))
 			return ""
@@ -273,7 +273,7 @@ func (am *AccountMonitor) checkCurrentAccount() {
 
 		if accountUsername == currentUsername {
 			isNexusAccount = true
-			am.logger.Info("Match found! Current account is a Nexus-managed account",
+			am.logger.Debug("Match found! Current account is a Nexus-managed account",
 				zap.String("summonerName", currentUsername))
 			break
 		}

@@ -235,7 +235,9 @@ type RankedDataV2 struct {
 type RCUUserinfo struct {
 	UserInfo string `json:"userInfo"`
 }
-
+type UserinfoJWT struct {
+	UserInfo string `json:"userInfo"`
+}
 type UserInfo struct {
 	Country             string      `json:"country"`
 	Sub                 string      `json:"sub"`
@@ -260,7 +262,6 @@ type UserInfo struct {
 	JTI                 string      `json:"jti"`
 	Username            string      `json:"username"`
 }
-
 type LOLAccount struct {
 	SummonerID    int    `json:"summoner_id"`
 	ProfileIcon   int    `json:"profile_icon"`
@@ -305,4 +306,28 @@ type Account struct {
 	GameName  string `json:"game_name"`
 	TagLine   string `json:"tag_line"`
 	CreatedAt int64  `json:"created_at"`
+}
+type ChampionJWT struct {
+	Sub   string `json:"sub"`
+	Tiers struct {
+	} `json:"tiers"`
+	Containsf2P bool   `json:"containsf2P"`
+	ShardId     string `json:"shardId"`
+	Exp         int    `json:"exp"`
+	Iat         int    `json:"iat"`
+	Items       struct {
+		CHAMPION []int `json:"CHAMPION"`
+	} `json:"items"`
+}
+type SkinJWT struct {
+	Sub   string `json:"sub"`
+	Tiers struct {
+	} `json:"tiers"`
+	Containsf2P bool   `json:"containsf2P"`
+	ShardId     string `json:"shardId"`
+	Exp         int    `json:"exp"`
+	Iat         int    `json:"iat"`
+	Items       struct {
+		SKIN []int `json:"CHAMPION_SKIN"`
+	} `json:"items"`
 }

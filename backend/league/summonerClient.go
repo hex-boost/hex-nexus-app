@@ -28,14 +28,13 @@ func NewSummonerClient(lcu *LCUConnection, logger *utils.Logger) *SummonerClient
 }
 
 func (s *SummonerClient) GetLoginSession() (*types.LoginSession, error) {
-	s.logger.Debug("Fetching login session information")
 
 	var result types.LoginSession
 	resp, err := s.lcu.client.R().SetResult(&result).
 		Get("/lol-login/v1/session")
 
 	if err != nil {
-		s.logger.Error("Error fetching login session data", zap.Error(err))
+		s.logger.Debug("Error fetching login session data", zap.Error(err))
 		return nil, err
 	}
 
@@ -75,8 +74,7 @@ func (s *SummonerClient) getAssetsIds(assets []interface{}) ([]int, error) {
 
 	s.logger.Debug("Processing assets", zap.Int("count", len(assets)))
 
-	for i, asset := range assets {
-		s.logger.Debug("Asset structure", zap.Int("index", i), zap.Any("asset", asset))
+	for _, asset := range assets {
 
 		switch v := asset.(type) {
 		case float64:
@@ -114,6 +112,19 @@ func (s *SummonerClient) getAssetsIds(assets []interface{}) ([]int, error) {
 	return result, nil
 }
 
+type T struct {
+	Sub   string `json:"sub"`
+	Tiers struct {
+	} `json:"tiers"`
+	Containsf2P bool   `json:"containsf2P"`
+	ShardId     string `json:"shardId"`
+	Exp         int    `json:"exp"`
+	Iat         int    `json:"iat"`
+	Items       struct {
+		CHAMPION []int `json:"CHAMPION"`
+	} `json:"items"`
+}
+
 func (s *SummonerClient) GetChampions() ([]int, error) {
 	s.logger.Debug("Fetching owned champions")
 	var encodedData string
@@ -131,23 +142,19 @@ func (s *SummonerClient) GetChampions() ([]int, error) {
 		return nil, errors.New(errMsg)
 	}
 
-	decoded, err := s.lcuUtils.DecodeRiotJWT(encodedData)
+	var payload types.ChampionJWT
+	err = s.lcuUtils.DecodeRiotJWT(encodedData, &payload)
 	if err != nil {
 		return nil, err
 	}
-
-	champions, ok := decoded.Payload["CHAMPION"].([]interface{})
-	if !ok {
-		return nil, errors.New("could not parse champions data")
-	}
-	championsIds, err := s.getAssetsIds(champions)
+	championsIds := payload.Items.CHAMPION
 
 	s.logger.Info("Successfully retrieved champions", zap.Int("count", len(championsIds)))
 	return championsIds, nil
 }
 
 func (s *SummonerClient) GetSkins() ([]int, error) {
-	s.logger.Debug("Fetching owned champions")
+	s.logger.Debug("Fetching owned skins")
 	var encodedData string
 	resp, err := s.lcu.client.R().SetResult(&encodedData).
 		Get("/lol-inventory/v1/signedInventory/simple?inventoryTypes=%5B%22CHAMPION_SKIN%22%5D")
@@ -163,18 +170,15 @@ func (s *SummonerClient) GetSkins() ([]int, error) {
 		return nil, errors.New(errMsg)
 	}
 
-	decoded, err := s.lcuUtils.DecodeRiotJWT(encodedData)
+	var payload types.SkinJWT
+	err = s.lcuUtils.DecodeRiotJWT(encodedData, &payload)
 	if err != nil {
 		return nil, err
 	}
 
-	skins, ok := decoded.Payload["CHAMPION_SKIN"].([]interface{})
-	if !ok {
-		return nil, errors.New("could not parse champions data")
-	}
-	skinsIds, err := s.getAssetsIds(skins)
+	skinsIds := payload.Items.SKIN
 
-	s.logger.Info("Successfully retrieved champions", zap.Int("count", len(skins)))
+	s.logger.Info("Successfully retrieved skins", zap.Int("count", len(skinsIds)))
 	return skinsIds, nil
 }
 
@@ -207,7 +211,7 @@ func (s *SummonerClient) GetCurrency() (map[string]interface{}, error) {
 	return result, nil
 }
 
-func (s *SummonerClient) GetRanking() (map[string]interface{}, error) {
+func (s *SummonerClient) GetRanking() (*types.RankedStats, error) {
 	s.logger.Info("Fetching ranking data")
 
 	resp, err := s.lcu.client.R().
@@ -234,48 +238,68 @@ func (s *SummonerClient) GetRanking() (map[string]interface{}, error) {
 		return nil, errors.New("could not parse queue map")
 	}
 
-	result := make(map[string]interface{})
-	for queue, info := range queueMap {
-		if queue == "RANKED_SOLO_5x5" || queue == "RANKED_FLEX_SR" {
-			result[queue] = info
-		}
+	var result types.RankedStats
+	if flexData, ok := queueMap["RANKED_FLEX_SR"].(map[string]interface{}); ok {
+		result.RankedFlexSR = flexData
 	}
 
+	if soloData, ok := queueMap["RANKED_SOLO_5x5"].(map[string]interface{}); ok {
+		result.RankedSolo5x5 = soloData
+	}
 	s.logger.Info("Ranking data retrieved")
 	s.logger.Debug("Ranking details",
-		zap.Any("FLEX", result["RANKED_FLEX_SR"]),
-		zap.Any("SOLO", result["RANKED_SOLO_5x5"]))
+		zap.Any("FLEX", result.RankedFlexSR),
+		zap.Any("SOLO", result.RankedSolo5x5))
 
-	return result, nil
+	return &result, nil
 }
 
-func (s *SummonerClient) GetRegion() (string, error) {
+func (s *SummonerClient) GetLolChat() (*types.FriendPresence, error) {
 	s.logger.Debug("Fetching account region")
-
-	resp, err := s.lcu.client.R().
-		Get("/lol-chat/v1/me")
+	var friendPresence types.FriendPresence
+	resp, err := s.lcu.client.R().SetResult(friendPresence).Get("/lol-chat/v1/me")
 
 	if err != nil {
 		s.logger.Error("Error fetching region data", zap.Error(err))
-		return "UNKNOWN", err
+		return nil, err
 	}
 
 	if resp.StatusCode() != http.StatusOK {
 		errMsg := fmt.Sprintf("Failed to get region status: %d", resp.StatusCode())
 		s.logger.Warn(errMsg)
-		return "UNKNOWN", errors.New(errMsg)
+		return nil, errors.New(errMsg)
 	}
 
 	var data map[string]interface{}
 	if err := json.Unmarshal(resp.Body(), &data); err != nil {
-		return "UNKNOWN", err
+		return nil, err
 	}
 
-	region, ok := data["platformId"].(string)
-	if !ok {
-		return "UNKNOWN", errors.New("could not parse region")
+	s.logger.Debug("Summoner region retrieved", zap.String("region", friendPresence.PlatformId))
+	return &friendPresence, nil
+}
+
+func (s *SummonerClient) GetUserInfo() (*types.UserInfo, error) {
+	s.logger.Debug("Fetching account userinfo")
+	var encodedUserinfoJWT types.UserinfoJWT
+	resp, err := s.lcu.client.R().SetResult(&encodedUserinfoJWT).Get("/lol-rso-auth/v1/authorization/userinfo")
+
+	if err != nil {
+		s.logger.Error("Error fetching userinfo data", zap.Error(err))
+		return nil, err
 	}
 
-	s.logger.Info("Summoner region retrieved", zap.String("region", region))
-	return region, nil
+	if resp.StatusCode() != http.StatusOK {
+		errMsg := fmt.Sprintf("Failed to get userinfo status: %d", resp.StatusCode())
+		s.logger.Warn(errMsg)
+		return nil, errors.New(errMsg)
+	}
+
+	var decodedUserinfo types.UserInfo
+	err = s.lcuUtils.DecodeRiotJWT(encodedUserinfoJWT.UserInfo, &decodedUserinfo)
+	if err != nil {
+		s.logger.Error("Error decoding userinfo data", zap.Error(err))
+		return nil, err
+	}
+	return &decodedUserinfo, nil
 }

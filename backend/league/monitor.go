@@ -69,7 +69,6 @@ func NewClientMonitor(logger *utils.Logger, accountMonitor *AccountMonitor, leag
 	initialState := &LeagueClientState{
 		ClientState: ClientStateClosed,
 		AuthState:   AuthStateNone,
-
 		LastUpdated: time.Now(),
 	}
 
@@ -141,6 +140,8 @@ func (cm *ClientMonitor) UpdateAuthState(authState LeagueAuthStateType, errorMsg
 	cm.updateState(newState)
 }
 
+// HasBeenUpdatedBefore checks if the account with the given username has been updated in this session
+
 func (cm *ClientMonitor) checkClientState() {
 	// Check if client is running
 	isRiotClientRunning := cm.riotClient.IsRunning()
@@ -157,27 +158,38 @@ func (cm *ClientMonitor) checkClientState() {
 	}
 
 	if isLeagueClientRunning {
-		cm.logger.Sugar().Infow("LeagueService client running with previous logged-in state, maintaining state",
-			"leagueClientRunning", isLeagueClientRunning,
-			"riotClientRunning", isRiotClientRunning)
-		if !cm.accountUpdateStatus.IsUpdated {
-			loggedInUsername := cm.accountMonitor.GetLoggedInUsername()
+
+		loggedInUsername := cm.accountMonitor.GetLoggedInUsername()
+
+		if cm.accountUpdateStatus.Username != loggedInUsername {
+			cm.accountUpdateStatus.IsUpdated = false
+		}
+		if !cm.accountUpdateStatus.IsUpdated && cm.leagueService.IsLCUConnectionReady() {
+			cm.logger.Info("Updating account for first time",
+				zap.String("username", loggedInUsername), zap.Any("updateStatus", cm.accountUpdateStatus))
+
 			err := cm.leagueService.UpdateFromLCU(loggedInUsername)
 			if err != nil {
 				cm.logger.Error("Error updating account from LCU", zap.Error(err))
+			} else {
+				// Only mark as updated on success
+				cm.accountUpdateStatus.IsUpdated = true
+				cm.accountUpdateStatus.Username = loggedInUsername
+				cm.logger.Info("Account successfully updated on first login",
+					zap.String("username", cm.accountUpdateStatus.Username))
 			}
-
 		}
-		return
-	} else {
-		cm.accountUpdateStatus.Username = ""
+	} else if cm.accountUpdateStatus.Username != "" && cm.accountUpdateStatus.IsUpdated {
+		cm.logger.Info("reseting account update status",
+			zap.Any("oldUpdateStatus", cm.accountUpdateStatus))
 		cm.accountUpdateStatus.IsUpdated = false
+		cm.accountUpdateStatus.Username = ""
 	}
 
 	// Get detailed client state if running
 	if isRiotClientRunning {
 		if !cm.riotClient.IsClientInitialized() {
-			cm.logger.Info("Client running but not initialized, initializing...")
+			cm.logger.Debug("Client running but not initialized, initializing...")
 			err := cm.riotClient.InitializeRestyClient()
 			if err != nil {
 				// Change from Error to Errorw for structured logging
@@ -216,7 +228,7 @@ func (cm *ClientMonitor) checkClientState() {
 	// Special case: Reset auth state when transitioning from LOGGED_IN to any other state
 	// But only if LeagueService client is not running
 	if previousClientState == ClientStateLoggedIn && clientState != ClientStateLoggedIn && !isLeagueClientRunning {
-		cm.logger.Info("Client was logged in but now requires login again, resetting auth state")
+		cm.logger.Debug("Client was logged in but now requires login again, resetting auth state")
 		newState.AuthState = AuthStateNone
 	} else if previousClientState == ClientStateClosed && clientState == ClientStateLoginReady {
 		time.Sleep(3 * time.Second)
@@ -359,4 +371,31 @@ func (cm *ClientMonitor) LaunchClient() error {
 	}
 
 	return nil
+}
+
+// IsLCUConnectionReady checks if the League Client connection is fully established and ready
+func (lc *LeagueService) IsLCUConnectionReady() bool {
+	// Ensure client is initialized
+	if lc.LCUconnection.client == nil {
+		err := lc.LCUconnection.InitializeConnection()
+		if err != nil {
+			lc.logger.Debug("Failed to initialize LCU connection", zap.Error(err))
+			return false
+		}
+	}
+
+	// Test connection with a simple endpoint
+	resp, err := lc.LCUconnection.client.R().Get("/lol-summoner/v1/current-summoner")
+	if err != nil {
+		lc.logger.Debug("LCU connection test failed", zap.Error(err))
+		return false
+	}
+
+	// Check if we got a valid response (2xx status)
+	if resp.StatusCode() >= 200 && resp.StatusCode() < 300 {
+		return true
+	}
+
+	lc.logger.Debug("LCU connection not ready", zap.Int("statusCode", resp.StatusCode()))
+	return false
 }

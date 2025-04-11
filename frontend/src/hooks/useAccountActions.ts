@@ -1,6 +1,5 @@
 import type { AccountType, UserType } from '@/types/types';
 import type { StrapiError } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
-import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
 import { useGoFunctions } from '@/hooks/useGoBindings.ts';
 import { strapiClient } from '@/lib/strapi';
 import { AccountMonitor } from '@league';
@@ -10,14 +9,12 @@ import { toast } from 'sonner';
 
 export function useAccountActions({
   account,
-  onAccountChange,
   user,
 }: {
   account: AccountType;
   user?: UserType;
   onAccountChange: () => Promise<void>;
 }) {
-  const { refetchUser } = useCommonFetch();
   const { Utils } = useGoFunctions();
   const queryClient = useQueryClient();
 

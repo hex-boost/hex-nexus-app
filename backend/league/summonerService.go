@@ -30,14 +30,28 @@ func (l *SummonerService) UpdateFromLCU(username string) (*types.SummonerRented,
 		champions       []int
 		skins           []int
 		currencyMap     map[string]interface{}
-		rankingMap      map[string]interface{}
+		rankingMap      *types.RankedStats
 		region          string
 		mu              sync.Mutex
+		ban             types.Ban
 	)
 
 	eg, _ := errgroup.WithContext(context.Background())
+	eg.Go(func() error {
+
+		userinfo, err := l.summonerClient.GetUserInfo()
+		if err != nil {
+			l.logger.Error("Failed to get current summoner")
+			return err
+		}
+		mu.Lock()
+		ban = userinfo.Ban
+		mu.Unlock()
+		return nil
+	})
 
 	eg.Go(func() error {
+
 		summoner, err := l.summonerClient.GetCurrentSummoner()
 		if err != nil {
 			l.logger.Error("Failed to get current summoner")
@@ -98,13 +112,13 @@ func (l *SummonerService) UpdateFromLCU(username string) (*types.SummonerRented,
 	})
 
 	eg.Go(func() error {
-		reg, err := l.summonerClient.GetRegion()
+		friendPresence, err := l.summonerClient.GetLolChat()
 		if err != nil {
 			l.logger.Error("Failed to get region")
 			return err
 		}
 		mu.Lock()
-		region = reg
+		region = friendPresence.PlatformId
 		mu.Unlock()
 		return nil
 	})
@@ -125,33 +139,18 @@ func (l *SummonerService) UpdateFromLCU(username string) (*types.SummonerRented,
 		}
 	}
 
-	rankedStats := types.RankedStats{
-		RankedFlexSR:  make(map[string]interface{}),
-		RankedSolo5x5: make(map[string]interface{}),
-	}
-
-	if flexVal, ok := rankingMap["RANKED_FLEX_SR"]; ok {
-		if flexMap, ok := flexVal.(map[string]interface{}); ok {
-			rankedStats.RankedFlexSR = flexMap
-		}
-	}
-
-	if soloVal, ok := rankingMap["RANKED_SOLO_5x5"]; ok {
-		if soloMap, ok := soloVal.(map[string]interface{}); ok {
-			rankedStats.RankedSolo5x5 = soloMap
-		}
-	}
-
 	summoner := &types.SummonerRented{
 		Username: username,
 		SummonerBase: types.SummonerBase{
 			Tagline:      currentSummoner.TagLine,
 			LCUchampions: champions,
-			LCUskins:     skins,
-			BlueEssence:  currencies.LolBlueEssence,
-			RiotPoints:   currencies.RP,
-			Rankings:     rankedStats,
-			Server:       region,
+
+			LCUskins:    skins,
+			BlueEssence: currencies.LolBlueEssence,
+			RiotPoints:  currencies.RP,
+			Rankings:    *rankingMap,
+			Server:      region,
+			Ban:         ban,
 		},
 		GameName: currentSummoner.GameName,
 	}

@@ -10,7 +10,7 @@ import (
 
 type LeagueService struct {
 	LCUconnection   *LCUConnection
-	api             *repository.AccountsRepository
+	Api             *repository.AccountsRepository // Changed from api to Api for public access
 	summonerService *SummonerService
 	logger          *utils.Logger
 }
@@ -18,7 +18,7 @@ type LeagueService struct {
 func NewLeagueService(logger *utils.Logger, api *repository.AccountsRepository, summonerService *SummonerService, lcuConnection *LCUConnection) *LeagueService {
 	return &LeagueService{
 		LCUconnection:   lcuConnection,
-		api:             api,
+		Api:             api, // Updated field name
 		logger:          logger,
 		summonerService: summonerService,
 	}
@@ -95,8 +95,11 @@ func (lc *LeagueService) WaitInventoryIsReady() {
 func (lc *LeagueService) IsInventoryReady() bool {
 
 	if lc.LCUconnection.client == nil {
-		lc.logger.Debug("LCU client not initialized")
-		return false
+		err := lc.LCUconnection.InitializeConnection()
+		if err != nil {
+			lc.logger.Debug("LCU client not initialized")
+			return false
+		}
 	}
 
 	var result bool
@@ -122,9 +125,10 @@ func (lc *LeagueService) UpdateFromLCU(username string) error {
 		lc.logger.Error("Failed to update account from LCU", zap.Error(err))
 		return err
 	}
-	err = lc.api.Save(*summonerRented)
+
+	err = lc.Api.Save(*summonerRented) // You may need to update the repository to accept the new format
 	if err != nil {
-		lc.logger.Error("failed to save account to dabase", zap.Error(err))
+		lc.logger.Error("failed to save account to database", zap.Error(err))
 		return err
 	}
 	return nil

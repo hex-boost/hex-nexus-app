@@ -79,8 +79,7 @@ func (rc *RiotClient) WaitUntilAuthenticationIsReady(timeout time.Duration) erro
 			continue
 		}
 
-		rc.logger.Info("Riot client is opened and auth state is valid")
-		rc.logger.Info("Credentials:",
+		rc.logger.Debug("Riot client is opened and auth state is valid! Credentials:",
 			zap.Int("pid", pid),
 			zap.String("port", port))
 		return nil

@@ -31,7 +31,7 @@ func NewLCUConnection(logger *utils.Logger) *LCUConnection {
 }
 
 func (c *LCUConnection) InitializeConnection() error {
-	c.logger.Info("Initializing LeagueService client connection")
+	c.logger.Debug("Initializing LeagueService client connection")
 
 	port, token, _, err := c.getLeagueCredentials()
 	if err != nil {
@@ -47,7 +47,7 @@ func (c *LCUConnection) InitializeConnection() error {
 	client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 
 	c.client = client
-	c.logger.Info("Client connection initialized successfully")
+	c.logger.Debug("Client connection initialized successfully")
 
 	return nil
 }
@@ -91,7 +91,7 @@ func (c *LCUConnection) getLeagueCredentials() (port, token, pid string, err err
 	token = tokenMatches[1]
 	pid = pidMatches[1]
 
-	c.logger.Info("Found LeagueService client",
+	c.logger.Debug("Found LeagueService client",
 		zap.String("port", port),
 		zap.String("pid", pid))
 
@@ -126,3 +126,4 @@ func (c *LCUConnection) WaitUntilReady() error {
 		}
 	}
 }
+func (c *LCUConnection)

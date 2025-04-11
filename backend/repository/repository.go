@@ -24,7 +24,12 @@ func (s *AccountsRepository) Save(summoner types.SummonerRented) error {
 	client.SetHeader("Content-Type", "application/json")
 	client.SetHeader("Accept", "application/json")
 	client.SetAuthToken(config.RefreshApiKey)
-	req := client.R().SetBody(summoner)
+	marshalledSummoner, err := summoner.MarshalJSON()
+	if err != nil {
+		s.api.Logger.Error("error marshalling summoner", zap.Error(err))
+		return err
+	}
+	req := client.R().SetBody(marshalledSummoner)
 
 	// Make the request manually instead of using s.api.Put
 	resp, err := req.Put("/api/accounts/refresh")
@@ -39,6 +44,7 @@ func (s *AccountsRepository) Save(summoner types.SummonerRented) error {
 
 	return nil
 }
+
 func (s *AccountsRepository) GetAllRented() ([]types.SummonerRented, error) {
 	var summoners types.RentedAccountsResponse
 	_, err := s.api.Get("/api/accounts/rented", &summoners)
@@ -46,8 +52,8 @@ func (s *AccountsRepository) GetAllRented() ([]types.SummonerRented, error) {
 		return nil, err
 	}
 	return summoners.Data, nil
-
 }
+
 func (s *AccountsRepository) GetAll() ([]types.SummonerBase, error) {
 	var summoners []types.SummonerBase
 	_, err := s.api.Get("/api/accounts/available", &summoners)
@@ -55,5 +61,4 @@ func (s *AccountsRepository) GetAll() ([]types.SummonerBase, error) {
 		return nil, err
 	}
 	return summoners, nil
-
 }
