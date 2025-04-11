@@ -51,7 +51,7 @@ const (
 
 type ClientMonitor struct {
 	accountUpdateStatus AccountUpdateStatus
-	app                 *application.WebviewWindow
+	app                 *application.App
 	riotClient          *riot.RiotClient
 	isRunning           bool
 	pollingTicker       *time.Ticker
@@ -184,6 +184,7 @@ func (cm *ClientMonitor) checkClientState() {
 					cm.stateMutex.Lock()
 					cm.accountUpdateStatus.IsUpdated = true
 					cm.accountUpdateStatus.Username = loggedInUsername
+					cm.app.EmitEvent(LeagueWebsocketStartHandlers)
 					cm.stateMutex.Unlock()
 
 					cm.logger.Info("Account successfully updated",
@@ -199,6 +200,7 @@ func (cm *ClientMonitor) checkClientState() {
 		cm.stateMutex.Lock()
 		cm.accountUpdateStatus.IsUpdated = false
 		cm.accountUpdateStatus.Username = ""
+		cm.app.EmitEvent(LeagueWebsocketStopHandlers)
 		cm.stateMutex.Unlock()
 	}
 	// Get detailed client state if running
@@ -349,8 +351,8 @@ func (cm *ClientMonitor) OpenWebviewAndGetToken(username string) (string, error)
 		return "", errors.New("captcha_cancelled_by_user")
 	}
 }
-func (cm *ClientMonitor) SetWindow(window *application.WebviewWindow) {
-	cm.app = window
+func (cm *ClientMonitor) SetWindow(app *application.App) {
+	cm.app = app
 }
 func (cm *ClientMonitor) Stop() {
 	if !cm.isRunning {

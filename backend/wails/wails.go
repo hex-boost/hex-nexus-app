@@ -308,10 +308,11 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 	})
 	utilsBind.SetApp(app)
 	SetupSystemTray(app, mainWindow, icon16, accountMonitor, utilsBind)
-	clientMonitor.SetWindow(mainWindow)
+	clientMonitor.SetWindow(app)
 	appProtocol.SetWindow(mainWindow)
 	captcha.SetWindow(captchaWindow)
 	websocketService.SetWindow(app)
+	websocketService.SubscribeToLeagueEvents()
 	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(ctx *application.WindowEvent) {
 		websocketService.Start()
 		accountMonitor.Start()
