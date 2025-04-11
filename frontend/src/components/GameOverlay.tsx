@@ -1,11 +1,15 @@
-import { SettingsPanel } from '@/components/GameOverlaySettings.tsx';
+'use client';
+
+import type { ExtensionOption } from '@/components/extend-rental.ts';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { ChevronDown, ChevronUp, Clock, Info, Settings, Trophy, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+// Add this import at the top
 
+// Update the GameOverlayProps interface to include userCoins
 type GameOverlayProps = {
   accountId: string;
   elo: string;
@@ -13,9 +17,19 @@ type GameOverlayProps = {
   lp: number;
   rentalTimeRemaining: number; // in seconds
   userName?: string;
+  userCoins?: number; // Add this new prop
 };
 
-export function GameOverlay({ accountId, elo, rank, lp, rentalTimeRemaining, userName }: GameOverlayProps) {
+// Update the function parameters to include userCoins with a default value
+export function GameOverlay({
+  accountId,
+  elo,
+  rank,
+  lp,
+  rentalTimeRemaining,
+  userName,
+  userCoins = 0,
+}: GameOverlayProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState({
@@ -71,6 +85,14 @@ export function GameOverlay({ accountId, elo, rank, lp, rentalTimeRemaining, use
       default:
         return 'text-zinc-400';
     }
+  };
+
+  // Add this function inside the GameOverlay component
+  const handleExtend = (option: ExtensionOption, cost: number, seconds: number) => {
+    // In a real application, this would call an API to extend the rental
+    console.log(`Extending rental by ${option} for ${cost} coins (${seconds} seconds)`);
+    setTimeRemaining(prev => prev + seconds)
+    (prev => prev - cost);
   };
 
   return (
@@ -187,6 +209,21 @@ export function GameOverlay({ accountId, elo, rank, lp, rentalTimeRemaining, use
                     s
                   </div>
                 </div>
+              </div>
+
+              {/* Quick-Extend Options */}
+              <div className="mt-2 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-zinc-400">Quick-Extend:</span>
+                  <span className="text-xs text-amber-400 font-medium flex items-center gap-1">
+                    <span className="text-amber-400">⦿</span>
+                    {' '}
+                    {userCoins}
+                    {' '}
+                    coins
+                  </span>
+                </div>
+                <QuickExtendButtons userCoins={userCoins} onExtend={handleExtend} />
               </div>
 
               {/* Account ID */}
