@@ -132,7 +132,7 @@ export function GameOverlay({
         >
           {/* Header with Logo */}
           <div className="flex items-center justify-between bg-gradient-to-r from-blue-900/80 to-blue-600/80 px-3 py-2">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <img src={logoHexBoost} alt="Logo Hex Boost" className="w-6 h-6" />
               <span className="text-sm font-bold text-white">Nexus</span>
             </div>

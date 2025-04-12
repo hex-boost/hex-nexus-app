@@ -62,11 +62,11 @@ func CreateGameOverlay(app *application.App) *application.WebviewWindow {
 		application.WebviewWindowOptions{
 			Name:          "Overlay",
 			Title:         "Nexus Overlay",
-			Width:         400,
-			Height:        260,
+			Width:         260,
+			Height:        296,
 			DisableResize: true,
 			AlwaysOnTop:   true,
-			Hidden:        false,
+			Hidden:        true,
 			Frameless:     true,
 			URL:           "/?target=overlay",
 
