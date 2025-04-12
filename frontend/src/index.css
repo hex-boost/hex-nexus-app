@@ -130,14 +130,20 @@
     border-color: var(--color-border);
     outline: hsla(var(--color-ring), 50)
 }
-
 body {
     font-family: 'Geist Variable', sans-serif;
-    background-color: transparent;
+    min-height: 100vh; /* Change height to min-height */
+    margin: 0; /* Remove default margin */
+    background-color: var(--color-background); /* Explicitly set background color */
     color: var(--color-foreground);
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+    display: flex;
+    flex-direction: column;
 }
-#root{
-    height: 100vh;
+
+html {
+    height: 100%;
+    background-color: var(--color-background); /* Set background on html too */
 }
 [class*='after:absolute'],
 [class*='before:absolute'] {

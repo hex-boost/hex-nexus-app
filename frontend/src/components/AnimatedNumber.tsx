@@ -19,8 +19,14 @@ export function AnimatedNumber({
   const [displayValue, setDisplayValue] = useState(value);
 
   useEffect(() => {
-    // Only animate if the value is increasing
-    if (value > displayValue) {
+    // Don't animate if it's a simple decrement by 1 (likely from countdown timer)
+    if (displayValue - value === 1) {
+      setDisplayValue(value);
+      return;
+    }
+
+    // Animate when value changes significantly
+    if (value !== displayValue) {
       const startTime = Date.now();
       const startValue = displayValue;
       const endValue = value;
@@ -42,9 +48,6 @@ export function AnimatedNumber({
       };
 
       requestAnimationFrame(animateValue);
-    } else {
-      // If value is decreasing, update immediately without animation
-      setDisplayValue(value);
     }
   }, [value, duration]);
 
@@ -76,7 +79,7 @@ export function AnimatedCoins({
   coins: number;
   className?: string;
 }) {
-  return <AnimatedNumber value={coins} className={className} formatter={val => `${val} ⦿`} />;
+  return <AnimatedNumber value={coins} className={className} formatter={val => `${val}`} />;
 }
 
 export function AnimatedTimeChange({
@@ -125,8 +128,6 @@ export function AnimatedCoinChange({
       >
         -
         {coins}
-        {' '}
-        ⦿
       </motion.div>
     </AnimatePresence>
   );

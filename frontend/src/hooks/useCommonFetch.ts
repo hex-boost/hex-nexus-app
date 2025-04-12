@@ -10,8 +10,9 @@ import { toast } from 'sonner';
 
 export function useCommonFetch() {
   const { Utils } = useGoFunctions();
+
   const router = useRouter();
-  const { isAuthenticated, setUser, logout } = useUserStore();
+  const { isAuthenticated, setUser, logout, user: storeUser } = useUserStore();
   const {
     data: user,
     isLoading: isUserLoading,
@@ -25,7 +26,7 @@ export function useCommonFetch() {
           logout();
           toast.error('You have been logged out due to HWID mismatch');
           router.navigate({ to: '/login' });
-          throw new Error('HWID mismatch error, if this is a mistake, please contact support');
+          return {} as UserType;
         }
       }
 
@@ -35,13 +36,11 @@ export function useCommonFetch() {
     refetchOnMount: true,
     refetchOnWindowFocus: true,
     enabled: isAuthenticated,
-  },
-
-  );
+  });
 
   return {
     isUserLoading,
-    user,
+    user: user || storeUser,
     refetchUser,
   };
 }

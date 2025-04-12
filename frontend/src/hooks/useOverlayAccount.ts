@@ -1,5 +1,4 @@
 import type { AccountType } from '@/types/types.ts';
-import { useRiotAccount } from '@/hooks/useRiotAccount.ts';
 import { strapiClient } from '@/lib/strapi.ts';
 import { useUserStore } from '@/stores/useUserStore';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -21,68 +20,21 @@ export function useOverlayAccount(username: string | undefined) {
   const { rentedAccounts, isRentedLoading } = useAccountByID({
     username,
   });
-  const { currentRanking } = useRiotAccount({ account: storeAccount });
   const account = storeAccount || (rentedAccounts && rentedAccounts[0]) as AccountType | undefined;
   const isAccountLoading = !account && (isRentedLoading || username === undefined);
 
-  const { calculateTimeRemaining, getSecondsRemaining, addTimeToExpiry } = useDateTime();
+  const { calculateTimeRemaining, getSecondsRemaining } = useDateTime();
 
   const { price, getAccountPrice, isPriceLoading } = usePrice();
 
   // Optimistic update function for the cache
-  const updateAccountCacheOptimistically = (extensionIndex: number) => {
-    if (!account || !price) {
-      return;
-    }
-
-    const extensionOption = getAccountPrice(price, currentRanking?.elo)[extensionIndex];
-    if (!extensionOption) {
-      return;
-    }
-
-    const secondsToAdd = extensionOption.hours / 3600;
-    const cost = extensionOption.price;
-
-    // Update accounts cache
-    queryClient.setQueryData(['accounts'], (oldData: any) => {
-      if (!oldData) {
-        return oldData;
-      }
-
-      return {
-        ...oldData,
-        data: oldData.data.map((acc: AccountType) => {
-          if (acc.documentId === account.documentId) {
-            // Calculate new expiry time
-            const expiryDate = account.actionHistory.find(action => action.type === 'claim' && user?.id === action.user.id)?.expirationDate as Date;
-            const updatedExpiry = addTimeToExpiry(expiryDate.toString(), secondsToAdd);
-
-            return {
-              ...acc,
-              rentalExpiry: updatedExpiry,
-            };
-          }
-          return acc;
-        }),
-      };
-    });
-
-    // Update user store with reduced coins
-    if (user) {
-      const updatedUser = {
-        ...user,
-        coins: (user.coins || 0) - cost,
-      };
-      useUserStore.getState().setUser(updatedUser);
-    }
-  };
 
   const onAccountChange = async () => {
     // Still invalidate queries for background refresh
     await queryClient.invalidateQueries({ queryKey: ['accounts'] });
   };
 
-  const { handleExtendAccount: originalExtendAccount, isExtendPending, selectedExtensionIndex }
+  const { handleExtendAccount: originalExtendAccount, isExtendPending, selectedExtensionIndex, updateAccountCacheOptimistically }
     = useAccountActions({ account, onAccountChange, user: user! });
 
   // Enhanced extend function with optimistic updates

@@ -7,6 +7,7 @@ import {
   AnimatedTimeChange,
   AnimatedTimeDisplay,
 } from '@/components/AnimatedNumber.tsx';
+import { CoinIcon } from '@/components/coin-icon.tsx';
 import { QuickExtendButtons } from '@/components/GameOverlayQuickExtend.tsx';
 import { GameOverlaySkeleton } from '@/components/GameOverlaySkeleton.tsx';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
@@ -19,7 +20,7 @@ import { cn } from '@/lib/utils';
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { Clock, Coins, XIcon } from 'lucide-react';
+import { Clock, XIcon } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 type GameOverlayProps = {
@@ -44,7 +45,6 @@ export function GameOverlay({
   const { user } = useUserStore();
   const [userCoins, setUserCoins] = useState(user?.coins || 0);
 
-  // Use our hook to manage account data
   const {
     account,
     initialRentalTime,
@@ -69,7 +69,27 @@ export function GameOverlay({
     }
   }, [initialRentalTime]);
 
-  // Format time remaining
+  // Countdown timer effect
+  useEffect(() => {
+    // Only start the countdown if we have time remaining
+    if (rentalTimeRemaining <= 0) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setRentalTimeRemaining((prevTime) => {
+        // Stop at zero to prevent negative values
+        if (prevTime <= 0) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prevTime - 1;
+      });
+    }, 1000);
+
+    // Cleanup the interval when component unmounts or dependencies change
+    return () => clearInterval(interval);
+  }, [rentalTimeRemaining]); // Only reset the timer when we go from 0 to positive or vice versa
 
   // Update user coins from store when they change
   useEffect(() => {
@@ -177,7 +197,7 @@ export function GameOverlay({
                     <span className="text-white font-bold">{user?.username}</span>
                   </div>
                   <div className="flex items-center gap-1 text-xs">
-                    <Coins className="h-3 w-3 text-amber-400" />
+                    <CoinIcon className="h-3 w-3 text-amber-400" />
                     <div className="relative">
                       <AnimatedCoins coins={userCoins} className="text-amber-400 font-medium" />
                       {showCoinChange && (
