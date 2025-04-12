@@ -87,7 +87,7 @@ export default function AccountDetails({ account, onAccountChange }: {
   const { championsSearch, setChampionsSearch, skinsSearch, setSkinsSearch, filteredChampions, filteredSkins } = useAccountFilters({ account });
   const { dropRefund, selectedRentalOptionIndex, handleExtendAccount, isExtendPending, setSelectedRentalOptionIndex, selectedExtensionIndex, isRentPending, handleRentAccount } = useAccountActions({ account, onAccountChange, user: user as any });
   const [activeTab, setActiveTab] = useState(0);
-  const { getCompanyIcon, getGameIcon } = useMapping();
+  const { getCompanyIcon, getGameIcon, getFormattedServer } = useMapping();
   const soloQueueRank = account.rankings?.find(lc => lc.queueType === 'soloqueue');
   const flexQueueRank = account.rankings?.find(lc => lc.queueType === 'flex');
   const { calculateTimeRemaining } = useDateTime();
@@ -164,7 +164,7 @@ export default function AccountDetails({ account, onAccountChange }: {
 
               <div className="border p-3 dark:bg-white/[0.01] rounded-lg">
                 <p className="text-sm text-zinc-600 dark:text-zinc-400">Server</p>
-                <p className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">{account.server.slice(0, account.server.length - 1)}</p>
+                <p className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">{getFormattedServer(account.server)}</p>
               </div>
 
             </div>
