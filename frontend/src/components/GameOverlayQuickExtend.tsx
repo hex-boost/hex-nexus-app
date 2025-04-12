@@ -3,6 +3,7 @@ import { CoinIcon } from '@/components/coin-icon.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { usePrice } from '@/hooks/usePrice.ts';
 import { cn } from '@/lib/utils';
+import React from 'react';
 
 export function QuickExtendButtons({
   userCoins,
@@ -33,6 +34,8 @@ export function QuickExtendButtons({
     <div className="grid grid-cols-3 gap-2">
       {quickOptions.map((option, idx) => (
         <Button
+          style={{ '--wails-draggable': 'no-drag' } as React.CSSProperties}
+
           key={idx}
           variant="outline"
           size="sm"

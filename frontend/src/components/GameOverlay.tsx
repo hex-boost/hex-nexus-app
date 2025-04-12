@@ -20,7 +20,7 @@ import { useUserStore } from '@/stores/useUserStore.ts';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Clock, Coins, XIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 type GameOverlayProps = {
   setShowOverlay: (show: boolean) => void;
@@ -118,12 +118,14 @@ export function GameOverlay({
   return (
     <TooltipProvider>
       <div
-        className="fixed top-4 right-4 z-50 flex flex-col items-end"
+        className="fixed  z-50 flex flex-col items-end"
+
         style={{
-          opacity: opacity / 100,
-          transform: `scale(${scale / 100})`,
-          transformOrigin: 'top right',
-        }}
+          'opacity': opacity / 100,
+          'transform': `scale(${scale / 100})`,
+          'transformOrigin': 'top right',
+          '--wails-draggable': 'drag',
+        } as any}
       >
         <div
           className={cn(
@@ -136,7 +138,10 @@ export function GameOverlay({
               <img src={logoHexBoost} alt="Logo Hex Boost" className="w-6 h-6" />
               <span className="text-sm font-bold text-white">Nexus</span>
             </div>
-            <div className="flex items-center gap-1">
+            <div
+              className="flex items-center gap-1"
+              style={{ '--wails-draggable': 'no-drag' } as React.CSSProperties}
+            >
               <Button
                 variant="ghost"
                 size="icon"

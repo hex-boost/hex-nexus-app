@@ -22,7 +22,6 @@ export function useOverlayAccount(username: string | undefined) {
     username,
   });
   const { currentRanking } = useRiotAccount({ account: storeAccount });
-  // Use account from store or from direct fetch
   const account = storeAccount || (rentedAccounts && rentedAccounts[0]) as AccountType | undefined;
   const isAccountLoading = !account && (isRentedLoading || username === undefined);
 
@@ -36,7 +35,7 @@ export function useOverlayAccount(username: string | undefined) {
       return;
     }
 
-    const extensionOption = getAccountPrice(price, currentRanking.elo)[extensionIndex];
+    const extensionOption = getAccountPrice(price, currentRanking?.elo)[extensionIndex];
     if (!extensionOption) {
       return;
     }

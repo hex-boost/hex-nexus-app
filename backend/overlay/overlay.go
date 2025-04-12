@@ -57,18 +57,27 @@ func IsWindowVisible(hwnd windows.HWND) bool {
 	ret, _, _ := procIsWindowVisible.Call(uintptr(hwnd))
 	return ret != 0
 }
+
 func CreateGameOverlay(app *application.App) *application.WebviewWindow {
 	overlay := app.NewWebviewWindowWithOptions(
 		application.WebviewWindowOptions{
-			Name:          "Overlay",
-			Title:         "Nexus Overlay",
-			Width:         260,
-			Height:        296,
-			DisableResize: true,
-			AlwaysOnTop:   true,
-			Hidden:        true,
-			Frameless:     true,
-			URL:           "/?target=overlay",
+			Name:           "Overlay",
+			Title:          "Nexus Overlay",
+			Width:          260,
+			Height:         296,
+			DisableResize:  true,
+			AlwaysOnTop:    true,
+			BackgroundType: application.BackgroundTypeTransparent,
+			BackgroundColour: application.RGBA{
+				Red:   0,
+				Green: 0,
+				Blue:  0,
+				Alpha: 0,
+			},
+
+			Hidden:    true,
+			Frameless: true,
+			URL:       "/?target=overlay",
 
 			Windows: application.WindowsWindow{
 				Theme:                             1, // Use dark theme
@@ -174,7 +183,6 @@ func (m *GameOverlayManager) monitorGame() {
 				m.findAndTrackGameWindow()
 			}
 		case <-ticker.C:
-			// Periodically check if game window is still available and correctly positioned
 			if m.isGameRunning {
 				if !m.isWindowValid(m.gameHwnd) {
 					m.mutex.Lock()

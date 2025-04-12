@@ -16,7 +16,7 @@ export function GameOverlaySkeleton({
 }: GameOverlaySkeletonProps) {
   return (
     <div
-      className="fixed top-4 right-4 z-50 flex flex-col items-end"
+      className="fixed z-50 flex flex-col items-end"
       style={{
         opacity: opacity / 100,
         transform: `scale(${scale / 100})`,
