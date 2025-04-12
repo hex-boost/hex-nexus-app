@@ -304,6 +304,8 @@ func (m *GameOverlayManager) monitorGame() {
 
 	var wasGameFocused = false
 	var overlayHwnd windows.HWND
+	var lastFocusLossTime time.Time
+	const focusLossConfirmDelay = 250 * time.Millisecond
 
 	// Get overlay handle once
 	if handle, err := m.overlay.NativeWindowHandle(); err == nil {
@@ -336,10 +338,22 @@ func (m *GameOverlayManager) monitorGame() {
 					// Check if either game or overlay has focus
 					hasFocus := foregroundWindow == m.gameHwnd || foregroundWindow == overlayHwnd
 
-					// Only hide if neither game nor overlay has focus
-					if !hasFocus && wasGameFocused && m.overlay.IsVisible() {
-						m.logger.Info("Both game and overlay lost focus, hiding overlay")
-						m.overlay.Hide()
+					// Handle focus loss with delay to prevent false positives during transitions
+					if !hasFocus && wasGameFocused {
+						if lastFocusLossTime.IsZero() {
+							// First detection of focus loss
+							lastFocusLossTime = time.Now()
+						} else if time.Since(lastFocusLossTime) > focusLossConfirmDelay {
+							// Focus loss confirmed after delay
+							if m.overlay.IsVisible() {
+								m.logger.Info("Both game and overlay lost focus, hiding overlay")
+								m.overlay.Hide()
+							}
+							lastFocusLossTime = time.Time{} // Reset timer
+						}
+					} else if hasFocus {
+						// Reset focus loss timer when focus is detected
+						lastFocusLossTime = time.Time{}
 					}
 
 					wasGameFocused = hasFocus
@@ -363,7 +377,6 @@ func (m *GameOverlayManager) monitorGame() {
 		}
 	}
 }
-
 func (m *GameOverlayManager) registerGlobalHotkey() {
 
 	hook.Register(hook.KeyDown, []string{"ctrl", "shift", "b"}, func(event hook.Event) {
@@ -408,25 +421,35 @@ func (m *GameOverlayManager) toggleOverlay() {
 		m.logger.Info("Hiding overlay")
 		m.overlay.Hide()
 	} else {
-		m.logger.Info("Showing overlay")
-		m.overlay.Show()
+		// Get foreground window
+		foregroundHwnd, _, _ := procGetForegroundWindow.Call()
+		foregroundWindow := windows.HWND(foregroundHwnd)
 
-		// Immediately maintain z-order after showing
-		m.maintainZOrder()
+		// Only show if the game has focus
+		if foregroundWindow == m.gameHwnd {
+			m.logger.Info("Showing overlay")
+			m.overlay.Show()
 
-		// Get native handle for the overlay
-		overlayHwnd, err := m.overlay.NativeWindowHandle()
-		if err == nil {
-			// Set window position with SWP_NOACTIVATE to prevent focus stealing
-			user32.NewProc("SetWindowPos").Call(
-				uintptr(overlayHwnd),
-				^uintptr(0), // HWND_TOPMOST
-				0, 0, 0, 0,
-				0x0001|0x0002|0x0010, // SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE
-			)
+			// Immediately maintain z-order after showing
+			m.maintainZOrder()
+
+			// Get native handle for the overlay
+			overlayHwnd, err := m.overlay.NativeWindowHandle()
+			if err == nil {
+				// Set window position with SWP_NOACTIVATE to prevent focus stealing
+				user32.NewProc("SetWindowPos").Call(
+					uintptr(overlayHwnd),
+					^uintptr(0), // HWND_TOPMOST
+					0, 0, 0, 0,
+					0x0001|0x0002|0x0010, // SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE
+				)
+			}
+		} else {
+			m.logger.Info("Toggle requested but game window is not focused")
 		}
 	}
 }
+
 func (m *GameOverlayManager) findAndTrackGameWindow() {
 	// League in-game window title can be either of these
 	possibleTitles := []string{
