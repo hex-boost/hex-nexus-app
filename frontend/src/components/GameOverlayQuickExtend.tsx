@@ -1,58 +1,59 @@
-'use client';
-
 import type { ExtensionOption } from './extend-rental';
-import { Button } from '@/components/ui/button';
-import { canExtendRental, EXTENSION_OPTIONS } from './extend-rental';
+import { CoinIcon } from '@/components/coin-icon.tsx';
+import { Button } from '@/components/ui/button.tsx';
+import { usePrice } from '@/hooks/usePrice.ts';
+import { cn } from '@/lib/utils';
 
-type QuickExtendButtonsProps = {
-  userCoins: number;
+export function QuickExtendButtons({
+  userCoins,
+  onExtend,
+  isExtending,
+  rankElo,
+  priceData,
+}: {
+  userCoins?: number;
   onExtend: (option: ExtensionOption, cost: number, seconds: number) => void;
-  compact?: boolean;
-};
+  isExtending: boolean;
+  rankElo?: string;
+  priceData: any;
+}) {
+  const { getAccountPrice } = usePrice();
 
-export function QuickExtendButtons({ userCoins, onExtend, compact = false }: QuickExtendButtonsProps) {
-  const handleExtend = (option: ExtensionOption) => {
-    const { cost, seconds } = EXTENSION_OPTIONS[option];
-    if (canExtendRental(option, userCoins)) {
-      onExtend(option, cost, seconds);
-    }
-  };
+  // Get extension options based on rank
+  const extensionOptions = getAccountPrice(priceData, rankElo);
+
+  // Select only the first three options for quick extend
+  const quickOptions = extensionOptions.slice(0, 3).map((option, index) => ({
+    ...option,
+    index,
+    seconds: option.hours * 3600, // Convert hours to seconds
+  }));
 
   return (
-    <div className={`grid grid-cols-3 gap-${compact ? '1' : '1.5'}`}>
-      {(Object.keys(EXTENSION_OPTIONS) as ExtensionOption[]).map((option) => {
-        const { cost } = EXTENSION_OPTIONS[option];
-        const canAfford = canExtendRental(option, userCoins);
-
-        return (
-          <Button
-            key={option}
-            size="sm"
-            variant="outline"
-            disabled={!canAfford}
-            onClick={() => handleExtend(option)}
-            className={`
-              ${compact ? 'h-5 px-1 text-[10px] py-0' : 'h-7 px-1.5 text-xs'} 
-              ${
-          canAfford
-            ? 'bg-blue-950/30 border-blue-800/50 hover:bg-blue-900/50'
-            : 'bg-zinc-900/30 border-zinc-800/50 text-zinc-500'
-          }
-            `}
-          >
-            <div className="flex flex-col items-center">
-              <span>{option}</span>
-              <span
-                className={`${compact ? 'text-[8px]' : 'text-[10px]'} ${canAfford ? 'text-amber-400' : 'text-zinc-500'}`}
-              >
-                {cost}
-                {' '}
-                ⦿
-              </span>
-            </div>
-          </Button>
-        );
-      })}
+    <div className="grid grid-cols-3 gap-2">
+      {quickOptions.map((option, idx) => (
+        <Button
+          key={idx}
+          variant="outline"
+          size="sm"
+          className={cn(
+            'flex flex-col items-center gap-1 h-auto py-2',
+            option.price > (userCoins || 0) ? 'opacity-50 cursor-not-allowed' : '',
+          )}
+          onClick={() => onExtend(option, option.price, option.seconds)}
+          disabled={isExtending || option.price > (userCoins || 0)}
+        >
+          <span className="text-xs">
+            +
+            {option.hours}
+            h
+          </span>
+          <div className="flex items-center gap-0.5 text-xs">
+            <CoinIcon className="w-3 h-3 text-amber-500" />
+            {option.price}
+          </div>
+        </Button>
+      ))}
     </div>
   );
 }

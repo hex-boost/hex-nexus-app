@@ -24,7 +24,7 @@ export function SettingsPanel({ opacity, setOpacity, scale, setScale }: Settings
   return (
     <div className="p-3 h-[350px] overflow-y-auto">
       <Tabs defaultValue="appearance" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 h-7">
+        <TabsList className="grid w-full grid-cols-3 bg-transparent ">
           <TabsTrigger value="appearance" className="text-[10px]">
             <Eye className="h-3 w-3 mr-1" />
             Look

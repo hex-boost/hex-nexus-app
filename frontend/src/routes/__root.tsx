@@ -41,6 +41,7 @@ function RootLayout() {
     <>
       <Outlet />
       <TanStackRouterDevtools />
+
     </>
   );
 }

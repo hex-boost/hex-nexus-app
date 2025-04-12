@@ -1,11 +1,9 @@
-import type { AccountType } from '@/types/types.ts';
-
 import AccountDetails from '@/components/account-details.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
-import { strapiClient } from '@/lib/strapi.ts';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAccountByID } from '@/hooks/useAccountByID.ts';
+import { useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, useParams } from '@tanstack/react-router';
 import { ArrowLeftIcon } from 'lucide-react';
 
@@ -21,27 +19,7 @@ export const Route = createFileRoute('/_protected/accounts/$id')({
 function AccountByID() {
   const { id } = useParams({ from: '/_protected/accounts/$id' });
   const queryClient = useQueryClient();
-
-  const {
-    data: availableAccounts,
-    isLoading: isAvailableLoading,
-  } = useQuery({
-    queryKey: ['accounts', 'available', id],
-    queryFn: () => strapiClient.find<AccountType[]>('accounts/available', {
-      filters: { documentId: id },
-    }).then(res => res.data),
-  });
-
-  const {
-    data: rentedAccounts,
-    isLoading: isRentedLoading,
-  } = useQuery({
-    queryKey: ['accounts', 'rented'],
-    queryFn: () => strapiClient.find<AccountType[]>('accounts/rented', {
-      filters: { documentId: id },
-    }).then(res => res.data),
-  });
-
+  const { rentedAccounts, isRentedLoading, isAvailableLoading, availableAccounts } = useAccountByID({ documentId: id });
   const refetchAccount = async () => {
     // Invalidate all queries that start with 'accounts' with a single call
     await queryClient.invalidateQueries({ queryKey: ['accounts'] });

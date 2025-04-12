@@ -22,14 +22,40 @@ export function useDateTime() {
       return `${diffSeconds}s left`;
     }
   }
+
   function calculateTimeRemaining(account: AccountType): string {
     const mostRecentAction = account.actionHistory?.reduce((latest, current) =>
       new Date(latest.createdAt) > new Date(current.createdAt) ? latest : current,
     );
     return getFormattedTimeRemaining(mostRecentAction?.expirationDate.toString());
   }
+
+  function getSecondsRemaining(account: AccountType): number {
+    const mostRecentAction = account.actionHistory?.reduce((latest, current) =>
+      new Date(latest.createdAt) > new Date(current.createdAt) ? latest : current,
+    );
+
+    if (!mostRecentAction?.expirationDate) {
+      return 0;
+    }
+
+    const expiryDate = new Date(mostRecentAction.expirationDate);
+    const now = new Date();
+    const diffMs = expiryDate.getTime() - now.getTime();
+
+    return Math.max(0, Math.floor(diffMs / 1000));
+  }
+
+  function addTimeToExpiry(expiryTime: string, secondsToAdd: number): string {
+    const expiryDate = new Date(expiryTime);
+    const newExpiryDate = new Date(expiryDate.getTime() + secondsToAdd * 1000);
+    return newExpiryDate.toISOString();
+  }
+
   return {
     calculateTimeRemaining,
     getFormattedTimeRemaining,
+    getSecondsRemaining,
+    addTimeToExpiry,
   };
 }
