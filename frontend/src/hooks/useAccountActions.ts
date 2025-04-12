@@ -162,6 +162,7 @@ export function useAccountActions({
         {
           loading: 'Extending account...',
           success: data => data.message || 'Account extended successfully',
+          duration: 3000,
           error: error => error.error?.message || 'This feature is not implemented yet',
         },
       );

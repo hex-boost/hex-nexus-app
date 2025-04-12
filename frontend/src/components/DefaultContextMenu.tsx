@@ -1,7 +1,7 @@
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { useContextMenu } from '@/contexts/ContextMenuContext';
 import { useRouter } from '@tanstack/react-router';
-import { ArrowLeft, ArrowRight, RefreshCw } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 
 export function DefaultContextMenu({ children }: { children: React.ReactNode }) {
   const { hasCustomMenu } = useContextMenu();
@@ -38,14 +38,14 @@ export function DefaultContextMenu({ children }: { children: React.ReactNode }) 
           <ArrowRight className="size-4" />
           <span>Back</span>
         </ContextMenuItem>
-        <ContextMenuItem onClick={() => router.invalidate()} className="">
-          <div className="space-x-2 flex items-center">
-            <RefreshCw className="size-4" />
-            <span>Reload</span>
-          </div>
-          {/* <ContextMenuShortcut>Ctrl+R</ContextMenuShortcut> */}
+        {/* <ContextMenuItem onClick={() => router.invalidate()} className=""> */}
+        {/*  <div className="space-x-2 flex items-center"> */}
+        {/*    <RefreshCw className="size-4" /> */}
+        {/*    <span>Reload</span> */}
+        {/*  </div> */}
+        {/* <ContextMenuShortcut>Ctrl+R</ContextMenuShortcut> */}
 
-        </ContextMenuItem>
+        {/* </ContextMenuItem> */}
       </ContextMenuContent>
     </ContextMenu>
   );

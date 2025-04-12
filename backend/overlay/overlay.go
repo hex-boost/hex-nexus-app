@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"github.com/hex-boost/hex-nexus-app/backend/process"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
-	hook "github.com/robotn/gohook"
+	"github.com/robotn/gohook"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"go.uber.org/zap"
 	"golang.org/x/sys/windows"
+
 	"os"
 	"path/filepath"
 	"strings"
@@ -27,24 +28,31 @@ type GameOverlayManager struct {
 	configPath    string
 }
 
-var (
-	procSetWindowPos = user32.NewProc("SetWindowPos")
-	procShowWindow   = user32.NewProc("ShowWindow")
-)
-
 const (
-	HWND_TOPMOST   = ^windows.HWND(0)
-	SWP_NOSIZE     = 0x0001
-	SWP_NOACTIVATE = 0x0010
+	HWND_TOPMOST   = -1
+	HWND_NOTOPMOST = -2
 )
 
 var (
-	user32              = windows.NewLazySystemDLL("user32.dll")
-	procFindWindow      = user32.NewProc("FindWindowW")
-	procGetWindowRect   = user32.NewProc("GetWindowRect")
-	procIsWindowVisible = user32.NewProc("IsWindowVisible")
+	// Add these constants at the beginning of your file, near the other vars
+	user32                  = windows.NewLazySystemDLL("user32.dll")
+	procFindWindow          = user32.NewProc("FindWindowW")
+	procGetWindowRect       = user32.NewProc("GetWindowRect")
+	procIsWindowVisible     = user32.NewProc("IsWindowVisible")
+	procGetForegroundWindow = user32.NewProc("GetForegroundWindow")
 )
 
+func (m *GameOverlayManager) hasGameFocus() bool {
+	if m.gameHwnd == 0 {
+		return false
+	}
+
+	// Get the foreground window
+	foregroundHwnd, _, _ := procGetForegroundWindow.Call()
+
+	// Check if the game window is the foreground window
+	return windows.HWND(foregroundHwnd) == m.gameHwnd
+}
 func FindWindow(className, windowName *uint16) windows.HWND {
 	ret, _, _ := procFindWindow.Call(
 		uintptr(unsafe.Pointer(className)),
@@ -72,13 +80,12 @@ func IsWindowVisible(hwnd windows.HWND) bool {
 func CreateGameOverlay(app *application.App) *application.WebviewWindow {
 	overlay := app.NewWebviewWindowWithOptions(
 		application.WebviewWindowOptions{
-			Name:          "Overlay",
-			Title:         "Nexus Overlay",
-			Width:         260,
-			Height:        296,
-			DisableResize: true,
-			AlwaysOnTop:   true,
-
+			Name:           "Overlay",
+			Title:          "Nexus Overlay",
+			Width:          260,
+			Height:         296,
+			DisableResize:  true,
+			AlwaysOnTop:    true,
 			BackgroundType: application.BackgroundTypeTransparent,
 			BackgroundColour: application.RGBA{
 				Red:   0,
@@ -91,10 +98,10 @@ func CreateGameOverlay(app *application.App) *application.WebviewWindow {
 			URL:       "/?target=overlay",
 
 			Windows: application.WindowsWindow{
-				Theme:                             1, // Use dark theme
+				Theme:                             1, // Dark theme
 				DisableFramelessWindowDecorations: true,
 				BackdropType:                      application.Acrylic,
-				ExStyle:                           0x00000080 | 0x00000008, // WS_EX_TOOLWINDOW | WS_EX_TOPMOST
+				ExStyle:                           0x00080000 | 0x00000020 | 0x00000008, // WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST
 				HiddenOnTaskbar:                   true,
 			},
 		},
@@ -102,6 +109,55 @@ func CreateGameOverlay(app *application.App) *application.WebviewWindow {
 	return overlay
 }
 
+//	func (m *GameOverlayManager) attachToGameWindow() {
+//		if m.gameHwnd == 0 {
+//			return
+//		}
+//
+//		// Get native window handle for the overlay
+//		overlayHandle, err := m.overlay.NativeWindowHandle()
+//		if err != nil {
+//			m.logger.Error("Failed to get overlay window handle", zap.Error(err))
+//			return
+//		}
+//
+//		// Set game window as parent of overlay window
+//		user32.NewProc("SetParent").Call(
+//			uintptr(overlayHandle),
+//			uintptr(m.gameHwnd),
+//		)
+//
+//		// Update window style
+//		user32.NewProc("SetWindowLongW").Call(
+//			uintptr(overlayHandle),
+//			-16,        // GWL_STYLE
+//			0x40000000, // WS_CHILD
+//		)
+//
+//		// Position relative to parent (game window)
+//		m.overlay.SetPosition(m.position["x"], m.position["y"])
+//	}
+func (m *GameOverlayManager) maintainZOrder() {
+	if !m.isGameRunning || !m.isWindowValid(m.gameHwnd) {
+		return
+	}
+	uintPTR, err := m.overlay.NativeWindowHandle()
+	if err != nil {
+		return
+	}
+	hwnd := windows.HWND(uintPTR)
+	if hwnd == 0 {
+		return
+	}
+
+	// Always set overlay to be topmost
+	user32.NewProc("SetWindowPos").Call(
+		uintptr(hwnd),
+		^uintptr(0), // HWND_TOPMOST (-1)
+		0, 0, 0, 0,
+		0x0001|0x0002|0x0010, // SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE
+	)
+}
 func NewGameOverlayManager(overlay *application.WebviewWindow, logger *utils.Logger) *GameOverlayManager {
 	configDir, err := os.UserConfigDir()
 	if err != nil {
@@ -111,7 +167,10 @@ func NewGameOverlayManager(overlay *application.WebviewWindow, logger *utils.Log
 	configPath := filepath.Join(configDir, "hex-nexus", "overlay-position.json")
 
 	// Ensure directory exists
-	os.MkdirAll(filepath.Dir(configPath), 0755)
+	err = os.MkdirAll(filepath.Dir(configPath), 0755)
+	if err != nil {
+		return nil
+	}
 
 	manager := &GameOverlayManager{
 		overlay:    overlay,
@@ -126,6 +185,7 @@ func NewGameOverlayManager(overlay *application.WebviewWindow, logger *utils.Log
 
 	return manager
 }
+
 func (m *GameOverlayManager) loadPosition() {
 	data, err := os.ReadFile(m.configPath)
 	if err != nil {
@@ -150,49 +210,111 @@ func (m *GameOverlayManager) savePosition(x, y int) error {
 	return os.WriteFile(m.configPath, data, 0644)
 }
 
-//	func (m *GameOverlayManager) initializeOverlay() {
-//		m.overlay.OnWindowEvent(events.Common.WindowRuntimeReady, func(event *application.WindowEvent) {
-//			m.overlay.EmitEvent("overlay:navigate")
+//	func (m *GameOverlayManager) registerLowLevelKeyboardHook() {
+//		// Define keyboard hook procedure
+//		keyboardProc := windows.NewCallback(func(code int, wParam, lParam uintptr) uintptr {
+//			if code < 0 {
+//				ret, _, _ := user32.NewProc("CallNextHookEx").Call(0, uintptr(code), wParam, lParam)
+//				return ret
+//			}
+//			// Only process key down events (wParam == 0x100 for WM_KEYDOWN)
+//			if wParam == 0x100 {
+//				kbdStruct := (*struct {
+//					VkCode    uint32
+//					ScanCode  uint32
+//					Flags     uint32
+//					Time      uint32
+//					ExtraInfo uintptr
+//				})(unsafe.Pointer(lParam))
+//
+//				if kbdStruct.VkCode == 0x42 {
+//					ctrlRet, _, _ := user32.NewProc("GetAsyncKeyState").Call(uintptr(0x11))
+//					shiftRet, _, _ := user32.NewProc("GetAsyncKeyState").Call(uintptr(0x10))
+//
+//					ctrlDown := ctrlRet&0x8000 != 0
+//					shiftDown := shiftRet&0x8000 != 0
+//
+//					if ctrlDown && shiftDown && m.isGameRunning && m.isWindowValid(m.gameHwnd) {
+//						// Use goroutine to avoid blocking hook
+//						go m.toggleOverlay()
+//					}
+//				}
+//
+//				// Similarly, fix the second key check
+//				if kbdStruct.VkCode == 0x4D {
+//					ctrlRet, _, _ := user32.NewProc("GetAsyncKeyState").Call(uintptr(0x11))
+//					shiftRet, _, _ := user32.NewProc("GetAsyncKeyState").Call(uintptr(0x10))
+//
+//					ctrlDown := ctrlRet&0x8000 != 0
+//					shiftDown := shiftRet&0x8000 != 0
+//
+//					if ctrlDown && shiftDown && m.isGameRunning && m.isWindowValid(m.gameHwnd) {
+//						go m.toggleMouseEvents()
+//					}
+//				}
+//			}
+//
+//			// Call the next hook in the chain
+//			ret, _, _ := user32.NewProc("CallNextHookEx").Call(0, uintptr(code), wParam, lParam)
+//			return ret
+//
 //		})
+//
+//		// Set the Windows keyboard hook
+//		hookID, _, _ := user32.NewProc("SetWindowsHookExW").Call(
+//			13, // WH_KEYBOARD_LL
+//			keyboardProc,
+//			0, // No module handle needed for low-level hooks
+//			0, // System-wide hook
+//		)
+//
+//		if hookID == 0 {
+//			m.logger.Error("Failed to set keyboard hook")
+//			return
+//		}
+//
+//		m.logger.Info("Low level keyboard hook registered successfully")
+//
+//		// Wait for stop signal
+//		<-m.stopChan
+//
+//		// Remove the hook when stopping
+//		user32.NewProc("UnhookWindowsHookEx").Call(hookID)
 //	}
 func (m *GameOverlayManager) Start() {
-	//m.initializeOverlay()
 	m.overlay.IsIgnoreMouseEvents()
 
-	// Register frontend bindings
-	//m.overlay.Bind("overlay:savePosition", func(pos map[string]interface{}) {
-	//	if x, ok := pos["x"].(float64); ok {
-	//		if y, ok := pos["y"].(float64); ok {
-	//			m.savePosition(int(x), int(y))
-	//		}
-	//	}
-	//})
-	//
-	//m.overlay("overlay:getPosition", func() map[string]int {
-	//	return m.position
-	//})
-
 	go m.monitorGame()
+	//go m.registerLowLevelKeyboardHook()
 	go m.registerGlobalHotkey()
 }
+
 func (m *GameOverlayManager) Stop() {
 	close(m.stopChan)
+
+	// Unregister hotkeys when stopping
 }
 
 func (m *GameOverlayManager) monitorGame() {
 	processChan, stopMonitor := process.MonitorProcesses(false, 1*time.Second)
 	defer stopMonitor()
 
-	// Check existing processes
-	ticker := time.NewTicker(1 * time.Second)
+	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()
+
+	var wasGameFocused = false
+	var overlayHwnd windows.HWND
+
+	// Get overlay handle once
+	if handle, err := m.overlay.NativeWindowHandle(); err == nil {
+		overlayHwnd = windows.HWND(handle)
+	}
 
 	for {
 		select {
 		case <-m.stopChan:
 			return
 		case proc := <-processChan:
-			// Handle new processes
 			if strings.Contains(strings.ToLower(proc.Name), "league of legends.exe") {
 				m.logger.Info("League of Legends game detected", zap.Uint32("pid", proc.PID))
 				m.findAndTrackGameWindow()
@@ -205,11 +327,38 @@ func (m *GameOverlayManager) monitorGame() {
 					m.gameHwnd = 0
 					m.mutex.Unlock()
 					m.overlay.Hide()
+					wasGameFocused = false
 				} else {
-					//m.updateOverlayPosition()
+					// Get foreground window
+					foregroundHwnd, _, _ := procGetForegroundWindow.Call()
+					foregroundWindow := windows.HWND(foregroundHwnd)
+
+					// Check if either game or overlay has focus
+					hasFocus := foregroundWindow == m.gameHwnd || foregroundWindow == overlayHwnd
+
+					// Only hide if neither game nor overlay has focus
+					if !hasFocus && wasGameFocused && m.overlay.IsVisible() {
+						m.logger.Info("Both game and overlay lost focus, hiding overlay")
+						m.overlay.Hide()
+					}
+
+					wasGameFocused = hasFocus
+
+					if m.overlay.IsVisible() {
+						m.maintainZOrder()
+					}
 				}
 			} else {
 				m.findAndTrackGameWindow()
+
+				// Update overlay handle if needed
+				if overlayHwnd == 0 {
+					if handle, err := m.overlay.NativeWindowHandle(); err == nil {
+						overlayHwnd = windows.HWND(handle)
+					}
+				}
+
+				wasGameFocused = false
 			}
 		}
 	}
@@ -217,9 +366,6 @@ func (m *GameOverlayManager) monitorGame() {
 
 func (m *GameOverlayManager) registerGlobalHotkey() {
 
-	//ctrlDown := false
-	//shiftDown := false
-	// Add this to your registerGlobalHotkey function to reduce hook sensitivity
 	hook.Register(hook.KeyDown, []string{"ctrl", "shift", "b"}, func(event hook.Event) {
 		m.toggleOverlay()
 	})
@@ -235,70 +381,26 @@ func (m *GameOverlayManager) toggleMouseEvents() {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	if !m.overlay.IsVisible() {
-		return // Don't toggle if not visible
+	if !m.overlay.IsVisible() || !m.isGameRunning || !m.isWindowValid(m.gameHwnd) {
+		return
 	}
 
-	// Check current state
 	ignoring := m.overlay.IsIgnoreMouseEvents()
-
-	// Toggle the state
 	m.overlay.SetIgnoreMouseEvents(!ignoring)
 
-	// Update UI to show current mode
-	if ignoring {
-		m.overlay.EmitEvent("overlay:update", "Mode: Draggable (Ctrl+Shift+M to toggle)")
-		m.logger.Info("Overlay is now draggable")
+	if !ignoring {
+		m.logger.Info("Mouse events now pass through overlay")
 	} else {
-		m.overlay.EmitEvent("overlay:update", "Mode: Click-through (Ctrl+Shift+M to toggle)")
-		m.logger.Info("Overlay is now click-through")
+		m.logger.Info("Overlay now captures mouse events")
 	}
 }
-func SetWindowPos(hwnd windows.HWND, insertAfter windows.HWND, x, y, cx, cy int32, flags uint32) bool {
-	ret, _, _ := procSetWindowPos.Call(
-		uintptr(hwnd),
-		uintptr(insertAfter),
-		uintptr(x),
-		uintptr(y),
-		uintptr(cx),
-		uintptr(cy),
-		uintptr(flags),
-	)
-	return ret != 0
-}
 
-func ShowWindow(hwnd windows.HWND, cmdShow int32) bool {
-	ret, _, _ := procShowWindow.Call(
-		uintptr(hwnd),
-		uintptr(cmdShow),
-	)
-	return ret != 0
-}
-
-//	func IsFullscreenWindow(hwnd windows.HWND) bool {
-//		var appRect windows.Rect
-//		var screenRect windows.Rect
-//
-//		if err := GetWindowRect(hwnd, &appRect); err != nil {
-//			return false
-//		}
-//
-//		// Get screen dimensions
-//		hdc := windows.GetDC(0)
-//		defer windows.ReleaseDC(0, hdc)
-//
-//		screenWidth := windows.GetDeviceCaps(hdc, 8)  // HORZRES
-//		screenHeight := windows.GetDeviceCaps(hdc, 10) // VERTRES
-//
-//		return appRect.Left <= 0 && appRect.Top <= 0 &&
-//			appRect.Right >= int32(screenWidth) && appRect.Bottom >= int32(screenHeight)
-//	}
 func (m *GameOverlayManager) toggleOverlay() {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	if !m.isGameRunning {
-		m.logger.Info("Toggle requested but game not running")
+	if !m.isGameRunning || !m.isWindowValid(m.gameHwnd) {
+		m.logger.Info("Toggle requested but game not running or not visible")
 		return
 	}
 
@@ -308,29 +410,47 @@ func (m *GameOverlayManager) toggleOverlay() {
 	} else {
 		m.logger.Info("Showing overlay")
 		m.overlay.Show()
+
+		// Immediately maintain z-order after showing
+		m.maintainZOrder()
+
+		// Get native handle for the overlay
+		overlayHwnd, err := m.overlay.NativeWindowHandle()
+		if err == nil {
+			// Set window position with SWP_NOACTIVATE to prevent focus stealing
+			user32.NewProc("SetWindowPos").Call(
+				uintptr(overlayHwnd),
+				^uintptr(0), // HWND_TOPMOST
+				0, 0, 0, 0,
+				0x0001|0x0002|0x0010, // SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE
+			)
+		}
 	}
 }
-
 func (m *GameOverlayManager) findAndTrackGameWindow() {
-	// Find League of Legends game window
-	hwnd := FindWindow(nil, windows.StringToUTF16Ptr("League of Legends (TM) Client"))
-	if hwnd == 0 {
-		return
+	// League in-game window title can be either of these
+	possibleTitles := []string{
+		"League of Legends (TM) Client",
+		"League of Legends",
+		"League of Legends (TM) Game",
 	}
 
-	// Check if window is visible
-	if !IsWindowVisible(hwnd) {
-		return
+	for _, title := range possibleTitles {
+		uintPtr, err := windows.UTF16PtrFromString(title)
+		if err != nil {
+			continue
+		}
+		hwnd := FindWindow(nil, uintPtr)
+		if hwnd != 0 && IsWindowVisible(hwnd) {
+			m.mutex.Lock()
+			m.isGameRunning = true
+			m.gameHwnd = hwnd
+			m.mutex.Unlock()
+			m.logger.Info("League of Legends game window found", zap.String("title", title))
+			return
+		}
 	}
-
-	m.mutex.Lock()
-	m.isGameRunning = true
-	m.gameHwnd = hwnd
-	m.mutex.Unlock()
-
-	m.logger.Info("League of Legends game window found")
 }
-
 func (m *GameOverlayManager) updateOverlayPosition() {
 	if m.gameHwnd == 0 {
 		return
@@ -342,24 +462,49 @@ func (m *GameOverlayManager) updateOverlayPosition() {
 		return
 	}
 
-	// Set overlay position relative to game window, but don't resize
-	// Apply the saved position offset
+	// Get overlay size
+	width, height := m.overlay.Size()
+
+	// Calculate position, ensuring overlay stays within game window bounds
 	x := int(rect.Left) + m.position["x"]
 	y := int(rect.Top) + m.position["y"]
 
+	// Constrain to game window bounds
+	if x < int(rect.Left) {
+		x = int(rect.Left)
+	}
+	if y < int(rect.Top) {
+		y = int(rect.Top)
+	}
+	if x+width > int(rect.Right) {
+		x = int(rect.Right) - width
+	}
+	if y+height > int(rect.Bottom) {
+		y = int(rect.Bottom) - height
+	}
+
 	m.overlay.SetPosition(x, y)
-	// Don't set size here - keep the overlay at its original dimensions
 }
 
-// Update the isWindowVisible function to use our helper
 func (m *GameOverlayManager) isWindowValid(hwnd windows.HWND) bool {
 	if hwnd == 0 {
 		return false
 	}
 
+	// Only check if the window is visible, not if it's the foreground window
 	return IsWindowVisible(hwnd)
 }
+func (m *GameOverlayManager) isChildOrSameProcess(hwnd1, hwnd2 windows.HWND) bool {
+	// Get process ID for both windows
+	var pid1, pid2 uint32
+	user32.NewProc("GetWindowThreadProcessId").Call(
+		uintptr(hwnd1),
+		uintptr(unsafe.Pointer(&pid1)),
+	)
+	user32.NewProc("GetWindowThreadProcessId").Call(
+		uintptr(hwnd2),
+		uintptr(unsafe.Pointer(&pid2)),
+	)
 
-func isWindowVisible(hwnd windows.HWND) bool {
-	return windows.IsWindowVisible(hwnd)
+	return pid1 == pid2
 }

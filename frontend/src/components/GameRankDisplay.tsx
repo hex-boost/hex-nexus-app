@@ -3,7 +3,7 @@ import { useMapping } from '@/lib/useMapping.tsx';
 import { cn } from '@/lib/utils';
 
 type RankDisplayProps = {
-  ranking: RankingType;
+  ranking?: RankingType;
   className?: string;
   imageClass?: string;
   showLP?: boolean;

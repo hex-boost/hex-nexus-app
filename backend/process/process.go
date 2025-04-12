@@ -37,7 +37,7 @@ var leagueProcessNames = []string{
 
 // MonitorProcesses monitors for processes and sends information through the returned channel
 func MonitorProcesses(leagueOnly bool, interval time.Duration) (<-chan ProcessInfo, func()) {
-	processChan := make(chan ProcessInfo, 10) // Buffered channel to reduce blocking
+	processChan := make(chan ProcessInfo, 100) // Buffered channel to reduce blocking
 	done := make(chan struct{})
 
 	knownProcesses := make(map[uint32]bool)
