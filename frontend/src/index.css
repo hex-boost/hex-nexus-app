@@ -133,10 +133,12 @@
 
 body {
     font-family: 'Geist Variable', sans-serif;
-    background: var(--color-background);
+    background-color: transparent;
     color: var(--color-foreground);
 }
-
+#root{
+    height: 100vh;
+}
 [class*='after:absolute'],
 [class*='before:absolute'] {
     pointer-events: none;

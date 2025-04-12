@@ -28,6 +28,17 @@ type GameOverlayManager struct {
 }
 
 var (
+	procSetWindowPos = user32.NewProc("SetWindowPos")
+	procShowWindow   = user32.NewProc("ShowWindow")
+)
+
+const (
+	HWND_TOPMOST   = ^windows.HWND(0)
+	SWP_NOSIZE     = 0x0001
+	SWP_NOACTIVATE = 0x0010
+)
+
+var (
 	user32              = windows.NewLazySystemDLL("user32.dll")
 	procFindWindow      = user32.NewProc("FindWindowW")
 	procGetWindowRect   = user32.NewProc("GetWindowRect")
@@ -61,12 +72,13 @@ func IsWindowVisible(hwnd windows.HWND) bool {
 func CreateGameOverlay(app *application.App) *application.WebviewWindow {
 	overlay := app.NewWebviewWindowWithOptions(
 		application.WebviewWindowOptions{
-			Name:           "Overlay",
-			Title:          "Nexus Overlay",
-			Width:          260,
-			Height:         296,
-			DisableResize:  true,
-			AlwaysOnTop:    true,
+			Name:          "Overlay",
+			Title:         "Nexus Overlay",
+			Width:         260,
+			Height:        296,
+			DisableResize: true,
+			AlwaysOnTop:   true,
+
 			BackgroundType: application.BackgroundTypeTransparent,
 			BackgroundColour: application.RGBA{
 				Red:   0,
@@ -74,7 +86,6 @@ func CreateGameOverlay(app *application.App) *application.WebviewWindow {
 				Blue:  0,
 				Alpha: 0,
 			},
-
 			Hidden:    true,
 			Frameless: true,
 			URL:       "/?target=overlay",
@@ -82,11 +93,15 @@ func CreateGameOverlay(app *application.App) *application.WebviewWindow {
 			Windows: application.WindowsWindow{
 				Theme:                             1, // Use dark theme
 				DisableFramelessWindowDecorations: true,
+				BackdropType:                      application.Acrylic,
+				ExStyle:                           0x00000080 | 0x00000008, // WS_EX_TOOLWINDOW | WS_EX_TOPMOST
+				HiddenOnTaskbar:                   true,
 			},
 		},
 	)
 	return overlay
 }
+
 func NewGameOverlayManager(overlay *application.WebviewWindow, logger *utils.Logger) *GameOverlayManager {
 	configDir, err := os.UserConfigDir()
 	if err != nil {
@@ -239,6 +254,45 @@ func (m *GameOverlayManager) toggleMouseEvents() {
 		m.logger.Info("Overlay is now click-through")
 	}
 }
+func SetWindowPos(hwnd windows.HWND, insertAfter windows.HWND, x, y, cx, cy int32, flags uint32) bool {
+	ret, _, _ := procSetWindowPos.Call(
+		uintptr(hwnd),
+		uintptr(insertAfter),
+		uintptr(x),
+		uintptr(y),
+		uintptr(cx),
+		uintptr(cy),
+		uintptr(flags),
+	)
+	return ret != 0
+}
+
+func ShowWindow(hwnd windows.HWND, cmdShow int32) bool {
+	ret, _, _ := procShowWindow.Call(
+		uintptr(hwnd),
+		uintptr(cmdShow),
+	)
+	return ret != 0
+}
+
+//	func IsFullscreenWindow(hwnd windows.HWND) bool {
+//		var appRect windows.Rect
+//		var screenRect windows.Rect
+//
+//		if err := GetWindowRect(hwnd, &appRect); err != nil {
+//			return false
+//		}
+//
+//		// Get screen dimensions
+//		hdc := windows.GetDC(0)
+//		defer windows.ReleaseDC(0, hdc)
+//
+//		screenWidth := windows.GetDeviceCaps(hdc, 8)  // HORZRES
+//		screenHeight := windows.GetDeviceCaps(hdc, 10) // VERTRES
+//
+//		return appRect.Left <= 0 && appRect.Top <= 0 &&
+//			appRect.Right >= int32(screenWidth) && appRect.Bottom >= int32(screenHeight)
+//	}
 func (m *GameOverlayManager) toggleOverlay() {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
@@ -253,7 +307,57 @@ func (m *GameOverlayManager) toggleOverlay() {
 		m.overlay.Hide()
 	} else {
 		m.logger.Info("Showing overlay")
-		//m.updateOverlayPosition()
+
+		// Get overlay HWND
+		//hwnd, _ := m.overlay.NativeWindowHandle()
+		//if hwnd != 0 {
+		//	// Update overlay position based on game window
+		//	var rect windows.Rect
+		//	if err := GetWindowRect(m.gameHwnd, &rect); err == nil {
+		//		x := int(rect.Left) + m.position["x"]
+		//		y := int(rect.Top) + m.position["y"]
+		//
+		//		// Enhanced window styles for better overlay behavior
+		//		const (
+		//			WS_EX_NOACTIVATE  = 0x08000000
+		//			WS_EX_TOOLWINDOW  = 0x00000080
+		//			WS_EX_TOPMOST     = 0x00000008
+		//			WS_EX_TRANSPARENT = 0x00000020
+		//			WS_EX_LAYERED     = 0x00080000
+		//		)
+		//
+		//		// Get current extended style
+		//		procGetWindowLong := user32.NewProc("GetWindowLongW")
+		//		currentStyle, _, _ := procGetWindowLong.Call(
+		//			uintptr(hwnd),
+		//			uintptr(0xFFFFFFEC),
+		//		)
+		//
+		//		// Set extended window style
+		//		procSetWindowLong := user32.NewProc("SetWindowLongW")
+		//		_, _, _ = procSetWindowLong.Call(
+		//			uintptr(hwnd),
+		//			uintptr(0xFFFFFFEC),
+		//			uintptr(currentStyle|WS_EX_NOACTIVATE|WS_EX_TOOLWINDOW|WS_EX_TOPMOST|WS_EX_TRANSPARENT|WS_EX_LAYERED),
+		//		)
+		//
+		//		// First make sure it's visible with no activation
+		//		ShowWindow(windows.HWND(hwnd), 4) // SW_SHOWNOACTIVATE
+		//
+		//		// Then position it as topmost
+		//		SetWindowPos(
+		//			windows.HWND(hwnd),
+		//			HWND_TOPMOST,
+		//			int32(x),
+		//			int32(y),
+		//			0, 0, // Don't change size
+		//			SWP_NOSIZE|SWP_NOACTIVATE,
+		//		)
+		//
+		//		// Force it to be in front
+		//		user32.NewProc("BringWindowToTop").Call(uintptr(hwnd))
+		//	}
+		//}
 		m.overlay.Show()
 	}
 }

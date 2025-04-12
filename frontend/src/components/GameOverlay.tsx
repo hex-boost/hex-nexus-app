@@ -118,7 +118,7 @@ export function GameOverlay({
   return (
     <TooltipProvider>
       <div
-        className="fixed  z-50 flex flex-col items-end"
+        className="fixed  z-50 flex flex-col items-end backdrop-blur-2xl"
 
         style={{
           'opacity': opacity / 100,
@@ -129,11 +129,14 @@ export function GameOverlay({
       >
         <div
           className={cn(
-            'bg-background backdrop-blur-sm border border-blue-500/50 rounded-lg shadow-lg shadow-blue-500/20 overflow-hidden transition-all duration-300',
+            'rounded-lg overflow-hidden transition-all duration-300',
           )}
+          style={{
+            boxShadow: 'none',
+          }}
         >
           {/* Header with Logo */}
-          <div className="flex items-center justify-between bg-gradient-to-r from-blue-900/80 to-blue-600/80 px-3 py-2">
+          <div className="flex items-center justify-between bg-gradient-to-r from-blue-900/95 to-blue-600/95 px-3 py-2 rounded-t-lg">
             <div className="flex items-center gap-3">
               <img src={logoHexBoost} alt="Logo Hex Boost" className="w-6 h-6" />
               <span className="text-sm font-bold text-white">Nexus</span>
@@ -156,7 +159,7 @@ export function GameOverlay({
           </div>
 
           {/* Content */}
-          <div className="p-3 space-y-3">
+          <div className="p-3 space-y-3 bg-background/95 backdrop-blur-md rounded-b-lg border border-blue-500/50">
             {/* User Info */}
             {user?.username && (
               <div className="flex gap-2 justify-start items-start">

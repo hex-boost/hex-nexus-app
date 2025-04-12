@@ -104,7 +104,7 @@ const Globe = ({
   return (
     <div
       className={cn(
-        'absolute h-full -bottom-40 mx-auto aspect-[1/1] w-full max-w-[600px] flex items-center justify-center',
+        'absolute h-full -bottom-40 mx-auto aspect-[1/1] w-full w-[600px] flex items-center justify-center',
         className,
       )}
     >
