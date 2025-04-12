@@ -49,7 +49,7 @@ export function useFavoriteAccounts() {
       }
       return await strapiClient.create('favorite-accounts', {
         data: {
-          user: user.id.toString(),
+          user: user.id,
           riot_account: account.id,
         },
       });

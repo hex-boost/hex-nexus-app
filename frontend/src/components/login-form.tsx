@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { WindowControls } from '@/components/WindowControls.tsx';
 import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
 import { useGoFunctions } from '@/hooks/useGoBindings.ts';
 import { useProfileAvatar } from '@/hooks/useProfileAvatar.ts';
@@ -15,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@radix-ui/react-tabs';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { Eye, EyeOff } from 'lucide-react';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { toast } from 'sonner';
 
 export function DiscordSvg() {
@@ -129,189 +130,199 @@ export function LoginForm({
   const isLoading = activeTab === 'login' ? loginMutation.isPending : registerMutation.isPending;
   return (
 
-    <div className="flex h-full w-screen   bg-background">
-      <div className="w-full h-full  bg-background ">
-        <div
-          className={cn('flex justify-center h-full items-center  flex-col gap-6', className)}
-          {...props}
-        >
-          <Card className="border-none rounded-none overflow-hidden w-full h-full">
-            <CardContent className="grid  w-full h-full p-0 md:grid-cols-2">
-              <div className="relative h-full hidden  md:block">
-                <div className="absolute inset-0  flex items-start pt-6 h-full justify-center">
-                  <div className="flex flex-col items-center p-8">
-                    <img
-                      src={hexNexusAuthBg}
-                      alt="Hex Nexus Logo"
-                      width={64}
-                      height={64}
-                      className="object-cover z-10 mb-4"
+    <>
+      <div className="flex h-full w-screen   bg-background">
+        <div className="w-full h-full  bg-background ">
+          <div
+            className={cn('flex justify-center h-full items-center  flex-col gap-6', className)}
+            {...props}
+          >
+            <WindowControls className="absolute top-0 right-0 px-4 py-2" />
+            <Card className="border-none rounded-none overflow-hidden w-full h-full">
+              <CardContent className="grid  w-full h-full p-0 md:grid-cols-2">
+                <div className="relative h-full hidden  md:block">
+                  <div className="absolute inset-0  flex items-start pt-6 h-full justify-center">
+                    <div className="flex flex-col items-center p-8">
+                      <img
+                        src={hexNexusAuthBg}
+                        alt="Hex Nexus Logo"
+                        width={64}
+                        height={64}
+                        className="object-cover z-10 mb-4"
+                      />
+                      <h1 className="text-4xl font-bold mb-2">Nexus</h1>
+                      <p className="text-base text-muted-foreground font-medium text-center mb-1">
+                        The number one place to find your account
+                        <br />
+                        <strong className="font-medium text-white">Never waste your time</strong>
+                        {' '}
+                        searching for accounts again.
+                      </p>
+                    </div>
+                    <FlickeringGrid
+                      className="absolute h-full opacity-50 inset-0 z-0 w-screen pointer-events-none"
+                      squareSize={4}
+                      gridGap={6}
+                      color="#4552B8"
+                      maxOpacity={0.2}
+                      flickerChance={0.1}
                     />
-                    <h1 className="text-4xl font-bold mb-2">Nexus</h1>
-                    <p className="text-base text-muted-foreground font-medium text-center mb-1">
-                      The number one place to find your account
-                      <br />
-                      <strong className="font-medium text-white">Never waste your time</strong>
-                      {' '}
-                      searching for accounts again.
-                    </p>
+                    <Globe />
                   </div>
-                  <FlickeringGrid
-                    className="absolute h-full opacity-50 inset-0 z-0 w-screen pointer-events-none"
-                    squareSize={4}
-                    gridGap={6}
-                    color="#4552B8"
-                    maxOpacity={0.2}
-                    flickerChance={0.1}
-                  />
-                  <Globe />
                 </div>
-              </div>
-              <Tabs
-                value={activeTab}
-                onValueChange={setActiveTab}
-                className="flex justify-center w-full items-center p-6 md:p-8"
-              >
-                <form
-                  onSubmit={handleSubmit}
-                  className="flex flex-col gap-6 justify-center max-w-[480px] w-full items-center"
+                <Tabs
+                  value={activeTab}
+                  onValueChange={setActiveTab}
+                  className="flex justify-center w-full items-center p-6 md:p-8"
                 >
-                  <TabsContent
-                    key="login"
-                    className="w-full flex flex-col gap-6"
-                    value="login"
+                  <form
+                    onSubmit={handleSubmit}
+                    className="flex flex-col gap-6 justify-center max-w-[480px] w-full items-center"
                   >
-                    <div className="flex w-full flex-col items-center text-center">
-                      <h1 className="text-2xl font-bold">Welcome back</h1>
-                      <p className="text-balance text-muted-foreground">
-                        Access your account to continue
-                      </p>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        autoComplete="email"
-                        id="email"
-                        type="email"
-                        placeholder="example@email.com"
-                        required
-                        value={formData.email}
-                        onChange={e => setFormData({ ...formData, email: e.target.value })}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <div className="flex items-center">
-                        <Label htmlFor="password">Password</Label>
-                      </div>
-                      <div className="relative">
-                        <Input
-                          placeholder="**********"
-                          id="password"
-                          autoComplete="current-password"
-                          type={showLoginPassword ? 'text' : 'password'}
-                          required
-                          value={formData.password}
-                          onChange={e => setFormData({ ...formData, password: e.target.value })}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowLoginPassword(!showLoginPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                        >
-                          {showLoginPassword
-                            ? (
-                                <EyeOff className="h-4 w-4" />
-                              )
-                            : (
-                                <Eye className="h-4 w-4" />
-                              )}
-                        </button>
-                      </div>
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent key="register" className="w-full flex flex-col gap-6" value="register">
-                    <div className="flex flex-col items-center text-center">
-                      <h1 className="text-2xl font-bold">Create Account</h1>
-                      <p className="text-balance text-muted-foreground">
-                        Register to start your journey
-                      </p>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="username">Username</Label>
-                      <Input
-                        placeholder="Your username"
-                        autoComplete="username"
-                        id="username"
-                        required
-                        value={formData.username}
-                        onChange={e => setFormData({ ...formData, username: e.target.value })}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="example@email.com"
-                        className="!bg-background"
-                        required
-                        value={formData.email}
-                        onChange={e => setFormData({ ...formData, email: e.target.value })}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="password">Password</Label>
-                      <div className="relative">
-                        <Input
-
-                          placeholder="**********"
-                          id="password"
-                          type={showRegisterPassword ? 'text' : 'password'}
-                          autoComplete="new-password"
-                          required
-                          value={formData.password}
-                          onChange={e => setFormData({ ...formData, password: e.target.value })}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowRegisterPassword(!showRegisterPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                        >
-                          {showRegisterPassword
-                            ? (
-                                <EyeOff className="h-4 w-4" />
-                              )
-                            : (
-                                <Eye className="h-4 w-4" />
-                              )}
-                        </button>
-                      </div>
-                    </div>
-                  </TabsContent>
-                  <Button loading={isLoading} type="submit" className="w-full" disabled={isLoading}>
-                    {activeTab === 'login'
-                      ? isLoading ? 'Signing in...' : 'Sign in'
-                      : isLoading ? 'Registering...' : 'Register'}
-                  </Button>
-                  <TabsList className="text-center text-sm">
-                    <span>
-                      {activeTab === 'login' ? 'Don\'t have an account? ' : 'Already have an account? '}
-                    </span>
-                    <TabsTrigger
-                      value={activeTab === 'login' ? 'register' : 'login'}
-                      className="underline underline-offset-4 cursor-pointer"
+                    <TabsContent
+                      key="login"
+                      className="w-full flex flex-col gap-6"
+                      value="login"
                     >
-                      {activeTab === 'login' ? 'Sign up' : 'Log in'}
-                    </TabsTrigger>
-                  </TabsList>
+                      <div className="flex w-full flex-col items-center text-center">
+                        <h1 className="text-2xl font-bold">Welcome back</h1>
+                        <p className="text-balance text-muted-foreground">
+                          Access your account to continue
+                        </p>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="email">Email</Label>
+                        <Input
+                          autoComplete="email"
+                          id="email"
+                          type="email"
+                          placeholder="example@email.com"
+                          required
+                          value={formData.email}
+                          onChange={e => setFormData({ ...formData, email: e.target.value })}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <div className="flex items-center">
+                          <Label htmlFor="password">Password</Label>
+                        </div>
+                        <div className="relative">
+                          <Input
+                            placeholder="**********"
+                            id="password"
+                            autoComplete="current-password"
+                            type={showLoginPassword ? 'text' : 'password'}
+                            required
+                            value={formData.password}
+                            onChange={e => setFormData({
+                              ...formData,
+                              password: e.target.value,
+                            })}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowLoginPassword(!showLoginPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {showLoginPassword
+                              ? (
+                                  <EyeOff className="h-4 w-4" />
+                                )
+                              : (
+                                  <Eye className="h-4 w-4" />
+                                )}
+                          </button>
+                        </div>
+                      </div>
+                    </TabsContent>
 
-                </form>
-              </Tabs>
-            </CardContent>
-          </Card>
+                    <TabsContent key="register" className="w-full flex flex-col gap-6" value="register">
+                      <div className="flex flex-col items-center text-center">
+                        <h1 className="text-2xl font-bold">Create Account</h1>
+                        <p className="text-balance text-muted-foreground">
+                          Register to start your journey
+                        </p>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="username">Username</Label>
+                        <Input
+                          placeholder="Your username"
+                          autoComplete="username"
+                          id="username"
+                          required
+                          value={formData.username}
+                          onChange={e => setFormData({ ...formData, username: e.target.value })}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="email">Email</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          placeholder="example@email.com"
+                          className="!bg-background"
+                          required
+                          value={formData.email}
+                          onChange={e => setFormData({ ...formData, email: e.target.value })}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="password">Password</Label>
+                        <div className="relative">
+                          <Input
+
+                            placeholder="**********"
+                            id="password"
+                            type={showRegisterPassword ? 'text' : 'password'}
+                            autoComplete="new-password"
+                            required
+                            value={formData.password}
+                            onChange={e => setFormData({
+                              ...formData,
+                              password: e.target.value,
+                            })}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {showRegisterPassword
+                              ? (
+                                  <EyeOff className="h-4 w-4" />
+                                )
+                              : (
+                                  <Eye className="h-4 w-4" />
+                                )}
+                          </button>
+                        </div>
+                      </div>
+                    </TabsContent>
+                    <Button loading={isLoading} type="submit" className="w-full" disabled={isLoading}>
+                      {activeTab === 'login'
+                        ? isLoading ? 'Signing in...' : 'Sign in'
+                        : isLoading ? 'Registering...' : 'Register'}
+                    </Button>
+                    <TabsList className="text-center text-sm">
+                      <span>
+                        {activeTab === 'login' ? 'Don\'t have an account? ' : 'Already have an account? '}
+                      </span>
+                      <TabsTrigger
+                        value={activeTab === 'login' ? 'register' : 'login'}
+                        className="underline underline-offset-4 cursor-pointer"
+                      >
+                        {activeTab === 'login' ? 'Sign up' : 'Log in'}
+                      </TabsTrigger>
+                    </TabsList>
+
+                  </form>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </div>
         </div>
+
       </div>
-    </div>
+    </>
   );
 }
