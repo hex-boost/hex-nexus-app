@@ -47,10 +47,10 @@ export function useFavoriteAccounts() {
       if (!user?.id) {
         throw new Error('User not logged in');
       }
-      return await strapiClient.create('favorite-accounts', {
+      return await strapiClient.create<FavoriteAccounts>('favorite-accounts', {
         data: {
-          user: user.id,
           riot_account: account.id,
+          user: user.id,
         },
       });
     },
