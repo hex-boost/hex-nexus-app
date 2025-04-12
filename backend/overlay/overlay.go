@@ -307,57 +307,6 @@ func (m *GameOverlayManager) toggleOverlay() {
 		m.overlay.Hide()
 	} else {
 		m.logger.Info("Showing overlay")
-
-		// Get overlay HWND
-		//hwnd, _ := m.overlay.NativeWindowHandle()
-		//if hwnd != 0 {
-		//	// Update overlay position based on game window
-		//	var rect windows.Rect
-		//	if err := GetWindowRect(m.gameHwnd, &rect); err == nil {
-		//		x := int(rect.Left) + m.position["x"]
-		//		y := int(rect.Top) + m.position["y"]
-		//
-		//		// Enhanced window styles for better overlay behavior
-		//		const (
-		//			WS_EX_NOACTIVATE  = 0x08000000
-		//			WS_EX_TOOLWINDOW  = 0x00000080
-		//			WS_EX_TOPMOST     = 0x00000008
-		//			WS_EX_TRANSPARENT = 0x00000020
-		//			WS_EX_LAYERED     = 0x00080000
-		//		)
-		//
-		//		// Get current extended style
-		//		procGetWindowLong := user32.NewProc("GetWindowLongW")
-		//		currentStyle, _, _ := procGetWindowLong.Call(
-		//			uintptr(hwnd),
-		//			uintptr(0xFFFFFFEC),
-		//		)
-		//
-		//		// Set extended window style
-		//		procSetWindowLong := user32.NewProc("SetWindowLongW")
-		//		_, _, _ = procSetWindowLong.Call(
-		//			uintptr(hwnd),
-		//			uintptr(0xFFFFFFEC),
-		//			uintptr(currentStyle|WS_EX_NOACTIVATE|WS_EX_TOOLWINDOW|WS_EX_TOPMOST|WS_EX_TRANSPARENT|WS_EX_LAYERED),
-		//		)
-		//
-		//		// First make sure it's visible with no activation
-		//		ShowWindow(windows.HWND(hwnd), 4) // SW_SHOWNOACTIVATE
-		//
-		//		// Then position it as topmost
-		//		SetWindowPos(
-		//			windows.HWND(hwnd),
-		//			HWND_TOPMOST,
-		//			int32(x),
-		//			int32(y),
-		//			0, 0, // Don't change size
-		//			SWP_NOSIZE|SWP_NOACTIVATE,
-		//		)
-		//
-		//		// Force it to be in front
-		//		user32.NewProc("BringWindowToTop").Call(uintptr(hwnd))
-		//	}
-		//}
 		m.overlay.Show()
 	}
 }
