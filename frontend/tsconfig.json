@@ -57,7 +57,11 @@
 
       "@stripe": [
         "bindings/github.com/hex-boost/hex-nexus-app/backend/stripe"
+      ],
+      "@overlay": [
+        "bindings/github.com/hex-boost/hex-nexus-app/backend/overlay"
       ]
+
     }
   },
   "include": [

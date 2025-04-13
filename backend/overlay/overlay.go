@@ -28,11 +28,6 @@ type GameOverlayManager struct {
 	configPath    string
 }
 
-const (
-	HWND_TOPMOST   = -1
-	HWND_NOTOPMOST = -2
-)
-
 var (
 	// Add these constants at the beginning of your file, near the other vars
 	user32                  = windows.NewLazySystemDLL("user32.dll")
@@ -109,34 +104,6 @@ func CreateGameOverlay(app *application.App) *application.WebviewWindow {
 	return overlay
 }
 
-//	func (m *GameOverlayManager) attachToGameWindow() {
-//		if m.gameHwnd == 0 {
-//			return
-//		}
-//
-//		// Get native window handle for the overlay
-//		overlayHandle, err := m.overlay.NativeWindowHandle()
-//		if err != nil {
-//			m.logger.Error("Failed to get overlay window handle", zap.Error(err))
-//			return
-//		}
-//
-//		// Set game window as parent of overlay window
-//		user32.NewProc("SetParent").Call(
-//			uintptr(overlayHandle),
-//			uintptr(m.gameHwnd),
-//		)
-//
-//		// Update window style
-//		user32.NewProc("SetWindowLongW").Call(
-//			uintptr(overlayHandle),
-//			-16,        // GWL_STYLE
-//			0x40000000, // WS_CHILD
-//		)
-//
-//		// Position relative to parent (game window)
-//		m.overlay.SetPosition(m.position["x"], m.position["y"])
-//	}
 func (m *GameOverlayManager) maintainZOrder() {
 	if !m.isGameRunning || !m.isWindowValid(m.gameHwnd) {
 		return
@@ -158,7 +125,10 @@ func (m *GameOverlayManager) maintainZOrder() {
 		0x0001|0x0002|0x0010, // SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE
 	)
 }
-func NewGameOverlayManager(overlay *application.WebviewWindow, logger *utils.Logger) *GameOverlayManager {
+func (m *GameOverlayManager) SetWindow(window *application.WebviewWindow) {
+	m.overlay = window
+}
+func NewGameOverlayManager(logger *utils.Logger) *GameOverlayManager {
 	configDir, err := os.UserConfigDir()
 	if err != nil {
 		configDir = "."
@@ -173,7 +143,7 @@ func NewGameOverlayManager(overlay *application.WebviewWindow, logger *utils.Log
 	}
 
 	manager := &GameOverlayManager{
-		overlay:    overlay,
+		overlay:    nil,
 		logger:     logger,
 		stopChan:   make(chan struct{}),
 		position:   map[string]int{"x": 20, "y": 20},
@@ -210,77 +180,6 @@ func (m *GameOverlayManager) savePosition(x, y int) error {
 	return os.WriteFile(m.configPath, data, 0644)
 }
 
-//	func (m *GameOverlayManager) registerLowLevelKeyboardHook() {
-//		// Define keyboard hook procedure
-//		keyboardProc := windows.NewCallback(func(code int, wParam, lParam uintptr) uintptr {
-//			if code < 0 {
-//				ret, _, _ := user32.NewProc("CallNextHookEx").Call(0, uintptr(code), wParam, lParam)
-//				return ret
-//			}
-//			// Only process key down events (wParam == 0x100 for WM_KEYDOWN)
-//			if wParam == 0x100 {
-//				kbdStruct := (*struct {
-//					VkCode    uint32
-//					ScanCode  uint32
-//					Flags     uint32
-//					Time      uint32
-//					ExtraInfo uintptr
-//				})(unsafe.Pointer(lParam))
-//
-//				if kbdStruct.VkCode == 0x42 {
-//					ctrlRet, _, _ := user32.NewProc("GetAsyncKeyState").Call(uintptr(0x11))
-//					shiftRet, _, _ := user32.NewProc("GetAsyncKeyState").Call(uintptr(0x10))
-//
-//					ctrlDown := ctrlRet&0x8000 != 0
-//					shiftDown := shiftRet&0x8000 != 0
-//
-//					if ctrlDown && shiftDown && m.isGameRunning && m.isWindowValid(m.gameHwnd) {
-//						// Use goroutine to avoid blocking hook
-//						go m.toggleOverlay()
-//					}
-//				}
-//
-//				// Similarly, fix the second key check
-//				if kbdStruct.VkCode == 0x4D {
-//					ctrlRet, _, _ := user32.NewProc("GetAsyncKeyState").Call(uintptr(0x11))
-//					shiftRet, _, _ := user32.NewProc("GetAsyncKeyState").Call(uintptr(0x10))
-//
-//					ctrlDown := ctrlRet&0x8000 != 0
-//					shiftDown := shiftRet&0x8000 != 0
-//
-//					if ctrlDown && shiftDown && m.isGameRunning && m.isWindowValid(m.gameHwnd) {
-//						go m.toggleMouseEvents()
-//					}
-//				}
-//			}
-//
-//			// Call the next hook in the chain
-//			ret, _, _ := user32.NewProc("CallNextHookEx").Call(0, uintptr(code), wParam, lParam)
-//			return ret
-//
-//		})
-//
-//		// Set the Windows keyboard hook
-//		hookID, _, _ := user32.NewProc("SetWindowsHookExW").Call(
-//			13, // WH_KEYBOARD_LL
-//			keyboardProc,
-//			0, // No module handle needed for low-level hooks
-//			0, // System-wide hook
-//		)
-//
-//		if hookID == 0 {
-//			m.logger.Error("Failed to set keyboard hook")
-//			return
-//		}
-//
-//		m.logger.Info("Low level keyboard hook registered successfully")
-//
-//		// Wait for stop signal
-//		<-m.stopChan
-//
-//		// Remove the hook when stopping
-//		user32.NewProc("UnhookWindowsHookEx").Call(hookID)
-//	}
 func (m *GameOverlayManager) Start() {
 	m.overlay.IsIgnoreMouseEvents()
 
@@ -378,16 +277,20 @@ func (m *GameOverlayManager) monitorGame() {
 	}
 }
 func (m *GameOverlayManager) registerGlobalHotkey() {
-
-	hook.Register(hook.KeyDown, []string{"ctrl", "shift", "b"}, func(event hook.Event) {
+	// Use correct package name (gohook instead of hook)
+	hook.Register(hook.KeyDown, []string{"ctrl", "shift", "b"}, func(e hook.Event) {
 		m.toggleOverlay()
 	})
-	hook.Register(hook.KeyDown, []string{"ctrl", "shift", "m"}, func(event hook.Event) {
+	hook.Register(hook.KeyDown, []string{"ctrl", "shift", "m"}, func(e hook.Event) {
 		m.toggleMouseEvents()
 	})
 
-	s := hook.Start()
-	<-hook.Process(s)
+	// Start hook in the background without blocking
+	go func() {
+		_ = hook.Start()
+		<-m.stopChan // Wait for stop signal
+		hook.End()   // Properly end the hook when stopping
+	}()
 }
 
 func (m *GameOverlayManager) toggleMouseEvents() {
@@ -407,7 +310,10 @@ func (m *GameOverlayManager) toggleMouseEvents() {
 		m.logger.Info("Overlay now captures mouse events")
 	}
 }
-
+func (m *GameOverlayManager) Hide() {
+	m.logger.Info("Hiding overlay")
+	m.overlay.Hide()
+}
 func (m *GameOverlayManager) toggleOverlay() {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
@@ -418,8 +324,7 @@ func (m *GameOverlayManager) toggleOverlay() {
 	}
 
 	if m.overlay.IsVisible() {
-		m.logger.Info("Hiding overlay")
-		m.overlay.Hide()
+		m.Hide()
 	} else {
 		// Get foreground window
 		foregroundHwnd, _, _ := procGetForegroundWindow.Call()
@@ -516,18 +421,4 @@ func (m *GameOverlayManager) isWindowValid(hwnd windows.HWND) bool {
 
 	// Only check if the window is visible, not if it's the foreground window
 	return IsWindowVisible(hwnd)
-}
-func (m *GameOverlayManager) isChildOrSameProcess(hwnd1, hwnd2 windows.HWND) bool {
-	// Get process ID for both windows
-	var pid1, pid2 uint32
-	user32.NewProc("GetWindowThreadProcessId").Call(
-		uintptr(hwnd1),
-		uintptr(unsafe.Pointer(&pid1)),
-	)
-	user32.NewProc("GetWindowThreadProcessId").Call(
-		uintptr(hwnd2),
-		uintptr(unsafe.Pointer(&pid2)),
-	)
-
-	return pid1 == pid2
 }

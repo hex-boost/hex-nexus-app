@@ -32,13 +32,6 @@ export default function FavoriteAccounts({
     navigate({ to: '/accounts' });
   };
 
-  // Function to open note dialog
-
-  // Function to delete note (actually just sets note to empty string)
-
-  // Function to save note
-
-  // Check if user has any favorite accounts
   const hasFavorites = user.favoriteAccounts && user.favoriteAccounts.length > 0;
 
   return (

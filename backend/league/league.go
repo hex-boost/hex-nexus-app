@@ -23,7 +23,29 @@ func NewLeagueService(logger *utils.Logger, api *repository.AccountsRepository, 
 		summonerService: summonerService,
 	}
 }
+func (lc *LeagueService) IsPlaying() bool {
+	processes, err := ps.Processes()
+	if err != nil {
+		lc.logger.Error("Failed to list processes", zap.Error(err))
+		return false
+	}
 
+	leagueProcessNames := []string{
+		"League of Legends.exe",
+	}
+
+	for _, process := range processes {
+		exe := process.Executable()
+		for _, name := range leagueProcessNames {
+			if exe == name {
+				return true
+			}
+		}
+	}
+
+	return false
+
+}
 func (lc *LeagueService) IsRunning() bool {
 	processes, err := ps.Processes()
 	if err != nil {

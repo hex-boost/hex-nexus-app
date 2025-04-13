@@ -8,6 +8,7 @@ import { strapiClient } from '@/lib/strapi';
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { AccountMonitor } from '@league';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from '@tanstack/react-router';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -28,6 +29,7 @@ export function useAccountActions({
   const [selectedRentalOptionIndex, setSelectedRentalOptionIndex] = useState<number>(1);
   const [isDropDialogOpen, setIsDropDialogOpen] = useState(false);
   const [selectedExtensionIndex, setSelectedExtensionIndex] = useState<number>(1);
+  const router = useRouter();
 
   const updateAccountCacheOptimistically = (extensionIndex: number) => {
     if (!account || !price) {
@@ -148,24 +150,25 @@ export function useAccountActions({
     mutationKey: ['accounts', 'extend', account?.documentId],
     mutationFn: async (timeIndex: number) => {
       setSelectedExtensionIndex(timeIndex);
-      return toast.promise(
-        (async () => {
-          return await strapiClient.request<{
-            message: string;
-          }>('put', `accounts/${account?.documentId}/extend`, {
-            data: {
-              game: 'league',
-              timeEnum: timeIndex,
-            },
-          });
-        })(),
-        {
-          loading: 'Extending account...',
-          success: data => data.message || 'Account extended successfully',
-          duration: 3000,
-          error: error => error.error?.message || 'This feature is not implemented yet',
+
+      const requestPromise = strapiClient.request<{
+        message: string;
+      }>('put', `accounts/${account?.documentId}/extend`, {
+        data: {
+          game: 'league',
+          timeEnum: timeIndex,
         },
-      );
+      });
+
+      if (router.state.location.pathname === '/overlay') {
+        return requestPromise;
+      }
+      return toast.promise(requestPromise, {
+        loading: 'Extending account...',
+        success: data => data.message || 'Account extended successfully',
+        error: error => error.error?.message || 'This feature is not implemented yet',
+        duration: 3000,
+      });
     },
     onMutate: async (timeIndex) => {
       // Optimistically update the UI before the actual API call
@@ -179,17 +182,16 @@ export function useAccountActions({
       invalidateRelatedQueries();
     },
   });
-
   const { mutate: handleRentAccount, isPending: isRentPending } = useMutation<
     { message: string },
     StrapiError,
     number
   >({
     mutationKey: ['accounts', 'rent', account?.documentId],
-    mutationFn: async (timeIndex: number) => {
+    mutationFn: async (timeIndex) => {
       setIsDropDialogOpen(false);
 
-      const response = strapiClient.request<{
+      return strapiClient.request<{
         message: string;
       }>('post', `accounts/${account?.documentId}/rentals`, {
         data: {
@@ -197,8 +199,6 @@ export function useAccountActions({
           time: timeIndex,
         },
       });
-
-      return response;
     },
     onSuccess: async (data, variables) => {
       updateAccountCacheOptimistically(variables);

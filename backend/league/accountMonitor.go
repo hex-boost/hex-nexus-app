@@ -9,6 +9,7 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/hex-boost/hex-nexus-app/backend/watchdog"
 	"go.uber.org/zap"
+	"strings"
 	"sync"
 	"time"
 )
@@ -235,14 +236,16 @@ func (am *AccountMonitor) GetLoggedInUsername() string {
 			return ""
 		}
 		currentUsername = leagueCurrentUsername
+	} else if am.leagueService.IsPlaying() {
+		currentUsername = am.lastCheckedUsername
 	}
-	return currentUsername
+	return strings.ToLower(currentUsername)
 }
 
 // UpdateWatchdogAccountStatus updates the account status in the watchdog state file
 func (am *AccountMonitor) checkCurrentAccount() {
 	// Skip if Riot client is not running
-	if !am.riotClient.IsRunning() && !am.leagueService.IsRunning() {
+	if !am.riotClient.IsRunning() && !am.leagueService.IsRunning() && !am.leagueService.IsPlaying() {
 		am.logger.Debug("Skipping account check - Riot client not running")
 		return
 	}
@@ -271,7 +274,7 @@ func (am *AccountMonitor) checkCurrentAccount() {
 			zap.String("currrentUsername", currentUsername),
 			zap.String("nexusSummonerName", accountUsername))
 
-		if accountUsername == currentUsername {
+		if strings.ToLower(accountUsername) == strings.ToLower(currentUsername) {
 			isNexusAccount = true
 			am.logger.Debug("Match found! Current account is a Nexus-managed account",
 				zap.String("summonerName", currentUsername))
@@ -289,8 +292,8 @@ func (am *AccountMonitor) checkCurrentAccount() {
 			// Try again with fresh data
 			accounts = am.cachedAccounts
 			for _, account := range accounts {
-				accountSummonerName := account.GameName + "#" + account.Tagline
-				if accountSummonerName == currentUsername {
+
+				if strings.ToLower(account.Username) == currentUsername {
 					isNexusAccount = true
 					am.logger.Info("Match found after cache refresh! Current account is a Nexus-managed account",
 						zap.String("summonerName", currentUsername))

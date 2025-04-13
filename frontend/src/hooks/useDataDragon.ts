@@ -209,9 +209,9 @@ export function useAllDataDragon() {
         id: Number.parseInt(skin.id),
         name: skin.name || 'Default',
         champion: champion.name,
-        imageAvatarUrl: `https://ddragon.leagueoflegends.com/cdn/img/champion/loading/${champion.name}_${skin.num}.jpg`,
+        imageAvatarUrl: `https://ddragon.leagueoflegends.com/cdn/img/champion/loading/${champion.id}_${skin.num}.jpg`,
         rarity: determineRarity(skin),
-        imageUrl: `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${champion.name}_${skin.num}.jpg`,
+        imageUrl: `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${champion.id}_${skin.num}.jpg`,
       }));
     });
   }, [versionQuery.data, allChampionDetailsQuery.data]);

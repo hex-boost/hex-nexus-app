@@ -1,6 +1,6 @@
 import type { ExtensionOption } from './extend-rental';
-
 import logoHexBoost from '@/assets/logo-hex-boost.svg';
+
 import {
   AnimatedCoinChange,
   AnimatedCoins,
@@ -18,6 +18,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { useOverlayAccount } from '@/hooks/useOverlayAccount.ts';
 import { cn } from '@/lib/utils';
 import { useUserStore } from '@/stores/useUserStore.ts';
+import { AccountMonitor } from '@league';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Clock, XIcon } from 'lucide-react';
@@ -37,8 +38,7 @@ export function GameOverlay({
   const { data: username, isLoading: isUsernameLoading } = useQuery({
     queryKey: ['loggedInUsername'],
     queryFn: async () => {
-      return 'ilettykooki';
-      // return AccountMonitor.GetLoggedInUsername();
+      return AccountMonitor.GetLoggedInUsername();
     },
   });
 

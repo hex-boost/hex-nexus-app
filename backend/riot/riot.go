@@ -203,7 +203,7 @@ func (rc *RiotClient) InitializeRestyClient() error {
 	rc.client = client
 	return nil
 }
-func (rc *RiotClient) InitializeCaptchaHandling(ctx context.Context) error {
+func (rc *RiotClient) InitializeCaptchaHandling() error {
 
 	if err := rc.InitializeRestyClient(); err != nil {
 		return err

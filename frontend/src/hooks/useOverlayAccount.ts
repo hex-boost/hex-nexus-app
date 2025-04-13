@@ -44,7 +44,7 @@ export function useOverlayAccount(username: string | undefined) {
 
     try {
       // Then perform the actual API call in the background
-      await originalExtendAccount(extensionIndex);
+      originalExtendAccount(extensionIndex);
       // Successful - cache will be refreshed by the invalidateQueries in onAccountChange
     } catch (error) {
       console.error('Account extension failed:', error);

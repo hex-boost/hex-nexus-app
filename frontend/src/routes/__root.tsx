@@ -1,7 +1,6 @@
 import { ErrorPage } from '@/components/error-page.tsx';
 import { useUserStore } from '@/stores/useUserStore';
 import { createRootRouteWithContext, Outlet, redirect } from '@tanstack/react-router';
-import { TanStackRouterDevtools } from '@tanstack/router-devtools';
 
 export type RouterContext = {
   auth: {
@@ -40,7 +39,6 @@ function RootLayout() {
   return (
     <>
       <Outlet />
-      <TanStackRouterDevtools />
 
     </>
   );

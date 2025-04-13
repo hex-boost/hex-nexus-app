@@ -153,6 +153,8 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		panic(err)
 	}
 	var mainWindow *application.WebviewWindow
+
+	gameOverlayManager := gameOverlay.NewGameOverlayManager(appInstance.Log().League())
 	stripeService := stripe.NewStripe(appInstance.Log().Stripe())
 	lcuConn := league.NewLCUConnection(appInstance.Log().League())
 	baseRepo := repository.NewBaseRepository(cfg, appInstance.Log().Repo())
@@ -225,6 +227,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 			application.NewService(accountsRepository),
 			application.NewService(accountMonitor),
 			application.NewService(stripeService),
+			application.NewService(gameOverlayManager),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.BundledAssetFileServer(assets),
@@ -276,7 +279,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 	)
 
 	overlayWindow := gameOverlay.CreateGameOverlay(app)
-	overlayManager := gameOverlay.NewGameOverlayManager(overlayWindow, appInstance.Log().League())
+	gameOverlayManager.SetWindow(overlayWindow)
 	mainWindow.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
 		app.Logger.Info("Window closing event triggered")
 
@@ -291,7 +294,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		accountMonitor.Stop()
 		clientMonitor.Stop()
 		websocketService.Stop()
-		overlayManager.Stop() // Stop the overlay manager
+		gameOverlayManager.Stop() // Stop the overlay manager
 
 	})
 	utilsBind.SetApp(app)
@@ -305,7 +308,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		websocketService.Start()
 		accountMonitor.Start()
 		clientMonitor.Start()
-		overlayManager.Start()
+		gameOverlayManager.Start()
 
 	})
 

@@ -42,7 +42,7 @@ func (s *SummonerRented) MarshalJSON() ([]byte, error) {
 		Currencies   Currencies  `json:"currencies"`
 		Rankings     RankedStats `json:"rankedStats"`
 		Server       string      `json:"server"`
-		ban          Ban         `json:"ban"`
+		Ban          Ban         `json:"ban"`
 	}{
 		Username:     s.Username,
 		GameName:     s.GameName,
@@ -55,7 +55,7 @@ func (s *SummonerRented) MarshalJSON() ([]byte, error) {
 		},
 		Rankings: s.Rankings,
 		Server:   s.Server,
-		ban:      s.Ban,
+		Ban:      s.Ban,
 	})
 }
 

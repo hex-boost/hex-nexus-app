@@ -1,18 +1,11 @@
 import { GameOverlay } from '@/components/GameOverlay.tsx';
-import { Events } from '@wailsio/runtime';
-import { useEffect, useState } from 'react';
+import { GameOverlayManager } from '@overlay';
 
 export function GameOverlayPage() {
-  const [showOverlay, setShowOverlay] = useState(true);
-
-  useEffect(() => {
-    Events.On('overlay:toggle', () => {
-      setShowOverlay(!showOverlay);
-    });
-  }, []);
+  function setShowOverlay() {
+    GameOverlayManager.Hide();
+  }
   return (
-    <>
-      {showOverlay && <GameOverlay setShowOverlay={setShowOverlay} />}
-    </>
+    <GameOverlay setShowOverlay={setShowOverlay} />
   );
 }

@@ -169,7 +169,6 @@ func (c *Captcha) SetWindow(window *application.WebviewWindow) {
 func (c *Captcha) GetWebView() (*application.WebviewWindow, error) {
 
 	c.window.SetURL("http://127.0.0.1:6969/index.html")
-	c.window.Show()
 	return c.window, nil
 }
 
