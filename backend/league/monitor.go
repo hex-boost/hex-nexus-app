@@ -1,6 +1,7 @@
 package league
 
 import (
+	"context"
 	"errors"
 	"github.com/hex-boost/hex-nexus-app/backend/riot"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
@@ -150,11 +151,6 @@ func (cm *ClientMonitor) UpdateAuthState(authState LeagueAuthStateType, errorMsg
 // HasBeenUpdatedBefore checks if the account with the given username has been updated in this session
 
 func (cm *ClientMonitor) checkClientState() {
-	//if !cm.isCheckingState.CompareAndSwap(false, true) {
-	//	cm.logger.Debug("checkClientState already running, skipping this run")
-	//	return
-	//}
-	//defer cm.isCheckingState.Store(false)
 
 	// Check if client is running
 	isRiotClientRunning := cm.riotClient.IsRunning()
@@ -258,6 +254,11 @@ func (cm *ClientMonitor) checkClientState() {
 
 	if previousClientState == ClientStateLoggedIn && clientState != ClientStateLoggedIn && !isLeagueClientRunning {
 		newState.AuthState = AuthStateNone
+	} else if currentState.AuthState == AuthStateWaitingCaptcha {
+		newState.AuthState = AuthStateWaitingCaptcha
+		newState.ClientState = currentState.ClientState
+		cm.updateState(newState)
+		return
 	} else if previousClientState == ClientStateClosed && clientState == ClientStateLoginReady {
 		time.Sleep(4 * time.Second)
 	} else if (currentState.AuthState == AuthStateWaitingLogin ||
@@ -300,6 +301,8 @@ func (cm *ClientMonitor) Start() {
 func (cm *ClientMonitor) OpenWebviewAndGetToken(username string) (string, error) {
 	// Ensure only one captcha flow runs at a time
 	cm.UpdateAuthState(AuthStateWaitingCaptcha, "", username)
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	defer cancel()
 	err := cm.riotClient.InitializeCaptchaHandling()
 	if err != nil {
 		cm.updateState(&LeagueClientState{
