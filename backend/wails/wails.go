@@ -179,13 +179,6 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		},
 		// In the application.New options where you see "KeyBindings:"
 		KeyBindings: map[string]func(window *application.WebviewWindow){
-			"F12": func(window *application.WebviewWindow) {
-				if window != nil {
-					window.OpenDevTools()
-				}
-			},
-
-			// Optional: Add Ctrl+Shift+I as an alternative
 			"ctrl+shift+i": func(window *application.WebviewWindow) {
 				if window != nil {
 					window.OpenDevTools()
@@ -304,9 +297,10 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 	appProtocol.SetWindow(mainWindow)
 	captcha.SetWindow(captchaWindow)
 	websocketService.SetWindow(app)
-	websocketService.SubscribeToLeagueEvents()
 	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(ctx *application.WindowEvent) {
 		websocketService.Start()
+
+		websocketService.SubscribeToLeagueEvents()
 		accountMonitor.Start()
 		clientMonitor.Start()
 		gameOverlayManager.Start()

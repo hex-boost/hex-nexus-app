@@ -131,15 +131,16 @@ func (cm *ClientMonitor) checkClientState() {
 	isRiotClientRunning := cm.riotClient.IsRunning()
 	isLeagueClientRunning := cm.leagueService.IsRunning()
 	isPlayingLeague := cm.leagueService.IsPlaying()
-	if isRiotClientRunning && !cm.riotClient.IsClientInitialized() {
-		cm.initializeRiotClient()
-	}
-	authState, _ := cm.riotClient.GetAuthenticationState()
-	var authType string
-	if authState != nil {
-		cm.logger.Info("authState", zap.String("authType", authState.Type))
-		authType = authState.Type
 
+	var authType string
+	if isRiotClientRunning {
+		if !cm.riotClient.IsClientInitialized() {
+			cm.initializeRiotClient()
+		}
+		authState, _ := cm.riotClient.GetAuthenticationState()
+		if authState != nil {
+			authType = authState.Type
+		}
 	}
 
 	isLoggedIn := isPlayingLeague || isLeagueClientRunning || authType == "success"
@@ -147,6 +148,7 @@ func (cm *ClientMonitor) checkClientState() {
 
 	// Determine client state
 	newState := cm.determineClientState(
+		isRiotClientRunning,
 		isLeagueClientRunning,
 		isLoggedIn,
 		isLoginReady,
@@ -183,6 +185,7 @@ func (cm *ClientMonitor) WaitUntilAuthenticationIsReady(timeout time.Duration) e
 
 // determineClientState determines the current client state based on system conditions
 func (cm *ClientMonitor) determineClientState(
+	isRiotClientRunning bool,
 	isLeagueClientRunning bool,
 	isLoggedIn bool,
 	isLoginReady bool,
@@ -195,6 +198,7 @@ func (cm *ClientMonitor) determineClientState(
 	}
 
 	newState.ClientState = cm.calculateClientState(
+		isRiotClientRunning,
 		isLeagueClientRunning,
 		isLoggedIn,
 		isPlayingLeague,
@@ -208,6 +212,8 @@ func (cm *ClientMonitor) determineClientState(
 
 // calculateClientState determines the client state based on inputs
 func (cm *ClientMonitor) calculateClientState(
+	isRiotClientRunning bool,
+
 	isLeagueClientRunning bool,
 	isLoggedIn bool,
 	isPlayingLeague bool,
@@ -216,7 +222,7 @@ func (cm *ClientMonitor) calculateClientState(
 	previousState *LeagueClientState,
 ) LeagueClientStateType {
 	if currentState.ClientState == ClientStateWaitingLogin {
-		if !cm.riotClient.IsClientInitialized() {
+		if isRiotClientRunning && !cm.riotClient.IsClientInitialized() {
 			err := cm.riotClient.InitializeRestyClient()
 			if err != nil {
 				cm.logger.Error("Error initializing client", zap.Error(err))
