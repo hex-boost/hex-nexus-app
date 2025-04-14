@@ -122,6 +122,11 @@ func (ws *WebSocketService) Stop() {
 // connectToLCUWebSocket establishes a WebSocket connection to the LCU
 func (ws *WebSocketService) connectToLCUWebSocket() error {
 	// Get LCU credentials
+	defer func() {
+		if r := recover(); r != nil {
+
+		}
+	}()
 	port, _, _, err := ws.leagueService.LCUconnection.getLeagueCredentials()
 	if err != nil {
 		return err
@@ -138,6 +143,7 @@ func (ws *WebSocketService) connectToLCUWebSocket() error {
 		InsecureSkipVerify: true, // This is equivalent to NODE_TLS_REJECT_UNAUTHORIZED=0
 	}
 	headers := http.Header{}
+
 	headers.Add("Authorization", ws.leagueService.LCUconnection.client.Header.Get("Authorization"))
 
 	// Connect to WebSocket

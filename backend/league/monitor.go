@@ -3,6 +3,7 @@ package league
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/hex-boost/hex-nexus-app/backend/riot"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -15,7 +16,6 @@ import (
 )
 
 type LeagueClientStateType string
-type LeagueAuthStateType string
 type AccountUpdateStatus struct {
 	Username  string
 	IsUpdated bool
@@ -23,59 +23,45 @@ type AccountUpdateStatus struct {
 
 // Define client state constants
 const (
-	ClientStateClosed     LeagueClientStateType = "CLOSED"
-	ClientStateOpen       LeagueClientStateType = "OPEN"
-	ClientStateLoginReady LeagueClientStateType = "LOGIN_READY"
-	ClientStateLoggedIn   LeagueClientStateType = "LOGGED_IN"
+	ClientStateNone LeagueClientStateType = ""
+
+	ClientStateClosed         LeagueClientStateType = "CLOSED"
+	ClientStateLoginReady     LeagueClientStateType = "LOGIN_READY"
+	ClientStateLoggedIn       LeagueClientStateType = "LOGGED_IN"
+	ClientStateWaitingCaptcha LeagueClientStateType = "WAITING_CAPTCHA"
+	ClientStateWaitingLogin   LeagueClientStateType = "WAITING_LOGIN"
 )
 
 // Define auth state constants
-const (
-	AuthStateNone           LeagueAuthStateType = ""
-	AuthStateWaitingCaptcha LeagueAuthStateType = "WAITING_CAPTCHA"
-	AuthStateWaitingLogin   LeagueAuthStateType = "WAITING_LOGIN"
-	AuthStateLoginSuccess   LeagueAuthStateType = "LOGIN_SUCCESS"
-)
 
 type LeagueClientState struct {
-	ClientState  LeagueClientStateType `json:"clientState"`
-	AuthState    LeagueAuthStateType   `json:"authState"`
-	ErrorMessage string                `json:"errorMessage,omitempty"`
-	LastUpdated  time.Time             `json:"lastUpdated"`
-	Username     string                `json:"username,omitempty"`
+	ClientState LeagueClientStateType `json:"clientState"`
 }
 
-// State mapping between backend and frontend states
 const (
 	EventLeagueStateChanged = "league:state:changed"
 )
 
 type ClientMonitor struct {
-	accountUpdateStatus AccountUpdateStatus
-	app                 *application.App
-	riotClient          *riot.RiotClient
-	isRunning           bool
-	pollingTicker       *time.Ticker
-	logger              *utils.Logger
-	captcha             *riot.Captcha
-	accountMonitor      *AccountMonitor
-	leagueService       *LeagueService
-	// State management
+	accountUpdateStatus   AccountUpdateStatus
+	app                   *application.App
+	riotClient            *riot.RiotClient
+	isRunning             bool
+	pollingTicker         *time.Ticker
+	logger                *utils.Logger
+	captcha               *riot.Captcha
+	accountMonitor        *AccountMonitor
+	leagueService         *LeagueService
 	stateMutex            sync.RWMutex
-	captchaWebview        *application.WebviewWindow
-	captchaWebviewMutex   sync.Mutex
 	captchaFlowInProgress atomic.Bool
 	currentState          *LeagueClientState
-	isCheckingState       atomic.Bool // Tracks if checkClientState is already running
-
+	isCheckingState       atomic.Bool
 }
 
 func NewClientMonitor(logger *utils.Logger, accountMonitor *AccountMonitor, leagueService *LeagueService, riotClient *riot.RiotClient, captcha *riot.Captcha) *ClientMonitor {
 	logger.Info("Creating new client monitor")
 	initialState := &LeagueClientState{
-		ClientState: ClientStateClosed,
-		AuthState:   AuthStateNone,
-		LastUpdated: time.Now(),
+		ClientState: ClientStateNone,
 	}
 
 	monitor := &ClientMonitor{
@@ -112,18 +98,15 @@ func (cm *ClientMonitor) updateState(newState *LeagueClientState) {
 	cm.stateMutex.Lock()
 	defer cm.stateMutex.Unlock()
 
-	stateChanged := cm.currentState.ClientState != newState.ClientState ||
-		cm.currentState.AuthState != newState.AuthState
+	stateChanged := cm.currentState.ClientState != newState.ClientState
 
 	if stateChanged {
 		// Change from Info to Infow for structured logging
 		cm.logger.Sugar().Infow("State changed",
 			"prevClientState", cm.currentState.ClientState,
 			"newClientState", newState.ClientState,
-			"prevAuthState", cm.currentState.AuthState,
-			"newAuthState", newState.AuthState)
+		)
 
-		newState.LastUpdated = time.Now()
 		cm.currentState = newState
 
 		// Emit event to frontend
@@ -134,151 +117,203 @@ func (cm *ClientMonitor) updateState(newState *LeagueClientState) {
 }
 
 // UpdateAuthState updates the authentication state
-func (cm *ClientMonitor) UpdateAuthState(authState LeagueAuthStateType, errorMsg string, username string) {
-	currentState := cm.GetCurrentState()
-
-	newState := &LeagueClientState{
-		ClientState:  currentState.ClientState,
-		AuthState:    authState,
-		ErrorMessage: errorMsg,
-		Username:     username,
-		LastUpdated:  time.Now(),
-	}
-
-	cm.updateState(newState)
-}
 
 // HasBeenUpdatedBefore checks if the account with the given username has been updated in this session
 
+// checkClientState coordinates the client state checking process
 func (cm *ClientMonitor) checkClientState() {
-
-	// Check if client is running
-	isRiotClientRunning := cm.riotClient.IsRunning()
-
-	isLoggedIn := cm.leagueService.IsRunning()
-	isLeagueClientRunning := isLoggedIn
-	isPlayingLeague := cm.leagueService.IsPlaying()
-
-	isLoginReady := false
-
-	currentState := cm.GetCurrentState()
-	newState := &LeagueClientState{
-		ClientState:  currentState.ClientState,
-		AuthState:    currentState.AuthState,
-		ErrorMessage: currentState.ErrorMessage,
-		Username:     currentState.Username,
-	}
-
-	if isLeagueClientRunning {
-		loggedInUsername := cm.accountMonitor.GetLoggedInUsername()
-
-		if cm.leagueService.IsLCUConnectionReady() &&
-			loggedInUsername != "" &&
-			(!cm.accountUpdateStatus.IsUpdated ||
-				strings.ToLower(cm.accountUpdateStatus.Username) != loggedInUsername) {
-			cm.logger.Sugar().Infow("Checking account update status",
-				"currentUsername", loggedInUsername,
-				"lastUpdatedUsername", cm.accountUpdateStatus.Username,
-				"isUpdated", cm.accountUpdateStatus.IsUpdated)
-
-			// Only update if this is a different account or not already updated
-			if strings.ToLower(cm.accountUpdateStatus.Username) != loggedInUsername || !cm.accountUpdateStatus.IsUpdated {
-				cm.logger.Info("Updating account",
-					zap.String("username", loggedInUsername),
-					zap.Any("updateStatus", cm.accountUpdateStatus))
-
-				err := cm.leagueService.UpdateFromLCU(loggedInUsername)
-				if err != nil {
-					cm.logger.Error("Error updating account from LCU", zap.Error(err))
-					// Don't update status on failure so we can retry
-				} else {
-					// Store both values atomically to prevent race condition
-					cm.stateMutex.Lock()
-					cm.accountUpdateStatus.IsUpdated = true
-					cm.accountUpdateStatus.Username = strings.ToLower(loggedInUsername)
-					cm.app.EmitEvent(LeagueWebsocketStartHandlers)
-					cm.stateMutex.Unlock()
-
-					cm.logger.Info("Account successfully updated",
-						zap.String("username", loggedInUsername))
-				}
-			}
-		}
-	} else if cm.accountUpdateStatus.IsUpdated {
-		// Reset update status when league client is closed
-		cm.logger.Info("Resetting account update status",
-			zap.Any("oldUpdateStatus", cm.accountUpdateStatus))
-
-		cm.stateMutex.Lock()
-		cm.accountUpdateStatus.IsUpdated = false
-		cm.accountUpdateStatus.Username = ""
-		cm.app.EmitEvent(LeagueWebsocketStopHandlers)
-		cm.stateMutex.Unlock()
-	}
-	// Get detailed client state if running
-	if isRiotClientRunning {
-		if !cm.riotClient.IsClientInitialized() {
-			cm.logger.Debug("Client running but not initialized, initializing...")
-			err := cm.riotClient.InitializeRestyClient()
-			if err != nil {
-				cm.logger.Error("Error initializing client", zap.Error(err))
-				return
-			}
-			cm.logger.Info("Client initialized successfully")
-		}
-
-		userinfo, userinfoErr := cm.riotClient.GetUserinfo()
-		isLoggedIn = userinfoErr == nil
-
-		if isLoggedIn && userinfo != nil {
-			newState.Username = userinfo.Username
-		}
-
-		authError := cm.riotClient.IsAuthStateValid()
-		isLoginReady = authError == nil
-	}
-
-	// Determine current client state
-	var clientState LeagueClientStateType
-	if !isRiotClientRunning && !isLeagueClientRunning {
-		clientState = ClientStateClosed
-	} else if isLoggedIn || isPlayingLeague || (isLeagueClientRunning && currentState.ClientState == ClientStateOpen) {
-		clientState = ClientStateLoggedIn
-	} else if isLoginReady {
-		clientState = ClientStateLoginReady
-	} else {
-		clientState = ClientStateOpen
-	}
-
-	previousClientState := currentState.ClientState
-
-	if previousClientState == ClientStateLoggedIn && clientState != ClientStateLoggedIn && !isLeagueClientRunning {
-		newState.AuthState = AuthStateNone
-	} else if currentState.AuthState == AuthStateWaitingCaptcha {
-		newState.AuthState = AuthStateWaitingCaptcha
-		newState.ClientState = currentState.ClientState
-		cm.updateState(newState)
+	if !cm.isCheckingState.CompareAndSwap(false, true) {
 		return
-	} else if previousClientState == ClientStateClosed && clientState == ClientStateLoginReady {
-		time.Sleep(4 * time.Second)
-	} else if (currentState.AuthState == AuthStateWaitingLogin ||
-		currentState.AuthState == AuthStateWaitingCaptcha) &&
-		(clientState == ClientStateOpen || clientState == ClientStateLoginReady) {
-		// Keep the auth state as is during auth flow
-	} else if clientState == ClientStateLoggedIn &&
-		currentState.AuthState != AuthStateLoginSuccess {
-		newState.AuthState = AuthStateLoginSuccess
-	} else if clientState == ClientStateClosed {
-		// Reset auth state when client is closed
-		newState.AuthState = AuthStateNone
-	} else {
-		newState.AuthState = currentState.AuthState
+	}
+	defer cm.isCheckingState.Store(false)
+	previousState := cm.GetCurrentState()
+	// Get system state
+	isRiotClientRunning := cm.riotClient.IsRunning()
+	isLeagueClientRunning := cm.leagueService.IsRunning()
+	isPlayingLeague := cm.leagueService.IsPlaying()
+	if isRiotClientRunning && !cm.riotClient.IsClientInitialized() {
+		cm.initializeRiotClient()
+	}
+	authState, _ := cm.riotClient.GetAuthenticationState()
+	var authType string
+	if authState != nil {
+		cm.logger.Info("authState", zap.String("authType", authState.Type))
+		authType = authState.Type
+
 	}
 
-	newState.ClientState = clientState
+	isLoggedIn := isPlayingLeague || isLeagueClientRunning || authType == "success"
+	isLoginReady := isRiotClientRunning && cm.riotClient.IsAuthStateValid() == nil && !isLoggedIn
+
+	// Determine client state
+	newState := cm.determineClientState(
+		isLeagueClientRunning,
+		isLoggedIn,
+		isLoginReady,
+		isPlayingLeague,
+		previousState,
+	)
+
+	// Update account if needed
+	if isLeagueClientRunning {
+		go cm.checkAndUpdateAccount()
+	} else if cm.currentState.ClientState != ClientStateLoggedIn && cm.accountUpdateStatus.IsUpdated {
+		cm.resetAccountUpdateStatus()
+	}
+
+	// Apply the new state
 	cm.updateState(newState)
 }
 
+func (cm *ClientMonitor) WaitUntilAuthenticationIsReady(timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	checkInterval := 100 * time.Millisecond
+
+	for time.Now().Before(deadline) {
+		currentState := cm.GetCurrentState()
+		if currentState.ClientState != ClientStateLoginReady {
+			continue
+		}
+		time.Sleep(checkInterval)
+		return nil
+	}
+
+	return errors.New("timeout waiting for Riot client to initialize")
+}
+
+// determineClientState determines the current client state based on system conditions
+func (cm *ClientMonitor) determineClientState(
+	isLeagueClientRunning bool,
+	isLoggedIn bool,
+	isLoginReady bool,
+	isPlayingLeague bool,
+	previousState *LeagueClientState,
+) *LeagueClientState {
+	currentState := cm.GetCurrentState()
+	newState := &LeagueClientState{
+		ClientState: currentState.ClientState,
+	}
+
+	newState.ClientState = cm.calculateClientState(
+		isLeagueClientRunning,
+		isLoggedIn,
+		isPlayingLeague,
+		isLoginReady,
+		currentState,
+		previousState,
+	)
+
+	return newState
+}
+
+// calculateClientState determines the client state based on inputs
+func (cm *ClientMonitor) calculateClientState(
+	isLeagueClientRunning bool,
+	isLoggedIn bool,
+	isPlayingLeague bool,
+	isLoginReady bool,
+	currentState *LeagueClientState,
+	previousState *LeagueClientState,
+) LeagueClientStateType {
+	if currentState.ClientState == ClientStateWaitingLogin {
+		if !cm.riotClient.IsClientInitialized() {
+			err := cm.riotClient.InitializeRestyClient()
+			if err != nil {
+				cm.logger.Error("Error initializing client", zap.Error(err))
+				return ClientStateWaitingLogin
+			}
+		}
+		authState, err := cm.riotClient.GetAuthenticationState()
+		if err != nil {
+			return ClientStateWaitingLogin
+		}
+		if authState.Type == "success" {
+			cm.logger.Info("Auth state success, user is logged in")
+			return ClientStateLoggedIn
+		}
+
+	}
+	if currentState.ClientState == ClientStateWaitingCaptcha {
+		cm.logger.Info("Waiting for captcha response")
+		return ClientStateWaitingCaptcha
+	}
+	if isLoggedIn || isPlayingLeague || isLeagueClientRunning {
+
+		return ClientStateLoggedIn
+	}
+	if isLoginReady && previousState.ClientState == ClientStateClosed {
+		time.Sleep(4 * time.Second)
+		return ClientStateLoginReady
+	} else if isLoginReady && previousState.ClientState == ClientStateLoggedIn {
+		time.Sleep(1 * time.Second)
+		return ClientStateLoginReady
+	} else if isLoginReady {
+		return ClientStateLoginReady
+	}
+	return ClientStateClosed
+}
+
+// initializeRiotClient initializes the Riot client if needed
+func (cm *ClientMonitor) initializeRiotClient() {
+	cm.logger.Debug("Client running but not initialized, initializing...")
+	err := cm.riotClient.InitializeRestyClient()
+	if err != nil {
+		cm.logger.Error("Error initializing client", zap.Error(err))
+		return
+	}
+	cm.logger.Info("Client initialized successfully")
+}
+
+// checkAndUpdateAccount checks and updates account information if needed
+func (cm *ClientMonitor) checkAndUpdateAccount() {
+	if !cm.leagueService.IsLCUConnectionReady() {
+		return
+	}
+
+	loggedInUsername := cm.accountMonitor.GetLoggedInUsername()
+	if loggedInUsername == "" {
+		return
+	}
+
+	// Check if we need to update
+	if cm.accountUpdateStatus.IsUpdated &&
+		strings.ToLower(cm.accountUpdateStatus.Username) == loggedInUsername {
+		return
+	}
+
+	cm.logger.Sugar().Infow("Checking account update status",
+		"currentUsername", loggedInUsername,
+		"lastUpdatedUsername", cm.accountUpdateStatus.Username,
+		"isUpdated", cm.accountUpdateStatus.IsUpdated)
+
+	// Update account
+	err := cm.leagueService.UpdateFromLCU(loggedInUsername)
+	if err != nil {
+		cm.logger.Error("Error updating account from LCU", zap.Error(err))
+		return
+	}
+
+	// Update status
+	cm.stateMutex.Lock()
+	cm.accountUpdateStatus.IsUpdated = true
+	cm.accountUpdateStatus.Username = strings.ToLower(loggedInUsername)
+	cm.app.EmitEvent(LeagueWebsocketStartHandlers)
+	cm.stateMutex.Unlock()
+
+	cm.logger.Info("Account successfully updated", zap.String("username", loggedInUsername))
+}
+
+// resetAccountUpdateStatus resets the account update status
+func (cm *ClientMonitor) resetAccountUpdateStatus() {
+	cm.logger.Info("Resetting account update status",
+		zap.Any("oldUpdateStatus", cm.accountUpdateStatus))
+
+	cm.stateMutex.Lock()
+	cm.accountUpdateStatus.IsUpdated = false
+	cm.accountUpdateStatus.Username = ""
+	cm.app.EmitEvent(LeagueWebsocketStopHandlers)
+	cm.stateMutex.Unlock()
+}
 func (cm *ClientMonitor) Start() {
 	if cm.isRunning {
 		return
@@ -286,7 +321,7 @@ func (cm *ClientMonitor) Start() {
 
 	cm.logger.Info("Starting LeagueService client monitor")
 	cm.isRunning = true
-	cm.pollingTicker = time.NewTicker(200 * time.Millisecond)
+	cm.pollingTicker = time.NewTicker(500 * time.Millisecond)
 
 	go func() {
 		for {
@@ -298,110 +333,139 @@ func (cm *ClientMonitor) Start() {
 	}()
 }
 
-func (cm *ClientMonitor) OpenWebviewAndGetToken(username string) (string, error) {
-	// Ensure only one captcha flow runs at a time
-	cm.UpdateAuthState(AuthStateWaitingCaptcha, "", username)
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+// OpenWebviewAndGetToken opens a webview for captcha and returns the token
+func (cm *ClientMonitor) OpenWebviewAndGetToken() (string, error) {
+	// Check if captcha flow is already in progress
+	if !cm.captchaFlowInProgress.CompareAndSwap(false, true) {
+		cm.logger.Warn("Captcha flow already in progress")
+		return "", errors.New("captcha_already_in_progress")
+	}
+	cleanup := func() {
+		cm.captchaFlowInProgress.Store(false)
+	}
+	defer cleanup()
+	newState := &LeagueClientState{
+		ClientState: ClientStateWaitingCaptcha,
+	}
+	cm.updateState(newState)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	err := cm.riotClient.InitializeCaptchaHandling()
-	if err != nil {
-		cm.updateState(&LeagueClientState{
-			ClientState:  ClientStateLoginReady,
-			AuthState:    AuthStateNone,
-			ErrorMessage: err.Error(),
-			Username:     username,
-			LastUpdated:  time.Now(),
-		})
+
+	// Initialize captcha handling
+	if err := cm.initializeCaptchaHandling(); err != nil {
 		return "", err
 	}
 
-	// Get or create the shared webview
-	cm.captchaWebviewMutex.Lock()
-	if cm.captchaWebview == nil {
-		webview, err := cm.captcha.GetWebView()
-		if err != nil {
-			cm.captchaWebviewMutex.Unlock()
-			cm.logger.Error("Error opening captcha webview", zap.Error(err))
-			cm.updateState(&LeagueClientState{
-				ClientState:  ClientStateLoginReady,
-				AuthState:    AuthStateNone,
-				ErrorMessage: err.Error(),
-				Username:     username,
-				LastUpdated:  time.Now(),
-			})
-			return "", err
-		}
-		cm.captchaWebview = webview
+	// Get or create webview
+	webview, err := cm.prepareWebview()
+	if err != nil {
+		return "", err
 	}
-	webview := cm.captchaWebview
-	cm.captchaWebviewMutex.Unlock()
+	cancelEvent := webview.OnWindowEvent(events.Windows.WebViewNavigationCompleted, func(event *application.WindowEvent) {
+		cm.logger.Info("Webview navigation completed")
+		time.Sleep(500 * time.Millisecond)
+		webview.Show()
+		webview.Focus()
+	})
+	defer cancelEvent()
 
-	// Create function-local channels for this specific invocation
-	closedChan := make(chan struct{})
+	webview.Reload()
+	response, err := cm.executeCaptchaFlow(ctx, webview)
+	if err != nil {
+
+		cm.captcha.Reset()
+		return "", err
+	}
+	return response, nil
+}
+
+// initializeCaptchaHandling initializes captcha handling
+func (cm *ClientMonitor) initializeCaptchaHandling() error {
+	err := cm.riotClient.InitializeCaptchaHandling()
+	if err != nil {
+		cm.updateState(&LeagueClientState{
+			ClientState: ClientStateLoginReady,
+		})
+		return err
+	}
+	return nil
+}
+
+// prepareWebview prepares the webview for captcha
+func (cm *ClientMonitor) prepareWebview() (*application.WebviewWindow, error) {
+	webview, err := cm.captcha.GetWebView()
+	if err != nil {
+		cm.logger.Error("Error getting captcha webview", zap.Error(err))
+		cm.updateState(&LeagueClientState{
+			ClientState: ClientStateLoginReady,
+		})
+		return nil, err
+	}
+	return webview, nil
+}
+
+// executeCaptchaFlow executes the captcha flow and returns the token
+func (cm *ClientMonitor) executeCaptchaFlow(ctx context.Context, webview *application.WebviewWindow) (string, error) {
 	tokenChan := make(chan string)
 	errChan := make(chan error, 1)
 
-	// Create a context-specific "closed" flag
-	var thisFlowClosed atomic.Bool
-
-	// Register window closing handler that's specific to this invocation
-	webview.RegisterHook(events.Windows.WindowClosing, func(eventCtx *application.WindowEvent) {
+	// Register window closing handler
+	cancel := webview.RegisterHook(events.Windows.WindowClosing, func(eventCtx *application.WindowEvent) {
 		cm.logger.Info("Window closing event triggered")
 		eventCtx.Cancel()
-
-		// Only signal this specific invocation
-		if !thisFlowClosed.Swap(true) {
-			close(closedChan)
-		}
-
+		errChan <- errors.New("captcha_cancelled")
 		webview.Hide()
 	})
-	go func() {
-		webview.Show()
-		webview.Focus()
-		captchaResponse, err := cm.captcha.WaitAndGetCaptchaResponse(15 * time.Second)
-		webview.Hide()
-		if err != nil {
-			cm.logger.Error("Error in captcha flow", zap.Error(err))
-			cm.updateState(&LeagueClientState{
-				ClientState:  ClientStateLoginReady,
-				AuthState:    AuthStateNone,
-				ErrorMessage: err.Error(),
-				Username:     username,
-				LastUpdated:  time.Now(),
-			})
-			errChan <- err
-			return
-		}
-		tokenChan <- captchaResponse
-	}()
+	defer cancel()
 
-	// Wait for results while keeping all channels local to this invocation
+	go cm.handleCaptchaProcess(ctx, webview, tokenChan, errChan)
+
+	// Wait for results
 	select {
 	case <-ctx.Done():
 		cm.logger.Info("Captcha flow timed out")
 		return "", errors.New("captcha_timeout")
 	case err := <-errChan:
+		cm.handleCaptchaCancellation()
+		if err.Error() == "captcha_cancelled" {
+			cm.logger.Info("Captcha flow cancelled by user")
+			return "", err
+		}
 		return "", err
 	case token := <-tokenChan:
 		return token, nil
-	case <-closedChan:
-		cm.logger.Info("Webview was closed by user")
-		cancel()
-		cm.updateState(&LeagueClientState{
-			ClientState:  ClientStateLoginReady,
-			AuthState:    AuthStateNone,
-			ErrorMessage: "Captcha window closed by user",
-			Username:     username,
-			LastUpdated:  time.Now(),
-		})
-		return "", errors.New("captcha_cancelled_by_user")
 	}
 }
 
+// handleCaptchaProcess handles the captcha process
+func (cm *ClientMonitor) handleCaptchaProcess(ctx context.Context, webview *application.WebviewWindow, tokenChan chan string, errChan chan error) {
+	captchaResponse, err := cm.captcha.WaitAndGetCaptchaResponse(ctx, 15*time.Second)
+	webview.Hide()
+
+	if err != nil {
+		cm.logger.Error("Error in captcha flow", zap.Error(err))
+		cm.updateState(&LeagueClientState{
+			ClientState: ClientStateLoginReady,
+		})
+		errChan <- err
+		return
+	}
+
+	tokenChan <- captchaResponse
+}
+
+// handleCaptchaCancellation handles captcha cancellation
+func (cm *ClientMonitor) handleCaptchaCancellation() {
+	cm.logger.Info("Webview was closed by user")
+	cm.updateState(&LeagueClientState{
+		ClientState: ClientStateLoginReady,
+	})
+}
 func (cm *ClientMonitor) SetWindow(app *application.App) {
 	cm.app = app
 }
+
 func (cm *ClientMonitor) Stop() {
 	if !cm.isRunning {
 		return
@@ -412,29 +476,34 @@ func (cm *ClientMonitor) Stop() {
 	cm.isRunning = false
 }
 func (cm *ClientMonitor) HandleLogin(username string, password string, captchaToken string) error {
-	cm.UpdateAuthState(AuthStateWaitingLogin, "", username)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	newState := &LeagueClientState{
+		ClientState: ClientStateWaitingLogin,
+	}
+	cm.updateState(newState)
+	_, err := cm.riotClient.LoginWithCaptcha(ctx, username, password, captchaToken)
 
-	// Existing login logic...
-	_, err := cm.riotClient.LoginWithCaptcha(username, password, captchaToken)
+	// Reset authentication state if there's any error (including timeout)
 	if err != nil {
+		cm.logger.Error("Login failed", zap.Error(err))
+
 		newState := &LeagueClientState{
-			ClientState:  ClientStateLoginReady,
-			AuthState:    AuthStateNone,
-			ErrorMessage: err.Error(),
-			Username:     username,
-			LastUpdated:  time.Now(),
+			ClientState: ClientStateLoginReady,
 		}
 
 		cm.updateState(newState)
+
+		if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+			return fmt.Errorf("login operation timed out: %w", err)
+		}
 
 		return err
 	}
 
 	return nil
 }
-
 func (cm *ClientMonitor) LaunchClient() error {
-	cm.UpdateAuthState(AuthStateNone, "", "")
 
 	// Existing launch logic...
 	err := cm.riotClient.Launch()

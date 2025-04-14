@@ -1,6 +1,0 @@
-export enum LeagueAuthState {
-  NONE = '',
-  WAITING_CAPTCHA = 'WAITING_CAPTCHA',
-  WAITING_LOGIN = 'WAITING_LOGIN',
-  LOGIN_SUCCESS = 'LOGIN_SUCCESS',
-}

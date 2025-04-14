@@ -1,6 +1,7 @@
 import { ErrorPage } from '@/components/error-page.tsx';
 import { useUserStore } from '@/stores/useUserStore';
 import { createRootRouteWithContext, Outlet, redirect } from '@tanstack/react-router';
+import '@wailsio/runtime';
 
 export type RouterContext = {
   auth: {

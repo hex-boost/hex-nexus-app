@@ -96,7 +96,7 @@ func (rc *RiotClient) getCredentials(riotClientPid int) (port string, authToken 
 	return "", "", fmt.Errorf("unable to extract credentials from process %s (PID: %d)", riotClientPid)
 }
 
-func (rc *RiotClient) LoginWithCaptcha(username, password, captchaToken string) (string, error) {
+func (rc *RiotClient) LoginWithCaptcha(ctx context.Context, username, password, captchaToken string) (string, error) {
 	rc.logger.Info("Authenticating with captcha token", zap.String("token_length", fmt.Sprintf("%d", len(captchaToken))))
 
 	authPayload := types.Authentication{
@@ -113,13 +113,30 @@ func (rc *RiotClient) LoginWithCaptcha(username, password, captchaToken string) 
 	}
 
 	var loginResult types.RiotIdentityResponse
-	_, err := rc.client.R().
+	req := rc.client.R().
 		SetBody(authPayload).
-		SetResult(&loginResult).
-		Put("/rso-authenticator/v1/authentication")
-	if err != nil {
-		rc.logger.Error("Authentication with captcha failed", zap.Error(err))
-		return "", fmt.Errorf("authentication request failed: %w", err)
+		SetResult(&loginResult)
+
+	// Create a channel to handle async response
+	done := make(chan error, 1)
+
+	// Execute request in goroutine to handle context cancellation
+	go func() {
+		var err error
+		_, err = req.Put("/rso-authenticator/v1/authentication")
+		done <- err
+	}()
+
+	// Wait for either context cancellation or request completion
+	select {
+	case <-ctx.Done():
+		rc.logger.Error("Authentication timed out", zap.Error(ctx.Err()))
+		return "", fmt.Errorf("authentication timed out: %w", ctx.Err())
+	case err := <-done:
+		if err != nil {
+			rc.logger.Error("Authentication with captcha failed", zap.Error(err))
+			return "", fmt.Errorf("authentication request failed: %w", err)
+		}
 	}
 
 	if loginResult.Type == "multifactor" {
@@ -145,7 +162,6 @@ func (rc *RiotClient) LoginWithCaptcha(username, password, captchaToken string) 
 	rc.logger.Error("Authentication with captcha failed", zap.Any("response", loginResult))
 	return "", errors.New("authentication with captcha failed")
 }
-
 func (rc *RiotClient) Launch() error {
 	rc.ResetRestyClient()
 	rc.logger.Info("Attempting to launch Riot client")
@@ -213,7 +229,10 @@ func (rc *RiotClient) InitializeCaptchaHandling() error {
 		return err
 	}
 	rc.captcha.setRqData(rqdata)
-	rc.captcha.startServer()
+	if err := rc.captcha.startServer(); err != nil {
+		return err
+	}
+
 	return nil
 }
 

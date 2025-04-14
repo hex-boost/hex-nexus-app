@@ -10,35 +10,58 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"go.uber.org/zap"
 	"net/http"
+	"sync"
 	"time"
 )
 
 // Captcha handles all captcha-related functionality
 type Captcha struct {
-	client        *resty.Client
-	logger        *utils.Logger
-	cancel        context.CancelFunc
-	window        *application.WebviewWindow
-	response      chan string
-	captchaServer *http.Server
-	rqdata        string
+	client            *resty.Client
+	logger            *utils.Logger
+	window            *application.WebviewWindow
+	response          chan string
+	captchaServer     *http.Server
+	rqdata            string
+	isServerRunning   bool
+	serverMutex       sync.Mutex
+	captchaInProgress bool
 }
 
 func NewCaptcha(logger *utils.Logger) *Captcha {
 
 	return &Captcha{
-		logger:   logger,
-		response: make(chan string),
+		logger:            logger,
+		response:          make(chan string, 1), // Buffered channel to avoid deadlocks
+		isServerRunning:   false,
+		serverMutex:       sync.Mutex{},
+		captchaInProgress: false,
 	}
 }
 func (c *Captcha) setRqData(rqdata string) {
 	c.rqdata = rqdata
 }
-func (c *Captcha) startServer() {
-	if c.captchaServer != nil {
+
+func (c *Captcha) startServer() error {
+	c.serverMutex.Lock()
+	defer c.serverMutex.Unlock()
+
+	if c.isServerRunning {
 		c.logger.Info("Captcha server already started")
-		return
+		// Clear the response channel if it has pending data
+		select {
+		case <-c.response:
+			c.logger.Info("Cleared pending response from previous captcha session")
+		default:
+			// Channel already empty, do nothing
+		}
+		return nil
 	}
+
+	// Reset the response channel if needed
+	if c.response == nil {
+		c.response = make(chan string, 1)
+	}
+
 	mux := http.NewServeMux()
 
 	captchaServer := &http.Server{
@@ -153,26 +176,70 @@ func (c *Captcha) startServer() {
 	})
 	go func() {
 		c.logger.Info("Starting captcha server on http://127.0.0.1:6969")
+		c.isServerRunning = true
 		if err := captchaServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			c.logger.Error("Failed to start captcha server", zap.Error(err))
+			c.isServerRunning = false
 		}
 	}()
+
+	return nil
+}
+
+func (c *Captcha) stopServer() {
+	c.serverMutex.Lock()
+	defer c.serverMutex.Unlock()
+
+	if c.captchaServer != nil && c.isServerRunning {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		c.logger.Info("Stopping captcha server")
+		if err := c.captchaServer.Shutdown(ctx); err != nil {
+			c.logger.Error("Error shutting down captcha server", zap.Error(err))
+		}
+		c.isServerRunning = false
+		c.captchaServer = nil
+	}
 }
 
 func (c *Captcha) SetResponse(response string) {
-	c.response <- response
+	// Use non-blocking send to avoid deadlocks if channel isn't read
+	select {
+	case c.response <- response:
+		c.logger.Info("Response sent to channel successfully")
+	default:
+		c.logger.Warn("Channel full or closed, creating new channel")
+		c.response = make(chan string, 1)
+		c.response <- response
+	}
 }
+
 func (c *Captcha) SetWindow(window *application.WebviewWindow) {
 	c.window = window
 
 }
 func (c *Captcha) GetWebView() (*application.WebviewWindow, error) {
-
-	c.window.SetURL("http://127.0.0.1:6969/index.html")
+	if c.window == nil {
+		return nil, errors.New("webview_not_initialized")
+	}
 	return c.window, nil
 }
 
-func (c *Captcha) WaitAndGetCaptchaResponse(timeout time.Duration) (string, error) {
+func (c *Captcha) Reset() {
+	c.serverMutex.Lock()
+	defer c.serverMutex.Unlock()
+	c.rqdata = ""
+	c.captchaInProgress = false
+	c.response = make(chan string, 1)
+	c.logger.Info("Captcha fully reseted", zap.String("rqdata", c.rqdata), zap.Bool("captchaInProgress", c.captchaInProgress), zap.Any("response", c.response))
+}
+
+func (c *Captcha) WaitAndGetCaptchaResponse(ctx context.Context, timeout time.Duration) (string, error) {
+
+	c.captchaInProgress = true
+	defer func() { c.captchaInProgress = false }()
+
 	c.logger.Info("Waiting for captcha resolution", zap.Duration("timeout", timeout))
 	select {
 	case token := <-c.response:
@@ -185,5 +252,9 @@ func (c *Captcha) WaitAndGetCaptchaResponse(timeout time.Duration) (string, erro
 	case <-time.After(timeout):
 		c.logger.Info("Timeout waiting for captcha resolution")
 		return "", errors.New("captcha_timeout")
+
+	case <-ctx.Done():
+		c.logger.Info("Context cancelled before captcha resolution")
+		return "", errors.New("captcha_cancelled")
 	}
 }

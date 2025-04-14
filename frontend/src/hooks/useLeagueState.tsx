@@ -10,28 +10,35 @@ export function useLeagueState() {
   const logContext = 'useLeagueState';
 
   useEffect(() => {
+    let mounted = true;
     logger.info(logContext, 'Initializing league state hook');
 
     // Get initial state
-    setIsLoading(true);
     ClientMonitor.GetCurrentState()
       .then((initialState: LeagueClientState) => {
-        logger.info(logContext, 'Received initial state', initialState);
-        setState(initialState);
-        setIsLoading(false);
+        if (mounted) {
+          logger.info(logContext, 'Received initial state', initialState);
+          setState(initialState);
+          setIsLoading(false);
+        }
       })
       .catch((error) => {
-        logger.error(logContext, 'Failed to get initial state', error);
-        setIsLoading(false);
+        if (mounted) {
+          logger.error(logContext, 'Failed to get initial state', error);
+          setIsLoading(false);
+        }
       });
 
     // Listen for state changes
     const cleanup = Events.On('league:state:changed', (event: { data: LeagueClientState[] }) => {
-      logger.info(logContext, 'State changed event received', event);
-      setState(event.data[0]);
+      if (mounted) {
+        logger.info(logContext, 'State changed event received', event);
+        setState(event.data[0]);
+      }
     });
 
     return () => {
+      mounted = false;
       if (cleanup) {
         cleanup();
       }

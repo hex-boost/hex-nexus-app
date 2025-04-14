@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"github.com/hex-boost/hex-nexus-app/backend/process"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
-	"github.com/robotn/gohook"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"go.uber.org/zap"
 	"golang.org/x/sys/windows"
@@ -277,20 +276,20 @@ func (m *GameOverlayManager) monitorGame() {
 	}
 }
 func (m *GameOverlayManager) registerGlobalHotkey() {
-	// Use correct package name (gohook instead of hook)
-	hook.Register(hook.KeyDown, []string{"ctrl", "shift", "b"}, func(e hook.Event) {
-		m.toggleOverlay()
-	})
-	hook.Register(hook.KeyDown, []string{"ctrl", "shift", "m"}, func(e hook.Event) {
-		m.toggleMouseEvents()
-	})
-
-	// Start hook in the background without blocking
-	go func() {
-		_ = hook.Start()
-		<-m.stopChan // Wait for stop signal
-		hook.End()   // Properly end the hook when stopping
-	}()
+	//// Use correct package name (gohook instead of hook)
+	//hook.Register(hook.KeyDown, []string{"ctrl", "shift", "b"}, func(e hook.Event) {
+	//	m.toggleOverlay()
+	//})
+	//hook.Register(hook.KeyDown, []string{"ctrl", "shift", "m"}, func(e hook.Event) {
+	//	m.toggleMouseEvents()
+	//})
+	//
+	//// Start hook in the background without blocking
+	//go func() {
+	//	_ = hook.Start()
+	//	<-m.stopChan // Wait for stop signal
+	//	hook.End()   // Properly end the hook when stopping
+	//}()
 }
 
 func (m *GameOverlayManager) toggleMouseEvents() {

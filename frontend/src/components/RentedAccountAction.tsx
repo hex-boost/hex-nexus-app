@@ -1,9 +1,9 @@
 import type { AccountType } from '@/types/types.ts';
 import { Button } from '@/components/ui/button.tsx';
+
 import { useLeagueManager } from '@/hooks/useLeagueManager.tsx';
 import { useUserStore } from '@/stores/useUserStore.ts';
-import { LeagueAuthState } from '@/types/LeagueAuthState.ts';
-import { LeagueClientState } from '@/types/LeagueClientState.ts';
+import { LeagueClientStateType } from '@league';
 import { LogIn } from 'lucide-react';
 
 type RentedAccountButtonProps = {
@@ -16,11 +16,23 @@ export function RentedAccountButton({ account }: RentedAccountButtonProps) {
     handleLaunchRiotClient,
     handleOpenCaptchaWebview,
     clientState,
-    authenticationState: authState,
+    isStateLoading,
   } = useLeagueManager({ account });
   const { user } = useUserStore();
   // First check if we're in an auth flow regardless of client state
-  if (authState === LeagueAuthState.WAITING_CAPTCHA || authState === LeagueAuthState.WAITING_LOGIN) {
+
+  if (isStateLoading || (clientState === LeagueClientStateType.ClientStateNone)) {
+    return (
+      <Button
+        loading
+        variant="ghost"
+        className="flex-1 w-full text-white"
+      >
+        Loading...
+      </Button>
+    );
+  }
+  if (clientState === LeagueClientStateType.ClientStateWaitingCaptcha || clientState === LeagueClientStateType.ClientStateWaitingLogin) {
     return (
       <Button
         disabled
@@ -28,7 +40,7 @@ export function RentedAccountButton({ account }: RentedAccountButtonProps) {
         variant="ghost"
         className="flex-1 w-full text-white"
       >
-        {authState === LeagueAuthState.WAITING_CAPTCHA
+        {clientState === LeagueClientStateType.ClientStateWaitingCaptcha
           ? 'Waiting captcha solve'
           : 'Authenticating...'}
       </Button>
@@ -38,7 +50,7 @@ export function RentedAccountButton({ account }: RentedAccountButtonProps) {
   // Then handle client state
   const renderButton = () => {
     switch (clientState) {
-      case LeagueClientState.CLOSED:
+      case LeagueClientStateType.ClientStateClosed:
         return (
           <Button
             loading={isLaunchRiotClientPending}
@@ -46,7 +58,7 @@ export function RentedAccountButton({ account }: RentedAccountButtonProps) {
             className="flex-1 !w-full bg-blue-600 hover:bg-blue-700 text-white"
             onClick={() => handleLaunchRiotClient()}
           >
-            {!isLaunchRiotClientPending
+            {!isLaunchRiotClientPending && !isStateLoading
               ? (
                   <>
                     <LogIn className="mr-2 h-4 w-4" />
@@ -59,7 +71,7 @@ export function RentedAccountButton({ account }: RentedAccountButtonProps) {
           </Button>
         );
 
-      case LeagueClientState.LOGIN_READY:
+      case LeagueClientStateType.ClientStateLoginReady:
         // Always enable login button in LOGIN_READY state, regardless of auth state
         return (
           <Button
@@ -73,7 +85,7 @@ export function RentedAccountButton({ account }: RentedAccountButtonProps) {
           </Button>
         );
 
-      case LeagueClientState.LOGGED_IN:
+      case LeagueClientStateType.ClientStateLoggedIn:
         return (
           <Button
             disabled
