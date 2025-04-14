@@ -392,7 +392,7 @@ export interface ApiAccountAccount extends Struct.CollectionTypeSchema {
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     gamename: Schema.Attribute.String & Schema.Attribute.Private;
-    isEmailVerified: Schema.Attribute.Boolean;
+    isEmailVerified: Schema.Attribute.Boolean & Schema.Attribute.Private;
     isPhoneVerified: Schema.Attribute.Boolean;
     LCUchampions: Schema.Attribute.JSON;
     LCUskins: Schema.Attribute.JSON;
@@ -428,7 +428,7 @@ export interface ApiAccountAccount extends Struct.CollectionTypeSchema {
       ]
     >;
     tagline: Schema.Attribute.String & Schema.Attribute.Private;
-    type: Schema.Attribute.Enumeration<['nexus', 'boostroyal']> &
+    type: Schema.Attribute.Enumeration<['nexus', 'boostroyal', 'private']> &
       Schema.Attribute.DefaultTo<'nexus'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -541,6 +541,8 @@ export interface ApiNotificationNotification
         'membership_paid',
         'account_expiring',
         'account_expired',
+        'account_rented',
+        'new_update',
       ]
     >;
     isSeen: Schema.Attribute.Boolean;
@@ -587,9 +589,7 @@ export interface ApiPremiumPremium extends Struct.CollectionTypeSchema {
     > &
       Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
-    tier: Schema.Attribute.Enumeration<
-      ['tier 1', 'tier 2', 'tier 3', 'tier free']
-    >;
+    tier: Schema.Attribute.Enumeration<['basic', 'premium', 'pro', 'free']>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1190,7 +1190,7 @@ export interface PluginUsersPermissionsUser
     accountPermissions: Schema.Attribute.JSON &
       Schema.Attribute.CustomField<
         'plugin::multi-select.multi-select',
-        ['nexus:nexus', 'boostroyal:boostroyal']
+        ['nexus:nexus', 'boostroyal:boostroyal', 'private:private']
       > &
       Schema.Attribute.DefaultTo<'["nexus"]'>;
     actions: Schema.Attribute.Relation<'oneToMany', 'api::action.action'>;

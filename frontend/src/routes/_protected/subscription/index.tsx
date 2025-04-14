@@ -1,5 +1,4 @@
 import type { CheckoutSession, PricingPlan, SubscriptionRequest } from '@/types/membership.ts';
-import { Badge } from '@/components/ui/badge';
 import { Pricing } from '@/components/ui/pricing-cards.tsx';
 import { strapiClient } from '@/lib/strapi.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
@@ -18,10 +17,10 @@ export const Route = createFileRoute('/_protected/subscription/')({
 function RouteComponent() {
   const [pendingPlanTier, setPendingPlanTier] = useState<string | null>(null);
   const { user } = useUserStore();
-  const userPremiumTier = user.premium?.tier;
+  const userPremiumTier = user?.premium?.tier?.toLowerCase();
   const pricingPlans: PricingPlan[] = [
     {
-      tier: 'Free',
+      tier: 'free',
       description: 'Try our service to see if it fits your boosting needs.',
       price: 0,
       period: 'month',
@@ -35,13 +34,13 @@ function RouteComponent() {
           description: '',
         },
       ],
-      buttonText: user?.premium.tier === 'Free Tier' ? 'Current Plan' : 'Get started for free',
+      buttonText: userPremiumTier === 'free' ? 'Current Plan' : 'Get started for free',
       buttonVariant: 'outline',
       buttonIcon: <MoveRight className="w-4 h-4" />,
-      highlighted: userPremiumTier === 'Free Tier',
+      highlighted: userPremiumTier === 'free', // Corrected condition
     },
     {
-      tier: 'Basic',
+      tier: 'basic',
       description: 'Perfect for part-time boosters',
       price: 10,
       benefits: [
@@ -54,13 +53,13 @@ function RouteComponent() {
           description: '',
         },
       ],
-      buttonText: currentPlanTier === 'Basic' ? 'Current Plan' : 'Choose Basic',
+      buttonText: userPremiumTier === 'basic' ? 'Current Plan' : 'Choose Basic',
       buttonVariant: 'outline',
       buttonIcon: <MoveRight className="w-4 h-4" />,
-      highlighted: currentPlanTier === 'Basic',
+      highlighted: userPremiumTier === 'basic',
     },
     {
-      tier: 'Premium',
+      tier: 'premium',
       description: 'The ideal solution for serious boosters who need more accounts.',
       price: 20,
       benefits: [
@@ -73,11 +72,11 @@ function RouteComponent() {
           description: '',
         },
       ],
-      buttonText: currentPlanTier === 'Premium' ? 'Current Plan' : 'Choose Premium',
-      highlighted: currentPlanTier === 'Premium',
+      buttonText: userPremiumTier === 'premium' ? 'Current Plan' : 'Choose Premium',
+      highlighted: userPremiumTier === 'premium',
     },
     {
-      tier: 'Pro',
+      tier: 'pro',
       description: 'For full-time professional boosters',
       price: 30,
       benefits: [
@@ -90,19 +89,16 @@ function RouteComponent() {
           description: '',
         },
       ],
-      buttonText: currentPlanTier === 'Pro' ? 'Current Plan' : 'Choose Professional',
+      buttonText: userPremiumTier === 'pro' ? 'Current Plan' : 'Choose Professional',
       buttonVariant: 'outline',
-      highlighted: currentPlanTier === 'Pro',
+      highlighted: userPremiumTier === 'pro',
     },
   ];
-
   async function createSubscription(data: SubscriptionRequest): Promise<CheckoutSession> {
     try {
-      const response = await strapiClient.request<CheckoutSession>('post', 'stripe/subscription', {
+      return await strapiClient.request<CheckoutSession>('post', 'stripe/subscription', {
         data,
       });
-
-      return response;
     } catch (error) {
       console.error('Subscription creation failed:', error);
       throw new Error('Failed to create subscription');
@@ -112,8 +108,7 @@ function RouteComponent() {
     mutationKey: ['subscription'],
     mutationFn: async (tier: string) => {
       if (user?.premium?.tier) {
-        toast.warning('You already have a plan');
-        return;
+        throw new Error('You already have a plan');
       }
       setPendingPlanTier(tier);
 
@@ -122,19 +117,23 @@ function RouteComponent() {
 
       // 2. Then pass these URLs to Strapi for subscription creation
       return await createSubscription({
-        subscriptionTier: mapDisplayNameToApiTier(tier),
+        subscriptionTier: tier, // Directly pass tier (no mapping needed)
         successUrl,
         cancelUrl,
       });
     },
     onSuccess: async (data) => {
-      await Browser.OpenURL(data?.url!);
+      await Browser.OpenURL(data.url as string);
       setPendingPlanTier(null);
     },
     onError: (error) => {
+      if (error.message) {
+        toast.warning(error.message);
+      }
       console.error('Subscription error:', error);
       setPendingPlanTier(null);
     },
+
   });
   return (
     <div>
@@ -148,13 +147,7 @@ function RouteComponent() {
               <p className="leading-relaxed tracking-tight text-muted-foreground max-w-xl text-center">
                 Access premium LoL accounts for your boosting services with flexible plans
               </p>
-              <p className="text-center">
-                <Badge variant="outline" className="text-primary">
-                  Current Plan:
-                  {' '}
-                  {currentPlanTier}
-                </Badge>
-              </p>
+
             </div>
             <Pricing
               pendingPlanTier={pendingPlanTier}
