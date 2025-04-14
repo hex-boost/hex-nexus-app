@@ -16,32 +16,12 @@ export const Route = createFileRoute('/_protected/subscription/')({
 });
 
 function RouteComponent() {
-  const [currentApiTier] = useState<string | undefined>('tier 2');
   const [pendingPlanTier, setPendingPlanTier] = useState<string | null>(null);
   const { user } = useUserStore();
-
-  const mapTierToDisplayName = (tier: string | undefined): string => {
-    switch (tier) {
-      case 'tier 1': return 'Professional';
-      case 'tier 2': return 'Premium';
-      case 'tier 3': return 'Basic';
-      default: return 'Free Trial';
-    }
-  };
-
-  const mapDisplayNameToApiTier = (displayName: string): string => {
-    switch (displayName) {
-      case 'Professional': return 'tier 1';
-      case 'Premium': return 'tier 2';
-      case 'Basic': return 'tier 3';
-      default: return 'free';
-    }
-  };
-
-  const currentPlanTier = mapTierToDisplayName(currentApiTier);
+  const userPremiumTier = user.premium?.tier;
   const pricingPlans: PricingPlan[] = [
     {
-      tier: 'Free Trial',
+      tier: 'Free',
       description: 'Try our service to see if it fits your boosting needs.',
       price: 0,
       period: 'month',
@@ -55,10 +35,10 @@ function RouteComponent() {
           description: '',
         },
       ],
-      buttonText: currentPlanTier === 'Free Trial' ? 'Current Plan' : 'Get started for free',
+      buttonText: user?.premium.tier === 'Free Tier' ? 'Current Plan' : 'Get started for free',
       buttonVariant: 'outline',
       buttonIcon: <MoveRight className="w-4 h-4" />,
-      highlighted: currentPlanTier === 'Free Trial',
+      highlighted: userPremiumTier === 'Free Tier',
     },
     {
       tier: 'Basic',
@@ -81,7 +61,7 @@ function RouteComponent() {
     },
     {
       tier: 'Premium',
-      description: 'The ideal solution for serious boosters who accounts.',
+      description: 'The ideal solution for serious boosters who need more accounts.',
       price: 20,
       benefits: [
         {
@@ -97,7 +77,7 @@ function RouteComponent() {
       highlighted: currentPlanTier === 'Premium',
     },
     {
-      tier: 'Professional',
+      tier: 'Pro',
       description: 'For full-time professional boosters',
       price: 30,
       benefits: [
@@ -110,9 +90,9 @@ function RouteComponent() {
           description: '',
         },
       ],
-      buttonText: currentPlanTier === 'Professional' ? 'Current Plan' : 'Choose Professional',
+      buttonText: currentPlanTier === 'Pro' ? 'Current Plan' : 'Choose Professional',
       buttonVariant: 'outline',
-      highlighted: currentPlanTier === 'Professional',
+      highlighted: currentPlanTier === 'Pro',
     },
   ];
 

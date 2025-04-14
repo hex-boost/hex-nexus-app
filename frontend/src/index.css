@@ -137,10 +137,10 @@ body {
     background-color: var(--color-background); /* Explicitly set background color */
     color: var(--color-foreground);
     overflow-x: hidden; /* Prevent horizontal scrolling */
-    display: flex;
-    flex-direction: column;
 }
-
+#root {
+    min-height: 100vh; /* Change height to min-height */
+}
 html {
     height: 100%;
     background-color: var(--color-background); /* Set background on html too */
