@@ -16,22 +16,27 @@ export function NotificationDemo() {
     const notifications = {
       account_expired: {
         title: 'Account Expired',
+        priority: 'low',
         message: 'Your League of Legends account \'SummonerKing123\' has expired. Renew now to continue using it.',
       },
       subscription_expiring: {
         title: 'Subscription Expiring Soon',
+        priority: 'low',
         message: 'Your premium subscription will expire in 3 days. Extend now to avoid interruption.',
       },
       subscription_paid: {
         title: 'Payment Successful',
+        priority: 'low',
         message: 'Your monthly subscription payment of $19.99 was successfully processed.',
       },
       account_expiring: {
         title: 'Account Expiring Soon',
+        priority: 'low',
         message: 'Your League of Legends account \'DragonSlayer99\' will expire in 2 days.',
       },
       system_message: {
         title: 'Maintenance Scheduled',
+        priority: 'low',
         message:
           'We\'ll be performing system maintenance on June 15th from 2-4 AM UTC. Service may be temporarily unavailable.',
         actionUrl: '#maintenance-details',

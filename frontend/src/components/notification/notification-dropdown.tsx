@@ -1,8 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { Link } from '@tanstack/react-router';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bell, Check, Cog, Settings, X } from 'lucide-react';
+import { Bell, Check, Cog, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { CustomScrollbar } from './CustomScrollbar.tsx';
 import { NotificationEmptyState } from './notification-empty-state';
@@ -54,7 +53,7 @@ export function NotificationDropdown() {
       transition={{ duration: 0.2 }}
       ref={dropdownRef}
       className={cn(
-        'absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-[#0F0F12] rounded-lg shadow-lg',
+        'absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-card rounded-lg shadow-lg',
         'border border-gray-200 dark:border-[#1F1F23] z-50',
         'max-h-[80vh] flex flex-col',
       )}
@@ -92,28 +91,28 @@ export function NotificationDropdown() {
               <span className="hidden sm:inline">Mark all read</span>
             </button>
           )}
-          <button
-            onClick={() => setActiveTab(activeTab === 'notifications' ? 'settings' : 'notifications')}
-            className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white flex items-center gap-1 p-1 rounded hover:bg-gray-100 dark:hover:bg-[#1F1F23]"
-            aria-label={activeTab === 'notifications' ? 'Notification settings' : 'Back to notifications'}
-          >
-            {activeTab === 'notifications'
-              ? (
-                  <>
-                    <Settings className="h-3 w-3" />
-                    <span className="hidden sm:inline">Settings</span>
-                  </>
-                )
-              : (
-                  <>
-                    <Bell className="h-3 w-3" />
-                    <span className="hidden sm:inline">Notifications</span>
-                  </>
-                )}
-          </button>
+          {/* <button */}
+          {/*  onClick={() => setActiveTab(activeTab === 'notifications' ? 'settings' : 'notifications')} */}
+          {/*  className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white flex items-center gap-1 p-1 rounded hover:bg-gray-100 dark:hover:bg-[#1F1F23]" */}
+          {/*  aria-label={activeTab === 'notifications' ? 'Notification settings' : 'Back to notifications'} */}
+          {/* > */}
+          {/*  {activeTab === 'notifications' */}
+          {/*    ? ( */}
+          {/*        <> */}
+          {/*          <Settings className="h-3 w-3" /> */}
+          {/*          <span className="hidden sm:inline">Settings</span> */}
+          {/*        </> */}
+          {/*      ) */}
+          {/*    : ( */}
+          {/*        <> */}
+          {/*          <Bell className="h-3 w-3" /> */}
+          {/*          <span className="hidden sm:inline">Notifications</span> */}
+          {/*        </> */}
+          {/*      )} */}
+          {/* </button> */}
           <button
             onClick={() => setIsDropdownOpen(false)}
-            className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white p-1 rounded hover:bg-gray-100 dark:hover:bg-[#1F1F23]"
+            className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white p-1 rounded-full hover:bg-gray-100 dark:hover:bg-[#1F1F23]"
             aria-label="Close notifications"
           >
             <X className="h-4 w-4" />
@@ -152,7 +151,7 @@ export function NotificationDropdown() {
               </TabsList>
             </div>
 
-            <CustomScrollbar ref={scrollContainerRef} className="flex-1 min-h-0" theme="lol-blue" autoHide>
+            <CustomScrollbar ref={scrollContainerRef} className="flex-1 min-h-0 max-h-[400px]">
               <TabsContent value="all" className="m-0 p-0 h-full">
                 <AnimatePresence>
                   {notifications.length > 0
@@ -196,28 +195,28 @@ export function NotificationDropdown() {
                 >
                   Clear all
                 </button>
-                <Link
-                  to="/notifications"
-                  className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center justify-center gap-1"
-                >
-                  View all notifications
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-3 w-3"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </Link>
+                {/* <Link */}
+                {/*  to="/notifications" */}
+                {/*  className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center justify-center gap-1" */}
+                {/* > */}
+                {/*  View all notifications */}
+                {/*  <svg */}
+                {/*    xmlns="http://www.w3.org/2000/svg" */}
+                {/*    className="h-3 w-3" */}
+                {/*    fill="none" */}
+                {/*    viewBox="0 0 24 24" */}
+                {/*    stroke="currentColor" */}
+                {/*  > */}
+                {/*    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /> */}
+                {/*  </svg> */}
+                {/* </Link> */}
               </div>
             </div>
           )}
         </TabsContent>
 
         <TabsContent value="settings" className="flex-1 m-0 p-0 data-[state=active]:flex-1">
-          <CustomScrollbar className="max-h-[400px]" theme="lol-blue" autoHide>
+          <CustomScrollbar className="max-h-[400px]">
             <div className="p-4">
               <NotificationSettings inDropdown />
             </div>

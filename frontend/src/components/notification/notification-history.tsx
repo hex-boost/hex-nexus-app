@@ -40,15 +40,15 @@ export function NotificationHistory() {
           matchesPeriod = notificationDate.toDateString() === now.toDateString();
           break;
         case 'week':
-          const weekAgo = new Date();
+        { const weekAgo = new Date();
           weekAgo.setDate(now.getDate() - 7);
           matchesPeriod = notificationDate >= weekAgo;
-          break;
+          break; }
         case 'month':
-          const monthAgo = new Date();
+        { const monthAgo = new Date();
           monthAgo.setMonth(now.getMonth() - 1);
           matchesPeriod = notificationDate >= monthAgo;
-          break;
+          break; }
       }
     }
 
@@ -85,8 +85,8 @@ export function NotificationHistory() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">Notification History</h3>
+      <div className="flex items-center justify-between pb-6">
+        <h1 className="text-3xl font-semibold  ">Notification History</h1>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={markAllAsRead} className="text-xs" disabled={unreadCount === 0}>
             Mark all as read
@@ -193,8 +193,8 @@ export function NotificationHistory() {
         </div>
 
         <TabsContent value="all" className="m-0 p-0">
-          <div className="bg-white dark:bg-[#0F0F12] rounded-lg border border-gray-200 dark:border-[#1F1F23] overflow-hidden">
-            <CustomScrollbar ref={scrollContainerRef} className="max-h-[600px]" theme="lol-gold" autoHide>
+          <div className="bg-white dark:bg-card-darker rounded-lg border border-gray-200 dark:border-[#1F1F23] overflow-hidden">
+            <CustomScrollbar ref={scrollContainerRef} className="max-h-[600px]">
               {filteredNotifications.length > 0
                 ? (
                     <div className="divide-y divide-gray-200 dark:divide-[#1F1F23]">
@@ -214,7 +214,7 @@ export function NotificationHistory() {
 
         <TabsContent value="unread" className="m-0 p-0">
           <div className="bg-white dark:bg-[#0F0F12] rounded-lg border border-gray-200 dark:border-[#1F1F23] overflow-hidden">
-            <CustomScrollbar className="max-h-[600px]" theme="lol-gold" autoHide>
+            <CustomScrollbar className="max-h-[600px]">
               {filteredNotifications.length > 0
                 ? (
                     <div className="divide-y divide-gray-200 dark:divide-[#1F1F23]">
@@ -234,7 +234,7 @@ export function NotificationHistory() {
 
         <TabsContent value="read" className="m-0 p-0">
           <div className="bg-white dark:bg-[#0F0F12] rounded-lg border border-gray-200 dark:border-[#1F1F23] overflow-hidden">
-            <CustomScrollbar className="max-h-[600px]" theme="lol-gold" autoHide>
+            <CustomScrollbar className="max-h-[600px]">
               {filteredNotifications.length > 0
                 ? (
                     <div className="divide-y divide-gray-200 dark:divide-[#1F1F23]">

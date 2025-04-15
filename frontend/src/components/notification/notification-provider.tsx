@@ -8,7 +8,8 @@ export type NotificationType =
   | 'subscription_expiring'
   | 'subscription_paid'
   | 'account_expiring'
-  | 'system_message';
+  | 'system_message'
+  | 'subscription_expired';
 
 export type NotificationPriority = 'high' | 'medium' | 'low';
 

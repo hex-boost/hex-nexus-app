@@ -53,7 +53,7 @@ export function ErrorPage({ error }: ErrorPageProps) {
           </p>
 
           {isDevelopment && error instanceof Error && error.stack && (
-            <div className="mt-4 p-4 bg-zinc-100 dark:bg-zinc-800 rounded-md text-left overflow-auto">
+            <div className="mt-4 p-4 bg-zinc-100 dark:bg-zinc-800 rounded-md text-left overflow-y-auto">
               <p className="font-mono text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">
                 {error.stack}
               </p>

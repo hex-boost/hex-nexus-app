@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+
 import { useNotifications } from './notification-provider';
 
 type NotificationSoundProps = {

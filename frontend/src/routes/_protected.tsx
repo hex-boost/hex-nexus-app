@@ -52,94 +52,95 @@ function DashboardLayout() {
   return (
     <>
       <CloseConfirmationHandler />
-      <ContextMenuProvider>
-        <DefaultContextMenu>
-          <div className="flex flex-col h-screen bg-background">
-            <div
-              className={cls('sticky top-0 z-50 bg-card border-b ml-[89px]')}
-              style={{ '--wails-draggable': 'drag' } as React.CSSProperties}
-            >
-              <div className="flex justify-end items-center gap-6 py-2">
-                <div className="hidden sm:flex justify-center items-center gap-2 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-full">
-                  <CoinIcon className="h-4 w-4 text-amber-500 dark:text-amber-400" />
-                  {isLoading
-                    ? <Skeleton className="w-12 h-4.5"></Skeleton>
-                    : (
-                        <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                          {user?.coins.toLocaleString()}
-                          {' '}
-                          coins
-                        </span>
-                      )}
-                </div>
 
-                <NotificationProvider>
-                  <NotificationBell />
-                </NotificationProvider>
-                <DropdownMenu>
-                  <DropdownMenuTrigger className="focus:outline-none">
-                    <div className="flex gap-2 rounded-full cursor-pointer">
-                      {isLoading
-                        ? <Skeleton className="h-8 w-8 rounded-full p-0"></Skeleton>
-                        : (
-                            <Avatar className="h-8 w-8 rounded-full p-0">
-                              <AvatarImage src={userAvatar} alt={user?.username} />
-                              <AvatarFallback className="rounded-full">{user?.username.slice(0, 2)}</AvatarFallback>
-                            </Avatar>
-                          )}
-                    </div>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="end"
-                    sideOffset={8}
-                    className="w-[280px] sm:w-96 border-none p-0 backdrop-blur-xl bg-card rounded-2xl shadow-lg"
-                  >
+      <NotificationProvider>
+        <ContextMenuProvider>
+          <DefaultContextMenu>
+            <div className="flex flex-col h-screen bg-background">
+              <div
+                className={cls('sticky top-0 z-50 bg-card border-b ml-[89px]')}
+                style={{ '--wails-draggable': 'drag' } as React.CSSProperties}
+              >
+                <div className="flex justify-end items-center gap-6 py-2">
+                  <div className="hidden sm:flex justify-center items-center gap-2 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-full">
+                    <CoinIcon className="h-4 w-4 text-amber-500 dark:text-amber-400" />
                     {isLoading
-                      ? <Skeleton></Skeleton>
-                      : <UserProfile updateAction={refetchUser} user={user!} logoutAction={handleLogout} />}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <WindowControls className="px-4 py-2" />
-              </div>
-            </div>
-
-            <AdminPanelLayout>
-              <Dialog open={isNoteDialogOpen} onOpenChange={setIsNoteDialogOpen}>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>{noteText ? 'Edit Note' : 'Add Note'}</DialogTitle>
-                    <DialogDescription>
-                      Add a personal note about this account to help you remember important details.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <Textarea
-                      placeholder="Enter your note here..."
-                      value={noteText}
-                      onChange={e => setNoteText(e.target.value)}
-                      className="min-h-[100px] resize-none "
-                    />
+                      ? <Skeleton className="w-12 h-4.5"></Skeleton>
+                      : (
+                          <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                            {user?.coins.toLocaleString()}
+                            {' '}
+                            coins
+                          </span>
+                        )}
                   </div>
-                  <DialogFooter>
-                    <Button
-                      variant="outline"
-                      onClick={() => setIsNoteDialogOpen(false)}
+
+                  <NotificationBell />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger className="focus:outline-none">
+                      <div className="flex gap-2 rounded-full cursor-pointer">
+                        {isLoading
+                          ? <Skeleton className="h-8 w-8 rounded-full p-0"></Skeleton>
+                          : (
+                              <Avatar className="h-8 w-8 rounded-full p-0">
+                                <AvatarImage src={userAvatar} alt={user?.username} />
+                                <AvatarFallback className="rounded-full">{user?.username.slice(0, 2)}</AvatarFallback>
+                              </Avatar>
+                            )}
+                      </div>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      sideOffset={8}
+                      className="w-[280px] sm:w-96 border-none p-0 backdrop-blur-xl bg-card rounded-2xl shadow-lg"
                     >
-                      Cancel
-                    </Button>
-                    <Button onClick={handleSaveNote} disabled={updateFavoriteNote.isPending}>
-                      {updateFavoriteNote.isPending ? 'Saving...' : 'Save Note'}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-              <div className="p-6">
-                <Outlet />
+                      {isLoading
+                        ? <Skeleton></Skeleton>
+                        : <UserProfile updateAction={refetchUser} user={user!} logoutAction={handleLogout} />}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <WindowControls className="px-4 py-2" />
+                </div>
               </div>
-            </AdminPanelLayout>
-          </div>
-        </DefaultContextMenu>
-      </ContextMenuProvider>
+
+              <AdminPanelLayout>
+                <Dialog open={isNoteDialogOpen} onOpenChange={setIsNoteDialogOpen}>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>{noteText ? 'Edit Note' : 'Add Note'}</DialogTitle>
+                      <DialogDescription>
+                        Add a personal note about this account to help you remember important details.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <Textarea
+                        placeholder="Enter your note here..."
+                        value={noteText}
+                        onChange={e => setNoteText(e.target.value)}
+                        className="min-h-[100px] resize-none "
+                      />
+                    </div>
+                    <DialogFooter>
+                      <Button
+                        variant="outline"
+                        onClick={() => setIsNoteDialogOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button onClick={handleSaveNote} disabled={updateFavoriteNote.isPending}>
+                        {updateFavoriteNote.isPending ? 'Saving...' : 'Save Note'}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+                <div className="p-6">
+                  <Outlet />
+                </div>
+              </AdminPanelLayout>
+            </div>
+          </DefaultContextMenu>
+        </ContextMenuProvider>
+      </NotificationProvider>
     </>
   );
 }

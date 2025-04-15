@@ -126,7 +126,7 @@ export function NotificationItem({ notification }: NotificationItemProps) {
       exit={{ opacity: 0, x: 100 }}
       transition={{ duration: 0.2 }}
       className={cn(
-        'p-4 hover:bg-gray-50 dark:hover:bg-[#1F1F23] transition-all relative',
+        'p-4 hover:bg-gray-50 dark:hover:bg-[#1F1F23]  transition-all relative',
         getBackgroundColor(),
         getBorderColor(),
         isExiting && 'opacity-0 transform translate-x-full transition-all duration-300',
