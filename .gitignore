@@ -7,3 +7,7 @@ build/bin/*
 bin/*
 .task
 *.syso
+/build/icons.icns
+/build/windows/icons.ico
+/build/windows/nsis/MicrosoftEdgeWebview2Setup.exe
+/build/windows/nsis/Nexus-Setup-1.0.0.exe
