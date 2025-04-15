@@ -1,4 +1,5 @@
 import type { PremiumTiers } from '@/types/types.ts';
+import { BoostRoyalInnerDialog } from '@/components/BoostRoyalInnerDialog.tsx';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -9,13 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  InnerDialog,
-  InnerDialogContent,
-  InnerDialogDescription,
-  InnerDialogFooter,
-  InnerDialogHeader,
-  InnerDialogTitle,
-  InnerDialogTrigger,
 } from '@/components/ui/nested-dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useMembership } from '@/hooks/useMembership.ts';
@@ -64,15 +58,14 @@ export function PaymentMethodDialog({ children, selectedTier }: { selectedTier: 
         let url: string = '';
         if (selectedPaymentMethod === 'Pix') {
           const pixResponse = await createPixPayment({ membershipEnum: selectedTier });
-          url = pixResponse.data.callback_url as string;
+          url = pixResponse.data.point_of_interaction?.transaction_data?.ticket_url as string;
         }
         if (selectedPaymentMethod === 'Stripe') {
           const [successUrl, cancelUrl] = await Stripe.GetCallbackURLs();
-          const stripeResponse = await createStripeSubscription({ subscriptionTier: selectedTier, cancelUrl, successUrl });
+          const stripeResponse = await createStripeSubscription({ subscriptionTier: selectedTier.toLowerCase(), cancelUrl, successUrl });
           url = stripeResponse.url;
         }
         await Browser.OpenURL(url);
-        toast('fodase');
       },
       onError: (error) => {
         if (error.message) {
@@ -136,37 +129,39 @@ export function PaymentMethodDialog({ children, selectedTier }: { selectedTier: 
           </div>
 
           <DialogFooter className="flex flex-col items-center justify-between space-y-2 border-t px-4 py-2 sm:flex-row sm:space-y-0">
-            <InnerDialog>
-              <InnerDialogTrigger asChild>
-                {/* <Button */}
-                {/*  className="" */}
-                {/* /> */}
-              </InnerDialogTrigger>
-              <InnerDialogContent className="-mt-6 p-0 sm:-mt-1">
-                <InnerDialogHeader className="border-b p-4">
-                  <InnerDialogTitle>BR Balance Payment</InnerDialogTitle>
-                  <InnerDialogDescription>
-                    Handle BR Balance payment here
-                  </InnerDialogDescription>
-                </InnerDialogHeader>
-                <InnerDialogFooter className="flex flex-col items-center justify-between space-y-2 border-t px-4 py-2 sm:flex-row sm:space-x-2 sm:space-y-0">
-                  {/* Add BR Balance specific footer content here */}
-                </InnerDialogFooter>
-              </InnerDialogContent>
-            </InnerDialog>
+
             <DialogClose asChild>
               <Button variant="outline" className="w-full sm:w-auto">
                 Cancel
               </Button>
             </DialogClose>
-            <Button
-              loading={isPending}
-              className="w-full sm:w-auto"
-              onClick={handleContinue}
-            >
-              Continue
-              {paymentMethods.find(payment => payment.title === selectedPaymentMethod)?.isExternal && <ExternalLink />}
-            </Button>
+            {
+              !(selectedPaymentMethod.includes('BR'))
+                ? (
+                    <Button
+                      loading={isPending}
+                      disabled={isPending}
+
+                      className="w-full sm:w-auto"
+                      onClick={handleContinue}
+                    >
+                      Continue
+                      <ExternalLink width={14} height={14} className="ml-2" />
+                    </Button>
+                  )
+                : (
+                    <BoostRoyalInnerDialog>
+                      <Button
+                        loading={isPending}
+                        className="w-full sm:w-auto"
+                        onClick={handleContinue}
+                      >
+                        Continue
+                      </Button>
+                    </BoostRoyalInnerDialog>
+                  )
+
+            }
           </DialogFooter>
         </DialogContent>
       </Dialog>

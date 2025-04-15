@@ -13,6 +13,7 @@ function RouteComponent() {
   const pricingPlans: PricingPlan[] = [
     {
       tier: 'Free',
+      tier_enum: 'free',
       isCurrentPlan: userPremiumTier === 'free',
       description: 'Thanks for verifying your account and being part of Nexus.',
       price: 0,
@@ -68,6 +69,7 @@ function RouteComponent() {
         },
 
       ],
+      tier_enum: 'basic',
       buttonText: 'Choose Basic',
       isCurrentPlan: userPremiumTier === 'basic',
     },
@@ -76,7 +78,7 @@ function RouteComponent() {
       description: 'The ideal solution for serious boosters.',
       price: 20,
       color: 'purple',
-
+      tier_enum: 'premium',
       benefits: [
         {
           title: 'Instantly earns 10000 coins',
@@ -106,6 +108,7 @@ function RouteComponent() {
     },
     {
       tier: 'Pro',
+      tier_enum: 'pro',
       description: 'For full-time professional boosters',
       price: 30,
       color: 'primary',

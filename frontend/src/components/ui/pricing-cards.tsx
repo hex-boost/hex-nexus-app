@@ -187,7 +187,7 @@ export default function PricingCards({ pricingPlans }: { pricingPlans: PricingPl
                     ))}
                   </ul>
 
-                  <PaymentMethodDialog selectedTier={plan.tier}>
+                  <PaymentMethodDialog selectedTier={plan.tier_enum}>
                     <Button
                       className={`  w-full ${getColorClass(plan.color, 'bg')} ${getColorClass(plan.color, 'hover')} text-white py-3 rounded-md mt-6`}
                     >

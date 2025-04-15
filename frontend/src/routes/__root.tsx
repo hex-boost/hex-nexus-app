@@ -1,4 +1,5 @@
 import { ErrorPage } from '@/components/error-page.tsx';
+import { PremiumPaymentModal } from '@/components/PremiumPaymentModal.tsx';
 import { useUserStore } from '@/stores/useUserStore';
 import { createRootRouteWithContext, Outlet, redirect } from '@tanstack/react-router';
 import '@wailsio/runtime';
@@ -39,6 +40,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 function RootLayout() {
   return (
     <>
+      <PremiumPaymentModal isOpen={false} onClose={() => void 0} tier="Premium" paymentMethod="Stripe" colorKey="primary" />
       <Outlet />
 
     </>

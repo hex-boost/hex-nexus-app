@@ -3,6 +3,8 @@ import AdminPanelLayout from '@/components/admin-panel/admin-panel-layout.tsx';
 import { CloseConfirmationHandler } from '@/components/CloseConfirmation.tsx';
 import { CoinIcon } from '@/components/coin-icon.tsx';
 import { DefaultContextMenu } from '@/components/DefaultContextMenu.tsx';
+import { NotificationProvider } from '@/components/notification/notification-provider.tsx';
+import { NotificationBell } from '@/components/notification/NotificationBell.tsx';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import {
@@ -72,6 +74,9 @@ function DashboardLayout() {
                       )}
                 </div>
 
+                <NotificationProvider>
+                  <NotificationBell />
+                </NotificationProvider>
                 <DropdownMenu>
                   <DropdownMenuTrigger className="focus:outline-none">
                     <div className="flex gap-2 rounded-full cursor-pointer">
@@ -100,7 +105,6 @@ function DashboardLayout() {
             </div>
 
             <AdminPanelLayout>
-              {/* Dialog from original _protected.tsx */}
               <Dialog open={isNoteDialogOpen} onOpenChange={setIsNoteDialogOpen}>
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader>

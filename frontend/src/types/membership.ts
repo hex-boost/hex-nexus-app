@@ -6,7 +6,8 @@ export type Benefit = {
 };
 
 export type PricingPlan = {
-  tier: PremiumTiers;
+  tier: string;
+  tier_enum: PremiumTiers;
   price: number;
   period?: string;
   description: string;
