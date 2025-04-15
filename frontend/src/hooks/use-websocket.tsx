@@ -1,25 +1,25 @@
-"use client"
+import type { Socket } from 'socket.io-client';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { io } from 'socket.io-client';
 
-import { useState, useEffect, useRef, useCallback } from "react"
+type UseWebSocketOptions = {
+  url: string;
+  onOpen?: (event: Event) => void;
+  onMessage?: (event: MessageEvent) => void;
+  onClose?: (event: Event) => void;
+  onError?: (event: Event) => void;
+  reconnectInterval?: number;
+  reconnectAttempts?: number;
+  autoReconnect?: boolean;
+};
 
-interface UseWebSocketOptions {
-  url: string
-  onOpen?: (event: WebSocketEventMap["open"]) => void
-  onMessage?: (event: WebSocketEventMap["message"]) => void
-  onClose?: (event: WebSocketEventMap["close"]) => void
-  onError?: (event: WebSocketEventMap["error"]) => void
-  reconnectInterval?: number
-  reconnectAttempts?: number
-  autoReconnect?: boolean
-}
-
-interface UseWebSocketReturn {
-  sendMessage: (data: string | ArrayBufferLike | Blob | ArrayBufferView) => void
-  lastMessage: WebSocketEventMap["message"] | null
-  readyState: number
-  connectionStatus: "connecting" | "open" | "closing" | "closed" | "reconnecting"
-  reconnect: () => void
-}
+type UseWebSocketReturn = {
+  sendMessage: (data: string | ArrayBufferLike | Blob | ArrayBufferView) => void;
+  lastMessage: MessageEvent | null;
+  readyState: number;
+  connectionStatus: 'connecting' | 'open' | 'closing' | 'closed' | 'reconnecting';
+  reconnect: () => void;
+};
 
 export function useWebSocket({
   url,
@@ -31,133 +31,101 @@ export function useWebSocket({
   reconnectAttempts = 5,
   autoReconnect = true,
 }: UseWebSocketOptions): UseWebSocketReturn {
-  const [lastMessage, setLastMessage] = useState<WebSocketEventMap["message"] | null>(null)
-  const [readyState, setReadyState] = useState<number>(WebSocket.CONNECTING)
+  const [lastMessage, setLastMessage] = useState<MessageEvent | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<
-    "connecting" | "open" | "closing" | "closed" | "reconnecting"
-  >("connecting")
+        'connecting' | 'open' | 'closing' | 'closed' | 'reconnecting'
+  >('connecting');
+  const [readyState, setReadyState] = useState<number>(WebSocket.CONNECTING);
 
-  const websocketRef = useRef<WebSocket | null>(null)
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const reconnectAttemptsRef = useRef(0)
+  const socketRef = useRef<Socket | null>(null);
 
-  // Function to create a new WebSocket connection
-  const connect = useCallback(() => {
-    // Clean up any existing connection
-    if (websocketRef.current) {
-      websocketRef.current.close()
-    }
+  // Map connection status to WebSocket readyState constants
+  const updateReadyState = useCallback((status: typeof connectionStatus) => {
+    const stateMap = {
+      connecting: WebSocket.CONNECTING,
+      open: WebSocket.OPEN,
+      closing: WebSocket.CLOSING,
+      closed: WebSocket.CLOSED,
+      reconnecting: WebSocket.CONNECTING,
+    };
+    setReadyState(stateMap[status]);
+  }, []);
 
-    // In a real implementation, we would connect to the actual WebSocket server
-    // For this demo, we'll simulate the connection
-    setConnectionStatus("connecting")
+  const handleConnect = useCallback(() => {
+    setConnectionStatus('open');
+    updateReadyState('open');
+    onOpen?.(new Event('open'));
+  }, [onOpen, updateReadyState]);
 
-    // Simulate WebSocket connection
-    setTimeout(() => {
-      // In a real implementation, this would be:
-      // websocketRef.current = new WebSocket(url)
+  const handleDisconnect = useCallback((reason: string) => {
+    setConnectionStatus('closed');
+    updateReadyState('closed');
+    onClose?.(new Event('close'));
+  }, [onClose, updateReadyState]);
 
-      // For demo purposes, we'll just simulate the connection state
-      setReadyState(WebSocket.OPEN)
-      setConnectionStatus("open")
+  const handleError = useCallback((error: Error) => {
+    onError?.(new Event('error'));
+  }, [onError]);
 
-      if (onOpen) {
-        onOpen({ type: "open" } as unknown as WebSocketEventMap["open"])
-      }
-    }, 500)
+  const handleMessage = useCallback((data: string | ArrayBufferLike | Blob | ArrayBufferView) => {
+    const syntheticEvent = {
+      data,
+      type: 'message',
+    } as MessageEvent;
+    setLastMessage(syntheticEvent);
+    onMessage?.(syntheticEvent);
+  }, [onMessage]);
 
-    // In a real implementation, we would set up event handlers:
-    /*
-    websocketRef.current = new WebSocket(url)
-    
-    websocketRef.current.onopen = (event) => {
-      setReadyState(WebSocket.OPEN)
-      setConnectionStatus("open")
-      reconnectAttemptsRef.current = 0
-      if (onOpen) onOpen(event)
-    }
-    
-    websocketRef.current.onmessage = (event) => {
-      setLastMessage(event)
-      if (onMessage) onMessage(event)
-    }
-    
-    websocketRef.current.onclose = (event) => {
-      setReadyState(WebSocket.CLOSED)
-      setConnectionStatus("closed")
-      if (onClose) onClose(event)
-      
-      // Attempt to reconnect if enabled
-      if (autoReconnect && reconnectAttemptsRef.current < reconnectAttempts) {
-        setConnectionStatus("reconnecting")
-        reconnectTimeoutRef.current = setTimeout(() => {
-          reconnectAttemptsRef.current += 1
-          connect()
-        }, reconnectInterval)
-      }
-    }
-    
-    websocketRef.current.onerror = (event) => {
-      if (onError) onError(event)
-    }
-    */
-  }, [url, onOpen, onMessage, onClose, onError, autoReconnect, reconnectAttempts, reconnectInterval])
-
-  // Connect on mount, disconnect on unmount
   useEffect(() => {
-    connect()
+    socketRef.current = io(url, {
+      reconnection: autoReconnect,
+      reconnectionAttempts: reconnectAttempts,
+      reconnectionDelay: reconnectInterval,
+      transports: ['websocket'],
+    });
+
+    socketRef.current.on('connect', handleConnect);
+    socketRef.current.on('disconnect', handleDisconnect);
+    socketRef.current.on('error', handleError);
+    socketRef.current.on('message', handleMessage);
+
+    // Socket.io specific status events
+    socketRef.current.on('connecting', () => {
+      setConnectionStatus('connecting');
+      updateReadyState('connecting');
+    });
+
+    socketRef.current.on('reconnect_attempt', () => {
+      setConnectionStatus('reconnecting');
+      updateReadyState('reconnecting');
+    });
 
     return () => {
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current)
+      if (socketRef.current) {
+        socketRef.current.off('connect', handleConnect);
+        socketRef.current.off('disconnect', handleDisconnect);
+        socketRef.current.off('error', handleError);
+        socketRef.current.off('message', handleMessage);
+        socketRef.current.disconnect();
+        socketRef.current = null;
       }
+    };
+  }, [url, autoReconnect, reconnectAttempts, reconnectInterval, handleConnect, handleDisconnect, handleError, handleMessage, updateReadyState]);
 
-      if (websocketRef.current) {
-        websocketRef.current.close()
-      }
-    }
-  }, [connect])
-
-  // Function to send a message through the WebSocket
   const sendMessage = useCallback((data: string | ArrayBufferLike | Blob | ArrayBufferView) => {
-    if (websocketRef.current && websocketRef.current.readyState === WebSocket.OPEN) {
-      websocketRef.current.send(data)
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('message', data);
     } else {
-      console.error("WebSocket is not connected")
+      console.error('Socket is not connected');
     }
-  }, [])
+  }, []);
 
-  // Function to manually reconnect
   const reconnect = useCallback(() => {
-    reconnectAttemptsRef.current = 0
-    connect()
-  }, [connect])
-
-  // Simulate receiving a message (for demo purposes)
-  useEffect(() => {
-    // This would normally come from the actual WebSocket
-    // For demo purposes, we'll simulate receiving a message after 3 seconds
-    const timeout = setTimeout(() => {
-      const mockMessage = {
-        data: JSON.stringify({
-          type: "notification",
-          notification: {
-            id: "ws-" + Date.now(),
-            type: "account_expired",
-            title: "WebSocket Notification",
-            message: "This is a simulated WebSocket notification for demonstration purposes.",
-            priority: "high",
-          },
-        }),
-        type: "message",
-      } as WebSocketEventMap["message"]
-
-      setLastMessage(mockMessage)
-      if (onMessage) onMessage(mockMessage)
-    }, 3000)
-
-    return () => clearTimeout(timeout)
-  }, [onMessage])
+    if (socketRef.current) {
+      socketRef.current.disconnect();
+      socketRef.current.connect();
+    }
+  }, []);
 
   return {
     sendMessage,
@@ -165,5 +133,5 @@ export function useWebSocket({
     readyState,
     connectionStatus,
     reconnect,
-  }
+  };
 }

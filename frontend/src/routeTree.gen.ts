@@ -17,6 +17,7 @@ import { Route as ProtectedImport } from './routes/_protected'
 import { Route as IndexImport } from './routes/index'
 import { Route as ProtectedToolsIndexImport } from './routes/_protected/tools/index'
 import { Route as ProtectedSubscriptionIndexImport } from './routes/_protected/subscription/index'
+import { Route as ProtectedNotificationsIndexImport } from './routes/_protected/notifications/index'
 import { Route as ProtectedDashboardIndexImport } from './routes/_protected/dashboard/index'
 import { Route as ProtectedAccountsIndexImport } from './routes/_protected/accounts/index'
 import { Route as ProtectedAccountsIdImport } from './routes/_protected/accounts/$id'
@@ -59,6 +60,13 @@ const ProtectedSubscriptionIndexRoute = ProtectedSubscriptionIndexImport.update(
     getParentRoute: () => ProtectedRoute,
   } as any,
 )
+
+const ProtectedNotificationsIndexRoute =
+  ProtectedNotificationsIndexImport.update({
+    id: '/notifications/',
+    path: '/notifications/',
+    getParentRoute: () => ProtectedRoute,
+  } as any)
 
 const ProtectedDashboardIndexRoute = ProtectedDashboardIndexImport.update({
   id: '/dashboard/',
@@ -131,6 +139,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedDashboardIndexImport
       parentRoute: typeof ProtectedImport
     }
+    '/_protected/notifications/': {
+      id: '/_protected/notifications/'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof ProtectedNotificationsIndexImport
+      parentRoute: typeof ProtectedImport
+    }
     '/_protected/subscription/': {
       id: '/_protected/subscription/'
       path: '/subscription'
@@ -154,6 +169,7 @@ interface ProtectedRouteChildren {
   ProtectedAccountsIdRoute: typeof ProtectedAccountsIdRoute
   ProtectedAccountsIndexRoute: typeof ProtectedAccountsIndexRoute
   ProtectedDashboardIndexRoute: typeof ProtectedDashboardIndexRoute
+  ProtectedNotificationsIndexRoute: typeof ProtectedNotificationsIndexRoute
   ProtectedSubscriptionIndexRoute: typeof ProtectedSubscriptionIndexRoute
   ProtectedToolsIndexRoute: typeof ProtectedToolsIndexRoute
 }
@@ -162,6 +178,7 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedAccountsIdRoute: ProtectedAccountsIdRoute,
   ProtectedAccountsIndexRoute: ProtectedAccountsIndexRoute,
   ProtectedDashboardIndexRoute: ProtectedDashboardIndexRoute,
+  ProtectedNotificationsIndexRoute: ProtectedNotificationsIndexRoute,
   ProtectedSubscriptionIndexRoute: ProtectedSubscriptionIndexRoute,
   ProtectedToolsIndexRoute: ProtectedToolsIndexRoute,
 }
@@ -178,6 +195,7 @@ export interface FileRoutesByFullPath {
   '/accounts/$id': typeof ProtectedAccountsIdRoute
   '/accounts': typeof ProtectedAccountsIndexRoute
   '/dashboard': typeof ProtectedDashboardIndexRoute
+  '/notifications': typeof ProtectedNotificationsIndexRoute
   '/subscription': typeof ProtectedSubscriptionIndexRoute
   '/tools': typeof ProtectedToolsIndexRoute
 }
@@ -190,6 +208,7 @@ export interface FileRoutesByTo {
   '/accounts/$id': typeof ProtectedAccountsIdRoute
   '/accounts': typeof ProtectedAccountsIndexRoute
   '/dashboard': typeof ProtectedDashboardIndexRoute
+  '/notifications': typeof ProtectedNotificationsIndexRoute
   '/subscription': typeof ProtectedSubscriptionIndexRoute
   '/tools': typeof ProtectedToolsIndexRoute
 }
@@ -203,6 +222,7 @@ export interface FileRoutesById {
   '/_protected/accounts/$id': typeof ProtectedAccountsIdRoute
   '/_protected/accounts/': typeof ProtectedAccountsIndexRoute
   '/_protected/dashboard/': typeof ProtectedDashboardIndexRoute
+  '/_protected/notifications/': typeof ProtectedNotificationsIndexRoute
   '/_protected/subscription/': typeof ProtectedSubscriptionIndexRoute
   '/_protected/tools/': typeof ProtectedToolsIndexRoute
 }
@@ -217,6 +237,7 @@ export interface FileRouteTypes {
     | '/accounts/$id'
     | '/accounts'
     | '/dashboard'
+    | '/notifications'
     | '/subscription'
     | '/tools'
   fileRoutesByTo: FileRoutesByTo
@@ -228,6 +249,7 @@ export interface FileRouteTypes {
     | '/accounts/$id'
     | '/accounts'
     | '/dashboard'
+    | '/notifications'
     | '/subscription'
     | '/tools'
   id:
@@ -239,6 +261,7 @@ export interface FileRouteTypes {
     | '/_protected/accounts/$id'
     | '/_protected/accounts/'
     | '/_protected/dashboard/'
+    | '/_protected/notifications/'
     | '/_protected/subscription/'
     | '/_protected/tools/'
   fileRoutesById: FileRoutesById
@@ -283,6 +306,7 @@ export const routeTree = rootRoute
         "/_protected/accounts/$id",
         "/_protected/accounts/",
         "/_protected/dashboard/",
+        "/_protected/notifications/",
         "/_protected/subscription/",
         "/_protected/tools/"
       ]
@@ -303,6 +327,10 @@ export const routeTree = rootRoute
     },
     "/_protected/dashboard/": {
       "filePath": "_protected/dashboard/index.tsx",
+      "parent": "/_protected"
+    },
+    "/_protected/notifications/": {
+      "filePath": "_protected/notifications/index.tsx",
       "parent": "/_protected"
     },
     "/_protected/subscription/": {

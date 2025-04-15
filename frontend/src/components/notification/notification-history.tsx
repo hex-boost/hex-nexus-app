@@ -1,89 +1,87 @@
-"use client"
-
-import { useState, useRef } from "react"
-import { useNotifications } from "./notification-provider"
-import { NotificationItem } from "./notification-item"
-import { NotificationEmptyState } from "./notification-empty-state"
-import { AlertOctagon, Clock, CheckCircle, AlertTriangle, Info, Filter, Search, Calendar } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { CustomScrollbar } from "./custom-scrollbar"
+import { CustomScrollbar } from '@/components/notification/CustomScrollbar.tsx';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AlertOctagon, AlertTriangle, Calendar, CheckCircle, Clock, Filter, Info, Search } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { NotificationEmptyState } from './notification-empty-state';
+import { NotificationItem } from './notification-item';
+import { useNotifications } from './notification-provider';
 
 export function NotificationHistory() {
-  const { notifications, markAllAsRead, clearAll } = useNotifications()
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedType, setSelectedType] = useState<string>("all")
-  const [selectedPeriod, setSelectedPeriod] = useState<string>("all")
-  const [activeTab, setActiveTab] = useState<"all" | "unread" | "read">("all")
+  const { notifications, markAllAsRead, clearAll } = useNotifications();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedType, setSelectedType] = useState<string>('all');
+  const [selectedPeriod, setSelectedPeriod] = useState<string>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'unread' | 'read'>('all');
 
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Filter notifications based on search term, type, period, and read status
   const filteredNotifications = notifications.filter((notification) => {
     // Search term filter
-    const matchesSearch =
-      searchTerm === "" ||
-      notification.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      notification.message.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSearch
+      = searchTerm === ''
+        || notification.title.toLowerCase().includes(searchTerm.toLowerCase())
+        || notification.message.toLowerCase().includes(searchTerm.toLowerCase());
 
     // Type filter
-    const matchesType = selectedType === "all" || notification.type === selectedType
+    const matchesType = selectedType === 'all' || notification.type === selectedType;
 
     // Period filter
-    let matchesPeriod = true
-    if (selectedPeriod !== "all") {
-      const notificationDate = new Date(notification.timestamp)
-      const now = new Date()
+    let matchesPeriod = true;
+    if (selectedPeriod !== 'all') {
+      const notificationDate = new Date(notification.timestamp);
+      const now = new Date();
 
       switch (selectedPeriod) {
-        case "today":
-          matchesPeriod = notificationDate.toDateString() === now.toDateString()
-          break
-        case "week":
-          const weekAgo = new Date()
-          weekAgo.setDate(now.getDate() - 7)
-          matchesPeriod = notificationDate >= weekAgo
-          break
-        case "month":
-          const monthAgo = new Date()
-          monthAgo.setMonth(now.getMonth() - 1)
-          matchesPeriod = notificationDate >= monthAgo
-          break
+        case 'today':
+          matchesPeriod = notificationDate.toDateString() === now.toDateString();
+          break;
+        case 'week':
+          const weekAgo = new Date();
+          weekAgo.setDate(now.getDate() - 7);
+          matchesPeriod = notificationDate >= weekAgo;
+          break;
+        case 'month':
+          const monthAgo = new Date();
+          monthAgo.setMonth(now.getMonth() - 1);
+          matchesPeriod = notificationDate >= monthAgo;
+          break;
       }
     }
 
     // Read status filter
-    const matchesReadStatus =
-      activeTab === "all" ||
-      (activeTab === "unread" && !notification.read) ||
-      (activeTab === "read" && notification.read)
+    const matchesReadStatus
+      = activeTab === 'all'
+        || (activeTab === 'unread' && !notification.read)
+        || (activeTab === 'read' && notification.read);
 
-    return matchesSearch && matchesType && matchesPeriod && matchesReadStatus
-  })
+    return matchesSearch && matchesType && matchesPeriod && matchesReadStatus;
+  });
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case "account_expired":
-        return <AlertOctagon className="h-4 w-4 text-red-500" />
-      case "subscription_expiring":
-        return <Clock className="h-4 w-4 text-amber-500" />
-      case "subscription_paid":
-        return <CheckCircle className="h-4 w-4 text-green-500" />
-      case "account_expiring":
-        return <AlertTriangle className="h-4 w-4 text-amber-500" />
-      case "system_message":
-        return <Info className="h-4 w-4 text-blue-500" />
-      case "all":
-        return <Filter className="h-4 w-4 text-gray-500" />
+      case 'account_expired':
+        return <AlertOctagon className="h-4 w-4 text-red-500" />;
+      case 'subscription_expiring':
+        return <Clock className="h-4 w-4 text-amber-500" />;
+      case 'subscription_paid':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'account_expiring':
+        return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+      case 'system_message':
+        return <Info className="h-4 w-4 text-blue-500" />;
+      case 'all':
+        return <Filter className="h-4 w-4 text-gray-500" />;
       default:
-        return <Filter className="h-4 w-4 text-gray-500" />
+        return <Filter className="h-4 w-4 text-gray-500" />;
     }
-  }
+  };
 
-  const unreadCount = notifications.filter((n) => !n.read).length
-  const readCount = notifications.filter((n) => n.read).length
+  const unreadCount = notifications.filter(n => !n.read).length;
+  const readCount = notifications.filter(n => n.read).length;
 
   return (
     <div className="space-y-4">
@@ -104,11 +102,23 @@ export function NotificationHistory() {
         </div>
       </div>
 
-      <Tabs defaultValue="all" onValueChange={(value) => setActiveTab(value as "all" | "unread" | "read")}>
+      <Tabs defaultValue="all" onValueChange={value => setActiveTab(value as 'all' | 'unread' | 'read')}>
         <TabsList className="mb-4">
-          <TabsTrigger value="all">All ({notifications.length})</TabsTrigger>
-          <TabsTrigger value="unread">Unread ({unreadCount})</TabsTrigger>
-          <TabsTrigger value="read">Read ({readCount})</TabsTrigger>
+          <TabsTrigger value="all">
+            All (
+            {notifications.length}
+            )
+          </TabsTrigger>
+          <TabsTrigger value="unread">
+            Unread (
+            {unreadCount}
+            )
+          </TabsTrigger>
+          <TabsTrigger value="read">
+            Read (
+            {readCount}
+            )
+          </TabsTrigger>
         </TabsList>
 
         <div className="flex flex-col sm:flex-row gap-2 sm:items-center mb-4">
@@ -118,7 +128,7 @@ export function NotificationHistory() {
               type="text"
               placeholder="Search notifications..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={e => setSearchTerm(e.target.value)}
               className="pl-9 h-10 text-sm"
             />
           </div>
@@ -185,17 +195,19 @@ export function NotificationHistory() {
         <TabsContent value="all" className="m-0 p-0">
           <div className="bg-white dark:bg-[#0F0F12] rounded-lg border border-gray-200 dark:border-[#1F1F23] overflow-hidden">
             <CustomScrollbar ref={scrollContainerRef} className="max-h-[600px]" theme="lol-gold" autoHide>
-              {filteredNotifications.length > 0 ? (
-                <div className="divide-y divide-gray-200 dark:divide-[#1F1F23]">
-                  {filteredNotifications.map((notification) => (
-                    <NotificationItem key={notification.id} notification={notification} />
-                  ))}
-                </div>
-              ) : (
-                <div className="p-6">
-                  <NotificationEmptyState type="all" />
-                </div>
-              )}
+              {filteredNotifications.length > 0
+                ? (
+                    <div className="divide-y divide-gray-200 dark:divide-[#1F1F23]">
+                      {filteredNotifications.map(notification => (
+                        <NotificationItem key={notification.id} notification={notification} />
+                      ))}
+                    </div>
+                  )
+                : (
+                    <div className="p-6">
+                      <NotificationEmptyState type="all" />
+                    </div>
+                  )}
             </CustomScrollbar>
           </div>
         </TabsContent>
@@ -203,17 +215,19 @@ export function NotificationHistory() {
         <TabsContent value="unread" className="m-0 p-0">
           <div className="bg-white dark:bg-[#0F0F12] rounded-lg border border-gray-200 dark:border-[#1F1F23] overflow-hidden">
             <CustomScrollbar className="max-h-[600px]" theme="lol-gold" autoHide>
-              {filteredNotifications.length > 0 ? (
-                <div className="divide-y divide-gray-200 dark:divide-[#1F1F23]">
-                  {filteredNotifications.map((notification) => (
-                    <NotificationItem key={notification.id} notification={notification} />
-                  ))}
-                </div>
-              ) : (
-                <div className="p-6">
-                  <NotificationEmptyState type="unread" />
-                </div>
-              )}
+              {filteredNotifications.length > 0
+                ? (
+                    <div className="divide-y divide-gray-200 dark:divide-[#1F1F23]">
+                      {filteredNotifications.map(notification => (
+                        <NotificationItem key={notification.id} notification={notification} />
+                      ))}
+                    </div>
+                  )
+                : (
+                    <div className="p-6">
+                      <NotificationEmptyState type="unread" />
+                    </div>
+                  )}
             </CustomScrollbar>
           </div>
         </TabsContent>
@@ -221,17 +235,19 @@ export function NotificationHistory() {
         <TabsContent value="read" className="m-0 p-0">
           <div className="bg-white dark:bg-[#0F0F12] rounded-lg border border-gray-200 dark:border-[#1F1F23] overflow-hidden">
             <CustomScrollbar className="max-h-[600px]" theme="lol-gold" autoHide>
-              {filteredNotifications.length > 0 ? (
-                <div className="divide-y divide-gray-200 dark:divide-[#1F1F23]">
-                  {filteredNotifications.map((notification) => (
-                    <NotificationItem key={notification.id} notification={notification} />
-                  ))}
-                </div>
-              ) : (
-                <div className="p-6">
-                  <NotificationEmptyState type="read" />
-                </div>
-              )}
+              {filteredNotifications.length > 0
+                ? (
+                    <div className="divide-y divide-gray-200 dark:divide-[#1F1F23]">
+                      {filteredNotifications.map(notification => (
+                        <NotificationItem key={notification.id} notification={notification} />
+                      ))}
+                    </div>
+                  )
+                : (
+                    <div className="p-6">
+                      <NotificationEmptyState type="read" />
+                    </div>
+                  )}
             </CustomScrollbar>
           </div>
         </TabsContent>
@@ -239,9 +255,17 @@ export function NotificationHistory() {
 
       {filteredNotifications.length > 0 && (
         <div className="text-center text-sm text-gray-500 dark:text-gray-400">
-          Showing {filteredNotifications.length} of {notifications.length} notifications
+          Showing
+          {' '}
+          {filteredNotifications.length}
+          {' '}
+          of
+          {' '}
+          {notifications.length}
+          {' '}
+          notifications
         </div>
       )}
     </div>
-  )
+  );
 }

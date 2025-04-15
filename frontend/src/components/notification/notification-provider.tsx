@@ -210,7 +210,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   // WebSocket integration
   const { lastMessage } = useWebSocket({
-    url: import.meta.env.NEXT_PUBLIC_WEBSOCKET_URL || 'wss://api.example.com/notifications',
+    url: import.meta.env.VITE_API_URL || 'wss://api.example.com/notifications',
     onMessage: (message) => {
       try {
         const data = JSON.parse(message.data);

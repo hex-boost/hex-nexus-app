@@ -13,7 +13,7 @@ type CustomScrollbarProps = {
 } & React.HTMLProps<HTMLDivElement>;
 
 export const CustomScrollbar = (
-  { ref, children, className, thumbClassName, trackClassName, hideTrackWhenNotHovering = false, autoHide = false, theme = 'lol-blue', ...props }: CustomScrollbarProps & { ref?: React.RefObject<HTMLDivElement | null> },
+  { ref, children, className, thumbClassName, trackClassName, hideTrackWhenNotHovering = false, autoHide = false, theme = 'default', ...props }: CustomScrollbarProps & { ref?: React.RefObject<HTMLDivElement | null> },
 ) => {
   const [isHovering, setIsHovering] = useState(false);
   const [scrollThumbHeight, setScrollThumbHeight] = useState(0);
@@ -123,18 +123,18 @@ export const CustomScrollbar = (
         )}
       >
         {/* League of Legends themed icon at the top of the track */}
-        <div className="absolute top-1 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            className={cn('w-full h-full', theme === 'lol-gold' ? 'text-amber-400' : 'text-blue-400', 'opacity-70')}
-          >
-            <path
-              fill="currentColor"
-              d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm6 9.09c0 4-2.55 7.7-6 8.83-3.45-1.13-6-4.82-6-8.83v-4.7l6-2.25 6 2.25v4.7z"
-            />
-          </svg>
-        </div>
+        {/* <div className="absolute top-1 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5"> */}
+        {/*  <svg */}
+        {/*    xmlns="http://www.w3.org/2000/svg" */}
+        {/*    viewBox="0 0 24 24" */}
+        {/*    className={cn('w-full h-full', theme === 'lol-gold' ? 'text-amber-400' : 'text-blue-400', 'opacity-70')} */}
+        {/*  > */}
+        {/*    <path */}
+        {/*      fill="currentColor" */}
+        {/*      d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm6 9.09c0 4-2.55 7.7-6 8.83-3.45-1.13-6-4.82-6-8.83v-4.7l6-2.25 6 2.25v4.7z" */}
+        {/*    /> */}
+        {/*  </svg> */}
+        {/* </div> */}
       </div>
 
       {/* Custom Scrollbar Thumb */}

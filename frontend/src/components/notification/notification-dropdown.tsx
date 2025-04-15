@@ -197,7 +197,7 @@ export function NotificationDropdown() {
                   Clear all
                 </button>
                 <Link
-                  to="/"
+                  to="/notifications"
                   className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center justify-center gap-1"
                 >
                   View all notifications
