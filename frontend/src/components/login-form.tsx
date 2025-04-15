@@ -131,13 +131,13 @@ export function LoginForm({
   return (
 
     <>
+      <WindowControls className="absolute w-screen top-0 right-0 px-4 py-2" />
       <div className=" min-h-screen w-screen   bg-background">
         <div className="w-full min-h-screen  bg-background ">
           <div
             className={cn('  min-h-screen  gap-6', className)}
             {...props}
           >
-            <WindowControls className="absolute top-0 right-0 px-4 py-2" />
             <Card className="border-none rounded-none overflow-hidden w-full h-full">
               <CardContent className="grid  w-full min-h-screen p-0 md:grid-cols-2">
                 <div className="relative h-full hidden  md:block">

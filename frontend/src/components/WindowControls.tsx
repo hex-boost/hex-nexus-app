@@ -11,7 +11,6 @@ type Position = {
 
 export function WindowControls({ className }: { className?: string }) {
   const window = Window;
-  Window.Get('fodase');
   const [isMaximized, setIsMaximized] = useState(false);
   const [previousSize, setPreviousSize] = useState<any | null>(null);
   const [previousPosition, setPreviousPosition] = useState<Position | null>();
@@ -57,7 +56,10 @@ export function WindowControls({ className }: { className?: string }) {
   const controlButtonClass = 'h-8 w-8 flex items-center justify-center rounded-md hover:bg-white/[0.1] transition-colors';
 
   return (
-    <div className={cn('flex items-center gap-2', className)}>
+    <div
+      style={{ '--wails-draggable': 'drag' } as React.CSSProperties}
+      className={cn('flex items-center gap-2', className)}
+    >
       <TooltipProvider>
         <div
           className="flex-grow h-8"

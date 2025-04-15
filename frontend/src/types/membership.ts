@@ -5,16 +5,14 @@ export type Benefit = {
 
 export type PricingPlan = {
   tier: string;
-  description: string;
   price: number;
   period?: string;
-  productID?: string;
-  priceID?: string;
-  benefits: { title: string; description: string }[];
+  description: string;
+  benefits: { title: string; description?: string; isNew?: boolean; icon?: string }[];
   buttonText: string;
-  buttonVariant?: 'default' | 'outline' | 'destructive';
-  buttonIcon?: React.ReactNode;
-  highlighted?: boolean;
+  isCurrentPlan: boolean;
+  color: string;
+  note?: string;
 };
 export type SubscriptionRequest = {
   subscriptionTier: string;
