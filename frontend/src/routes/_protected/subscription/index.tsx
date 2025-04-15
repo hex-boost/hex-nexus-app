@@ -1,6 +1,5 @@
 import type { PricingPlan } from '@/types/membership.ts';
 import PricingCards from '@/components/ui/pricing-cards.tsx';
-import { useMembership } from '@/hooks/useMembership.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { createFileRoute } from '@tanstack/react-router';
 
@@ -9,7 +8,6 @@ export const Route = createFileRoute('/_protected/subscription/')({
 });
 
 function RouteComponent() {
-  const { pendingPlanTier } = useMembership();
   const { user } = useUserStore();
   const userPremiumTier = user?.premium?.tier?.toLowerCase();
   const pricingPlans: PricingPlan[] = [

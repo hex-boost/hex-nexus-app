@@ -1,10 +1,12 @@
+import type { PremiumTiers } from '@/types/types.ts';
+
 export type Benefit = {
   title: string;
   description: string;
 };
 
 export type PricingPlan = {
-  tier: string;
+  tier: PremiumTiers;
   price: number;
   period?: string;
   description: string;
@@ -75,5 +77,5 @@ export type CheckoutSession = {
     amount_tax: number;
   } | null;
   ui_mode: 'hosted' | 'embedded' | null;
-  url: string | null;
+  url: string;
 };

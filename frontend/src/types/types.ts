@@ -63,4 +63,4 @@ export type RoleType = Entity<PluginUsersPermissionsRole>;
 export type UserRole = RoleType;
 export type UserMedia = MediaFileType;
 export type RankingGame = RankingType['game'];
-export type PremiumTier = PremiumType['tier'];
+export type PremiumTiers = PremiumType['tier'];

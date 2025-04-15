@@ -1,6 +1,9 @@
 import type { CheckoutSession, SubscriptionRequest } from '@/types/membership.ts';
-import { strapiClient } from '@/lib/strapi.ts';
+import type { PremiumTiers } from '@/types/types.ts';
 
+import type { PaymentResponse } from 'mercadopago/dist/clients/payment/commonTypes';
+
+import { strapiClient } from '@/lib/strapi.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { Stripe } from '@stripe';
 import { useMutation } from '@tanstack/react-query';
@@ -10,7 +13,7 @@ import { toast } from 'sonner';
 
 export function useMembership() {
   const [pendingPlanTier, setPendingPlanTier] = useState<string | null>(null);
-  async function createSubscription(data: SubscriptionRequest): Promise<CheckoutSession> {
+  async function createStripeSubscription(data: SubscriptionRequest): Promise<CheckoutSession> {
     try {
       return await strapiClient.request<CheckoutSession>('post', 'stripe/subscription', {
         data,
@@ -20,6 +23,25 @@ export function useMembership() {
       throw new Error('Failed to create subscription');
     }
   }
+  type PixPayload = {
+    membershipEnum: PremiumTiers;
+  };
+  type PixResponse = {
+    message: string;
+    data: PaymentResponse;
+  };
+  async function createPixPayment(payload: PixPayload): Promise<PixResponse> {
+    try {
+      return await strapiClient.request<PixResponse>('post', 'mercadopago/payment', {
+        data: { ...payload },
+
+      });
+    } catch (error) {
+      console.error('Subscription creation failed:', error);
+      throw new Error('Failed to create subscription');
+    }
+  }
+
   const { user } = useUserStore();
   const { mutate: selectPlan } = useMutation({
     mutationKey: ['subscription'],
@@ -32,7 +54,7 @@ export function useMembership() {
       // 1. First get callback URLs from local Go server
       const [successUrl, cancelUrl] = await Stripe.GetCallbackURLs();
 
-      return await createSubscription({
+      return await createStripeSubscription({
         subscriptionTier: tier, // Directly pass tier (no mapping needed)
         successUrl,
         cancelUrl,
@@ -52,6 +74,8 @@ export function useMembership() {
 
   });
   return {
+    createStripeSubscription,
+    createPixPayment,
     selectPlan,
     pendingPlanTier,
     setPendingPlanTier,

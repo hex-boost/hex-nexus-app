@@ -130,7 +130,7 @@ export default function PricingCards({ pricingPlans }: { pricingPlans: PricingPl
 
             <p className="text-gray-400 text-center max-w-lg mb-8">
               {currentPlan.description}
-              {currentPlan.tier === 'Free' && ' As a member of the Trial Plan, you have access to:'}
+              {currentPlan.tier === 'free' && ' As a member of the Trial Plan, you have access to:'}
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">

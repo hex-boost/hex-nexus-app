@@ -1,3 +1,4 @@
+import type { PremiumTiers } from '@/types/types.ts';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -17,10 +18,18 @@ import {
   InnerDialogTrigger,
 } from '@/components/ui/nested-dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useMembership } from '@/hooks/useMembership.ts';
+import { useUserStore } from '@/stores/useUserStore.ts';
+import { Stripe } from '@stripe';
+import { useMutation } from '@tanstack/react-query';
+import { Browser } from '@wailsio/runtime';
 import { ExternalLink } from 'lucide-react';
 import * as React from 'react';
+import { toast } from 'sonner';
 
-export function PaymentMethodDialog({ children, selectedTier }: { selectedTier: string; children: React.ReactNode }) {
+export function PaymentMethodDialog({ children, selectedTier }: { selectedTier: PremiumTiers; children: React.ReactNode }) {
+  const { user } = useUserStore();
+  const { createStripeSubscription, createPixPayment } = useMembership();
   const paymentMethods = [
     {
       title: 'Pix',
@@ -44,12 +53,40 @@ export function PaymentMethodDialog({ children, selectedTier }: { selectedTier: 
 
     const [selectedPaymentMethod, setSelectedPaymentMethod] = React.useState<PaymentMethodTitle>(paymentMethods[0].title);
 
-    const handleContinue = () => {
+    // 1. First get callback URLs from local Go server
+
+    const { isPending, mutate: handlePayment } = useMutation({
+      mutationKey: ['payment', selectedPaymentMethod],
+      mutationFn: async () => {
+        if (user?.premium?.tier !== 'free') {
+          throw new Error('You already have a plan');
+        }
+        let url: string = '';
+        if (selectedPaymentMethod === 'Pix') {
+          const pixResponse = await createPixPayment({ membershipEnum: selectedTier });
+          url = pixResponse.data.callback_url as string;
+        }
+        if (selectedPaymentMethod === 'Stripe') {
+          const [successUrl, cancelUrl] = await Stripe.GetCallbackURLs();
+          const stripeResponse = await createStripeSubscription({ subscriptionTier: selectedTier, cancelUrl, successUrl });
+          url = stripeResponse.url;
+        }
+        await Browser.OpenURL(url);
+        toast('fodase');
+      },
+      onError: (error) => {
+        if (error.message) {
+          toast.warning(error.message);
+        }
+      },
+    });
+
+    const handleContinue = async () => {
       if (selectedPaymentMethod === 'BR Balance') {
       // Add BR Balance specific handling here
         console.log('BR Balance selected - implement InnerDialog logic');
       } else {
-      // Handle other payment methods
+        handlePayment();
         console.log('Proceeding with', selectedPaymentMethod);
       }
     };
@@ -123,6 +160,7 @@ export function PaymentMethodDialog({ children, selectedTier }: { selectedTier: 
               </Button>
             </DialogClose>
             <Button
+              loading={isPending}
               className="w-full sm:w-auto"
               onClick={handleContinue}
             >
