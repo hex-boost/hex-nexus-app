@@ -46,28 +46,12 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     }
 
     // Check if in Do Not Disturb mode
-    if (preferences.doNotDisturb) {
-      const now = new Date();
-      const currentHour = now.getHours();
-
-      if (preferences.doNotDisturbStart && preferences.doNotDisturbEnd) {
-        const startHour = Number.parseInt(preferences.doNotDisturbStart.split(':')[0]);
-        const endHour = Number.parseInt(preferences.doNotDisturbEnd.split(':')[0]);
-
-        if (
-          (startHour < endHour && currentHour >= startHour && currentHour < endHour)
-          || (startHour > endHour && (currentHour >= startHour || currentHour < endHour))
-        ) {
-          return; // In DND period, don't play sound
-        }
-      }
-    }
 
     // Play the notification sound
     if (notificationSoundRef.current) {
       notificationSoundRef.current.play();
     }
-  }, [preferences.doNotDisturb, preferences.doNotDisturbEnd, preferences.doNotDisturbStart, preferences.soundEnabled]);
+  }, [preferences.soundEnabled]);
 
   const addNotification = useCallback((notification: Notification) => {
     if (!preferences.enabledTypes[notification.event as ServerNotificationEvents]) {

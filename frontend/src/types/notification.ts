@@ -15,9 +15,6 @@ export type Notification = ServerNotification & {
 };
 export type NotificationPreferences = {
   enabledTypes: Record<ServerNotificationEvents, boolean>;
-  doNotDisturb: boolean;
-  doNotDisturbStart?: string;
-  doNotDisturbEnd?: string;
   soundEnabled: boolean;
   emailEnabled: boolean;
 };
@@ -53,7 +50,6 @@ export const DEFAULT_PREFERENCES: NotificationPreferences = {
     account_expiring: true,
     system_message: true,
   },
-  doNotDisturb: false,
   soundEnabled: true,
   emailEnabled: false,
 };
