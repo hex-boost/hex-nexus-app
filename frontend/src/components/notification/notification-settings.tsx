@@ -40,12 +40,6 @@ export function NotificationSettings({ inDropdown = false }: NotificationSetting
     }));
   };
 
-  const handleToggleDND = () => {
-    setLocalPrefs(prev => ({
-      ...prev,
-    }));
-  };
-
   // const handleToggleSound = () => {
   //   setLocalPrefs(prev => ({
   //     ...prev,
@@ -58,13 +52,6 @@ export function NotificationSettings({ inDropdown = false }: NotificationSetting
     setLocalPrefs(prev => ({
       ...prev,
       emailEnabled: !prev.emailEnabled,
-    }));
-  };
-
-  const handleTimeChange = (field: 'doNotDisturbStart' | 'doNotDisturbEnd', value: string) => {
-    setLocalPrefs(prev => ({
-      ...prev,
-      [field]: value,
     }));
   };
 
