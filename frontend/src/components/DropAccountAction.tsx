@@ -32,8 +32,6 @@ export function DropAccountAction({
   account,
   user,
   onSuccess,
-  variant = 'button',
-  asChild = false,
   children,
   buttonVariant = 'outline',
 }: DropAccountActionProps) {
@@ -104,22 +102,18 @@ export function DropAccountAction({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleDialogOpen}>
-      <DialogTrigger asChild={asChild}>
-        {variant === 'button'
-          ? (
-              <Button
-                variant={buttonVariant}
-                className="flex items-center gap-1"
-              >
-                {children || (
-                  <>
-                    <ArrowDownToLine className="h-4 w-4" />
-                    Drop Account
-                  </>
-                )}
-              </Button>
-            )
-          : children}
+      <DialogTrigger asChild>
+        <Button
+          variant={buttonVariant}
+          className="flex items-center gap-1"
+        >
+          {children || (
+            <>
+              <ArrowDownToLine className="h-4 w-4" />
+              Drop Account
+            </>
+          )}
+        </Button>
       </DialogTrigger>
 
       <DialogContent>

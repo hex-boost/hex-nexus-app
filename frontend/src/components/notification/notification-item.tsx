@@ -25,7 +25,6 @@ export function NotificationItem({ notification }: NotificationItemProps) {
   const handleToggleReadStatus = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (notification.isSeen) {
-      // In a real app, you would have a markAsUnread function
       console.log('Would mark as unread:', notification.id);
     } else {
       markAsRead(notification.id);

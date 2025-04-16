@@ -187,7 +187,6 @@ export function AccountCard({
                   user={user}
                   onSuccess={onAccountChange}
                   variant="dropdown"
-                  asChild
                 >
                   Drop Account
                 </DropAccountAction>

@@ -1,19 +1,17 @@
-import type {
-  Notification,
-  NotificationAction,
-  NotificationPreferences,
-  NotificationPriority,
-} from '@/types/notification.ts';
+import type { Notification, NotificationPreferences, NotificationPriority } from '@/types/notification.ts';
 import type { ServerNotification, ServerNotificationEvents } from '@/types/types.ts';
 import type { ReactNode } from 'react';
+import notificationSound from '@/assets/sounds/notification.ogg';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { useWebSocket } from '@/hooks/use-websocket';
-import { DEFAULT_PREFERENCES, NotificationContext, SAMPLE_NOTIFICATIONS } from '@/types/notification.ts';
+import { DEFAULT_PREFERENCES, NotificationContext } from '@/types/notification.ts';
+import { Howl } from 'howler';
+
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
   // State
-  const [notifications, setNotifications] = useState<Notification[]>(SAMPLE_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [hasUnread, setHasUnread] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -25,22 +23,24 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     DEFAULT_PREFERENCES,
   );
 
-  // Audio refs for notification sounds
-  const accountExpiredSound = useRef<HTMLAudioElement | null>(null);
-  const generalNotificationSound = useRef<HTMLAudioElement | null>(null);
+  // Single audio ref for notification sound
+  const notificationSoundRef = useRef<Howl | null>(null);
 
-  // Initialize audio elements
+  // Initialize single Howl sound object
   useEffect(() => {
-    accountExpiredSound.current = new Audio('/sounds/account-expired.mp3');
-    generalNotificationSound.current = new Audio('/sounds/notification.mp3');
+    notificationSoundRef.current = new Howl({
+      src: [notificationSound],
+      volume: 0.5,
+      preload: true,
+    });
 
     return () => {
-      accountExpiredSound.current = null;
-      generalNotificationSound.current = null;
+      // Clean up sound
+      notificationSoundRef.current?.unload();
     };
   }, []);
 
-  const playSound = useCallback((type: ServerNotificationEvents) => {
+  const playSound = useCallback(() => {
     if (!preferences.soundEnabled) {
       return;
     }
@@ -63,10 +63,9 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    if (type === 'account_expired' && accountExpiredSound.current) {
-      accountExpiredSound.current.play();
-    } else if (generalNotificationSound.current) {
-      generalNotificationSound.current.play();
+    // Play the notification sound
+    if (notificationSoundRef.current) {
+      notificationSoundRef.current.play();
     }
   }, [preferences.doNotDisturb, preferences.doNotDisturbEnd, preferences.doNotDisturbStart, preferences.soundEnabled]);
 
@@ -102,8 +101,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       });
     });
 
-    // Play sound based on notification type
-    playSound(notification.event as ServerNotificationEvents);
+    // Play notification sound
+    playSound();
   }, [playSound, preferences.enabledTypes]);
 
   // Remove a notification
@@ -111,7 +110,6 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     setNotifications(prev => prev.filter(notification => notification.id !== id));
   };
 
-  // Mark a notification as read
   const markAsRead = (id: number) => {
     setNotifications(prev =>
       prev.map(notification => (notification.id === id ? { ...notification, read: true } : notification)),
@@ -140,38 +138,34 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   };
 
   // Helper function to get default actions based on notification type
-  const getDefaultActionsForType = (type: ServerNotificationEvents): NotificationAction => {
-    switch (type) {
-      case 'account_expired':
-        return { label: 'Renew Account', href: '/accounts/renew' };
-      case 'membership_ending':
-        return { label: 'Extend Subscription', href: '/subscription/extend' };
-      case 'account_expiring':
-        return { label: 'View Account', href: '/accounts' };
-      case 'membership_paid':
-        return { label: 'View Receipt', href: '/payments/receipts' };
-      case 'system_message':
-        return { label: 'Learn More', href: '/announcements' };
-      default:
-        return {} as any;
-    }
-  };
+  // const getDefaultActionsForType = (type: ServerNotificationEvents): NotificationAction => {
+  //   switch (type) {
+  //     case 'account_expired':
+  //       return { label: 'Renew Account', href: '/accounts/renew' };
+  //     case 'membership_ending':
+  //       return { label: 'Extend Subscription', href: '/subscription/extend' };
+  //     case 'account_expiring':
+  //       return { label: 'View Account', href: '/accounts' };
+  //     case 'membership_paid':
+  //       return { label: 'View Receipt', href: '/payments/receipts' };
+  //     case 'system_message':
+  //       return { label: 'Learn More', href: '/announcements' };
+  //     default:
+  //       return {} as any;
+  //   }
+  // };
   const handleNotification = useCallback(
     (notification: ServerNotification) => {
+      console.info('New notificaiton received', notification.event, notification.title);
       const newNotification: Notification = {
         ...notification,
         priority: getPriorityForType(notification.event),
-        action: getDefaultActionsForType(notification.event),
+        // action: getDefaultActionsForType(notification.event),
       };
 
       addNotification(newNotification);
-
-      // Play sound for account_expired notifications
-      if (notification.event === 'account_expiring' && preferences.soundEnabled) {
-        playSound(notification.event);
-      }
     },
-    [addNotification, playSound, preferences.soundEnabled],
+    [addNotification],
   );
   // WebSocket integration
   useWebSocket({

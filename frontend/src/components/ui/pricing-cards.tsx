@@ -6,7 +6,7 @@ import { PaymentMethodDialog } from '@/components/PaymentMethodDialog.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
 import { Button } from '@/components/ui/button';
 import { useUserStore } from '@/stores/useUserStore.ts';
-import { CircleCheckBig } from 'lucide-react';
+import { ArrowDownCircle, CircleCheckBig } from 'lucide-react';
 import { useRef } from 'react';
 
 export default function PricingCards({ pricingPlans }: { pricingPlans: PricingPlan[] }) {
@@ -91,16 +91,14 @@ export default function PricingCards({ pricingPlans }: { pricingPlans: PricingPl
             className="text-purple-400 hover:text-purple-300 flex items-center gap-2"
             onClick={scrollToPricing}
           >
-            <span className="h-5 w-5 rounded-full bg-purple-400/20 flex items-center justify-center text-purple-400">
-              ↗
-            </span>
+            <ArrowDownCircle className="h-5 w-5 rounded-full bg-purple-400/20 flex items-center justify-center " />
             View Upgrade Options
           </Button>
         </div>
 
         {currentPlan && (
           <div className={`${getBackgroundColor(currentPlan.color)}  rounded-xl px-8 pb-8 pt-16 flex flex-col items-center relative overflow-hidden`}>
-            <div className="w-24 h-24 rounded-full bg-[#2a9d8f] p-1 mb-6">
+            <div className=" w-24 h-24 rounded-full  mb-6">
               <div className="w-full h-full rounded-full overflow-hidden">
                 <img
                   src={import.meta.env.VITE_API_URL + user!.avatar.url}

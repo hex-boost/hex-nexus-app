@@ -49,8 +49,8 @@ export function WindowControls({ className }: { className?: string }) {
       }
     }, 250);
   };
-  console.warn(toggleMaximize);
   const minimizeToTray = () => {
+    console.log(toggleMaximize);
     window.Hide();
   };
   const controlButtonClass = 'h-8 w-8 flex items-center justify-center rounded-md hover:bg-white/[0.1] transition-colors';
