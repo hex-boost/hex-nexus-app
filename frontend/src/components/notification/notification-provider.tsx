@@ -4,17 +4,19 @@ import type { ReactNode } from 'react';
 import notificationSound from '@/assets/sounds/notification.ogg';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { useWebSocket } from '@/hooks/use-websocket';
+import { useUserStore } from '@/stores/useUserStore.ts';
 import { DEFAULT_PREFERENCES, NotificationContext } from '@/types/notification.ts';
 import { Howl } from 'howler';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
-  // State
+  const { user } = useUserStore();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [hasUnread, setHasUnread] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [filterType, setFilterType] = useState<'all' | 'unread' | 'read'>('all');
+  const [initialized, setInitialized] = useState(false);
 
   // Local storage for preferences
   const [preferences, setPreferences] = useLocalStorage<NotificationPreferences>(
@@ -44,8 +46,6 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     if (!preferences.soundEnabled) {
       return;
     }
-
-    // Check if in Do Not Disturb mode
 
     // Play the notification sound
     if (notificationSoundRef.current) {
@@ -96,19 +96,20 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   const markAsRead = (id: number) => {
     setNotifications(prev =>
-      prev.map(notification => (notification.id === id ? { ...notification, read: true } : notification)),
+      prev.map(notification => (notification.id === id ? { ...notification, isSeen: true } : notification)),
     );
   };
 
   // Mark all notifications as read
   const markAllAsRead = () => {
-    setNotifications(prev => prev.map(notification => ({ ...notification, read: true })));
+    setNotifications(prev => prev.map(notification => ({ ...notification, isSeen: true })));
   };
 
   // Clear all notifications
   const clearAll = () => {
     setNotifications([]);
   };
+
   const getPriorityForType = (type: ServerNotificationEvents): NotificationPriority => {
     switch (type) {
       case 'account_expired':
@@ -121,36 +122,55 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Helper function to get default actions based on notification type
-  // const getDefaultActionsForType = (type: ServerNotificationEvents): NotificationAction => {
-  //   switch (type) {
-  //     case 'account_expired':
-  //       return { label: 'Renew Account', href: '/accounts/renew' };
-  //     case 'membership_ending':
-  //       return { label: 'Extend Subscription', href: '/subscription/extend' };
-  //     case 'account_expiring':
-  //       return { label: 'View Account', href: '/accounts' };
-  //     case 'membership_paid':
-  //       return { label: 'View Receipt', href: '/payments/receipts' };
-  //     case 'system_message':
-  //       return { label: 'Learn More', href: '/announcements' };
-  //     default:
-  //       return {} as any;
-  //   }
-  // };
   const handleNotification = useCallback(
     (notification: ServerNotification) => {
-      console.info('New notificaiton received', notification.event, notification.title);
+      console.info('New notification received', notification.event, notification.title);
       const newNotification: Notification = {
         ...notification,
         priority: getPriorityForType(notification.event),
-        // action: getDefaultActionsForType(notification.event),
       };
 
       addNotification(newNotification);
     },
     [addNotification],
   );
+
+  // Initialize notifications from the user object
+  useEffect(() => {
+    if (user?.notifications && !initialized) {
+      // Process each notification before adding it to state
+      const processedNotifications = user.notifications.map(notification => ({
+        ...notification,
+        priority: getPriorityForType(notification.event),
+      }));
+
+      // Add all processed notifications to state
+      setNotifications((prev) => {
+        // Sort using your existing sort logic
+        const combined = [...processedNotifications, ...prev];
+        return combined.sort((a, b) => {
+          // First sort by priority
+          const priorityOrder = { high: 0, medium: 1, low: 2 };
+          const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
+
+          if (priorityDiff !== 0) {
+            return priorityDiff;
+          }
+
+          // Then by read status (unread first)
+          if (a.isSeen !== b.isSeen) {
+            return a.isSeen ? 1 : -1;
+          }
+
+          // Finally by timestamp (newest first)
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
+      });
+
+      setInitialized(true);
+    }
+  }, [user, getPriorityForType, initialized]);
+
   // WebSocket integration
   useWebSocket({
     url: import.meta.env.VITE_API_URL || 'http:localhost:1337',
