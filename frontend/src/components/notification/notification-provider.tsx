@@ -8,12 +8,12 @@ import type { ServerNotification, ServerNotificationEvents } from '@/types/types
 import type { ReactNode } from 'react';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { useWebSocket } from '@/hooks/use-websocket';
-import { DEFAULT_PREFERENCES, NotificationContext } from '@/types/notification.ts';
+import { DEFAULT_PREFERENCES, NotificationContext, SAMPLE_NOTIFICATIONS } from '@/types/notification.ts';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
   // State
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>(SAMPLE_NOTIFICATIONS);
   const [hasUnread, setHasUnread] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -140,35 +140,35 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   };
 
   // Helper function to get default actions based on notification type
-  const getDefaultActionsForType = (type: ServerNotificationEvents): NotificationAction[] => {
+  const getDefaultActionsForType = (type: ServerNotificationEvents): NotificationAction => {
     switch (type) {
       case 'account_expired':
-        return [{ label: 'Renew Account', href: '/accounts/renew' }];
+        return { label: 'Renew Account', href: '/accounts/renew' };
       case 'membership_ending':
-        return [{ label: 'Extend Subscription', href: '/subscription/extend' }];
+        return { label: 'Extend Subscription', href: '/subscription/extend' };
       case 'account_expiring':
-        return [{ label: 'View Account', href: '/accounts' }];
+        return { label: 'View Account', href: '/accounts' };
       case 'membership_paid':
-        return [{ label: 'View Receipt', href: '/payments/receipts' }];
+        return { label: 'View Receipt', href: '/payments/receipts' };
       case 'system_message':
-        return [{ label: 'Learn More', href: '/announcements' }];
+        return { label: 'Learn More', href: '/announcements' };
       default:
-        return [];
+        return {} as any;
     }
   };
-  const handleWebSocketNotification = useCallback(
+  const handleNotification = useCallback(
     (notification: ServerNotification) => {
       const newNotification: Notification = {
         ...notification,
         priority: getPriorityForType(notification.event),
-        actions: getDefaultActionsForType(notification.event),
+        action: getDefaultActionsForType(notification.event),
       };
 
       addNotification(newNotification);
 
       // Play sound for account_expired notifications
-      if (notification.event === 'account_expired' && preferences.soundEnabled) {
-        playSound('account_expired');
+      if (notification.event === 'account_expiring' && preferences.soundEnabled) {
+        playSound(notification.event);
       }
     },
     [addNotification, playSound, preferences.soundEnabled],
@@ -178,7 +178,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     url: import.meta.env.VITE_API_URL || 'http:localhost:1337',
     onMessage: (message) => {
       try {
-        handleWebSocketNotification(message);
+        handleNotification(message);
       } catch (error) {
         console.error('Failed to parse WebSocket message:', error);
       }

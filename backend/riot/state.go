@@ -39,7 +39,6 @@ func (rc *RiotClient) IsRunning() bool {
 		return true
 	}
 
-	rc.logger.Debug("Riot Client window not found")
 	return false
 }
 

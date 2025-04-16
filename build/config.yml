@@ -10,8 +10,8 @@ info:
   productIdentifier: "com.hexboost.nexus.app" # The unique product identifier
   description: "Professional game account renting" # The application description
   copyright: "(c) 2025, Hex Inc" # Copyright text
-  comments: "League renting done right" # Comments
-  version: "v1.0.12" # The application version
+  comments: "League account renting done right" # Comments
+  version: "v1.0.19" # The application version
 
 # Dev mode configuration
 dev_mode:
@@ -41,20 +41,5 @@ dev_mode:
     - cmd: wails3 task run
       type: primary
 
-# File Associations
-# More information at: https://v3alpha.wails.io/noit/done/yet
-fileAssociations:
-#  - ext: wails
-#    name: Wails
-#    description: Wails Application File
-#    iconName: wailsFileIcon
-#    role: Editor
-#  - ext: jpg
-#    name: JPEG
-#    description: Image File
-#    iconName: jpegFileIcon
-#    role: Editor
-
-# Other data
 other:
   - name: My Other Data

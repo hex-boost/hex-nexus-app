@@ -15,61 +15,50 @@ type Logger struct {
 }
 
 func NewLogger(prefix string, config *config.Config) *Logger {
-	// Create logs directory
-	if err := os.MkdirAll(config.LogsDirectory, os.ModePerm); err != nil {
-		panic(fmt.Sprintf("panic creting logs dir %v", err))
-	}
+	// Try to create logs directory
+	logFilePath := filepath.Join(config.LogsDirectory, "app.log")
+	err := os.MkdirAll(config.LogsDirectory, os.ModePerm)
 
-	// Configure encoder for both console and file
+	// Core configuration
 	encoderConfig := zap.NewProductionEncoderConfig()
 	encoderConfig.TimeKey = "time"
 	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
-
-	// Use the same encoder for console and files
 	consoleEncoder := zapcore.NewConsoleEncoder(encoderConfig)
-	fileEncoder := zapcore.NewConsoleEncoder(encoderConfig) // Same as console for consistency
-	var zapLogLevel zapcore.Level
-	switch strings.ToLower(config.LogLevel) {
-	case "debug":
-		zapLogLevel = zapcore.DebugLevel
-	case "info":
-		zapLogLevel = zapcore.InfoLevel
-	case "warn", "warning":
-		zapLogLevel = zapcore.WarnLevel
-	case "error":
-		zapLogLevel = zapcore.ErrorLevel
-	default:
-		zapLogLevel = zapcore.InfoLevel
-	}
-	// Log level - DebugLevel to show all logs
+
+	// Determine log level
+	zapLogLevel := getLogLevel(config.LogLevel)
 	atomicLevel := zap.NewAtomicLevelAt(zapLogLevel)
 
-	// Open log file - using append mode instead of truncating
-	logFilePath := filepath.Join(config.LogsDirectory, "app.log")
-	logFile, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		panic(fmt.Sprintf("error opening log file %v", err))
+	// Always have console logging
+	cores := []zapcore.Core{
+		zapcore.NewCore(
+			consoleEncoder,
+			zapcore.AddSync(os.Stdout),
+			atomicLevel,
+		),
 	}
 
-	// Create cores for both outputs with same level and encoder style
-	consoleCore := zapcore.NewCore(
-		consoleEncoder,
+	// Try to add file logging if possible
+	if err == nil {
+		logFile, fileErr := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if fileErr == nil {
+			fileEncoder := zapcore.NewConsoleEncoder(encoderConfig)
+			cores = append(cores, zapcore.NewCore(
+				fileEncoder,
+				zapcore.AddSync(logFile),
+				atomicLevel,
+			))
+		} else {
+			// Log the error to console but continue without file logging
+			fmt.Printf("Warning: Could not open log file: %v. Continuing with console logging only.\n", fileErr)
+		}
+	} else {
+		fmt.Printf("Warning: Could not create logs directory: %v. Continuing with console logging only.\n", err)
+	}
 
-		zapcore.AddSync(os.Stdout),
-		atomicLevel,
-	)
-
-	fileCore := zapcore.NewCore(
-		fileEncoder,
-		zapcore.AddSync(logFile),
-		atomicLevel,
-	)
-
-	// Combine both cores
-	core := zapcore.NewTee(consoleCore, fileCore)
-
-	// Create the logger
+	// Create the logger with available cores
+	core := zapcore.NewTee(cores...)
 	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
 
 	// Add prefix if provided
@@ -77,7 +66,19 @@ func NewLogger(prefix string, config *config.Config) *Logger {
 		logger = logger.With(zap.String("module", prefix))
 	}
 
-	return &Logger{
-		logger,
+	return &Logger{logger}
+}
+func getLogLevel(logLevel string) zapcore.Level {
+	switch strings.ToLower(logLevel) {
+	case "debug":
+		return zapcore.DebugLevel
+	case "info":
+		return zapcore.InfoLevel
+	case "warn", "warning":
+		return zapcore.WarnLevel
+	case "error":
+		return zapcore.ErrorLevel
+	default:
+		return zapcore.InfoLevel
 	}
 }

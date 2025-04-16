@@ -15,17 +15,18 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/updater"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/hex-boost/hex-nexus-app/backend/watchdog"
+	"os/signal"
+	"strconv"
+	"strings"
+	"sync"
+	"syscall"
+	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
 	"go.uber.org/zap"
 	"log"
 	"os"
-	"os/signal"
-	"strconv"
-	"sync"
-	"syscall"
-	"time"
 )
 
 func SetupSystemTray(app *application.App, window *application.WebviewWindow, icon []byte, monitor *league.AccountMonitor, utils *utils.Utils) *application.SystemTray {
@@ -72,8 +73,22 @@ func StartWatchdog() error {
 	return nil
 }
 func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
+	var protocolURL string
+	for _, arg := range os.Args {
+
+		fmt.Println(arg)
+		if strings.HasPrefix(arg, "nexus://") {
+			protocolURL = arg
+			break
+		}
+	}
+
+	cfg, _ := config.LoadConfig()
+
+	appInstance := app.App(cfg)
 
 	utilsBind := utils.NewUtils()
+
 	if len(os.Args) >= 3 && os.Args[1] == "--watchdog" {
 		mainPID, err := strconv.Atoi(os.Args[2])
 		if err != nil {
@@ -140,17 +155,18 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 	if err != nil {
 		panic(fmt.Sprintf("error starting watchdog %v", err))
 		return
-	} // Start the watchdog process
-	cfg, err := config.LoadConfig()
-
-	appInstance := app.App(cfg)
+	}
 	updater.NewUpdater(cfg, appInstance.Log().Wails()).Start()
 	mainLogger := appInstance.Log().Wails()
-	mainLogger.Info(fmt.Sprintf("Initializing with version %s and backendUrl %s and apiToken %s", cfg.Version, cfg.BackendURL, cfg.RefreshApiKey))
+	mainLogger.Info(fmt.Sprintf("Initializing with version %s and backendUrl %s and apiToken %s and protocolUrl %s", cfg.Version, cfg.BackendURL, cfg.RefreshApiKey, protocolURL))
 	appProtocol := protocol.New(appInstance.Log().Protocol())
 	if err := appProtocol.Register(); err != nil {
 		mainLogger.Info("Warning: Failed to register custom protocol", zap.Error(err))
-		panic(err)
+	}
+	if isAdmin, _ := protocol.IsRunningAsAdmin(); isAdmin {
+		mainLogger.Info("Running as admin")
+	} else {
+		mainLogger.Info("Not running as admin")
 	}
 	var mainWindow *application.WebviewWindow
 
@@ -167,13 +183,14 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 	riotClient := riot.NewRiotClient(appInstance.Log().Riot(), captcha)
 	accountMonitor := league.NewAccountMonitor(appInstance.Log().Riot(), leagueService, riotClient, accountsRepository, summonerClient, lcuConn)
 	websocketService := league.NewWebSocketService(appInstance.Log().League(), accountMonitor, leagueService)
-	discordService := discord.New(appInstance.Log().Discord())
+	discordService := discord.New(cfg, appInstance.Log().Discord(), utilsBind)
 
 	clientMonitor := league.NewClientMonitor(appInstance.Log().League(), accountMonitor, leagueService, riotClient, captcha)
 	app := application.New(application.Options{
 		Name:        "Nexus",
 		Description: "Nexus",
-		Icon:        icon256,
+
+		Icon: icon256,
 		Windows: application.WindowsOptions{
 			DisableQuitOnLastWindowClosed: true,
 		},
@@ -190,6 +207,11 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 			UniqueID: "com.hexboost.nexus.app",
 			OnSecondInstanceLaunch: func(data application.SecondInstanceData) {
 				mainLogger.Info("Second instance detected ", zap.Any("args", data.Args))
+
+				if mainWindow != nil {
+					mainWindow.Restore()
+					mainWindow.Focus()
+				}
 				for _, arg := range data.Args {
 					if len(arg) > 8 && arg[:8] == "nexus://" {
 						mainLogger.Info("Protocol open detected")
@@ -200,10 +222,6 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 						}
 						break
 					}
-				}
-				if mainWindow != nil {
-					mainWindow.Restore()
-					mainWindow.Focus()
 				}
 
 			},

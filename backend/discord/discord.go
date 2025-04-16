@@ -9,14 +9,15 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/gorilla/mux"
 	"github.com/hex-boost/hex-nexus-app/backend"
+	"github.com/hex-boost/hex-nexus-app/backend/config"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
-	"github.com/hex-boost/hex-nexus-app/backend/updater"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/pkg/browser"
 	"go.uber.org/zap"
 	"html/template"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -28,22 +29,21 @@ const (
 )
 
 type Discord struct {
-	config *DiscordConfig
-	logger *utils.Logger
+	config        *config.Config
+	backendClient *resty.Client
+	logger        *utils.Logger
+	utils         *utils.Utils
 }
 
-type DiscordConfig struct {
-	backendURL string
-	client     *resty.Client
-}
+func New(config *config.Config, logger *utils.Logger, utils *utils.Utils) *Discord {
+	client := resty.New()
+	client.SetBaseURL(config.BackendURL)
 
-func New(logger *utils.Logger) *Discord {
 	return &Discord{
-		config: &DiscordConfig{
-			backendURL: updater.BackendURL,
-			client:     resty.New(),
-		},
-		logger: logger,
+		backendClient: client,
+		config:        config,
+		logger:        logger,
+		utils:         utils,
 	}
 }
 
@@ -58,7 +58,7 @@ func (d *Discord) renderTemplate(w http.ResponseWriter, tmplName string) error {
 	return tmpl.Execute(w, nil)
 }
 
-func (d *Discord) renderErrorTemplate(w http.ResponseWriter, err error) {
+func (d *Discord) renderErrorTemplate(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusBadRequest)
 	if err := d.renderTemplate(w, "discord_auth_error.html"); err != nil {
 		d.logger.Error("Error rendering error template", zap.Error(err))
@@ -66,14 +66,19 @@ func (d *Discord) renderErrorTemplate(w http.ResponseWriter, err error) {
 	return
 }
 
-func (d *Discord) StartOAuth() (map[string]interface{}, error) {
-	strapiAuthURL := fmt.Sprintf("%s/api/connect/discord", d.config.backendURL)
+func (d *Discord) StartOAuth() (*types.UserWithJWT, error) {
+	strapiAuthURL := fmt.Sprintf("%s/api/connect/discord", d.config.BackendURL)
 	d.logger.Sugar().Infow("Starting OAuth authentication with Discord", "url", strapiAuthURL)
 	if err := browser.OpenURL(strapiAuthURL); err != nil {
 		d.logger.Error("Error opening browser for authentication", zap.Error(err))
 		return nil, fmt.Errorf("error opening browser: %v", err)
 	}
-	resultChan := make(chan map[string]interface{}, 1)
+
+	// Create a context with timeout that we can cancel when needed
+	ctx, cancel := context.WithTimeout(context.Background(), authWaitTimeout)
+	defer cancel()
+
+	userWithJWTChan := make(chan *types.UserWithJWT, 1)
 	errChan := make(chan error, 1)
 	router := mux.NewRouter()
 	srv := &http.Server{
@@ -84,15 +89,23 @@ func (d *Discord) StartOAuth() (map[string]interface{}, error) {
 		code := r.URL.Query().Get("access_token")
 		if code == "" {
 			errMsg := errors.New("authorization code not found")
-			d.renderErrorTemplate(w, errMsg)
-			errChan <- errMsg
+			d.renderErrorTemplate(w)
+			select {
+			case errChan <- errMsg:
+			default:
+			}
+			return
 		}
+
 		d.logger.Info("Authorization code received", zap.Int("code_length", len(code)))
-		jwt, userData, err := d.authenticateWithStrapiAndProcessAvatar(code)
+		userWithJWT, err := d.authenticateWithStrapiAndProcessAvatar(code)
 		if err != nil {
 			errMsg := errors.New("error in Strapi authentication")
-			d.renderErrorTemplate(w, errMsg)
-			errChan <- errMsg
+			d.renderErrorTemplate(w)
+			select {
+			case errChan <- errMsg:
+			default:
+			}
 			return
 		}
 		if err := d.renderTemplate(w, "discord_auth_success.html"); err != nil {
@@ -103,41 +116,58 @@ func (d *Discord) StartOAuth() (map[string]interface{}, error) {
 			return
 		}
 		d.logger.Info("Authentication successful")
-		resultChan <- map[string]interface{}{
-			"jwt":  jwt,
-			"user": userData,
+		select {
+		case userWithJWTChan <- userWithJWT:
+		case <-ctx.Done():
+			return
 		}
+
+		// Schedule server shutdown
 		go func() {
 			time.Sleep(1 * time.Second)
 			d.logger.Debug("Shutting down temporary HTTP server")
-			srv.Shutdown(context.Background())
+			// Use a new context for shutdown to ensure it happens even if parent is canceled
+			shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer shutdownCancel()
+			srv.Shutdown(shutdownCtx)
 		}()
 	})
-	d.logger.Info("Starting HTTP server for OAuth callback", zap.Int("port", discordCallbackPort))
+
+	// Start the HTTP server in a separate goroutine
+	serverErrChan := make(chan error, 1)
 	go func() {
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		d.logger.Info("Starting HTTP server for OAuth callback", zap.Int("port", discordCallbackPort))
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			d.logger.Error("HTTP server error", zap.Error(err))
-			errChan <- fmt.Errorf("HTTP server error: %v", err)
+			serverErrChan <- fmt.Errorf("HTTP server error: %v", err)
 		}
 	}()
 	select {
-	case result := <-resultChan:
+	case result := <-userWithJWTChan:
 		d.logger.Info("Authentication completed successfully")
 		return result, nil
 	case err := <-errChan:
 		d.logger.Error("Authentication failed", zap.Error(err))
 		return nil, err
-	case <-time.After(authWaitTimeout):
+	case err := <-serverErrChan:
+		d.logger.Error("Server error", zap.Error(err))
+		return nil, err
+	case <-ctx.Done():
 		d.logger.Warn("Authentication timeout exceeded", zap.Duration("timeout", authWaitTimeout))
-		srv.Shutdown(context.Background())
+		// Ensure server is shut down
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer shutdownCancel()
+		if err := srv.Shutdown(shutdownCtx); err != nil {
+			d.logger.Error("Error shutting down server", zap.Error(err))
+		}
 		return nil, fmt.Errorf("authentication timeout exceeded")
 	}
 }
 
 func (d *Discord) fetchDiscordUserInfo(accessToken string) (*types.DiscordUser, error) {
-	d.logger.Debug("Fetching Discord user information")
-	resp, err := d.config.client.R().
-		SetHeader("Authorization", "Bearer "+accessToken).
+	restyClient := resty.New()
+	request := restyClient.R()
+	resp, err := request.SetHeader("Authorization", "Bearer "+accessToken).
 		Get(discordApiBaseURL + "/users/@me")
 	if err != nil {
 		d.logger.Error("Failed to fetch Discord user information", zap.Error(err))
@@ -156,48 +186,60 @@ func (d *Discord) fetchDiscordUserInfo(accessToken string) (*types.DiscordUser, 
 	return &user, nil
 }
 
-func (d *Discord) authenticateWithStrapiAndProcessAvatar(code string) (string, interface{}, error) {
-	d.logger.Info("Authenticating with Strapi", zap.String("backend_url", d.config.backendURL))
-	var authResult struct {
-		JWT  string     `json:"jwt"`
-		User types.User `json:"user"`
+func (d *Discord) authenticateWithStrapiAndProcessAvatar(code string) (*types.UserWithJWT, error) {
+	var authResult types.UserWithJWT
+	authURL := fmt.Sprintf("/api/auth/discord/callback?access_token=%s", url.QueryEscape(code))
+
+	request := d.backendClient.R()
+
+	if d.utils != nil {
+		request.SetHeader("hwid", d.utils.GetHWID())
+	} else {
+		d.logger.Warn("Utils is nil, cannot get HWID")
 	}
-	authURL := fmt.Sprintf("%s/api/auth/discord/callback?access_token=%s", d.config.backendURL, code)
-	resp, err := d.config.client.R().
-		SetResult(&authResult).
-		SetHeader("hwid", utils.NewUtils().GetHWID()).
-		Get(authURL)
+
+	resp, err := request.Get(authURL)
 	if err != nil {
 		d.logger.Error("Error in Strapi authentication", zap.Error(err))
-		return "", nil, fmt.Errorf("authentication error: %v", err)
+		return nil, fmt.Errorf("authentication error: %v", err)
 	}
 	if resp.IsError() {
 		d.logger.Error("error in Strapi authentication", zap.Int("status", resp.StatusCode()), zap.String("response", string(resp.Body())))
-		return "", nil, fmt.Errorf("authentication error: %d - %s", resp.StatusCode(), string(resp.Body()))
+		return nil, fmt.Errorf("authentication error: %d - %s", resp.StatusCode(), string(resp.Body()))
 	}
+
+	// Parse the response body into authResult
+	if err := json.Unmarshal(resp.Body(), &authResult); err != nil {
+		d.logger.Error("Error parsing authentication response", zap.Error(err))
+		return nil, fmt.Errorf("error parsing authentication response: %v", err)
+	}
+
 	d.logger.Info("Strapi authentication successful", zap.Int("user_id", authResult.User.Id))
-	if err := d.uploadDiscordAvatar(code, authResult.JWT, authResult.User.Id); err != nil {
-		d.logger.Warn("Error processing avatar", zap.Error(err), zap.Int("user_id", authResult.User.Id))
+
+	// Use a separate error variable to avoid overwriting the JWT on avatar upload failure
+	avatarErr := d.uploadDiscordAvatar(code, authResult.JWT, authResult.User.Id)
+	if avatarErr != nil {
+		d.logger.Warn("Error processing avatar", zap.Error(avatarErr), zap.Int("user_id", authResult.User.Id))
 	} else {
 		d.logger.Info("Avatar processed successfully", zap.Int("user_id", authResult.User.Id))
 	}
-	userMeURL := fmt.Sprintf("%s/api/users/me", d.config.backendURL)
-	userResp, err := d.config.client.R().
+	userResp, err := d.backendClient.R().
 		SetHeader("Authorization", "Bearer "+authResult.JWT).
-		Get(userMeURL)
+		Get("/api/users/me")
+
 	if err != nil {
 		d.logger.Error("Error fetching user data", zap.Error(err))
-		return authResult.JWT, &authResult.User, nil
+		return &authResult, nil
 	}
-	var userData map[string]interface{}
+	var userData types.User
 	if err := json.Unmarshal(userResp.Body(), &userData); err != nil {
 		d.logger.Error("Error decoding user response", zap.Error(err))
-		return authResult.JWT, &authResult.User, nil
+		return &authResult, nil
 	}
-	userId, _ := userData["id"].(float64)
-	username, _ := userData["username"].(string)
-	d.logger.Info("User data fetched successfully after avatar upload", zap.Float64("user_id", userId), zap.String("username", username))
-	return authResult.JWT, &userData, nil
+	userId := userData.Id
+	username := userData.Username
+	d.logger.Info("User data fetched successfully after avatar upload", zap.Int("user_id", userId), zap.String("username", username))
+	return &authResult, nil
 }
 
 func (d *Discord) uploadDiscordAvatar(accessToken string, userJwt string, userId int) error {
@@ -212,8 +254,7 @@ func (d *Discord) uploadDiscordAvatar(accessToken string, userJwt string, userId
 	}
 	avatarUrl := fmt.Sprintf("https://cdn.discordapp.com/avatars/%s/%s.png", discordUser.ID, discordUser.Avatar)
 	d.logger.Debug("Avatar URL", zap.String("url", avatarUrl))
-	d.logger.Debug("Downloading Discord avatar")
-	imgResp, err := d.config.client.R().Get(avatarUrl)
+	imgResp, err := d.backendClient.R().Get(avatarUrl)
 	if err != nil {
 		d.logger.Error("Error downloading avatar", zap.Error(err))
 		return fmt.Errorf("error downloading avatar: %v", err)
@@ -244,11 +285,11 @@ func (d *Discord) uploadDiscordAvatar(accessToken string, userJwt string, userId
 	}
 	multipartWriter.Close()
 	d.logger.Debug("Sending image to Strapi", zap.String("endpoint", "/api/upload"))
-	uploadResp, err := d.config.client.R().
+	uploadResp, err := d.backendClient.R().
 		SetHeader("Content-Type", multipartWriter.FormDataContentType()).
 		SetHeader("Authorization", "Bearer "+userJwt).
 		SetBody(requestBody.Bytes()).
-		Post(d.config.backendURL + "/api/upload")
+		Post("/api/upload")
 	if err != nil {
 		d.logger.Error("Error sending upload request", zap.Error(err))
 		return fmt.Errorf("error sending upload request: %v", err)
@@ -275,9 +316,9 @@ func (d *Discord) uploadDiscordAvatar(accessToken string, userJwt string, userId
 	updateData := map[string]interface{}{
 		"avatar": avatarId,
 	}
-	updateURL := fmt.Sprintf("%s/api/users/%d", d.config.backendURL, userId)
+	updateURL := fmt.Sprintf("/api/users/%d", userId)
 	d.logger.Debug("Updating user with new avatar", zap.String("url", updateURL))
-	updateResp, err := d.config.client.R().
+	updateResp, err := d.backendClient.R().
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Authorization", "Bearer "+userJwt).
 		SetBody(updateData).
@@ -296,6 +337,10 @@ func (d *Discord) uploadDiscordAvatar(accessToken string, userJwt string, userId
 }
 
 func (d *Discord) handleDiscordCallback(callback func(token string, err error)) {
+	// Create a context with timeout to ensure proper cleanup
+	ctx, cancel := context.WithTimeout(context.Background(), authWaitTimeout)
+	defer cancel()
+
 	router := mux.NewRouter()
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%d", discordCallbackPort),
@@ -308,8 +353,8 @@ func (d *Discord) handleDiscordCallback(callback func(token string, err error)) 
 		code := r.URL.Query().Get("access_token")
 		d.logger.Debug("Callback received with token", zap.Int("token_length", len(code)))
 
-		authURL := fmt.Sprintf("%s/api/auth/discord/callback?access_token=%s", d.config.backendURL, code)
-		resp, err := d.config.client.R().Get(authURL)
+		authURL := fmt.Sprintf("/api/auth/discord/callback?access_token=%s", code)
+		resp, err := d.backendClient.R().Get(authURL)
 
 		var token string
 		if err == nil {
@@ -331,18 +376,38 @@ func (d *Discord) handleDiscordCallback(callback func(token string, err error)) 
 			d.logger.Error("Error rendering success template", zap.Error(err))
 		}
 
+		// Call the callback with the result
+		callback(token, err)
+
+		// Schedule server shutdown
 		go func() {
 			time.Sleep(2 * time.Second)
 			d.logger.Debug("Shutting down HTTP server")
-			srv.Shutdown(context.Background())
+			// Use a separate context for shutdown
+			shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer shutdownCancel()
+			srv.Shutdown(shutdownCtx)
 		}()
-
-		callback(token, err)
 	})
 
 	go func() {
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			d.logger.Error("HTTP server error", zap.Error(err))
+			callback("", fmt.Errorf("HTTP server error: %v", err))
+		}
+	}()
+
+	// Ensure server gets shut down after context timeout
+	go func() {
+		<-ctx.Done()
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			d.logger.Warn("Authentication timeout exceeded")
+			callback("", fmt.Errorf("authentication timeout exceeded"))
+
+			// Ensure server shutdown
+			shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer shutdownCancel()
+			srv.Shutdown(shutdownCtx)
 		}
 	}()
 }

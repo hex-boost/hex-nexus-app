@@ -15,8 +15,6 @@ type NotificationItemProps = {
 export function NotificationItem({ notification }: NotificationItemProps) {
   const { markAsRead, removeNotification } = useNotifications();
   const [isExiting, setIsExiting] = useState(false);
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
 
   const handleMarkAsRead = () => {
     if (!notification.isSeen) {
@@ -39,17 +37,6 @@ export function NotificationItem({ notification }: NotificationItemProps) {
     setTimeout(() => {
       removeNotification(notification.id);
     }, 300);
-  };
-
-  const handleFeedback = (isHelpful: boolean) => {
-    // In a real app, you would send this feedback to your backend
-    console.log(`Notification ${notification.id} feedback: ${isHelpful ? 'helpful' : 'not helpful'}`);
-    setFeedbackSubmitted(true);
-
-    // Hide feedback UI after submission
-    setTimeout(() => {
-      setShowFeedback(false);
-    }, 2000);
   };
 
   const getIcon = () => {
@@ -106,7 +93,6 @@ export function NotificationItem({ notification }: NotificationItemProps) {
         return '';
     }
   };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 5 }}
@@ -162,15 +148,16 @@ export function NotificationItem({ notification }: NotificationItemProps) {
 
           <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">{notification.message}</p>
 
-          {/* Action buttons */}
-          {notification.actions && notification.actions.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-2">
-              {notification.actions.map((action, index) =>
-                action.href
+          <div className="flex items-center justify-between mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-500">
+              {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+            </p>
+            {notification.action && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {notification.action.href
                   ? (
                       <Link
-                        key={index}
-                        to={action.href}
+                        to={notification.action.href}
                         className={cn(
                           'text-xs font-medium px-3 py-1 rounded-full flex items-center gap-1',
                           'transition-colors duration-200',
@@ -187,17 +174,16 @@ export function NotificationItem({ notification }: NotificationItemProps) {
                         )}
                         onClick={e => e.stopPropagation()}
                       >
-                        {action.label}
+                        {notification.action.label}
                         <ExternalLink className="h-3 w-3" />
                       </Link>
                     )
                   : (
                       <button
-                        key={index}
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (action.onClick) {
-                            action.onClick();
+                          if (notification.action?.onClick) {
+                            notification.action?.onClick();
                           }
                         }}
                         className={cn(
@@ -215,18 +201,11 @@ export function NotificationItem({ notification }: NotificationItemProps) {
                           && 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30',
                         )}
                       >
-                        {action.label}
+                        {notification.action?.label}
                       </button>
-                    ),
-              )}
-            </div>
-          )}
-
-          <div className="flex items-center justify-between mt-2">
-            <p className="text-xs text-gray-500 dark:text-gray-500">
-              {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
-            </p>
-
+                    )}
+              </div>
+            )}
           </div>
         </div>
       </div>

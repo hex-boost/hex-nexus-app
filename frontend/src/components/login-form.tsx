@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator.tsx';
 import { WindowControls } from '@/components/WindowControls.tsx';
 import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
 import { useGoFunctions } from '@/hooks/useGoBindings.ts';
@@ -12,6 +13,7 @@ import { useProfileAvatar } from '@/hooks/useProfileAvatar.ts';
 import { userAuth } from '@/lib/strapi';
 import { cn } from '@/lib/utils';
 import { useUserStore } from '@/stores/useUserStore';
+import { Discord } from '@discord';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@radix-ui/react-tabs';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
@@ -126,7 +128,39 @@ export function LoginForm({
       registerMutation.mutate();
     }
   };
+  const discordLoginMutation = useMutation(
+    {
+      mutationFn:
+        async () => {
+          return Discord.StartOAuth();
+        },
+      onSuccess: async (data) => {
+        console.info('discord login data', data);
+        if (!data || !data.jwt) {
+          toast.error('Failed to authenticate with Discord');
+          return;
+        }
 
+        console.info('discord login jwt', data?.jwt);
+        setAuthToken(data.jwt);
+
+        try {
+          await refetchUser();
+          console.info('User refetched successfully');
+
+          // Navigate to dashboard after successful authentication
+          router.navigate({ to: '/dashboard' });
+        } catch (error) {
+          console.error('Error refetching user:', error);
+          toast.error('Failed to load user data');
+        }
+      },
+      onError: (error) => {
+        console.error('Error in Discord login:', error);
+        toast.error('Failed to authenticate with Discord');
+      },
+    },
+  );
   const isLoading = activeTab === 'login' ? loginMutation.isPending : registerMutation.isPending;
   return (
 
@@ -302,6 +336,22 @@ export function LoginForm({
                       {activeTab === 'login'
                         ? isLoading ? 'Signing in...' : 'Sign in'
                         : isLoading ? 'Registering...' : 'Register'}
+                    </Button>
+                    <div className="flex items-center  gap-4 w-full">
+                      <Separator className="flex-1 w-full" />
+                      <span className="text-muted-foreground text-xs">OR</span>
+                      <Separator className="w-full flex-1" />
+                    </div>
+                    <Button
+                      type="button"
+                      disabled={discordLoginMutation.isPending}
+                      loading={discordLoginMutation.isPending}
+                      onClick={() => discordLoginMutation.mutate()}
+                      variant="outline"
+                      className="w-full space-x-2"
+                    >
+                      {!discordLoginMutation.isPending && <DiscordSvg />}
+                      <p>Continue with Discord</p>
                     </Button>
                     <TabsList className="text-center text-sm">
                       <span>

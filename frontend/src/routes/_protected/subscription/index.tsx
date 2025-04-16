@@ -77,7 +77,7 @@ function RouteComponent() {
       tier: 'Premium',
       description: 'The ideal solution for serious boosters.',
       price: 20,
-      color: 'purple',
+      color: 'primary',
       tier_enum: 'premium',
       benefits: [
         {
@@ -111,7 +111,7 @@ function RouteComponent() {
       tier_enum: 'pro',
       description: 'For full-time professional boosters',
       price: 30,
-      color: 'primary',
+      color: 'purple',
       benefits: [
         {
           title: 'Unlimited coins & accounts',

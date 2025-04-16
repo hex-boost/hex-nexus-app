@@ -28,7 +28,7 @@ type NotificationSettingsProps = {
 export function NotificationSettings({ inDropdown = false }: NotificationSettingsProps) {
   const { preferences, setPreferences } = useNotifications();
   const [localPrefs, setLocalPrefs] = useState({ ...preferences });
-  const [activeTab, setActiveTab] = useState<'general' | 'sound'>('general');
+  const [_, setActiveTab] = useState<'general' | 'sound'>('general');
   const [volume, setVolume] = useState(100);
   const [isMuted, setIsMuted] = useState(!preferences.soundEnabled);
 
@@ -49,13 +49,13 @@ export function NotificationSettings({ inDropdown = false }: NotificationSetting
     }));
   };
 
-  const handleToggleSound = () => {
-    setLocalPrefs(prev => ({
-      ...prev,
-      soundEnabled: !prev.soundEnabled,
-    }));
-    setIsMuted(!localPrefs.soundEnabled);
-  };
+  // const handleToggleSound = () => {
+  //   setLocalPrefs(prev => ({
+  //     ...prev,
+  //     soundEnabled: !prev.soundEnabled,
+  //   }));
+  //   setIsMuted(!localPrefs.soundEnabled);
+  // };
 
   const handleToggleEmail = () => {
     setLocalPrefs(prev => ({

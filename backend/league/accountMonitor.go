@@ -146,7 +146,6 @@ func (am *AccountMonitor) monitorLoop() {
 	for {
 		select {
 		case <-ticker.C:
-			am.logger.Debug("Running scheduled account check")
 			am.checkCurrentAccount()
 		case <-am.stopChan:
 			am.logger.Info("Account monitor loop terminated via stop channel")
@@ -246,7 +245,6 @@ func (am *AccountMonitor) GetLoggedInUsername() string {
 func (am *AccountMonitor) checkCurrentAccount() {
 	// Skip if Riot client is not running
 	if !am.riotClient.IsRunning() && !am.leagueService.IsRunning() && !am.leagueService.IsPlaying() {
-		am.logger.Debug("Skipping account check - Riot client not running")
 		return
 	}
 

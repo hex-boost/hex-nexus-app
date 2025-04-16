@@ -39,6 +39,7 @@ export const useUserStore = create<AuthState>((set, get) => ({
   },
   setAuthToken: (jwt: string) => {
     set({ jwt });
+    localStorage.setItem('authToken', jwt);
   },
   login: (user: UserType, jwt: string) => {
     localStorage.setItem('user', JSON.stringify(user));
