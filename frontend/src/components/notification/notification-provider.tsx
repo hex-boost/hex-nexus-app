@@ -6,7 +6,6 @@ import { useLocalStorage } from '@/hooks/use-local-storage';
 import { useWebSocket } from '@/hooks/use-websocket';
 import { DEFAULT_PREFERENCES, NotificationContext } from '@/types/notification.ts';
 import { Howl } from 'howler';
-
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
@@ -30,6 +29,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     notificationSoundRef.current = new Howl({
       src: [notificationSound],
+      format: ['ogg'],
       volume: 0.5,
       preload: true,
     });
