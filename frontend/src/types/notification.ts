@@ -28,9 +28,9 @@ type NotificationContextType = {
   unreadCount: number;
   preferences: NotificationPreferences;
   setPreferences: (prefs: NotificationPreferences) => void;
-  addNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void;
-  removeNotification: (id: string) => void;
-  markAsRead: (id: string) => void;
+  addNotification: (notification: Notification) => void;
+  removeNotification: (id: number) => void;
+  markAsRead: (id: number) => void;
   markAllAsRead: () => void;
   clearAll: () => void;
   isDropdownOpen: boolean;

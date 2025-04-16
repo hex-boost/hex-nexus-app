@@ -36,7 +36,7 @@ export function NotificationDropdown() {
   // Filter notifications based on the selected tab
   const filteredNotifications = notifications.filter((notification) => {
     if (filter === 'unread') {
-      return !notification.read;
+      return !notification.isSeen;
     }
     return true;
   });

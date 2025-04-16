@@ -15,7 +15,7 @@ export function NotificationSound({ notificationType = 'account_expired' }: Noti
     if (notifications.length > prevNotificationsLength.current) {
       // Check if the newest notification matches the type we want to play sound for
       const newestNotification = notifications[0];
-      if (newestNotification && newestNotification.type === notificationType) {
+      if (newestNotification && newestNotification.event === notificationType) {
         audioRef.current?.play().catch((error) => {
           console.error('Failed to play notification sound:', error);
         });

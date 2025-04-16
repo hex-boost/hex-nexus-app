@@ -1,3 +1,4 @@
+import type { ServerNotification } from '@/types/types.ts';
 import type { Socket } from 'socket.io-client';
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { useCallback, useEffect, useRef } from 'react';
@@ -5,7 +6,7 @@ import { io } from 'socket.io-client';
 
 type UseWebSocketOptions = {
   url: string;
-  onMessage: (event: MessageEvent) => void;
+  onMessage: (event: ServerNotification) => void;
 };
 
 export function useWebSocket({

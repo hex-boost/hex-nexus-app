@@ -31,14 +31,14 @@ export function NotificationItem({ notification }: NotificationItemProps) {
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
 
   const handleMarkAsRead = () => {
-    if (!notification.read) {
+    if (!notification.isSeen) {
       markAsRead(notification.id);
     }
   };
 
   const handleToggleReadStatus = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (notification.read) {
+    if (notification.isSeen) {
       // In a real app, you would have a markAsUnread function
       console.log('Would mark as unread:', notification.id);
     } else {
@@ -65,12 +65,12 @@ export function NotificationItem({ notification }: NotificationItemProps) {
   };
 
   const getIcon = () => {
-    switch (notification.type) {
+    switch (notification.event) {
       case 'account_expired':
         return <AlertOctagon className="h-5 w-5 text-red-500" />;
-      case 'subscription_expiring':
+      case 'membership_ending':
         return <Clock className="h-5 w-5 text-amber-500" />;
-      case 'subscription_paid':
+      case 'membership_paid':
         return <CheckCircle className="h-5 w-5 text-green-500" />;
       case 'account_expiring':
         return <AlertTriangle className="h-5 w-5 text-amber-500" />;
@@ -83,17 +83,17 @@ export function NotificationItem({ notification }: NotificationItemProps) {
 
   // Get background color based on notification type and read status
   const getBackgroundColor = () => {
-    if (notification.read) {
+    if (notification.isSeen) {
       return '';
     }
 
-    switch (notification.type) {
+    switch (notification.event) {
       case 'account_expired':
         return 'bg-red-50 dark:bg-red-900/10';
-      case 'subscription_expiring':
+      case 'membership_ending':
       case 'account_expiring':
         return 'bg-amber-50 dark:bg-amber-900/10';
-      case 'subscription_paid':
+      case 'membership_paid':
         return 'bg-green-50 dark:bg-green-900/10';
       case 'system_message':
         return 'bg-blue-50 dark:bg-blue-900/10';
@@ -104,13 +104,13 @@ export function NotificationItem({ notification }: NotificationItemProps) {
 
   // Get border color for the left border
   const getBorderColor = () => {
-    switch (notification.type) {
+    switch (notification.event) {
       case 'account_expired':
         return 'border-l-4 border-l-red-500';
-      case 'subscription_expiring':
+      case 'membership_ending':
       case 'account_expiring':
         return 'border-l-4 border-l-amber-500';
-      case 'subscription_paid':
+      case 'membership_paid':
         return 'border-l-4 border-l-green-500';
       case 'system_message':
         return 'border-l-4 border-l-blue-500';
@@ -134,7 +134,7 @@ export function NotificationItem({ notification }: NotificationItemProps) {
       onClick={handleMarkAsRead}
       tabIndex={0}
       role="button"
-      aria-label={`${notification.title} notification, ${notification.read ? 'read' : 'unread'}`}
+      aria-label={`${notification.title} notification, ${notification.isSeen ? 'read' : 'unread'}`}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           handleMarkAsRead();
@@ -146,7 +146,7 @@ export function NotificationItem({ notification }: NotificationItemProps) {
         <div className="flex-1 min-w-0">
           <div className="flex justify-between items-start">
             <p
-              className={cn('text-sm font-medium text-gray-900 dark:text-white', !notification.read && 'font-semibold')}
+              className={cn('text-sm font-medium text-gray-900 dark:text-white', !notification.isSeen && 'font-semibold')}
             >
               {notification.title}
             </p>
@@ -154,10 +154,10 @@ export function NotificationItem({ notification }: NotificationItemProps) {
               <button
                 onClick={handleToggleReadStatus}
                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                aria-label={notification.read ? 'Mark as unread' : 'Mark as read'}
-                title={notification.read ? 'Mark as unread' : 'Mark as read'}
+                aria-label={notification.isSeen ? 'Mark as unread' : 'Mark as read'}
+                title={notification.isSeen ? 'Mark as unread' : 'Mark as read'}
               >
-                {notification.read ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {notification.isSeen ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
               <button
                 onClick={(e) => {
@@ -186,15 +186,15 @@ export function NotificationItem({ notification }: NotificationItemProps) {
                         className={cn(
                           'text-xs font-medium px-3 py-1 rounded-full flex items-center gap-1',
                           'transition-colors duration-200',
-                          notification.type === 'account_expired'
+                          notification.event === 'account_expired'
                           && 'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30',
-                          notification.type === 'subscription_expiring'
+                          notification.event === 'membership_ending'
                           && 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/30',
-                          notification.type === 'subscription_paid'
+                          notification.event === 'membership_paid'
                           && 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/30',
-                          notification.type === 'account_expiring'
+                          notification.event === 'account_expiring'
                           && 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/30',
-                          notification.type === 'system_message'
+                          notification.event === 'system_message'
                           && 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30',
                         )}
                         onClick={e => e.stopPropagation()}
@@ -215,15 +215,15 @@ export function NotificationItem({ notification }: NotificationItemProps) {
                         className={cn(
                           'text-xs font-medium px-3 py-1 rounded-full',
                           'transition-colors duration-200',
-                          notification.type === 'account_expired'
+                          notification.event === 'account_expired'
                           && 'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30',
-                          notification.type === 'subscription_expiring'
+                          notification.event === 'membership_ending'
                           && 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/30',
-                          notification.type === 'subscription_paid'
+                          notification.event === 'membership_paid'
                           && 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/30',
-                          notification.type === 'account_expiring'
+                          notification.event === 'account_expiring'
                           && 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/30',
-                          notification.type === 'system_message'
+                          notification.event === 'system_message'
                           && 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30',
                         )}
                       >
@@ -236,7 +236,7 @@ export function NotificationItem({ notification }: NotificationItemProps) {
 
           <div className="flex items-center justify-between mt-2">
             <p className="text-xs text-gray-500 dark:text-gray-500">
-              {formatDistanceToNow(new Date(notification.timestamp), { addSuffix: true })}
+              {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
             </p>
 
             {/* Feedback buttons */}
@@ -288,7 +288,7 @@ export function NotificationItem({ notification }: NotificationItemProps) {
         </div>
       </div>
 
-      {!notification.read && (
+      {!notification.isSeen && (
         <span className="absolute top-4 right-12 h-2 w-2 rounded-full bg-blue-500" aria-hidden="true"></span>
       )}
     </motion.div>

@@ -93,26 +93,26 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         }
 
         // Then by read status (unread first)
-        if (a.read !== b.read) {
-          return a.read ? 1 : -1;
+        if (a.isSeen !== b.isSeen) {
+          return a.isSeen ? 1 : -1;
         }
 
         // Finally by timestamp (newest first)
-        return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       });
     });
 
     // Play sound based on notification type
-    playSound(notification.type as ServerNotificationEvents);
+    playSound(notification.event as ServerNotificationEvents);
   }, [playSound, preferences.enabledTypes]);
 
   // Remove a notification
-  const removeNotification = (id: string) => {
+  const removeNotification = (id: number) => {
     setNotifications(prev => prev.filter(notification => notification.id !== id));
   };
 
   // Mark a notification as read
-  const markAsRead = (id: string) => {
+  const markAsRead = (id: number) => {
     setNotifications(prev =>
       prev.map(notification => (notification.id === id ? { ...notification, read: true } : notification)),
     );
@@ -131,7 +131,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     switch (type) {
       case 'account_expired':
         return 'high';
-      case 'subscription_expiring':
+      case 'membership_ending':
       case 'account_expiring':
         return 'medium';
       default:
@@ -159,16 +159,9 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const handleWebSocketNotification = useCallback(
     (notification: ServerNotification) => {
       const newNotification: Notification = {
-        id: notification.id,
-        documentId: notification.documentId,
-        event: notification.event,
-        title: notification.title,
-        message: notification.message,
-        createdAt: notification.createdAt,
-        isSeen: false,
+        ...notification,
         priority: getPriorityForType(notification.event),
         actions: getDefaultActionsForType(notification.event),
-        metadata: notification.metadata || {},
       };
 
       addNotification(newNotification);
@@ -185,9 +178,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     url: import.meta.env.VITE_API_URL || 'http:localhost:1337',
     onMessage: (message) => {
       try {
-        if (message.type === 'notification') {
-          handleWebSocketNotification(message);
-        }
+        handleWebSocketNotification(message);
       } catch (error) {
         console.error('Failed to parse WebSocket message:', error);
       }
@@ -195,7 +186,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    const unreadNotifications = notifications.filter(notification => !notification.read);
+    const unreadNotifications = notifications.filter(notification => !notification.isSeen);
     setHasUnread(unreadNotifications.length > 0);
     setUnreadCount(unreadNotifications.length);
   }, [notifications]);

@@ -27,12 +27,12 @@ export function NotificationHistory() {
         || notification.message.toLowerCase().includes(searchTerm.toLowerCase());
 
     // Type filter
-    const matchesType = selectedType === 'all' || notification.type === selectedType;
+    const matchesType = selectedType === 'all' || notification.event === selectedType;
 
     // Period filter
     let matchesPeriod = true;
     if (selectedPeriod !== 'all') {
-      const notificationDate = new Date(notification.timestamp);
+      const notificationDate = new Date(notification.createdAt);
       const now = new Date();
 
       switch (selectedPeriod) {
@@ -55,8 +55,8 @@ export function NotificationHistory() {
     // Read status filter
     const matchesReadStatus
       = activeTab === 'all'
-        || (activeTab === 'unread' && !notification.read)
-        || (activeTab === 'read' && notification.read);
+        || (activeTab === 'unread' && !notification.isSeen)
+        || (activeTab === 'read' && notification.isSeen);
 
     return matchesSearch && matchesType && matchesPeriod && matchesReadStatus;
   });
@@ -80,8 +80,8 @@ export function NotificationHistory() {
   //   }
   // };
 
-  const unreadCount = notifications.filter(n => !n.read).length;
-  const readCount = notifications.filter(n => n.read).length;
+  const unreadCount = notifications.filter(n => !n.isSeen).length;
+  const readCount = notifications.filter(n => n.isSeen).length;
 
   return (
     <div className="space-y-4">

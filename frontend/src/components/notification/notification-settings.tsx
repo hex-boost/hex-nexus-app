@@ -1,4 +1,4 @@
-import type { NotificationType } from '@/types/notification.ts';
+import type { ServerNotificationEvents } from '@/types/types.ts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,7 +32,7 @@ export function NotificationSettings({ inDropdown = false }: NotificationSetting
   const [volume, setVolume] = useState(100);
   const [isMuted, setIsMuted] = useState(!preferences.soundEnabled);
 
-  const handleToggleType = (type: NotificationType) => {
+  const handleToggleType = (type: ServerNotificationEvents) => {
     setLocalPrefs(prev => ({
       ...prev,
       enabledTypes: {
@@ -92,13 +92,13 @@ export function NotificationSettings({ inDropdown = false }: NotificationSetting
     setPreferences(localPrefs);
   };
 
-  const getNotificationTypeIcon = (type: NotificationType) => {
+  const getNotificationTypeIcon = (type: ServerNotificationEvents) => {
     switch (type) {
       case 'account_expired':
         return <AlertOctagon className="h-4 w-4 text-red-500" />;
-      case 'subscription_expiring':
+      case 'membership_ending':
         return <Clock className="h-4 w-4 text-amber-500" />;
-      case 'subscription_paid':
+      case 'membership_paid':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'account_expiring':
         return <AlertTriangle className="h-4 w-4 text-amber-500" />;
@@ -107,13 +107,13 @@ export function NotificationSettings({ inDropdown = false }: NotificationSetting
     }
   };
 
-  const getNotificationTypeLabel = (type: NotificationType) => {
+  const getNotificationTypeLabel = (type: ServerNotificationEvents) => {
     switch (type) {
       case 'account_expired':
         return 'Account Expired';
-      case 'subscription_expiring':
+      case 'membership_ending':
         return 'Subscription Expiring';
-      case 'subscription_paid':
+      case 'membership_paid':
         return 'Payment Confirmations';
       case 'account_expiring':
         return 'Account Expiring Soon';
@@ -122,13 +122,13 @@ export function NotificationSettings({ inDropdown = false }: NotificationSetting
     }
   };
 
-  const getNotificationTypeDescription = (type: NotificationType) => {
+  const getNotificationTypeDescription = (type: ServerNotificationEvents) => {
     switch (type) {
       case 'account_expired':
         return 'Notify when your account access has expired';
-      case 'subscription_expiring':
+      case 'membership_ending':
         return 'Notify before your subscription expires';
-      case 'subscription_paid':
+      case 'membership_paid':
         return 'Confirm successful payments';
       case 'account_expiring':
         return 'Notify before your account access expires';
@@ -176,20 +176,20 @@ export function NotificationSettings({ inDropdown = false }: NotificationSetting
                 key={type}
                 className="flex items-start space-x-4 py-3 border-b border-gray-200 dark:border-[#1F1F23]"
               >
-                <div className="flex-shrink-0 pt-0.5">{getNotificationTypeIcon(type as NotificationType)}</div>
+                <div className="flex-shrink-0 pt-0.5">{getNotificationTypeIcon(type as ServerNotificationEvents)}</div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    {getNotificationTypeLabel(type as NotificationType)}
+                    {getNotificationTypeLabel(type as ServerNotificationEvents)}
                   </p>
                   <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                    {getNotificationTypeDescription(type as NotificationType)}
+                    {getNotificationTypeDescription(type as ServerNotificationEvents)}
                   </p>
                 </div>
                 <div className="flex-shrink-0">
                   <Switch
                     checked={enabled}
-                    onCheckedChange={() => handleToggleType(type as NotificationType)}
-                    aria-label={`Enable ${getNotificationTypeLabel(type as NotificationType)} notifications`}
+                    onCheckedChange={() => handleToggleType(type as ServerNotificationEvents)}
+                    aria-label={`Enable ${getNotificationTypeLabel(type as ServerNotificationEvents)} notifications`}
                   />
                 </div>
               </div>
