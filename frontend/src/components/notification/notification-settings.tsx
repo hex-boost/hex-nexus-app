@@ -1,7 +1,5 @@
 import type { ServerNotificationEvents } from '@/types/types.ts';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -45,7 +43,6 @@ export function NotificationSettings({ inDropdown = false }: NotificationSetting
   const handleToggleDND = () => {
     setLocalPrefs(prev => ({
       ...prev,
-      doNotDisturb: !prev.doNotDisturb,
     }));
   };
 
@@ -228,41 +225,8 @@ export function NotificationSettings({ inDropdown = false }: NotificationSetting
                   </p>
                 </div>
               </div>
-              <Switch
-                checked={localPrefs.doNotDisturb}
-                onCheckedChange={handleToggleDND}
-                aria-label="Enable do not disturb mode"
-              />
             </div>
 
-            {localPrefs.doNotDisturb && (
-              <div className="grid grid-cols-2 gap-4 pt-2">
-                <div className="space-y-2">
-                  <Label htmlFor="dnd-start" className="text-xs">
-                    Start Time
-                  </Label>
-                  <Input
-                    id="dnd-start"
-                    type="time"
-                    value={localPrefs.doNotDisturbStart || '22:00'}
-                    onChange={e => handleTimeChange('doNotDisturbStart', e.target.value)}
-                    className="h-8 text-xs"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="dnd-end" className="text-xs">
-                    End Time
-                  </Label>
-                  <Input
-                    id="dnd-end"
-                    type="time"
-                    value={localPrefs.doNotDisturbEnd || '08:00'}
-                    onChange={e => handleTimeChange('doNotDisturbEnd', e.target.value)}
-                    className="h-8 text-xs"
-                  />
-                </div>
-              </div>
-            )}
           </div>
         </TabsContent>
 
