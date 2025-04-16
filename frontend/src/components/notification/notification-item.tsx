@@ -5,19 +5,7 @@ import { cn } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
 import { formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
-import {
-  AlertOctagon,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  ExternalLink,
-  Eye,
-  EyeOff,
-  Info,
-  ThumbsDown,
-  ThumbsUp,
-  X,
-} from 'lucide-react';
+import { AlertOctagon, AlertTriangle, CheckCircle, Clock, ExternalLink, Eye, EyeOff, Info, X } from 'lucide-react';
 import { useState } from 'react';
 
 type NotificationItemProps = {
@@ -239,51 +227,6 @@ export function NotificationItem({ notification }: NotificationItemProps) {
               {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
             </p>
 
-            {/* Feedback buttons */}
-            {!showFeedback
-              ? (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowFeedback(true);
-                    }}
-                    className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                  >
-                    Was this helpful?
-                  </button>
-                )
-              : (
-                  <div className="flex items-center gap-2">
-                    {feedbackSubmitted
-                      ? (
-                          <span className="text-xs text-green-500 dark:text-green-400">Thanks for your feedback!</span>
-                        )
-                      : (
-                          <>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleFeedback(true);
-                              }}
-                              className="text-gray-500 hover:text-green-500 dark:hover:text-green-400"
-                              aria-label="This notification was helpful"
-                            >
-                              <ThumbsUp className="h-3 w-3" />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleFeedback(false);
-                              }}
-                              className="text-gray-500 hover:text-red-500 dark:hover:text-red-400"
-                              aria-label="This notification was not helpful"
-                            >
-                              <ThumbsDown className="h-3 w-3" />
-                            </button>
-                          </>
-                        )}
-                  </div>
-                )}
           </div>
         </div>
       </div>
