@@ -3,11 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useNotifications } from '@/hooks/useNotifications.tsx';
 import { AlertOctagon, AlertTriangle, Calendar, CheckCircle, Clock, Filter, Info, Search } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { NotificationEmptyState } from './notification-empty-state';
 import { NotificationItem } from './notification-item';
-import { useNotifications } from './notification-provider';
 
 export function NotificationHistory() {
   const { notifications, markAllAsRead, clearAll } = useNotifications();
@@ -61,24 +61,24 @@ export function NotificationHistory() {
     return matchesSearch && matchesType && matchesPeriod && matchesReadStatus;
   });
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'account_expired':
-        return <AlertOctagon className="h-4 w-4 text-red-500" />;
-      case 'subscription_expiring':
-        return <Clock className="h-4 w-4 text-amber-500" />;
-      case 'subscription_paid':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'account_expiring':
-        return <AlertTriangle className="h-4 w-4 text-amber-500" />;
-      case 'system_message':
-        return <Info className="h-4 w-4 text-blue-500" />;
-      case 'all':
-        return <Filter className="h-4 w-4 text-gray-500" />;
-      default:
-        return <Filter className="h-4 w-4 text-gray-500" />;
-    }
-  };
+  // const getTypeIcon = (type: string) => {
+  //   switch (type) {
+  //     case 'account_expired':
+  //       return <AlertOctagon className="h-4 w-4 text-red-500" />;
+  //     case 'subscription_expiring':
+  //       return <Clock className="h-4 w-4 text-amber-500" />;
+  //     case 'subscription_paid':
+  //       return <CheckCircle className="h-4 w-4 text-green-500" />;
+  //     case 'account_expiring':
+  //       return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+  //     case 'system_message':
+  //       return <Info className="h-4 w-4 text-blue-500" />;
+  //     case 'all':
+  //       return <Filter className="h-4 w-4 text-gray-500" />;
+  //     default:
+  //       return <Filter className="h-4 w-4 text-gray-500" />;
+  //   }
+  // };
 
   const unreadCount = notifications.filter(n => !n.read).length;
   const readCount = notifications.filter(n => n.read).length;

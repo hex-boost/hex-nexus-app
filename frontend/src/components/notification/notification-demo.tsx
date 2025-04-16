@@ -1,18 +1,14 @@
-import type { NotificationType } from './notification-provider';
+import type { ServerNotificationEvents } from '@/types/types.ts';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useState } from 'react';
-import { useNotifications } from './notification-provider';
+import { useNotifications } from '@/hooks/useNotifications.tsx';
 import { NotificationSettings } from './notification-settings';
 import { NotificationSound } from './notification-sound';
-import { useNotificationSocket } from './use-notification-socket';
 
 export function NotificationDemo() {
   const { addNotification } = useNotifications();
-  const socket = useNotificationSocket();
-  const [activeTab, setActiveTab] = useState('demo');
 
-  const createNotification = (type: NotificationType) => {
+  const createNotification = (type: ServerNotificationEvents) => {
     const notifications = {
       account_expired: {
         title: 'Account Expired',
@@ -102,21 +98,21 @@ export function NotificationDemo() {
               </Button>
             </div>
 
-            <div className="pt-4 border-t border-gray-200 dark:border-[#1F1F23] mt-4">
-              <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-2">WebSocket Simulation</h3>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
-                This simulates receiving notifications via WebSockets. A notification will automatically appear after 5
-                seconds.
-              </p>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={socket.reconnect} className="text-xs">
-                  Reconnect Socket
-                </Button>
-                <Button variant="outline" size="sm" onClick={socket.disconnect} className="text-xs">
-                  Disconnect Socket
-                </Button>
-              </div>
-            </div>
+            {/* <div className="pt-4 border-t border-gray-200 dark:border-[#1F1F23] mt-4"> */}
+            {/*  <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-2">WebSocket Simulation</h3> */}
+            {/*  <p className="text-xs text-gray-600 dark:text-gray-400 mb-3"> */}
+            {/*    This simulates receiving notifications via WebSockets. A notification will automatically appear after 5 */}
+            {/*    seconds. */}
+            {/*  </p> */}
+            {/*  <div className="flex gap-2"> */}
+            {/*    <Button variant="outline" size="sm" onClick={socket.reconnect} className="text-xs"> */}
+            {/*      Reconnect Socket */}
+            {/*    </Button> */}
+            {/*    <Button variant="outline" size="sm" onClick={socket.disconnect} className="text-xs"> */}
+            {/*      Disconnect Socket */}
+            {/*    </Button> */}
+            {/*  </div> */}
+            {/* </div> */}
           </div>
         </TabsContent>
 

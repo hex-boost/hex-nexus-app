@@ -1,10 +1,10 @@
 import { useOnClickOutside } from '@/hooks/use-on-click-outside';
+import { useNotifications } from '@/hooks/useNotifications.tsx';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bell } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { NotificationDropdown } from './notification-dropdown';
-import { useNotifications } from './notification-provider';
 
 export function NotificationBell() {
   const { hasUnread, unreadCount, isDropdownOpen, setIsDropdownOpen, notifications } = useNotifications();
@@ -13,8 +13,7 @@ export function NotificationBell() {
   const bellRef = useRef<HTMLDivElement>(null);
   const prevNotificationCount = useRef(notifications.length);
 
-  // Handle click outside to close dropdown
-  useOnClickOutside(bellRef, () => setIsDropdownOpen(false));
+  useOnClickOutside(bellRef as any, () => setIsDropdownOpen(false));
 
   // Animate bell when new notification arrives
   useEffect(() => {

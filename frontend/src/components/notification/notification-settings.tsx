@@ -1,10 +1,11 @@
-import type { NotificationType } from './notification-provider';
+import type { NotificationType } from '@/types/notification.ts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useNotifications } from '@/hooks/useNotifications.tsx';
 import { cn } from '@/lib/utils';
 import {
   AlertOctagon,
@@ -19,7 +20,6 @@ import {
   VolumeX,
 } from 'lucide-react';
 import { useState } from 'react';
-import { useNotifications } from './notification-provider';
 
 type NotificationSettingsProps = {
   inDropdown?: boolean;

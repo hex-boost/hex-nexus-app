@@ -1,4 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useNotifications } from '@/hooks/useNotifications.tsx';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bell, Check, Cog, X } from 'lucide-react';
@@ -6,7 +7,6 @@ import { useEffect, useRef, useState } from 'react';
 import { CustomScrollbar } from './CustomScrollbar.tsx';
 import { NotificationEmptyState } from './notification-empty-state';
 import { NotificationItem } from './notification-item';
-import { useNotifications } from './notification-provider';
 import { NotificationSettings } from './notification-settings';
 
 export function NotificationDropdown() {

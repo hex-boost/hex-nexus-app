@@ -1,5 +1,6 @@
+import type { Notification } from '@/types/notification.ts';
 import type React from 'react';
-import type { Notification } from './notification-provider';
+import { useNotifications } from '@/hooks/useNotifications.tsx';
 import { cn } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
 import { formatDistanceToNow } from 'date-fns';
@@ -18,7 +19,6 @@ import {
   X,
 } from 'lucide-react';
 import { useState } from 'react';
-import { useNotifications } from './notification-provider';
 
 type NotificationItemProps = {
   notification: Notification;

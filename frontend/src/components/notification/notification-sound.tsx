@@ -1,6 +1,5 @@
+import { useNotifications } from '@/hooks/useNotifications.tsx';
 import { useEffect, useRef } from 'react';
-
-import { useNotifications } from './notification-provider';
 
 type NotificationSoundProps = {
   notificationType?: string;

@@ -1,6 +1,5 @@
 import type { UserType } from '@/types/types';
 import FavoriteAccounts from '@/components/FavoriteAccounts.tsx';
-import { NotificationDemo } from '@/components/notification/notification-demo.tsx';
 import { Separator } from '@/components/ui/separator.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { Activity, Shield, Star } from 'lucide-react';
@@ -110,7 +109,6 @@ export default function Dashboard({ user }: { user: UserType }) {
             <FavoriteAccounts user={user} />
           </div>
         </div>
-        <NotificationDemo></NotificationDemo>
       </div>
     </div>
   );
