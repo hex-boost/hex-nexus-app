@@ -1,15 +1,14 @@
-import type { Notification } from '@/types/notification.ts';
+import type { ServerNotification } from '@/types/types.ts';
 import type React from 'react';
 import { useNotifications } from '@/hooks/useNotifications.tsx';
 import { cn } from '@/lib/utils';
-import { Link } from '@tanstack/react-router';
 import { formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
-import { AlertOctagon, AlertTriangle, CheckCircle, Clock, ExternalLink, Eye, EyeOff, Info, X } from 'lucide-react';
+import { AlertOctagon, AlertTriangle, CheckCircle, Clock, Eye, EyeOff, Info, X } from 'lucide-react';
 import { useState } from 'react';
 
 type NotificationItemProps = {
-  notification: Notification;
+  notification: ServerNotification;
 };
 
 export function NotificationItem({ notification }: NotificationItemProps) {
@@ -151,60 +150,6 @@ export function NotificationItem({ notification }: NotificationItemProps) {
             <p className="text-xs text-gray-500 dark:text-gray-500">
               {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
             </p>
-            {notification.action && (
-              <div className="mt-2 flex flex-wrap gap-2">
-                {notification.action.href
-                  ? (
-                      <Link
-                        to={notification.action.href}
-                        className={cn(
-                          'text-xs font-medium px-3 py-1 rounded-full flex items-center gap-1',
-                          'transition-colors duration-200',
-                          notification.event === 'account_expired'
-                          && 'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30',
-                          notification.event === 'membership_ending'
-                          && 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/30',
-                          notification.event === 'membership_paid'
-                          && 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/30',
-                          notification.event === 'account_expiring'
-                          && 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/30',
-                          notification.event === 'system_message'
-                          && 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30',
-                        )}
-                        onClick={e => e.stopPropagation()}
-                      >
-                        {notification.action.label}
-                        <ExternalLink className="h-3 w-3" />
-                      </Link>
-                    )
-                  : (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (notification.action?.onClick) {
-                            notification.action?.onClick();
-                          }
-                        }}
-                        className={cn(
-                          'text-xs font-medium px-3 py-1 rounded-full',
-                          'transition-colors duration-200',
-                          notification.event === 'account_expired'
-                          && 'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30',
-                          notification.event === 'membership_ending'
-                          && 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/30',
-                          notification.event === 'membership_paid'
-                          && 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/30',
-                          notification.event === 'account_expiring'
-                          && 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/30',
-                          notification.event === 'system_message'
-                          && 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30',
-                        )}
-                      >
-                        {notification.action?.label}
-                      </button>
-                    )}
-              </div>
-            )}
           </div>
         </div>
       </div>
