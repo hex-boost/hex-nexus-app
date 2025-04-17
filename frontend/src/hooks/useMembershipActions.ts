@@ -52,7 +52,7 @@ export function useMembershipActions() {
     mutationKey: ['subscription'],
     mutationFn: async (tier: string) => {
       if (user?.premium?.tier) {
-        throw new Error('You already have a plan');
+        throw new Error('You already have a plan,contact support if you want to change it');
       }
       setPendingPlanTier(tier);
 
@@ -83,7 +83,7 @@ export function useMembershipActions() {
     mutationKey: ['payment', selectedPaymentMethod],
     mutationFn: async (selectedTier: PremiumTiers) => {
       if (user?.premium?.tier !== 'free') {
-        throw new Error('You already have a plan');
+        throw new Error('You already have a plan, contact support if you want to change it');
       }
       let url: string = '';
       if (selectedPaymentMethod === 'Pix') {

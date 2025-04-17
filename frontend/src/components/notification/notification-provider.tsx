@@ -9,6 +9,7 @@ import { usePremiumPaymentModalStore } from '@/stores/usePremiumPaymentModalStor
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { DEFAULT_PREFERENCES, NOTIFICATION_EVENTS, NotificationContext } from '@/types/notification.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Utils } from '@utils';
 import { Howl } from 'howler';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -129,7 +130,6 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       });
     },
     onMutate: async (documentId) => {
-      // Optimistic update
       updateUserNotifications(prevNotifications =>
         prevNotifications.map(notification =>
           notification.documentId === documentId ? { ...notification, isSeen: true } : notification,
@@ -226,23 +226,9 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     (notification: ServerNotification) => {
       console.info('New notification received', notification.event, notification.title);
 
-      // Check if notification data has the expected format
-      if (!notification.documentId || !notification.event) {
-        console.error('Invalid notification format:', notification);
-        return;
+      if (notification.event === NOTIFICATION_EVENTS.ACCOUNT_EXPIRED) {
+        Utils.ForceCloseAllClients();
       }
-
-      if (notification.event === NOTIFICATION_EVENTS.MEMBERSHIP_PAID) {
-        const { tier, paymentMethod, amount } = notification.metadata || {};
-
-        // Open the premium payment modal with the data from the notification
-        premiumModalStore.open({
-          amount,
-          tier,
-          paymentMethod,
-        });
-      }
-      if (notification.)
 
       // Add priority to the notification
       const newNotification: ServerNotification = {
