@@ -28,7 +28,11 @@ export function NotificationBell() {
   }, [notifications.length]);
 
   return (
-    <div ref={bellRef} className="relative">
+    <div
+      ref={bellRef}
+      className="relative"
+      style={{ '--wails-draggable': 'no-drag' } as React.CSSProperties}
+    >
       <button
         type="button"
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}

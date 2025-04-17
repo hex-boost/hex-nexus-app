@@ -12,7 +12,7 @@ type PremiumPaymentModalProps = {
   isOpen: boolean;
   onClose: () => void;
   tier: PremiumTiers;
-  currency: 'USD' | 'BRL';
+  currency?: 'USD' | 'BRL';
   paymentMethod: PaymentMethodsAccepted;
   amount: number;
 };
