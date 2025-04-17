@@ -4,13 +4,15 @@ import type { ReactNode } from 'react';
 import notificationSound from '@/assets/sounds/notification.ogg';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { useWebSocket } from '@/hooks/use-websocket';
+import { usePremiumPaymentModalStore } from '@/stores/usePremiumPaymentModalStore';
 import { useUserStore } from '@/stores/useUserStore.ts';
-import { DEFAULT_PREFERENCES, NotificationContext } from '@/types/notification.ts';
+import { DEFAULT_PREFERENCES, NOTIFICATION_EVENTS, NotificationContext } from '@/types/notification.ts';
 import { Howl } from 'howler';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const { user } = useUserStore();
+  const premiumModalStore = usePremiumPaymentModalStore();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [hasUnread, setHasUnread] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -125,6 +127,17 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const handleNotification = useCallback(
     (notification: ServerNotification) => {
       console.info('New notification received', notification.event, notification.title);
+      if (notification.event === NOTIFICATION_EVENTS.MEMBERSHIP_PAID) {
+        const { tier, paymentMethod, amount } = notification.metadata;
+
+        // Open the premium payment modal with the data from the notification
+        premiumModalStore.open({
+          amount,
+          tier,
+          paymentMethod,
+          // colorKey,
+        });
+      }
       const newNotification: Notification = {
         ...notification,
         priority: getPriorityForType(notification.event),
@@ -132,7 +145,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
       addNotification(newNotification);
     },
-    [addNotification],
+    [addNotification, premiumModalStore],
   );
 
   // Initialize notifications from the user object

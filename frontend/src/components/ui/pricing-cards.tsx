@@ -1,10 +1,12 @@
 'use client';
 
 import type { PricingPlan } from '@/types/membership.ts';
+import type { PremiumTiers } from '@/types/types.ts';
 import { FlickeringGrid } from '@/components/magicui/flickering-grid.tsx';
 import { PaymentMethodDialog } from '@/components/PaymentMethodDialog.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
 import { Button } from '@/components/ui/button';
+import { useMembership } from '@/hooks/useMembership.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { ArrowDownCircle, CircleCheckBig } from 'lucide-react';
 import { useRef } from 'react';
@@ -12,55 +14,13 @@ import { useRef } from 'react';
 export default function PricingCards({ pricingPlans }: { pricingPlans: PricingPlan[] }) {
   const pricingRef = useRef<HTMLDivElement>(null);
   const { user } = useUserStore();
+  const { getBackgroundColor, getTierColorClass } = useMembership();
   const scrollToPricing = () => {
     pricingRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const getColorClass = (color: string, element: 'bg' | 'text' | 'border' | 'hover') => {
-    const colorMap: Record<string, Record<string, string>> = {
-      blue: {
-        bg: 'bg-blue-500',
-        text: 'text-blue-300',
-        border: 'border-[#1a2e45]',
-        hover: 'hover:bg-blue-600',
-      },
-      primary: {
-        bg: 'bg-primary',
-        text: 'text-indigo-300',
-        border: 'border-[#384394]',
-        hover: 'hover:bg-indigo-700',
-      },
-
-      purple: {
-        bg: 'bg-purple-600',
-        text: 'text-purple-300',
-        border: 'border-[#2d1a45]',
-        hover: 'hover:bg-purple-700',
-      },
-      emerald: {
-        bg: 'bg-emerald-600',
-        text: 'text-emerald-300',
-        border: 'border-emerald-900/30',
-        hover: 'hover:bg-emerald-700',
-      },
-    };
-
-    return colorMap[color]?.[element] || '';
-  };
-
-  const getBackgroundColor = (color: string) => {
-    const bgMap: Record<string, string> = {
-      blue: 'bg-[#0a1525]',
-      purple: 'bg-[#1a0a29]',
-      emerald: 'bg-gradient-to-b from-[#1a2e29] to-[#0f1e1b]',
-      primary: 'bg-[#151937]',
-    };
-
-    return bgMap[color] || '';
-  };
-
-  const renderIcon = (icon: string | undefined, color: string) => {
-    const colorClass = getColorClass(color, 'text');
+  const renderIcon = (icon: string | undefined, tier: PremiumTiers) => {
+    const colorClass = getTierColorClass(tier, 'text');
 
     switch (icon) {
       case 'check':
@@ -97,7 +57,7 @@ export default function PricingCards({ pricingPlans }: { pricingPlans: PricingPl
         </div>
 
         {currentPlan && (
-          <div className={`${getBackgroundColor(currentPlan.color)}  rounded-xl px-8 pb-8 pt-16 flex flex-col items-center relative overflow-hidden`}>
+          <div className={`${getBackgroundColor(currentPlan.tier_enum)}  rounded-xl px-8 pb-8 pt-16 flex flex-col items-center relative overflow-hidden`}>
             <div className=" w-24 h-24 rounded-full  mb-6">
               <div className="w-full h-full rounded-full overflow-hidden">
                 <img
@@ -152,31 +112,31 @@ export default function PricingCards({ pricingPlans }: { pricingPlans: PricingPl
               .map((plan, index) => (
                 <div
                   key={index}
-                  className={`${getBackgroundColor(plan.color)} rounded-xl p-6 text-left border ${getColorClass(plan.color, 'border')}`}
+                  className={`${getBackgroundColor(plan.tier_enum)} rounded-xl p-6 text-left border ${getTierColorClass(plan.tier_enum, 'border')}`}
                 >
                   <div className="flex items-center gap-1">
-                    <h3 className={`text-2xl font-bold ${getColorClass(plan.color, 'text')} mb-2`}>{plan.tier}</h3>
+                    <h3 className={`text-2xl font-bold ${getTierColorClass(plan.tier_enum, 'text')} mb-2`}>{plan.tier}</h3>
                   </div>
                   <p className="text-gray-400 mb-6">{plan.description}</p>
 
                   <div className="flex items-baseline mb-2">
-                    <span className={`${getColorClass(plan.color, 'text')} text-2xl`}>$</span>
-                    <span className={`${getColorClass(plan.color, 'text')} text-6xl font-bold mx-1`}>{plan.price}</span>
-                    <span className={`${getColorClass(plan.color, 'text')} text-xl`}>{plan.period}</span>
+                    <span className={`${getTierColorClass(plan.tier_enum, 'text')} text-2xl`}>$</span>
+                    <span className={`${getTierColorClass(plan.tier_enum, 'text')} text-6xl font-bold mx-1`}>{plan.price}</span>
+                    <span className={`${getTierColorClass(plan.tier_enum, 'text')} text-xl`}>{plan.period}</span>
                   </div>
 
-                  <div className={`border-t ${getColorClass(plan.color, 'border')} my-4`}></div>
+                  <div className={`border-t ${getTierColorClass(plan.tier_enum, 'border')} my-4`}></div>
 
                   <ul className="space-y-4">
                     {plan.benefits.map((benefit, idx) => (
                       <li key={idx} className="flex items-center gap-2">
-                        {renderIcon(benefit.icon, plan.color)}
-                        <span className={benefit.icon === 'gift' ? getColorClass(plan.color, 'text') : 'text-gray-300'}>
+                        {renderIcon(benefit.icon, plan.tier_enum)}
+                        <span className={benefit.icon === 'gift' ? getTierColorClass(plan.tier_enum, 'text') : 'text-gray-300'}>
                           {benefit.title}
                         </span>
                         {benefit.isNew && (
                           <Badge
-                            className={`${getColorClass(plan.color, 'bg')} text-white text-xs px-1.5 py-0.5 rounded`}
+                            className={`${getTierColorClass(plan.tier_enum, 'bg')} text-white text-xs px-1.5 py-0.5 rounded`}
                           >
                             New!
                           </Badge>
@@ -187,7 +147,7 @@ export default function PricingCards({ pricingPlans }: { pricingPlans: PricingPl
 
                   <PaymentMethodDialog selectedTier={plan.tier_enum}>
                     <Button
-                      className={`  w-full ${getColorClass(plan.color, 'bg')} ${getColorClass(plan.color, 'hover')} text-white py-3 rounded-md mt-6`}
+                      className={`  w-full ${getTierColorClass(plan.tier_enum, 'bg')} ${getTierColorClass(plan.tier_enum, 'hover')} text-white py-3 rounded-md mt-6`}
                     >
                       {plan.buttonText}
                     </Button>

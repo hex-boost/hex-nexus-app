@@ -14,7 +14,6 @@ export type PricingPlan = {
   benefits: { title: string; description?: string; isNew?: boolean; icon?: string }[];
   buttonText: string;
   isCurrentPlan: boolean;
-  color: string;
   note?: string;
 };
 export type SubscriptionRequest = {
@@ -79,4 +78,12 @@ export type CheckoutSession = {
   } | null;
   ui_mode: 'hosted' | 'embedded' | null;
   url: string;
+};
+
+export type PaymentMethodsAccepted = 'Pix' | 'Stripe' | 'BR Balance';
+export type PaymentMethod = {
+  title: PaymentMethodsAccepted;
+  description: string;
+  icon: string;
+  isExternal?: boolean;
 };

@@ -2,6 +2,7 @@
 import type { ServerNotification } from '@/types/types.ts';
 import type { Socket } from 'socket.io-client';
 import { useUserStore } from '@/stores/useUserStore.ts';
+import { NOTIFICATION_EVENTS } from '@/types/notification.ts';
 import { useCallback, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 
@@ -13,16 +14,6 @@ type UseWebSocketOptions = {
 // Global reference to store the socket instance
 let globalSocket: Socket | null = null;
 let connectionCount = 0;
-const NOTIFICATION_EVENTS = {
-  SYSTEM_MESSAGE: 'system_message',
-  MEMBERSHIP_ENDING: 'membership_ending',
-  MEMBERSHIP_ENDED: 'membership_ended',
-  MEMBERSHIP_PAID: 'membership_paid',
-  ACCOUNT_EXPIRING: 'account_expiring',
-  ACCOUNT_EXPIRED: 'account_expired',
-  ACCOUNT_RENTED: 'account_rented',
-  NEW_UPDATE: 'new_update',
-} as const;
 export function useWebSocket({
   url,
   onMessage,

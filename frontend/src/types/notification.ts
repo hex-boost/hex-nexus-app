@@ -37,6 +37,16 @@ type NotificationContextType = {
   setFilterType: (type: 'all' | 'unread' | 'read') => void;
 };
 
+export const NOTIFICATION_EVENTS = {
+  SYSTEM_MESSAGE: 'system_message',
+  MEMBERSHIP_ENDING: 'membership_ending',
+  MEMBERSHIP_ENDED: 'membership_ended',
+  MEMBERSHIP_PAID: 'membership_paid',
+  ACCOUNT_EXPIRING: 'account_expiring',
+  ACCOUNT_EXPIRED: 'account_expired',
+  ACCOUNT_RENTED: 'account_rented',
+  NEW_UPDATE: 'new_update',
+} as const;
 export const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 export const DEFAULT_PREFERENCES: NotificationPreferences = {

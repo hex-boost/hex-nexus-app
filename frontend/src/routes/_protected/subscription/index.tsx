@@ -18,7 +18,6 @@ function RouteComponent() {
       description: 'Thanks for verifying your account and being part of Nexus.',
       price: 0,
 
-      color: 'emerald',
       benefits: [
 
         {
@@ -45,7 +44,6 @@ function RouteComponent() {
       price: 10,
       period: '/mo',
 
-      color: 'blue',
       benefits: [
         {
           title: 'Instantly earns 3000 coins',
@@ -77,7 +75,6 @@ function RouteComponent() {
       tier: 'Premium',
       description: 'The ideal solution for serious boosters.',
       price: 20,
-      color: 'primary',
       tier_enum: 'premium',
       benefits: [
         {
@@ -111,7 +108,6 @@ function RouteComponent() {
       tier_enum: 'pro',
       description: 'For full-time professional boosters',
       price: 30,
-      color: 'purple',
       benefits: [
         {
           title: 'Unlimited coins & accounts',
