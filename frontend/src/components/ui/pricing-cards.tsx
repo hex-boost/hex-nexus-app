@@ -19,17 +19,9 @@ export default function PricingCards({ pricingPlans }: { pricingPlans: PricingPl
     pricingRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const renderIcon = (icon: string | undefined, tier: PremiumTiers) => {
-    const colorClass = getTierColorClass(tier, 'text');
-
-    switch (icon) {
-      case 'check':
-        return <span className={`${colorClass} rounded-full bg-opacity-10 p-0.5`}>✓</span>;
-      case 'gift':
-        return <span className={colorClass}>🎁</span>;
-      default:
-        return null;
-    }
+  const renderIcon = (tier: PremiumTiers) => {
+    const colorClass = getTierColorClass(tier);
+    return <span className={`${colorClass.text} rounded-full bg-opacity-10 p-0.5`}>✓</span>;
   };
 
   const currentPlan = pricingPlans.find(plan => plan.isCurrentPlan);
@@ -57,7 +49,7 @@ export default function PricingCards({ pricingPlans }: { pricingPlans: PricingPl
         </div>
 
         {currentPlan && (
-          <div className={`${getBackgroundColor(currentPlan.tier_enum)}  rounded-xl px-8 pb-8 pt-16 flex flex-col items-center relative overflow-hidden`}>
+          <div className={`${getTierColorClass(currentPlan.tier_enum).bgLight}  rounded-xl px-8 pb-8 pt-16 flex flex-col items-center relative overflow-hidden`}>
             <div className=" w-24 h-24 rounded-full  mb-6">
               <div className="w-full h-full rounded-full overflow-hidden">
                 <img
@@ -93,9 +85,9 @@ export default function PricingCards({ pricingPlans }: { pricingPlans: PricingPl
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
               {currentPlan.benefits.map((benefit, idx) => (
-                <div key={idx} className="bg-[#1a2e29]/50 text- rounded-lg p-4 flex items-center gap-3">
-                  <CircleCheckBig strokeWidth={2} className="h-6 w-6 text-green-300" />
-                  <span className="text-green-300 text-sm">{benefit.title}</span>
+                <div key={idx} className={`${getTierColorClass(currentPlan.tier_enum).text} ${getTierColorClass(currentPlan.tier_enum).glow}  rounded-lg p-4 flex items-center gap-3`}>
+                  <CircleCheckBig strokeWidth={2} className="h-6 w-6 " />
+                  <span className=" text-sm">{benefit.title}</span>
                 </div>
               ))}
             </div>
@@ -112,31 +104,31 @@ export default function PricingCards({ pricingPlans }: { pricingPlans: PricingPl
               .map((plan, index) => (
                 <div
                   key={index}
-                  className={`${getBackgroundColor(plan.tier_enum)} rounded-xl p-6 text-left border ${getTierColorClass(plan.tier_enum, 'border')}`}
+                  className={`${getBackgroundColor(plan.tier_enum)} rounded-xl p-6 text-left border ${getTierColorClass(plan.tier_enum).border}`}
                 >
                   <div className="flex items-center gap-1">
-                    <h3 className={`text-2xl font-bold ${getTierColorClass(plan.tier_enum, 'text')} mb-2`}>{plan.tier}</h3>
+                    <h3 className={`text-2xl font-bold ${getTierColorClass(plan.tier_enum).text} mb-2`}>{plan.tier}</h3>
                   </div>
                   <p className="text-gray-400 mb-6">{plan.description}</p>
 
                   <div className="flex items-baseline mb-2">
-                    <span className={`${getTierColorClass(plan.tier_enum, 'text')} text-2xl`}>$</span>
-                    <span className={`${getTierColorClass(plan.tier_enum, 'text')} text-6xl font-bold mx-1`}>{plan.price}</span>
-                    <span className={`${getTierColorClass(plan.tier_enum, 'text')} text-xl`}>{plan.period}</span>
+                    <span className={`${getTierColorClass(plan.tier_enum).text} text-2xl`}>$</span>
+                    <span className={`${getTierColorClass(plan.tier_enum).text} text-6xl font-bold mx-1`}>{plan.price}</span>
+                    <span className={`${getTierColorClass(plan.tier_enum).text} text-xl`}>{plan.period}</span>
                   </div>
 
-                  <div className={`border-t ${getTierColorClass(plan.tier_enum, 'border')} my-4`}></div>
+                  <div className={`border-t ${getTierColorClass(plan.tier_enum).border} my-4`}></div>
 
                   <ul className="space-y-4">
                     {plan.benefits.map((benefit, idx) => (
                       <li key={idx} className="flex items-center gap-2">
-                        {renderIcon(benefit.icon, plan.tier_enum)}
-                        <span className={benefit.icon === 'gift' ? getTierColorClass(plan.tier_enum, 'text') : 'text-gray-300'}>
+                        {renderIcon(plan.tier_enum)}
+                        <span className={benefit.icon === 'gift' ? getTierColorClass(plan.tier_enum).text : 'text-gray-300'}>
                           {benefit.title}
                         </span>
                         {benefit.isNew && (
                           <Badge
-                            className={`${getTierColorClass(plan.tier_enum, 'bg')} text-white text-xs px-1.5 py-0.5 rounded`}
+                            className={`${getTierColorClass(plan.tier_enum).bg} text-white text-xs px-1.5 py-0.5 rounded`}
                           >
                             New!
                           </Badge>
@@ -147,7 +139,7 @@ export default function PricingCards({ pricingPlans }: { pricingPlans: PricingPl
 
                   <PaymentMethodDialog selectedTier={plan.tier_enum}>
                     <Button
-                      className={`  w-full ${getTierColorClass(plan.tier_enum, 'bg')} ${getTierColorClass(plan.tier_enum, 'hover')} text-white py-3 rounded-md mt-6`}
+                      className={`  w-full ${getTierColorClass(plan.tier_enum).bg} ${getTierColorClass(plan.tier_enum).hover} text-white py-3 rounded-md mt-6`}
                     >
                       {plan.buttonText}
                     </Button>

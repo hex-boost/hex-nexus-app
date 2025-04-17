@@ -18,23 +18,23 @@ export function NotificationItem({ notification }: NotificationItemProps) {
 
   const handleMarkAsRead = () => {
     if (!notification.isSeen) {
-      markAsRead(notification.id);
+      markAsRead(notification.documentId);
     }
   };
 
   const handleToggleReadStatus = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (notification.isSeen) {
-      console.log('Would mark as unread:', notification.id);
+      console.log('Would mark as unread:', notification.documentId);
     } else {
-      markAsRead(notification.id);
+      markAsRead(notification.documentId);
     }
   };
 
   const handleRemove = () => {
     setIsExiting(true);
     setTimeout(() => {
-      removeNotification(notification.id);
+      removeNotification(notification.documentId);
     }, 300);
   };
 

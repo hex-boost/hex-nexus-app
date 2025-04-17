@@ -26,8 +26,8 @@ type NotificationContextType = {
   preferences: NotificationPreferences;
   setPreferences: (prefs: NotificationPreferences) => void;
   addNotification: (notification: Notification) => void;
-  removeNotification: (id: number) => void;
-  markAsRead: (id: number) => void;
+  removeNotification: (documentId: string) => void;
+  markAsRead: (documentId: string) => void;
   markAllAsRead: () => void;
   clearAll: () => void;
   isDropdownOpen: boolean;

@@ -1,24 +1,26 @@
 import type { Notification, NotificationPreferences, NotificationPriority } from '@/types/notification.ts';
-import type { ServerNotification, ServerNotificationEvents } from '@/types/types.ts';
+import type { ServerNotification, ServerNotificationEvents, UserType } from '@/types/types.ts';
 import type { ReactNode } from 'react';
 import notificationSound from '@/assets/sounds/notification.ogg';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { useWebSocket } from '@/hooks/use-websocket';
+import { strapiClient } from '@/lib/strapi.ts';
 import { usePremiumPaymentModalStore } from '@/stores/usePremiumPaymentModalStore';
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { DEFAULT_PREFERENCES, NOTIFICATION_EVENTS, NotificationContext } from '@/types/notification.ts';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Howl } from 'howler';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const { user } = useUserStore();
   const premiumModalStore = usePremiumPaymentModalStore();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [hasUnread, setHasUnread] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [filterType, setFilterType] = useState<'all' | 'unread' | 'read'>('all');
   const [initialized, setInitialized] = useState(false);
+
+  const queryClient = useQueryClient();
 
   // Local storage for preferences
   const [preferences, setPreferences] = useLocalStorage<NotificationPreferences>(
@@ -55,62 +57,157 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     }
   }, [preferences.soundEnabled]);
 
+  const sortNotifications = useCallback((notifications: Notification[]) => {
+    return [...notifications].sort((a, b) => {
+      // First sort by priority
+      const priorityOrder = { high: 0, medium: 1, low: 2 };
+      const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
+
+      if (priorityDiff !== 0) {
+        return priorityDiff;
+      }
+
+      // Then by read status (unread first)
+      if (a.isSeen !== b.isSeen) {
+        return a.isSeen ? 1 : -1;
+      }
+
+      // Finally by timestamp (newest first)
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  }, []);
+
+  const updateUserNotifications = useCallback((updaterFn: (notifications: Notification[]) => Notification[]) => {
+    queryClient.setQueryData(['users', 'me'], (oldData?: UserType) => {
+      if (!oldData) {
+        return oldData;
+      }
+
+      const updatedNotifications = updaterFn(oldData.notifications || []);
+
+      return {
+        ...oldData,
+        notifications: sortNotifications(updatedNotifications),
+      };
+    });
+  }, [queryClient, sortNotifications]);
+
   const addNotification = useCallback((notification: Notification) => {
     if (!preferences.enabledTypes[notification.event as ServerNotificationEvents]) {
       return;
     }
 
-    const newNotification: Notification = {
-      ...notification,
-    };
-
+    const newNotification: Notification = { ...notification };
     console.info('New notification being added', newNotification);
-    setNotifications((prev) => {
-      // Sort by priority and timestamp
-      const updated = [newNotification, ...prev];
-      return updated.sort((a, b) => {
-        // First sort by priority
-        const priorityOrder = { high: 0, medium: 1, low: 2 };
-        const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
 
-        if (priorityDiff !== 0) {
-          return priorityDiff;
-        }
+    updateUserNotifications((prevNotifications) => {
+      // Check if notification with same documentId already exists
+      const existingIndex = prevNotifications.findIndex(n => n.documentId === newNotification.documentId);
 
-        // Then by read status (unread first)
-        if (a.isSeen !== b.isSeen) {
-          return a.isSeen ? 1 : -1;
-        }
+      // If exists, update it instead of adding a new one
+      if (existingIndex !== -1) {
+        const updated = [...prevNotifications];
+        updated[existingIndex] = newNotification;
+        return updated;
+      }
 
-        // Finally by timestamp (newest first)
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      });
+      // If it doesn't exist, add as new
+      return [newNotification, ...prevNotifications];
     });
 
-    // Play notification sound
-    playSound();
-  }, [playSound, preferences.enabledTypes]);
+    // Only play sound for genuinely new notifications (not updates)
+    if (!notification.isSeen) {
+      playSound();
+    }
+  }, [playSound, preferences.enabledTypes, updateUserNotifications]);
 
-  // Remove a notification
-  const removeNotification = (id: number) => {
-    setNotifications(prev => prev.filter(notification => notification.id !== id));
-  };
+  const { mutate: markAsRead } = useMutation({
+    mutationKey: ['notifications', 'seen'],
+    mutationFn: async (documentId: string) => {
+      return strapiClient.update(`notifications`, documentId, {
+        isSeen: true,
+      });
+    },
+    onMutate: async (documentId) => {
+      // Optimistic update
+      updateUserNotifications(prevNotifications =>
+        prevNotifications.map(notification =>
+          notification.documentId === documentId ? { ...notification, isSeen: true } : notification,
+        ),
+      );
+    },
+    onError: () => {
+      toast.error('Failed to mark notification as read');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
+    },
+  });
 
-  const markAsRead = (id: number) => {
-    setNotifications(prev =>
-      prev.map(notification => (notification.id === id ? { ...notification, isSeen: true } : notification)),
-    );
-  };
+  const { mutate: markAllAsRead } = useMutation({
+    mutationKey: ['notifications', 'seen', 'all'],
+    mutationFn: async () => {
+      return strapiClient.request('put', 'notifications/read-all', {
+        params: {
+          filters: {
+            user: user?.id,
+          },
+        },
+      });
+    },
+    onMutate: async () => {
+      updateUserNotifications(prevNotifications =>
+        prevNotifications.map(notification => ({ ...notification, isSeen: true })),
+      );
+    },
+    onError: () => {
+      toast.error('Failed to mark all notifications as read');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
+    },
+  });
 
-  // Mark all notifications as read
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(notification => ({ ...notification, isSeen: true })));
-  };
+  const { mutate: removeNotification } = useMutation({
+    mutationKey: ['notifications', 'delete'],
+    mutationFn: async (documentId: string) => {
+      return strapiClient.delete(`notifications`, documentId);
+    },
+    onMutate: async (documentId) => {
+      // Optimistic update
+      updateUserNotifications(prevNotifications =>
+        prevNotifications.filter(notification => notification.documentId !== documentId),
+      );
+    },
+    onError: () => {
+      toast.error('Failed to delete notification');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
+    },
+  });
 
-  // Clear all notifications
-  const clearAll = () => {
-    setNotifications([]);
-  };
+  const { mutate: clearAll } = useMutation({
+    mutationKey: ['notifications', 'delete', 'all'],
+    mutationFn: async () => {
+      return strapiClient.request('delete', `notifications`, {
+        params: {
+          filters: {
+            user: user?.id,
+          },
+        },
+      });
+    },
+    onMutate: async () => {
+      updateUserNotifications(() => []);
+    },
+    onError: () => {
+      toast.error('Failed to delete all notifications');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
+    },
+  });
 
   const getPriorityForType = (type: ServerNotificationEvents): NotificationPriority => {
     switch (type) {
@@ -135,21 +232,21 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
           amount,
           tier,
           paymentMethod,
-          // colorKey,
         });
       }
-      const newNotification: Notification = {
+      const newNotification: ServerNotification = {
         ...notification,
-        priority: getPriorityForType(notification.event),
+        // priority: getPriorityForType(notification.event),
       };
 
       addNotification(newNotification);
     },
-    [addNotification, premiumModalStore],
+    [addNotification, premiumModalStore, getPriorityForType],
   );
 
   // Initialize notifications from the user object
   useEffect(() => {
+    console.log('Initializing notifications from user object', user?.notifications);
     if (user?.notifications && !initialized) {
       // Process each notification before adding it to state
       const processedNotifications = user.notifications.map(notification => ({
@@ -157,34 +254,13 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         priority: getPriorityForType(notification.event),
       }));
 
-      // Add all processed notifications to state
-      setNotifications((prev) => {
-        // Sort using your existing sort logic
-        const combined = [...processedNotifications, ...prev];
-        return combined.sort((a, b) => {
-          // First sort by priority
-          const priorityOrder = { high: 0, medium: 1, low: 2 };
-          const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
-
-          if (priorityDiff !== 0) {
-            return priorityDiff;
-          }
-
-          // Then by read status (unread first)
-          if (a.isSeen !== b.isSeen) {
-            return a.isSeen ? 1 : -1;
-          }
-
-          // Finally by timestamp (newest first)
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        });
-      });
+      // Update the cache with processed notifications
+      updateUserNotifications(() => processedNotifications);
 
       setInitialized(true);
     }
-  }, [user, getPriorityForType, initialized]);
+  }, [user, getPriorityForType, initialized, updateUserNotifications]);
 
-  // WebSocket integration
   useWebSocket({
     url: import.meta.env.VITE_API_URL || 'http:localhost:1337',
     onMessage: (message) => {
@@ -196,11 +272,11 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  useEffect(() => {
-    const unreadNotifications = notifications.filter(notification => !notification.isSeen);
-    setHasUnread(unreadNotifications.length > 0);
-    setUnreadCount(unreadNotifications.length);
-  }, [notifications]);
+  // Get notifications from the cached user object
+  const notifications = user?.notifications || [];
+  const unreadNotifications = notifications.filter(notification => !notification.isSeen);
+  const hasUnread = unreadNotifications.length > 0;
+  const unreadCount = unreadNotifications.length;
 
   return (
     <NotificationContext

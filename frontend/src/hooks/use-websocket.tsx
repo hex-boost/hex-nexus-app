@@ -19,6 +19,13 @@ export function useWebSocket({
   onMessage,
 }: UseWebSocketOptions) {
   const { jwt } = useUserStore();
+
+  const onMessageRef = useRef(onMessage);
+
+  // Update ref when onMessage changes to avoid effect reruns
+  useEffect(() => {
+    onMessageRef.current = onMessage;
+  }, [onMessage]);
   const socketRef = useRef<Socket | null>(null);
 
   const handleConnect = useCallback(() => {
@@ -59,7 +66,8 @@ export function useWebSocket({
     socketRef.current.on('disconnect', handleDisconnect);
     socketRef.current.on('error', handleError);
     Object.values(NOTIFICATION_EVENTS).forEach((event) => {
-      socketRef.current?.on(event, onMessage);
+      // Use the ref to current onMessage function instead of the prop directly
+      globalSocket?.on(event, data => onMessageRef.current(data));
     });
     return () => {
       // Remove event listeners
@@ -82,7 +90,7 @@ export function useWebSocket({
         globalSocket = null;
       }
     };
-  }, [url, jwt, handleConnect, handleDisconnect, handleError, onMessage]);
+  }, [url, jwt, handleConnect, handleDisconnect, handleError]);
 
   return {};
 }

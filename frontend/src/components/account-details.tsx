@@ -6,7 +6,6 @@ import { DropAccountAction } from '@/components/DropAccountAction';
 import { FavoriteAccountNote } from '@/components/FavoriteAccountNote.tsx';
 import { FavoriteStar } from '@/components/FavoriteStar.tsx';
 import { RentedAccountButton } from '@/components/RentedAccountAction.tsx';
-import { Badge } from '@/components/ui/badge.tsx';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -454,14 +453,6 @@ export default function AccountDetails({ account, onAccountChange }: {
                           {' '}
                           coins
                         </div>
-                        {option.hours === 6 && (
-                          <Badge
-                            variant="outline"
-                            className="mt-2 text-xs bg-blue-50 dark:bg-blue-900/20"
-                          >
-                            Best Value
-                          </Badge>
-                        )}
                       </div>
                     ))}
                     {isPriceLoading && Array.from({ length: 3 }).fill(0).map((_, index) => (

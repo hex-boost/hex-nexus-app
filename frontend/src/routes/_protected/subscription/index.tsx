@@ -15,7 +15,7 @@ function RouteComponent() {
       tier: 'Free',
       tier_enum: 'free',
       isCurrentPlan: userPremiumTier === 'free',
-      description: 'Thanks for verifying your account and being part of Nexus.',
+      description: 'Thanks for being part of Nexus.',
       price: 0,
 
       benefits: [
