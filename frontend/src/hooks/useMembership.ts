@@ -2,7 +2,7 @@ import type { PaymentMethod } from '@/types/membership.ts';
 import type { PremiumTiers } from '@/types/types.ts';
 
 export function useMembership() {
-  const getTierColorClass = (tier: PremiumTiers, element: 'bg' | 'text' | 'border' | 'hover') => {
+  const getTierColorClass = (tier: PremiumTiers) => {
     const colorMap: Record<string, Record<string, string>> = {
       basic: {
         bg: 'bg-blue-500',
@@ -41,7 +41,7 @@ export function useMembership() {
       },
     };
 
-    return colorMap[tier]?.[element] || '';
+    return colorMap[tier];
   };
 
   const getBackgroundColor = (tier: PremiumTiers) => {
