@@ -1,4 +1,4 @@
-import type { Notification, NotificationPreferences, NotificationPriority } from '@/types/notification.ts';
+import type { NotificationPreferences, NotificationPriority } from '@/types/notification.ts';
 import type { ServerNotification, ServerNotificationEvents, UserType } from '@/types/types.ts';
 import type { ReactNode } from 'react';
 import notificationSound from '@/assets/sounds/notification.ogg';
@@ -57,15 +57,15 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     }
   }, [preferences.soundEnabled]);
 
-  const sortNotifications = useCallback((notifications: Notification[]) => {
+  const sortNotifications = useCallback((notifications: ServerNotification[]) => {
     return [...notifications].sort((a, b) => {
       // First sort by priority
-      const priorityOrder = { high: 0, medium: 1, low: 2 };
-      const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
+      // const priorityOrder = { high: 0, medium: 1, low: 2 };
+      // const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
 
-      if (priorityDiff !== 0) {
-        return priorityDiff;
-      }
+      // if (priorityDiff !== 0) {
+      //   return priorityDiff;
+      // }
 
       // Then by read status (unread first)
       if (a.isSeen !== b.isSeen) {
@@ -77,7 +77,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const updateUserNotifications = useCallback((updaterFn: (notifications: Notification[]) => Notification[]) => {
+  const updateUserNotifications = useCallback((updaterFn: (notifications: ServerNotification[]) => ServerNotification[]) => {
     queryClient.setQueryData(['users', 'me'], (oldData?: UserType) => {
       if (!oldData) {
         return oldData;
@@ -92,12 +92,12 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     });
   }, [queryClient, sortNotifications]);
 
-  const addNotification = useCallback((notification: Notification) => {
+  const addNotification = useCallback((notification: ServerNotification) => {
     if (!preferences.enabledTypes[notification.event as ServerNotificationEvents]) {
       return;
     }
 
-    const newNotification: Notification = { ...notification };
+    const newNotification: ServerNotification = { ...notification };
     console.info('New notification being added', newNotification);
 
     updateUserNotifications((prevNotifications) => {
@@ -144,30 +144,6 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  const { mutate: markAllAsRead } = useMutation({
-    mutationKey: ['notifications', 'seen', 'all'],
-    mutationFn: async () => {
-      return strapiClient.request('put', 'notifications/read-all', {
-        params: {
-          filters: {
-            user: user?.id,
-          },
-        },
-      });
-    },
-    onMutate: async () => {
-      updateUserNotifications(prevNotifications =>
-        prevNotifications.map(notification => ({ ...notification, isSeen: true })),
-      );
-    },
-    onError: () => {
-      toast.error('Failed to mark all notifications as read');
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
-    },
-  });
-
   const { mutate: removeNotification } = useMutation({
     mutationKey: ['notifications', 'delete'],
     mutationFn: async (documentId: string) => {
@@ -187,16 +163,42 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  const { mutate: markAllAsRead } = useMutation({
+    mutationKey: ['notifications', 'seen', 'all'],
+    mutationFn: async () => {
+      const unreadNotifications = (user?.notifications || []).filter(
+        notification => !notification.isSeen,
+      );
+
+      return Promise.all(
+        unreadNotifications.map(notification =>
+          strapiClient.update(`notifications`, notification.documentId, {
+            isSeen: true,
+          }),
+        ),
+      );
+    },
+    onMutate: async () => {
+      updateUserNotifications(prevNotifications =>
+        prevNotifications.map(notification => ({ ...notification, isSeen: true })),
+      );
+    },
+    onError: () => {
+      toast.error('Failed to mark all notifications as read');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
+    },
+  });
+
   const { mutate: clearAll } = useMutation({
     mutationKey: ['notifications', 'delete', 'all'],
     mutationFn: async () => {
-      return strapiClient.request('delete', `notifications`, {
-        params: {
-          filters: {
-            user: user?.id,
-          },
-        },
-      });
+      return Promise.all(
+        (user?.notifications || []).map(notification =>
+          strapiClient.delete(`notifications`, notification.documentId),
+        ),
+      );
     },
     onMutate: async () => {
       updateUserNotifications(() => []);
@@ -208,7 +210,6 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
     },
   });
-
   const getPriorityForType = (type: ServerNotificationEvents): NotificationPriority => {
     switch (type) {
       case 'account_expired':
@@ -224,8 +225,15 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const handleNotification = useCallback(
     (notification: ServerNotification) => {
       console.info('New notification received', notification.event, notification.title);
+
+      // Check if notification data has the expected format
+      if (!notification.documentId || !notification.event) {
+        console.error('Invalid notification format:', notification);
+        return;
+      }
+
       if (notification.event === NOTIFICATION_EVENTS.MEMBERSHIP_PAID) {
-        const { tier, paymentMethod, amount } = notification.metadata;
+        const { tier, paymentMethod, amount } = notification.metadata || {};
 
         // Open the premium payment modal with the data from the notification
         premiumModalStore.open({
@@ -234,16 +242,19 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
           paymentMethod,
         });
       }
+      if (notification.)
+
+      // Add priority to the notification
       const newNotification: ServerNotification = {
         ...notification,
-        // priority: getPriorityForType(notification.event),
       };
 
       addNotification(newNotification);
-    },
-    [addNotification, premiumModalStore, getPriorityForType],
-  );
 
+      queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
+    },
+    [addNotification, premiumModalStore, getPriorityForType, queryClient],
+  );
   // Initialize notifications from the user object
   useEffect(() => {
     console.log('Initializing notifications from user object', user?.notifications);

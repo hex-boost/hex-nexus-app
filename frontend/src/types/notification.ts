@@ -20,12 +20,12 @@ export type NotificationPreferences = {
 };
 
 type NotificationContextType = {
-  notifications: Notification[];
+  notifications: ServerNotification[];
   hasUnread: boolean;
   unreadCount: number;
   preferences: NotificationPreferences;
   setPreferences: (prefs: NotificationPreferences) => void;
-  addNotification: (notification: Notification) => void;
+  addNotification: (notification: ServerNotification) => void;
   removeNotification: (documentId: string) => void;
   markAsRead: (documentId: string) => void;
   markAllAsRead: () => void;
