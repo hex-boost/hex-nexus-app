@@ -3,6 +3,7 @@ package league
 import (
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -20,6 +21,7 @@ const (
 	LeagueWebsocketStartHandlers = "league:websocket:start"
 	LeagueWebsocketStopHandlers  = "league:websocket:stop"
 )
+const JsonApiPrefix = "OnJsonApiEvent_"
 const (
 	Create = iota
 	Update
@@ -27,22 +29,10 @@ const (
 )
 
 type LCUWebSocketEvent struct {
-	Data      json.RawMessage `json:"data"`
-	EventType int             `json:"eventType"` // This will be a numeric value from LCU
-	URI       string          `json:"uri"`
-}
-
-func (e *LCUWebSocketEvent) GetEventType() EventType {
-	switch e.EventType {
-	case 0:
-		return Create
-	case 1:
-		return Update
-	case 2:
-		return Delete
-	default:
-		return -1 // Unknown
-	}
+	Data       json.RawMessage `json:"data"`
+	EventType  int             `json:"eventType"` // Valor numérico do LCU
+	URI        string          `json:"uri"`
+	EventTopic string          `json:"eventTopic"` // Armazena o valor do tópico (OnJsonApiEvent_*)
 }
 
 // EventType represents possible event types
@@ -202,8 +192,9 @@ func (ws *WebSocketService) Unsubscribe(eventPath string) error {
 // sendSubscription sends a subscription message to LCU websocket
 func (ws *WebSocketService) sendSubscription(eventPath string) error {
 	// Format according to WAMP 1.0 protocol (opcode 5 for subscribe)
-	message := []interface{}{5, eventPath}
-	err := ws.conn.WriteJSON(message)
+	subscribeMsg := []byte(fmt.Sprintf(`[5, "%s%s"]`, JsonApiPrefix, eventPath))
+
+	err := ws.conn.WriteMessage(websocket.TextMessage, subscribeMsg)
 	if err != nil {
 		ws.logger.Error("Failed to subscribe to event", zap.String("event", eventPath), zap.Error(err))
 		return err
@@ -244,147 +235,77 @@ func (ws *WebSocketService) resubscribeToEvents() error {
 
 // handleWebSocketEvent processes incoming WebSocket events
 func (ws *WebSocketService) handleWebSocketEvent(message []byte) {
-	messageLen := len(message)
-	messageCap := cap(message)
-
-	// Check for empty messages
-	if messageLen == 0 {
-		ws.logger.Debug("Received empty WebSocket message with capacity", zap.Int("capacity", messageCap))
-		return
-	}
-
-	// For debugging, log message details
-	ws.logger.Debug("Received WebSocket message",
-		zap.Int("size", messageLen),
-		zap.Int("capacity", messageCap),
-		zap.String("raw", string(message)))
-
-	ws.logger.Info("Received WebSocket message",
-		zap.Int("size", messageLen),
-		zap.String("preview", string(message[:min(100, messageLen)])))
-
-	var event []json.RawMessage
+	// Parse da mensagem WebSocket
+	var event []interface{}
 	if err := json.Unmarshal(message, &event); err != nil {
-		ws.logger.Error("Failed to parse WebSocket event array",
-			zap.Error(err),
-			zap.String("rawMessage", string(message)))
+		ws.logger.Error("Falha ao analisar mensagem WebSocket", zap.Error(err))
 		return
 	}
 
-	// WAMP message should have at least 2 elements
-	if len(event) < 2 {
-		ws.logger.Debug("Received WebSocket message with insufficient elements",
-			zap.Int("elements", len(event)))
+	// Verifica se tem formato válido (pelo menos 3 elementos)
+	if len(event) < 3 {
+		ws.logger.Debug("Formato de mensagem WebSocket inválido", zap.String("mensagem", string(message)))
 		return
 	}
 
-	// Check event type (should be 8 for LCU events)
-	var eventType int
-	if err := json.Unmarshal(event[0], &eventType); err != nil {
-		ws.logger.Error("Failed to parse event type", zap.Error(err))
+	// Verifica se é um evento (código 8)
+	eventCode, ok := event[0].(float64)
+	if !ok || eventCode != 8 {
 		return
 	}
 
-	if eventType != 8 {
+	eventData, ok := event[2].(map[string]interface{})
+	if !ok {
+		ws.logger.Error("Formato de dados do evento inválido")
 		return
 	}
 
-	// Check if this is a JSON API event
-	var eventName string
-	if err := json.Unmarshal(event[1], &eventName); err != nil {
-		ws.logger.Error("Failed to parse event name", zap.Error(err))
+	// Log informativo do evento
+	if eventType, typeOk := eventData["eventType"].(string); typeOk {
+		if uri, uriOk := eventData["uri"].(string); uriOk {
+			ws.logger.Info(fmt.Sprintf("%s %s", eventType, uri))
+		}
+	}
+	eventTopic, ok := event[1].(string)
+	if !ok {
+		ws.logger.Error("Formato de tópico do evento inválido")
 		return
 	}
 
-	if eventName != "OnJsonApiEvent" || len(event) < 3 {
-		return
+	// Mapeia tipo de evento para inteiro
+	eventTypeInt := 1 // Padrão é Update
+	if et, ok := eventData["eventType"].(string); ok {
+		switch et {
+		case "Create":
+			eventTypeInt = 0
+		case "Update":
+			eventTypeInt = 1
+		case "Delete":
+			eventTypeInt = 2
+		default:
+			eventTypeInt = -1
+		}
 	}
 
-	// Parse the actual event data
-	var lcuEvent LCUWebSocketEvent
-	if err := json.Unmarshal(event[2], &lcuEvent); err != nil {
-		ws.logger.Error("Failed to parse LCU event data", zap.Error(err))
-		return
+	// Prepara o evento LCU
+	uri, _ := eventData["uri"].(string)
+	lcuEvent := LCUWebSocketEvent{
+		URI:        uri,
+		EventType:  eventTypeInt,
+		EventTopic: eventTopic,
 	}
 
-	ws.logger.Debug("Received LCU event",
-		zap.String("uri", lcuEvent.URI),
-		zap.Int("eventType", lcuEvent.EventType))
+	// Converte campo data para json.RawMessage
+	if dataObj, ok := eventData["data"]; ok {
+		if dataBytes, err := json.Marshal(dataObj); err == nil {
+			lcuEvent.Data = json.RawMessage(dataBytes)
+		}
+	}
 
-	// Process event with registered handlers
-	ws.triggerEventHandlers(lcuEvent)
+	go ws.handleLCUEvent(lcuEvent)
 }
 
 // triggerEventHandlers calls all registered handlers for an event
-func (ws *WebSocketService) triggerEventHandlers(event LCUWebSocketEvent) {
-	ws.mutex.Lock()
-	defer ws.mutex.Unlock()
-
-	// First check for exact URI match
-	if handlers, ok := ws.eventHandlers[event.URI]; ok {
-		for _, handler := range handlers {
-			go handler(event)
-		}
-	}
-
-	// Then check for pattern matches
-	for path, handlers := range ws.eventHandlers {
-		// Skip exact matches as they were handled above
-		if path == event.URI {
-			continue
-		}
-
-		// If path is a pattern that matches the URI, call handlers
-		if pathMatches(path, event.URI) {
-			for _, handler := range handlers {
-				go handler(event)
-			}
-		}
-	}
-
-	// Handle specific events we care about in the default implementation
-	if event.URI == "/lol-summoner/v1/current-summoner" {
-		ws.handleSummonerChange(event)
-	} else if strings.Contains(event.URI, "/lol-champions/v1/inventories/") &&
-		strings.Contains(event.URI, "/champions-playable-count") {
-		ws.handleChampionsUpdate(event)
-	}
-}
-
-// pathMatches checks if a URI matches a pattern
-// Examples:
-// - "/path/*" matches "/path/something" but not "/other/path"
-// - "/path/*/subpath" matches "/path/something/subpath"
-func pathMatches(pattern, uri string) bool {
-	// Convert pattern to regex style
-	if !strings.Contains(pattern, "*") {
-		return pattern == uri
-	}
-
-	patternParts := strings.Split(pattern, "/")
-	uriParts := strings.Split(uri, "/")
-
-	if len(patternParts) > len(uriParts) {
-		return false
-	}
-
-	for i, part := range patternParts {
-		if i >= len(uriParts) {
-			return false
-		}
-
-		if part == "*" {
-			continue // Wildcard matches anything
-		}
-
-		if part != uriParts[i] {
-			return false
-		}
-	}
-
-	// If pattern had fewer parts, it matches only if it's a prefix
-	return len(patternParts) == len(uriParts) || strings.HasSuffix(pattern, "/*")
-}
 
 // handleSummonerChange processes summoner change events
 func (ws *WebSocketService) handleSummonerChange(event LCUWebSocketEvent) {
@@ -495,28 +416,18 @@ func (ws *WebSocketService) readMessages() {
 	ws.logger.Info("Started reading WebSocket messages")
 
 	for {
-		messageType, message, err := ws.conn.ReadMessage()
+		_, message, err := ws.conn.ReadMessage()
 		if err != nil {
 			ws.logger.Error("WebSocket read error", zap.Error(err))
 			ws.conn.Close()
 			ws.conn = nil
 			return
 		}
-
-		// Log message type for debugging
-		ws.logger.Debug("Received WebSocket message",
-			zap.Int("messageType", messageType),
-			zap.Int("length", len(message)),
-			zap.Int("capacity", cap(message)))
-
-		// Skip processing for control frames (ping, pong, close)
-		if messageType == websocket.PingMessage ||
-			messageType == websocket.PongMessage ||
-			messageType == websocket.CloseMessage {
-			ws.logger.Debug("Skipping control message", zap.Int("type", messageType))
+		if len(message) < 1 {
+			ws.logger.Debug("Received empty WebSocket message")
 			continue
 		}
-
+		// Log message type for debugging
 		ws.handleWebSocketEvent(message)
 	}
 }
@@ -540,28 +451,19 @@ func (ws *WebSocketService) RefreshAccountState() {
 	}
 }
 
-// SubscribeToPath subscribes to a specific LCU endpoint path
-func (ws *WebSocketService) SubscribeToPath(path string, handler func(LCUWebSocketEvent)) error {
-	return ws.Subscribe(path, handler)
-}
-
-// SubscribeToLeagueEvents sets up subscriptions for League events
 func (ws *WebSocketService) SubscribeToLeagueEvents() {
 	ws.app.OnEvent(LeagueWebsocketStartHandlers, func(event *application.CustomEvent) {
+		ws.logger.Debug("Starting WebSocket service handlers")
 		if event.Cancelled {
 			ws.logger.Info("WebSocket service already started")
 			return
 		}
 
-		// Subscribe to multiple relevant endpoints
+		ws.mutex.Lock()
+		ws.eventHandlers = make(map[string][]func(LCUWebSocketEvent))
+		ws.mutex.Unlock()
 		paths := []string{
-			"/lol-inventory/v1/wallet/lol_blue_essence",
-			"/lol-inventory/v1/wallet",
-			"/lol-inventory/v1/wallet/RP",
-			"/lol-champions/v1/inventories/*/champions-playable-count",
-			"/lol-summoner/v1/current-summoner",
-			"/lol-champ-select/v1/session",
-			"/lol-gameflow/v1/gameflow-phase",
+			"lol-inventory_v1_wallet",
 		}
 
 		for _, path := range paths {
@@ -602,12 +504,12 @@ func (ws *WebSocketService) SubscribeToLeagueEvents() {
 // handleLCUEvent is a generic handler for LCU events
 func (ws *WebSocketService) handleLCUEvent(event LCUWebSocketEvent) {
 	// Log all events at debug level
-	ws.logger.Debug("Received LCU event",
+	ws.logger.Info("Received LCU event",
 		zap.String("uri", event.URI),
 		zap.Int("eventType", event.EventType))
 
 	// Process specific event types based on URI path
-	if strings.Contains(event.URI, "/lol-inventory/v1/wallet") {
+	if strings.Contains(event.URI, "/lol-inventory/v1/wallet/lol_blue_essence") {
 		ws.handleWalletEvent(event)
 	} else if strings.Contains(event.URI, "/lol-champions/v1/inventories") {
 		ws.handleChampionsUpdate(event)
@@ -619,7 +521,6 @@ func (ws *WebSocketService) handleLCUEvent(event LCUWebSocketEvent) {
 		ws.handleGameflowPhase(event)
 	}
 
-	// Emit generic event to frontend with event data
 	if ws.app != nil {
 		ws.app.EmitEvent("lcu:event:"+strings.Replace(event.URI, "/", ":", -1), map[string]interface{}{
 			"uri":       event.URI,
