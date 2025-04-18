@@ -21,7 +21,7 @@ export function Sidebar() {
       )}
     >
       <div
-        className="relative  h-full flex flex-col px-3 py-4 overflow-y-hidden shadow-md dark:shadow-muted"
+        className="relative  h-full flex flex-col px-3 py-4 overflow-y-hidden shadow-md dark:shadow-muted/10"
       >
         <Button
           className={cn(

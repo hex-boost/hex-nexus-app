@@ -1,6 +1,6 @@
 import type { UserType } from '@/types/types.ts';
 import type { StrapiError } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
-import { useGoFunctions } from '@/hooks/useGoBindings.ts';
+import { useGoState } from '@/hooks/useGoBindings.ts';
 import { strapiClient } from '@/lib/strapi.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { useQuery } from '@tanstack/react-query';
@@ -9,7 +9,7 @@ import { useRouter } from '@tanstack/react-router';
 import { toast } from 'sonner';
 
 export function useCommonFetch() {
-  const { Utils } = useGoFunctions();
+  const { Utils } = useGoState();
 
   const router = useRouter();
   const { isAuthenticated, setUser, logout, user: storeUser } = useUserStore();

@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator.tsx';
 import { WindowControls } from '@/components/WindowControls.tsx';
 import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
-import { useGoFunctions } from '@/hooks/useGoBindings.ts';
+import { useGoState } from '@/hooks/useGoBindings.ts';
 import { useProfileAvatar } from '@/hooks/useProfileAvatar.ts';
 import { userAuth } from '@/lib/strapi';
 import { cn } from '@/lib/utils';
@@ -26,7 +26,7 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<'div'>) {
-  const { Utils } = useGoFunctions();
+  const { Utils } = useGoState();
   const { refetchUser } = useCommonFetch();
   const router = useRouter();
   const { getDefaultBase64Avatar, uploadImageFromBase64 } = useProfileAvatar();

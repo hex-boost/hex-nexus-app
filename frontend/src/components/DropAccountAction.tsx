@@ -10,9 +10,9 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog.tsx';
 import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
-import { useGoFunctions } from '@/hooks/useGoBindings.ts';
+import { useGoState } from '@/hooks/useGoBindings.ts';
 import { strapiClient } from '@/lib/strapi';
-import { AccountMonitor } from '@league';
+import { useAccountStore } from '@/stores/useAccountStore.ts';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { ArrowDownToLine } from 'lucide-react';
 import { useState } from 'react';
@@ -36,9 +36,9 @@ export function DropAccountAction({
   buttonVariant = 'outline',
 }: DropAccountActionProps) {
   const { refetchUser } = useCommonFetch();
-  const { Utils } = useGoFunctions();
+  const { Utils } = useGoState();
   const [isOpen, setIsOpen] = useState(false);
-  const [isNexusAccount, setIsNexusAccount] = useState(false);
+  const { isNexusAccount } = useAccountStore();
 
   // Get refund amount
   const { data: dropRefund } = useQuery({
@@ -48,27 +48,7 @@ export function DropAccountAction({
     enabled: !!account.documentId && isOpen && account.user?.documentId === user?.documentId,
     staleTime: 0,
   });
-
   // Handle dialog open
-  async function handleDialogOpen(open: boolean) {
-    if (open) {
-      try {
-        const isAccountNexus = await AccountMonitor.IsNexusAccount();
-        if (isAccountNexus) {
-          const droppedAccountUsername = account.username.toLowerCase();
-          const loggedInUsername = await AccountMonitor.GetLoggedInUsername();
-
-          if (droppedAccountUsername === loggedInUsername) {
-            setIsNexusAccount(true);
-          }
-        }
-      } catch (error) {
-        console.error('Error checking Nexus account:', error);
-      }
-    }
-
-    setIsOpen(open);
-  }
 
   // Drop account mutation
   const { mutate: handleDropAccount, isPending } = useMutation({
@@ -101,7 +81,7 @@ export function DropAccountAction({
   const isDisabled = isPending || account.user?.documentId !== user?.documentId;
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleDialogOpen}>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button
           variant={buttonVariant}

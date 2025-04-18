@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button.tsx';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useGoFunctions } from '@/hooks/useGoBindings.ts';
+import { useGoState } from '@/hooks/useGoBindings.ts';
 import { cn } from '@/lib/utils';
 import { Check, Copy } from 'lucide-react';
 import { useState } from 'react';
@@ -11,7 +11,7 @@ import { cls } from 'react-image-crop';
 export function CopyToClipboard({ className, text }: { className: string; text: string }) {
   const [copied, setCopied] = useState<boolean>(false);
 
-  const { Utils } = useGoFunctions();
+  const { Utils } = useGoState();
   const handleCopy = async () => {
     try {
       setCopied(true);

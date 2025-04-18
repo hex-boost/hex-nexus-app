@@ -1,7 +1,8 @@
 import type { AccountType } from '@/types/types';
-import { useGoFunctions } from '@/hooks/useGoBindings.ts';
+import { useGoState } from '@/hooks/useGoBindings.ts';
 import { useLeagueState } from '@/hooks/useLeagueState.tsx';
 import { logger } from '@/lib/logger';
+import { useAccountStore } from '@/stores/useAccountStore.ts';
 import { ClientMonitor } from '@league';
 import { RiotClient } from '@riot';
 import { useMutation } from '@tanstack/react-query';
@@ -14,7 +15,8 @@ export function useLeagueManager({
 }: {
   account: AccountType;
 }) {
-  const { Utils } = useGoFunctions();
+  const { Utils } = useGoState();
+  const { setIsNexusAccount } = useAccountStore();
   const { state, isLoading } = useLeagueState();
   const logContext = `useLeagueManager:${account.id}`;
 
@@ -47,6 +49,7 @@ export function useLeagueManager({
       }
     },
     onSuccess: () => {
+      setIsNexusAccount(true);
       logger.info(logContext, 'Login with captcha successful');
       toast.success('Authenticated successfully');
     },

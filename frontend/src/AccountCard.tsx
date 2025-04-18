@@ -38,7 +38,6 @@ export function AccountCard({
   className,
   expirationDate,
   riotAccount,
-  onAccountChange,
 }: AccountCardProps) {
   const { currentRanking } = useRiotAccount({ account: riotAccount });
 
@@ -118,7 +117,7 @@ export function AccountCard({
             <div className="min-w-fit flex gap-2 items-center">
               <GameRankDisplay imageClass="w-4.5 h-4.5" showLP={false} ranking={currentRanking} />
               <div className="w-1 h-1 rounded-full bg-shade4"></div>
-              <div className="py-1 px-1.5 text-[9px] bg-muted text-shade1 rounded-sm font-bold">
+              <div className="py-1 px-1.5 text-[9px] bg-muted/10 text-shade1 rounded-sm font-bold">
                 {getFormattedServer(riotAccount.server)}
               </div>
             </div>

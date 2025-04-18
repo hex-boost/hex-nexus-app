@@ -1,5 +1,6 @@
 import { ErrorPage } from '@/components/error-page.tsx';
 import { PremiumPaymentModal } from '@/components/PremiumPaymentModal.tsx';
+import { useGoState } from '@/hooks/useGoBindings.ts';
 import { usePremiumPaymentModalStore } from '@/stores/usePremiumPaymentModalStore';
 import { useUserStore } from '@/stores/useUserStore';
 import { createRootRouteWithContext, Outlet, redirect } from '@tanstack/react-router';
@@ -39,6 +40,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 });
 function RootLayout() {
   const { isOpen, tier, paymentMethod, amount, close } = usePremiumPaymentModalStore();
+  useGoState();
 
   return (
     <>

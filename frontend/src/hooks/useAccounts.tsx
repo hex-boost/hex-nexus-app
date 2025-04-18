@@ -450,6 +450,7 @@ export function useAccounts(page = 1, pageSize = 10) {
     setSelectedChampionIds,
     setSelectedSkinIds,
     setShowFiltersPersisted,
+    sortConfig,
     selectedSkinIds,
     updatePersistedState,
     pagination,

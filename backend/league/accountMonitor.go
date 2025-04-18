@@ -8,6 +8,7 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/hex-boost/hex-nexus-app/backend/watchdog"
+	"github.com/wailsapp/wails/v3/pkg/application"
 	"go.uber.org/zap"
 	"strings"
 	"sync"
@@ -25,6 +26,7 @@ type AccountMonitor struct {
 	cachedAccounts      []types.SummonerRented
 	lastAccountsFetch   time.Time
 	accountCacheTTL     time.Duration
+	window              *application.WebviewWindow
 	stopChan            chan struct{}
 	leagueService       *LeagueService
 	mutex               sync.Mutex
@@ -55,11 +57,15 @@ func NewAccountMonitor(
 		accountRepo:     accountRepo,
 		logger:          logger,
 		isNexusAccount:  false,
+		window:          nil,
 		accountCacheTTL: 5 * time.Minute, // Adjust the cache duration as needed
 
 		checkInterval: 1 * time.Second, // Check every 30 seconds
 		stopChan:      make(chan struct{}),
 	}
+}
+func (am *AccountMonitor) SetWindow(window *application.WebviewWindow) {
+	am.window = window
 }
 func (am *AccountMonitor) refreshAccountCache() error {
 	am.mutex.Lock()
@@ -266,23 +272,7 @@ func (am *AccountMonitor) checkCurrentAccount() {
 	}
 
 	isNexusAccount := false
-	for _, account := range accounts {
-		accountUsername := account.Username
-		am.logger.Debug("Comparing with Nexus account",
-			zap.String("currrentUsername", currentUsername),
-			zap.String("nexusSummonerName", accountUsername))
-
-		if strings.ToLower(accountUsername) == strings.ToLower(currentUsername) {
-			isNexusAccount = true
-			am.logger.Debug("Match found! Current account is a Nexus-managed account",
-				zap.String("summonerName", currentUsername))
-			break
-		}
-	}
-
-	// If no match is found, consider refreshing the cache once
-	// This handles the case where a new account was just added
-	if !isNexusAccount && len(accounts) > 0 {
+	if len(accounts) > 0 {
 		am.logger.Debug("Account not found in cache, refreshing account data")
 		if err := am.refreshAccountCache(); err != nil {
 			am.logger.Error("Failed to refresh account cache", zap.Error(err))
@@ -306,8 +296,8 @@ func (am *AccountMonitor) checkCurrentAccount() {
 			zap.String("summonerName", currentUsername))
 	}
 
-	// Rest of your existing code for updating state
 	previousState := am.IsNexusAccount()
+
 	am.mutex.Lock()
 	am.isNexusAccount = isNexusAccount
 	am.mutex.Unlock()
@@ -321,6 +311,7 @@ func (am *AccountMonitor) checkCurrentAccount() {
 			zap.String("summonerName", currentUsername))
 
 		err := watchdog.UpdateWatchdogAccountStatus(isNexusAccount)
+		am.window.EmitEvent("nexusAccount:state", isNexusAccount)
 		if err != nil {
 			am.logger.Error("Failed to update watchdog status via named pipe", zap.Error(err))
 		} else {

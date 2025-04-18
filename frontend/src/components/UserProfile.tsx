@@ -329,6 +329,7 @@ export function UserProfile({
                 </div>
               </Button>
 
+              <Separator className="" />
               {user.premium?.tier === 'free' && (
                 <Link to="/subscription" className="pt-3">
                   <RainbowButton className="w-full">

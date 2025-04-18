@@ -1,7 +1,7 @@
 import type { AccountType, UserType } from '@/types/types';
 import type { StrapiError } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
 import { useDateTime } from '@/hooks/useDateTime.ts';
-import { useGoFunctions } from '@/hooks/useGoBindings.ts';
+import { useGoState } from '@/hooks/useGoBindings.ts';
 import { usePrice } from '@/hooks/usePrice.ts';
 import { useRiotAccount } from '@/hooks/useRiotAccount.ts';
 import { strapiClient } from '@/lib/strapi';
@@ -20,7 +20,7 @@ export function useAccountActions({
   user?: UserType;
   onAccountChange: () => Promise<void>;
 }) {
-  const { Utils } = useGoFunctions();
+  const { Utils } = useGoState();
   const queryClient = useQueryClient();
   const { price, getAccountPrice } = usePrice();
   const { addTimeToExpiry } = useDateTime();

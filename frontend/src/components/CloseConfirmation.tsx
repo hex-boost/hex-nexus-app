@@ -7,13 +7,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useGoFunctions } from '@/hooks/useGoBindings.ts';
+import { useGoState } from '@/hooks/useGoBindings.ts';
 import { Events, Window } from '@wailsio/runtime';
 import { useEffect, useState } from 'react';
 
 export function CloseConfirmationHandler() {
   const [showCloseDialog, setShowCloseDialog] = useState(false);
-  const { Utils } = useGoFunctions();
+  const { Utils } = useGoState();
   useEffect(() => {
     // Listen for close confirmation requests
     const cancel = Events.On('nexus:confirm-close', () => {
