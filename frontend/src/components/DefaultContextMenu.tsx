@@ -72,7 +72,7 @@ export function DefaultContextMenu({ children }: { children: React.ReactNode }) 
         <ContextMenuItem
           disabled={!canGoBack}
           onClick={handleBack}
-          className="flex items-center space-x-2"
+          className="flex items-center  space-x-2"
         >
           <ArrowLeft className="size-4" />
           <span>Back</span>

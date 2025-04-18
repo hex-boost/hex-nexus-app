@@ -1,5 +1,3 @@
-import React from 'react';
-
 export function DiscordSvg({ size }: { size?: string }) {
   return (
     <svg
