@@ -56,7 +56,6 @@ func (lc *LeagueService) IsRunning() bool {
 	leagueProcessNames := []string{
 		"LeagueClient.exe",
 		"LeagueClientUx.exe",
-		"LeagueClientUxRender.exe",
 	}
 
 	for _, process := range processes {

@@ -5,6 +5,7 @@ import notificationSound from '@/assets/sounds/notification.ogg';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { useWebSocket } from '@/hooks/use-websocket';
 import { strapiClient } from '@/lib/strapi.ts';
+import { useAccountStore } from '@/stores/useAccountStore.ts';
 import { usePremiumPaymentModalStore } from '@/stores/usePremiumPaymentModalStore';
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { DEFAULT_PREFERENCES, NOTIFICATION_EVENTS, NotificationContext } from '@/types/notification.ts';
@@ -15,6 +16,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
+  const { isNexusAccount } = useAccountStore();
   const { user } = useUserStore();
   const premiumModalStore = usePremiumPaymentModalStore();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -228,11 +230,12 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       };
 
       addNotification(newNotification);
-
       if (notification.event === NOTIFICATION_EVENTS.ACCOUNT_EXPIRED) {
-        Utils.ForceCloseAllClients().then(() => {
-          toast.info('Your account has expired, and the league has been closed.');
-        });
+        if (isNexusAccount) {
+          Utils.ForceCloseAllClients().then(() => {
+            toast.info('Your account has expired, and the league has been closed.');
+          });
+        }
       }
       queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
     },

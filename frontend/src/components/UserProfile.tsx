@@ -265,7 +265,7 @@ export function UserProfile({
               </div>
               <div className="flex-1">
                 <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">{user.username}</h2>
-                <p className={cls(`text-zinc-600 dark:text-zinc-400 capitalize`, textClass)}>{user.premium?.tier || 'Free'}</p>
+                <p className={cls(` capitalize`, textClass)}>{user.premium?.tier || 'Free'}</p>
               </div>
             </div>
             <Separator className="mb-6" />
@@ -321,21 +321,23 @@ export function UserProfile({
                 onClick={async () => {
                   logoutAction();
                 }}
-                className="w-full flex items-center justify-between py-2 px-4 hover:bg-zinc-50 dark:hover:bg-red-900/10 text-zinc-100 dark:hover:!text-blue-300 rounded-lg transition-colors duration-200"
+                className="w-full flex items-center justify-between py-2 px-4 hover:bg-zinc-50 dark:hover:bg-red-900/10 text-red-300 rounded-lg transition-colors duration-200"
               >
-                <div className="flex items-center gap-2 text-red-300 ">
+                <div className="flex items-center gap-2  ">
                   <LogOut className="w-4 h-4" />
                   <span className="text-sm font-medium ">Logout</span>
                 </div>
               </Button>
 
-              <Separator className="" />
               {user.premium?.tier === 'free' && (
-                <Link to="/subscription" className="pt-2">
-                  <RainbowButton className="w-full">
-                    Upgrade Plan
-                  </RainbowButton>
-                </Link>
+                <>
+                  <Separator />
+                  <Link to="/subscription" className="pt-2">
+                    <RainbowButton className="w-full">
+                      Upgrade Plan
+                    </RainbowButton>
+                  </Link>
+                </>
               )}
             </div>
           </div>

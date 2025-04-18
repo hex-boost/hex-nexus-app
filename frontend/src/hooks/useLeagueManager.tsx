@@ -30,7 +30,6 @@ export function useLeagueManager({
     mutationKey: ['account', 'solveCaptcha', account.id],
     mutationFn: async () => {
       setIsNexusAccount(true);
-      logger.info(logContext, 'Starting captcha handling flow', { username: account.username });
 
       logger.info(logContext, 'Opening captcha web view and waiting for token');
 

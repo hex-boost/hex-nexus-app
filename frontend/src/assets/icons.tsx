@@ -1,4 +1,4 @@
-export function DiscordSvg({ size }: { size?: string }) {
+export function DiscordSvg({ size, fill }: { fill?: string; size?: string }) {
   return (
     <svg
       width={size || '24'}
@@ -8,7 +8,7 @@ export function DiscordSvg({ size }: { size?: string }) {
       xmlns="http://www.w3.org/2000/svg"
       xmlnsXlink="http://www.w3.org/1999/xlink"
       preserveAspectRatio="xMidYMid"
-      fill="#000000"
+      fill={fill || '#000000'}
     >
       <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
       <g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g>
