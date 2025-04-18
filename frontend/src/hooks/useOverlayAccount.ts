@@ -34,14 +34,11 @@ export function useOverlayAccount(username: string | undefined) {
     await queryClient.invalidateQueries({ queryKey: ['accounts'] });
   };
 
-  const { handleExtendAccount: originalExtendAccount, isExtendPending, selectedExtensionIndex, updateAccountCacheOptimistically }
+  const { handleExtendAccount: originalExtendAccount, isExtendPending, selectedExtensionIndex }
     = useAccountActions({ account, onAccountChange, user: user! });
 
   // Enhanced extend function with optimistic updates
   const handleExtendAccount = async (extensionIndex: number) => {
-    // Immediately update the cache optimistically
-    updateAccountCacheOptimistically(extensionIndex);
-
     try {
       // Then perform the actual API call in the background
       originalExtendAccount(extensionIndex);
@@ -73,7 +70,7 @@ export function useOverlayAccount(username: string | undefined) {
       const seconds = getSecondsRemaining(account);
       setInitialRentalTime(seconds);
     }
-  }, [account]);
+  }, [account, getSecondsRemaining]);
 
   return {
     account,

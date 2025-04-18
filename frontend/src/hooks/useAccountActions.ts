@@ -82,19 +82,31 @@ export function useAccountActions({
       if (router.state.location.pathname === '/overlay') {
         return requestPromise;
       }
-      return toast.promise(requestPromise, {
-        loading: 'Extending account...',
-        success: data => data.message || 'Account extended successfully',
-        error: error => error.error?.message || 'This feature is not implemented yet',
-        duration: 3000,
-      });
-    },
-    onSuccess: () => {
-      invalidateRelatedQueries();
-    },
-    onError: () => {
-      // Revert optimistic updates on error
-      invalidateRelatedQueries();
+
+      // Criar um ID de loading para gerenciar manualmente o toast
+      const toastId = toast.loading('Extending account...');
+
+      try {
+        const response = await requestPromise;
+
+        // Executar o timeout e invalidação
+        await new Promise((resolve) => {
+          setTimeout(async () => {
+            await invalidateRelatedQueries();
+            resolve(null);
+          }, 1000);
+        });
+
+        // Após timeout e invalidação, atualizar o toast
+        toast.success(response.message || 'Account time extended successfully', {
+          id: toastId,
+        });
+
+        return response;
+      } catch (error) {
+        toast.error(error.error?.message, { id: toastId });
+        throw error;
+      }
     },
   });
   const { mutate: handleRentAccount, isPending: isRentPending } = useMutation<

@@ -271,12 +271,14 @@ export function UserProfile({
             <Separator className="mb-6" />
             <div className="flex flex-col gap-2 px-6">
               {menuItems.map((item) => {
-                const isExternal = item.external || item.href.startsWith('http://') || item.href.startsWith('https://');
-
-                return isExternal
+                const isDiscord = item.label === 'Discord';
+                const [isHover, setHover] = useState(false);
+                return isDiscord
                   ? (
                       <Button
                         variant="custom"
+                        onMouseEnter={() => setHover(true)}
+                        onMouseLeave={() => setHover(false)}
                         key={item.label}
                         disabled={isPending}
                         onClick={() => mutate(item.href)}
@@ -284,7 +286,7 @@ export function UserProfile({
                       >
 
                         <div className="flex items-center gap-2">
-                          {item.icon}
+                          <DiscordSvg size="16" fill={isHover ? '#8ec5ff' : undefined} />
                           <span className="text-sm font-medium">{item.label}</span>
                         </div>
                         {item.external && <ExternalLink className="w-4 h-4" />}

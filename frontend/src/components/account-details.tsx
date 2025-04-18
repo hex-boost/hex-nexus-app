@@ -385,7 +385,6 @@ export default function AccountDetails({ account, onAccountChange }: {
                               size="sm"
                               className="flex border-primary/10 bg-white/[0.001] flex-col items-center gap-1 h-auto py-2"
                               onClick={() => handleExtendAccount(index)}
-                              loading={isExtendPending && selectedExtensionIndex === index}
                               disabled={isExtendPending}
                             >
                               <span className="text-sm">
