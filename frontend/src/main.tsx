@@ -29,7 +29,18 @@ const router = createRouter({
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
 
-    <Toaster theme="dark" richColors />
+    <Toaster
+      theme="dark"
+      richColors
+
+      toastOptions={
+        {
+          classNames: {
+            loading: '!bg-primary/80 backdrop-blur-lg !text-violet-200',
+          },
+        }
+      }
+    />
     <ReactQueryDevtools client={queryClient} />
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
