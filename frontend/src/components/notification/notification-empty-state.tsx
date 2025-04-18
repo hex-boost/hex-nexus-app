@@ -14,11 +14,11 @@ export function NotificationEmptyState({ type = 'all', className }: Notification
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.3 }}
-        className="w-16 h-16 rounded-full bg-gray-100 dark:bg-muted flex items-center justify-center mb-4"
+        className="w-16 h-16 rounded-full bg-gray-100 dark:bg-muted/20 flex items-center justify-center mb-4"
       >
         {type === 'unread'
           ? (
-              <AlertCircle className="h-8 w-8 text-gray-400 dark:text-gray-600" />
+              <AlertCircle className="h-8 w-8 text-gray-400 dark:text-white/60" />
             )
           : type === 'read'
             ? (

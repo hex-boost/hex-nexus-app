@@ -60,7 +60,7 @@ function DashboardLayout() {
             <div className="flex flex-col h-screen bg-background">
 
               <div
-                className={cls('sticky top-0 z-50 bg-card border-b ml-[89px]')}
+                className={cls('sticky top-0 z-50 bg-black/20 border-b ml-[89px]')}
                 style={{ '--wails-draggable': 'drag' } as React.CSSProperties}
               >
                 <div className="flex justify-end items-center gap-6 py-2">
