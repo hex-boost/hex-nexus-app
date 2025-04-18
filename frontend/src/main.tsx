@@ -36,7 +36,7 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
       toastOptions={
         {
           classNames: {
-            loading: '!bg-primary/80 backdrop-blur-lg !text-violet-200',
+            loading: '!bg-card border border-white/5 text-white',
           },
         }
       }

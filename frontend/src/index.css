@@ -49,7 +49,7 @@
     --color-shade3-50: hsla(var(--hue), 6%, 30%, 0.5);
     --color-shade3-75: hsla(var(--hue), 6%, 30%, 0.75);
 
-    --color-background: hsl(245 29% 9%);
+    --color-background: hsl(245 25% 9%);
     --color-foreground: hsl(0 0% 90%);
 
     --color-card: hsl(246, 28%, 7%);

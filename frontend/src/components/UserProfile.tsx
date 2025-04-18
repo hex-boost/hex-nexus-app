@@ -277,8 +277,8 @@ export function UserProfile({
                   ? (
                       <Button
                         variant="custom"
-                        onMouseEnter={() => setHover(true)}
-                        onMouseLeave={() => setHover(false)}
+                        onMouseEnter={() => setTimeout(() => setHover(true), 200)}
+                        onMouseLeave={() => setTimeout(() => setHover(false), 200)}
                         key={item.label}
                         disabled={isPending}
                         onClick={() => mutate(item.href)}
@@ -309,7 +309,7 @@ export function UserProfile({
                             <span className="text-sm font-medium">{item.label}</span>
                           </div>
                           {item.value && (
-                            <span className={cls('text-sm text-zinc-500 dark:text-zinc-400 ', textClass)}>
+                            <span className={cls('text-sm ', textClass)}>
                               {item.value}
                             </span>
                           )}
