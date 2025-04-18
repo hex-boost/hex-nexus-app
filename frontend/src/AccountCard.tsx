@@ -1,6 +1,5 @@
 import type { AccountType } from '@/types/types.ts';
 import { CoinIcon } from '@/components/coin-icon.tsx';
-import { DropAccountAction } from '@/components/DropAccountAction';
 import { FavoriteAccountNote } from '@/components/FavoriteAccountNote.tsx';
 import { FavoriteStar } from '@/components/FavoriteStar.tsx';
 import { AccountGameIcon } from '@/components/GameComponents';
@@ -174,24 +173,7 @@ export function AccountCard({
             }}
             onMouseEnter={e => e.stopPropagation()}
           >
-            {isFavorite && riotAccount && user && (
-              <DropdownMenuItem
-                asChild
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                }}
-              >
-                <DropAccountAction
-                  account={riotAccount}
-                  user={user}
-                  onSuccess={onAccountChange}
-                  variant="dropdown"
-                >
-                  Drop Account
-                </DropAccountAction>
-              </DropdownMenuItem>
-            )}
+
             {
               isFavorite && (
                 <>
