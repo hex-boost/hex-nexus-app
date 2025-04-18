@@ -104,8 +104,17 @@ function DashboardLayout() {
               </div>
 
               <AdminPanelLayout>
-                <Dialog open={isNoteDialogOpen} onOpenChange={setIsNoteDialogOpen}>
-                  <DialogContent className="sm:max-w-md">
+                <Dialog
+                  open={isNoteDialogOpen}
+                  onOpenChange={setIsNoteDialogOpen}
+                >
+                  <DialogContent
+                    onCloseAutoFocus={(event) => {
+                      event.preventDefault();
+                      document.body.style.pointerEvents = '';
+                    }}
+                    className="sm:max-w-md"
+                  >
                     <DialogHeader>
                       <DialogTitle>{noteText ? 'Edit Note' : 'Add Note'}</DialogTitle>
                       <DialogDescription>

@@ -14,9 +14,8 @@ import { usePrice } from '@/hooks/usePrice.ts';
 import { useRiotAccount } from '@/hooks/useRiotAccount.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
 import { cn } from '@/lib/utils';
-import { useUserStore } from '@/stores/useUserStore.ts';
 import { Link } from '@tanstack/react-router';
-import { Clock, MoreHorizontal } from 'lucide-react';
+import { Clock, MoreHorizontal, Pencil, PlusIcon, Star, TrashIcon } from 'lucide-react';
 import { useState } from 'react';
 
 export type AccountCardProps = {
@@ -49,19 +48,9 @@ export function AccountCard({
   const { getFavoriteAccount, handleEditNote, handleDeleteNote, handleAddToFavorites, handleRemoveFromFavorites } = useFavoriteAccounts();
   const favoriteAccount = getFavoriteAccount(riotAccount);
   const isFavorite = !!favoriteAccount;
-  // Add state for hover
   const [_, setIsHovering] = useState(false);
 
-  const { user } = useUserStore();
-  // Determine if account is a favorite internally
-
   const note = favoriteAccount?.note;
-
-  // Handler to remove from favorites
-
-  // Handle adding to favorites
-
-  // Handle edit note
 
   const { price, getAccountPrice, isPriceLoading } = usePrice();
 
@@ -159,7 +148,7 @@ export function AccountCard({
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 w-8 p-0 ml-1"
+              className="h-8 w-8 p-0 ml-1 min-w-fit aspect-square"
               onMouseEnter={e => e.stopPropagation()}
             >
               <MoreHorizontal className="h-4 w-4" />
@@ -174,31 +163,6 @@ export function AccountCard({
             onMouseEnter={e => e.stopPropagation()}
           >
 
-            {
-              isFavorite && (
-                <>
-                  <DropdownMenuItem onClick={() => {
-                    handleEditNote(riotAccount);
-                  }}
-                  >
-                    {note ? 'Edit Note' : 'Add Note'}
-                  </DropdownMenuItem>
-
-                  {
-                    note
-                    && (
-                      <DropdownMenuItem onClick={() => {
-                        handleDeleteNote(riotAccount);
-                      }}
-                      >
-                        Delete Note
-                      </DropdownMenuItem>
-                    )
-                  }
-                </>
-              )
-            }
-
             {!isFavorite && (
               <DropdownMenuItem onClick={(e) => {
                 e.stopPropagation();
@@ -206,7 +170,9 @@ export function AccountCard({
                 handleAddToFavorites(riotAccount);
               }}
               >
-                Add to favorites
+                <Star size={12} className="text-amber-500 " />
+                {' '}
+                Favorite
               </DropdownMenuItem>
             )}
 
@@ -221,9 +187,39 @@ export function AccountCard({
                 }}
                 className=""
               >
-                Remove from Favorites
+                <Star size={12} className="text-amber-500 fill-amber-500" />
+
+                Unfavorite
               </DropdownMenuItem>
             )}
+
+            {
+              isFavorite && (
+                <>
+                  <DropdownMenuItem onClick={() => {
+                    handleEditNote(riotAccount);
+                  }}
+                  >
+                    {note ? <Pencil size={12} /> : <PlusIcon size={12} />}
+                    {note ? 'Edit Note' : 'Add Note'}
+                  </DropdownMenuItem>
+
+                  {
+                    note
+                    && (
+                      <DropdownMenuItem onClick={() => {
+                        handleDeleteNote(riotAccount);
+                      }}
+                      >
+                        <TrashIcon size={12} />
+                        {' '}
+                        Delete Note
+                      </DropdownMenuItem>
+                    )
+                  }
+                </>
+              )
+            }
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

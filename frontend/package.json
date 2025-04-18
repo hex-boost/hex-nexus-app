@@ -89,5 +89,8 @@
     "typescript": "^5.8.2",
     "url": "^0.11.4",
     "vite": "^6.2.1"
+  },
+  "resolutions": {
+    "@radix-ui/react-dismissable-layer": "^1.1.3"
   }
 }

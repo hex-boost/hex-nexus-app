@@ -4,6 +4,7 @@ import { strapiClient } from '@/lib/strapi.ts';
 import { useNoteStore } from '@/stores/useNoteStore.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { toast } from 'sonner';
 
 type AddFavoriteParams = {
@@ -17,11 +18,22 @@ type UpdateFavoriteNoteParams = {
 };
 
 export function useFavoriteAccounts() {
-  const { setIsNoteDialogOpen, setNoteText, noteText, isNoteDialogOpen, setFavoriteAccountId, favoriteAccountId } = useNoteStore();
+  const { setNoteText, noteText, setFavoriteAccountId, favoriteAccountId, setIsNoteDialogOpen, isNoteDialogOpen } = useNoteStore();
+
   const queryClient = useQueryClient();
   const { user, setUser } = useUserStore();
+  useEffect(() => {
+    if (isNoteDialogOpen) {
+      // Pushing the change to the end of the call stack
+      const timer = setTimeout(() => {
+        document.body.style.pointerEvents = '';
+      }, 0);
 
-  // Helper function to get current user data from cache
+      return () => clearTimeout(timer);
+    } else {
+      document.body.style.pointerEvents = 'auto';
+    }
+  }, [isNoteDialogOpen]);
   const getCurrentUserData = (): UserType | undefined => {
     return queryClient.getQueryData<UserType>(['users', 'me']);
   };
@@ -112,9 +124,9 @@ export function useFavoriteAccounts() {
       return { previousUser };
     },
     onSuccess: (_, variables) => {
-      if (!variables.silent) {
-        toast.success('Note saved');
-      }
+      const toastText = variables.note == '' ? 'Note deleted' : 'Note updated';
+      toast.info(toastText);
+
       queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
     },
     onError: (error, variables, context) => {
