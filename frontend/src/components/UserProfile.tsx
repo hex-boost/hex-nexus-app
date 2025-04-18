@@ -12,7 +12,7 @@ import { useProfileAvatar } from '@/hooks/useProfileAvatar.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { Browser } from '@wailsio/runtime';
-import { Check, ExternalLink, LogOut, Pencil, Trophy, X } from 'lucide-react';
+import { Check, Crown, ExternalLink, LogOut, Pencil, X } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import ReactCrop, { cls } from 'react-image-crop';
@@ -158,7 +158,7 @@ export function UserProfile({
       label: 'Membership',
       value: (user.premium?.tier.slice(0, 1).toUpperCase() + user.premium.tier.slice(1)) || 'Free',
       href: '/subscription',
-      icon: <Trophy className="w-4 h-4" />,
+      icon: <Crown className="w-4 h-4" />,
     },
 
     {
@@ -307,7 +307,7 @@ export function UserProfile({
                             <span className="text-sm font-medium">{item.label}</span>
                           </div>
                           {item.value && (
-                            <span className={cls('text-sm text-zinc-500 dark:text-zinc-400 mr-2', textClass)}>
+                            <span className={cls('text-sm text-zinc-500 dark:text-zinc-400 ', textClass)}>
                               {item.value}
                             </span>
                           )}
@@ -331,7 +331,7 @@ export function UserProfile({
 
               <Separator className="" />
               {user.premium?.tier === 'free' && (
-                <Link to="/subscription" className="pt-3">
+                <Link to="/subscription" className="pt-2">
                   <RainbowButton className="w-full">
                     Upgrade Plan
                   </RainbowButton>

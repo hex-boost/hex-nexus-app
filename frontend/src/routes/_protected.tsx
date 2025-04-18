@@ -51,12 +51,14 @@ function DashboardLayout() {
 
   return (
     <>
+
       <CloseConfirmationHandler />
 
       <NotificationProvider>
         <ContextMenuProvider>
           <DefaultContextMenu>
             <div className="flex flex-col h-screen bg-background">
+
               <div
                 className={cls('sticky top-0 z-50 bg-card border-b ml-[89px]')}
                 style={{ '--wails-draggable': 'drag' } as React.CSSProperties}

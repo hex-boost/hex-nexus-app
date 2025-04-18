@@ -29,6 +29,7 @@ export function useLeagueManager({
   const { mutate: handleOpenCaptchaWebview, isPending: isCaptchaProcessing } = useMutation({
     mutationKey: ['account', 'solveCaptcha', account.id],
     mutationFn: async () => {
+      setIsNexusAccount(true);
       logger.info(logContext, 'Starting captcha handling flow', { username: account.username });
 
       logger.info(logContext, 'Opening captcha web view and waiting for token');
@@ -49,11 +50,11 @@ export function useLeagueManager({
       }
     },
     onSuccess: () => {
-      setIsNexusAccount(true);
       logger.info(logContext, 'Login with captcha successful');
       toast.success('Authenticated successfully');
     },
     onError: (error) => {
+      setIsNexusAccount(false);
       if (error instanceof Call.RuntimeError) {
         logger.error(logContext, 'Login with captcha failed', error);
 

@@ -13,6 +13,7 @@ import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
 import { useGoState } from '@/hooks/useGoBindings.ts';
 import { strapiClient } from '@/lib/strapi';
 import { useAccountStore } from '@/stores/useAccountStore.ts';
+import { AccountMonitor } from '@league';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { ArrowDownToLine } from 'lucide-react';
 import { useState } from 'react';
@@ -66,9 +67,9 @@ export function DropAccountAction({
       }
       return response;
     },
-    onSuccess: (data) => {
-      if (isNexusAccount) {
-        Utils.ForceCloseAllClients();
+    onSuccess: async (data) => {
+      if (isNexusAccount || await AccountMonitor.IsNexusAccount()) {
+        await Utils.ForceCloseAllClients();
       }
       toast.success(data.message || 'Account dropped successfully');
     },
@@ -116,7 +117,7 @@ export function DropAccountAction({
             className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md p-3 text-sm text-amber-800 dark:text-amber-300"
           >
             <p>
-              Your client will be logged out and the league will close.
+              Your League of Legends will close
             </p>
           </div>
         )}

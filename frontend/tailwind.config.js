@@ -2,6 +2,13 @@
 module.exports = {
   theme: {
     extend: {
+      keyframes: {
+        loadingBar: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(100%)' },
+        },
+      },
+
       colors: {
         'color-1': 'hsl(var(--color-1))',
         'color-2': 'hsl(var(--color-2))',

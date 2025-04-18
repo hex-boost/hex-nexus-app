@@ -201,6 +201,12 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 					window.OpenDevTools()
 				}
 			},
+
+			"ctrl+r": func(window *application.WebviewWindow) {
+				if window != nil {
+					window.EmitEvent("page:reload")
+				}
+			},
 		},
 
 		SingleInstance: &application.SingleInstanceOptions{

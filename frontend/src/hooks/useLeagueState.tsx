@@ -1,53 +1,63 @@
 import type { LeagueClientState } from '@league';
 import { logger } from '@/lib/logger';
 import { ClientMonitor } from '@league';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Events } from '@wailsio/runtime';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+
+// Chave para identificar esta consulta no cache
+const LEAGUE_STATE_QUERY_KEY = ['leagueState'];
+
+// Função de busca para o useQuery
+const fetchLeagueState = async (): Promise<LeagueClientState> => {
+  try {
+    logger.info('fetchLeagueState', 'Fetching league state');
+    return await ClientMonitor.GetCurrentState() as LeagueClientState;
+  } catch (e) {
+    logger.error('fetchLeagueState', 'Error fetching league state', e);
+    throw e;
+  }
+};
 
 export function useLeagueState() {
-  const [state, setState] = useState<LeagueClientState | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
   const logContext = 'useLeagueState';
 
+  // Configurar o listener para eventos de mudança de estado
   useEffect(() => {
-    let mounted = true;
-    logger.info(logContext, 'Initializing league state hook');
+    logger.info(logContext, 'Configurando listener para mudanças de estado');
 
-    // Get initial state
-    ClientMonitor.GetCurrentState()
-      .then((initialState: LeagueClientState) => {
-        if (mounted) {
-          logger.info(logContext, 'Received initial state', initialState);
-          setState(initialState);
-          setIsLoading(false);
-        }
-      })
-      .catch((error) => {
-        if (mounted) {
-          logger.error(logContext, 'Failed to get initial state', error);
-          setIsLoading(false);
-        }
-      });
-
-    // Listen for state changes
     const cleanup = Events.On('league:state:changed', (event: { data: LeagueClientState[] }) => {
-      if (mounted) {
-        logger.info(logContext, 'State changed event received', event);
-        setState(event.data[0]);
-      }
+      logger.info(logContext, 'Evento de mudança de estado recebido', event);
+
+      // Atualizar os dados diretamente no cache
+      queryClient.setQueryData(LEAGUE_STATE_QUERY_KEY, event.data[0]);
     });
 
     return () => {
-      mounted = false;
       if (cleanup) {
         cleanup();
       }
+      logger.info(logContext, 'Listener de mudanças de estado removido');
     };
-  }, []);
+  }, [queryClient]);
+
+  // Usar useQuery para gerenciar o estado
+  const query = useQuery({
+    queryKey: LEAGUE_STATE_QUERY_KEY,
+    queryFn: fetchLeagueState,
+    staleTime: Infinity, // Os dados só ficarão obsoletos quando invalidados explicitamente
+    retry: 2,
+  });
 
   return {
-    state,
-    setState,
-    isLoading,
+    state: query.data ?? null,
+    isLoading: query.isLoading,
+    setState: (newState: LeagueClientState) =>
+      queryClient.setQueryData(LEAGUE_STATE_QUERY_KEY, newState),
+    error: query.error,
+    status: query.status,
+    isError: query.isError,
+    isSuccess: query.isSuccess,
   };
 }

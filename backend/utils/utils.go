@@ -70,14 +70,13 @@ func (u *Utils) ForceCloseAllClients() error {
 		"RiotClientUx.exe",
 		"RiotClientUxRender.exe",
 		"Riot Client.exe",
+		"LeagueClientUx.exe",
 		//"League of Legends.exe",
 		"LeagueCrashHandler.exe",
 		"LeagueCrashHandler64.exe",
 		"LeagueClient.exe",
 		"LeagueClientUx.exe",
 		"LeagueClientUxRender.exe",
-		"VALORANT.exe",
-		"VALORANT-Win64-Shipping.exe",
 	}
 
 	processes, err := ps.Processes()

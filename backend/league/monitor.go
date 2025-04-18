@@ -116,10 +116,6 @@ func (cm *ClientMonitor) updateState(newState *LeagueClientState) {
 	}
 }
 
-// UpdateAuthState updates the authentication state
-
-// HasBeenUpdatedBefore checks if the account with the given username has been updated in this session
-
 // checkClientState coordinates the client state checking process
 func (cm *ClientMonitor) checkClientState() {
 	if !cm.isCheckingState.CompareAndSwap(false, true) {

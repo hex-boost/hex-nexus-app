@@ -5,8 +5,8 @@ import { useGoState } from '@/hooks/useGoBindings.ts';
 import { usePrice } from '@/hooks/usePrice.ts';
 import { useRiotAccount } from '@/hooks/useRiotAccount.ts';
 import { strapiClient } from '@/lib/strapi';
+import { useAccountStore } from '@/stores/useAccountStore.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
-import { AccountMonitor } from '@league';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -25,7 +25,7 @@ export function useAccountActions({
   const { price, getAccountPrice } = usePrice();
   const { addTimeToExpiry } = useDateTime();
   const { currentRanking } = useRiotAccount({ account });
-  const [isNexusAccount, setIsNexusAccount] = useState(false);
+  const { isNexusAccount } = useAccountStore();
   const [selectedRentalOptionIndex, setSelectedRentalOptionIndex] = useState<number>(1);
   const [isDropDialogOpen, setIsDropDialogOpen] = useState(false);
   const [selectedExtensionIndex, setSelectedExtensionIndex] = useState<number>(1);
@@ -90,22 +90,6 @@ export function useAccountActions({
       useUserStore.getState().setUser(updatedUser);
     }
   };
-
-  async function handleDropDialogOpen(open: boolean) {
-    const isAccountNexus = await AccountMonitor.IsNexusAccount();
-    console.log('isNexusAccount', isAccountNexus);
-    if (isAccountNexus) {
-      const currentLoggedInSummonerName = await AccountMonitor.GetLoggedInUsername();
-
-      console.log('currentLoggedInSummoner', currentLoggedInSummonerName);
-      if (currentLoggedInSummonerName === account?.username) {
-        setIsNexusAccount(true);
-      }
-    }
-    setIsDropDialogOpen(open);
-  }
-
-  // Helper function to consistently invalidate all related queries
   const invalidateRelatedQueries = async () => {
     await queryClient.invalidateQueries({ queryKey: ['accounts'] });
 
@@ -224,7 +208,6 @@ export function useAccountActions({
     handleDropAccount,
     isDropPending,
     handleExtendAccount,
-    handleDropDialogOpen,
     isExtendPending,
     dropRefund,
     isNexusAccount,
