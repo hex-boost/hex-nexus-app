@@ -1,9 +1,11 @@
 import type { AccountType, Server } from '@/types/types';
+
 import type { StrapiResponse } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
 import { strapiClient } from '@/lib/strapi.ts';
 import { useMapping } from '@/lib/useMapping';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
+import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 export const availableRegions: Server[] = [
@@ -23,6 +25,8 @@ export const availableRegions: Server[] = [
   'VN2',
   'TH2',
 ];
+type SortKey = keyof AccountType | 'coin_price' | 'winrate';
+
 export function getLeaverBusterInfo(account: AccountType) {
   if (!account.leaverBuster?.leaverBusterEntryDto) {
     return null;
@@ -84,6 +88,10 @@ export function useAccounts(page = 1, pageSize = 10) {
       minBlueEssence: 0,
       selectedSkins: [], // Ensure this is always an array
     },
+    sortConfig: {
+      key: null,
+      direction: null,
+    },
     pagination: {
       page: 1,
       pageSize: 20,
@@ -101,6 +109,7 @@ export function useAccounts(page = 1, pageSize = 10) {
     selectedSkins: Array.isArray(persistedState.filters?.selectedSkins) ? persistedState.filters.selectedSkins : [],
     leaverStatus: Array.isArray(persistedState.filters?.leaverStatus) ? persistedState.filters.leaverStatus : [],
   });
+  const [sortConfig, setSortConfig] = useState(persistedState.sortConfig || { key: null, direction: null });
   const [pagination, setPagination] = useState(persistedState.pagination || { page, pageSize });
 
   const { getRankColor, getEloIcon, getRegionIcon, getGameIcon } = useMapping();
@@ -113,9 +122,10 @@ export function useAccounts(page = 1, pageSize = 10) {
       selectedChampionIds,
       selectedSkinIds,
       filters,
+      sortConfig,
       pagination,
     });
-  }, [queryClient, searchQuery, showFilters, selectedChampionIds, selectedSkinIds, filters, pagination]);
+  }, [queryClient, searchQuery, showFilters, selectedChampionIds, selectedSkinIds, filters, sortConfig, pagination]);
 
   // Custom setters that update both local state and persisted state
   const setSearchQueryPersisted = useCallback((value: string) => {
@@ -151,6 +161,26 @@ export function useAccounts(page = 1, pageSize = 10) {
     queryClient.setQueryData(['accounts-filter-state'], (old: any) => ({ ...old, pagination: newPagination }));
   }, [queryClient]);
 
+  // Update persisted sort config
+  const requestSort = useCallback((key: SortKey) => {
+    let direction: 'ascending' | 'descending' | null = 'ascending';
+
+    if (sortConfig.key === key) {
+      if (sortConfig.direction === 'ascending') {
+        direction = 'descending';
+      } else if (sortConfig.direction === 'descending') {
+        const newConfig = { key: null, direction: null };
+        setSortConfig(newConfig);
+        queryClient.setQueryData(['accounts-filter-state'], (old: any) => ({ ...old, sortConfig: newConfig }));
+        return;
+      }
+    }
+
+    const newConfig = { key, direction };
+    setSortConfig(newConfig);
+    queryClient.setQueryData(['accounts-filter-state'], (old: any) => ({ ...old, sortConfig: newConfig }));
+  }, [sortConfig, queryClient]);
+
   const resetFilters = useCallback(() => {
     const initialState = {
       searchQuery: '',
@@ -169,6 +199,11 @@ export function useAccounts(page = 1, pageSize = 10) {
         selectedSkins: [],
         leaverStatus: [],
       },
+      sortConfig: {
+        key: null,
+        direction: null,
+      },
+
       pagination: {
         page: 1,
         pageSize: 10,
@@ -179,6 +214,7 @@ export function useAccounts(page = 1, pageSize = 10) {
     setSelectedChampionIds(initialState.selectedChampionIds);
     setSelectedSkinIds(initialState.selectedSkinIds);
     setFilters(initialState.filters);
+    setSortConfig(initialState.sortConfig);
     setPagination(initialState.pagination);
 
     // Reset persisted state
@@ -188,7 +224,7 @@ export function useAccounts(page = 1, pageSize = 10) {
   const router = useRouter();
 
   const { data, isLoading } = useQuery({
-    queryKey: ['accounts', filters, searchQuery, pagination.page, pagination.pageSize],
+    queryKey: ['accounts', filters, searchQuery, pagination.page, pagination.pageSize, sortConfig],
     queryFn: async () => {
       const strapiFilters: any = {};
 
@@ -251,6 +287,25 @@ export function useAccounts(page = 1, pageSize = 10) {
         },
       };
 
+      // Add sorting if configured
+      if (sortConfig.key && sortConfig.direction) {
+        const sortDirection = sortConfig.direction === 'ascending' ? 'asc' : 'desc';
+
+        // Handle special sort cases and map to the correct field names
+        if (sortConfig.key === 'LCUchampions') {
+          queryParams.sort = `LCUchampions_count:${sortDirection}`;
+        } else if (sortConfig.key === 'LCUskins') {
+          queryParams.sort = `LCUskins_count:${sortDirection}`;
+        } else if (sortConfig.key === 'coin_price') {
+          queryParams.sort = `rankings.elo:${sortDirection}`;
+        } else if (sortConfig.key === 'winrate') {
+          queryParams.sort = `rankings.wins:${sortDirection}`;
+        } else {
+          // Default sort for regular fields
+          queryParams.sort = `${sortConfig.key}:${sortDirection}`;
+        }
+      }
+
       return await strapiClient.find<AccountType[]>('accounts/available', queryParams) as StrapiResponse<AccountType[]>;
     },
   });
@@ -261,7 +316,7 @@ export function useAccounts(page = 1, pageSize = 10) {
       const nextPage = pagination.page + 1;
       if (nextPage <= Math.ceil(data.meta.pagination.total / pagination.pageSize)) {
         queryClient.prefetchQuery({
-          queryKey: ['accounts', filters, searchQuery, nextPage, pagination.pageSize],
+          queryKey: ['accounts', filters, searchQuery, nextPage, pagination.pageSize, sortConfig],
           queryFn: async () => {
             const strapiFilters: any = {};
 
@@ -324,73 +379,44 @@ export function useAccounts(page = 1, pageSize = 10) {
               },
             };
 
+            // Add sorting if configured - using same format as main query
+            if (sortConfig.key && sortConfig.direction) {
+              const sortDirection = sortConfig.direction === 'ascending' ? 'asc' : 'desc';
+
+              // Handle special sort cases
+              if (sortConfig.key === 'LCUchampions') {
+                queryParams.sort = `LCUchampions_count:${sortDirection}`;
+              } else if (sortConfig.key === 'LCUskins') {
+                queryParams.sort = `LCUskins_count:${sortDirection}`;
+              } else if (sortConfig.key === 'coin_price') {
+                queryParams.sort = `rankings.elo:${sortDirection}`;
+              } else if (sortConfig.key === 'winrate') {
+                queryParams.sort = `rankings.wins:${sortDirection}`;
+              } else {
+                // Default sort for regular fields
+                queryParams.sort = `${sortConfig.key}:${sortDirection}`;
+              }
+            }
+
             return await strapiClient.find<AccountType[]>('accounts/available', queryParams);
           },
         });
       }
     }
-  }, [data, filters, pagination, queryClient, searchQuery]);
-
-  // Add new useEffect to validate search results
-  useEffect(() => {
-    if (data?.data && (filters.selectedChampions.length > 0 || filters.selectedSkins.length > 0)) {
-      console.log('Validating search results for champions and skins...');
-
-      // Convert selected IDs to numbers for comparison
-      const searchedChampionIds = filters.selectedChampions.map(id => Number(id));
-      const searchedSkinIds = filters.selectedSkins.map(id => Number(id));
-
-      let allAccountsMatchCriteria = true;
-
-      // Check each account
-      data.data.forEach((account, index) => {
-        const accountChampions = account.LCUchampions || [];
-        const accountSkins = account.LCUskins || [];
-
-        // Check champions
-        if (searchedChampionIds.length > 0) {
-          const hasAllChampions = searchedChampionIds.every(id =>
-            accountChampions.includes(id));
-
-          if (!hasAllChampions) {
-            console.error(`Account ${account.id || account.documentId} (index ${index}) is missing some champions!`);
-            console.error(`- Searched for: ${searchedChampionIds.join(', ')}`);
-            console.error(`- Account has: ${accountChampions.join(', ')}`);
-            const missingChampions = searchedChampionIds.filter(id => !accountChampions.includes(id));
-            console.error(`- Missing: ${missingChampions.join(', ')}`);
-            allAccountsMatchCriteria = false;
-          }
-        }
-
-        // Check skins
-        if (searchedSkinIds.length > 0) {
-          const hasAllSkins = searchedSkinIds.every(id =>
-            accountSkins.includes(id));
-
-          if (!hasAllSkins) {
-            console.error(`Account ${account.id || account.documentId} (index ${index}) is missing some skins!`);
-            console.error(`- Searched for: ${searchedSkinIds.join(', ')}`);
-            console.error(`- Account has: ${accountSkins.join(', ')}`);
-            const missingSkins = searchedSkinIds.filter(id => !accountSkins.includes(id));
-            console.error(`- Missing: ${missingSkins.join(', ')}`);
-            allAccountsMatchCriteria = false;
-          }
-        }
-      });
-
-      if (allAccountsMatchCriteria) {
-        console.log('✅ SUCCESS: All accounts match the selected champions and skins criteria!');
-        console.log(`- Filtered for champions: ${searchedChampionIds.join(', ')}`);
-        console.log(`- Filtered for skins: ${searchedSkinIds.join(', ')}`);
-        console.log(`- Total matching accounts: ${data.data.length}`);
-      } else {
-        console.warn('❌ WARNING: Some accounts do not match the search criteria. Check errors above.');
-      }
-    }
-  }, [data, filters.selectedChampions, filters.selectedSkins]);
+  }, [data, filters, pagination, queryClient, searchQuery, sortConfig]);
 
   const handleViewAccountDetails = (accountId: string) => {
     router.navigate({ to: `/accounts/${accountId}` });
+  };
+  const SortIndicator = ({ column }: { column: SortKey }) => {
+    // Add null check here too
+    if (!sortConfig || sortConfig.key !== column || sortConfig.direction === null) {
+      return <ArrowUpDown className="ml-1 h-4 w-4" />;
+    }
+
+    return sortConfig.direction === 'ascending'
+      ? <ArrowUp className="ml-1 h-4 w-4" />
+      : <ArrowDown className="ml-1 h-4 w-4" />;
   };
 
   const handlePageChange = useCallback((newPage: number) => {
@@ -412,10 +438,12 @@ export function useAccounts(page = 1, pageSize = 10) {
     getEloIcon,
     getRegionIcon,
     getGameIcon,
+    requestSort,
     setSearchQueryPersisted,
     setSelectedChampionIdsPersisted,
     setSelectedSkinIdsPersisted,
     resetFilters,
+    SortIndicator,
     handleViewAccountDetails,
     selectedChampionIds,
     setFiltersPersisted,
