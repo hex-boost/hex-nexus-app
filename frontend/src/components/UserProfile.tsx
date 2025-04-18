@@ -1,17 +1,21 @@
 import type { UserType } from '@/types/types.ts';
 import type React from 'react';
 import type { Crop } from 'react-image-crop';
+import { DiscordSvg } from '@/assets/icons.tsx';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
+import { RainbowButton } from '@/components/ui/rainbow-button.tsx';
 import { Separator } from '@/components/ui/separator.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip.tsx';
+import { useMembership } from '@/hooks/useMembership.ts';
 import { useProfileAvatar } from '@/hooks/useProfileAvatar.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { Check, HelpCircle, LogOut, MoveUpRight, Pencil, Trophy, X } from 'lucide-react';
+import { Browser } from '@wailsio/runtime';
+import { Check, ExternalLink, LogOut, Pencil, Trophy, X } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import ReactCrop from 'react-image-crop';
+import ReactCrop, { cls } from 'react-image-crop';
 import { toast } from 'sonner';
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
@@ -19,6 +23,7 @@ import 'react-image-crop/dist/ReactCrop.css';
 
 type MenuItem = {
   label: string;
+  external_link?: string;
   value?: string;
   href: string;
   icon?: React.ReactNode;
@@ -40,6 +45,8 @@ export function UserProfile({
   const [previewAvatar, setPreviewAvatar] = useState<string | null>(null);
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+
+  const { getTierColorClass } = useMembership();
   const [crop, setCrop] = useState<Crop>({
     unit: '%',
     width: 80,
@@ -145,21 +152,28 @@ export function UserProfile({
       setImageToCrop(null);
     }
   };
+  const textClass = getTierColorClass(user.premium.tier).text;
   const menuItems: MenuItem[] = [
     {
       label: 'Membership',
-      value: user.premium?.tier || 'Free Trial',
-      href: '#',
+      value: (user.premium?.tier.slice(0, 1).toUpperCase() + user.premium.tier.slice(1)) || 'Free',
+      href: '/subscription',
       icon: <Trophy className="w-4 h-4" />,
     },
+
     {
-      label: 'Help',
-      href: '#',
-      icon: <HelpCircle className="w-4 h-4" />,
-      external: false,
+      label: 'Discord',
+      href: 'https://discord.gg/Vew8tvRWVZ',
+      external: true,
+      icon: <DiscordSvg size="16" />,
     },
   ];
-
+  const { isPending, mutate } = useMutation({
+    mutationKey: ['open', 'url'],
+    mutationFn: async (href: string) => {
+      await Browser.OpenURL(href);
+    },
+  });
   return (
     <>
       <div className="w-full max-w-sm mx-auto">
@@ -251,45 +265,77 @@ export function UserProfile({
               </div>
               <div className="flex-1">
                 <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">{user.username}</h2>
-                <p className="text-zinc-600 dark:text-zinc-400">{user.premium?.tier || 'Free Trial'}</p>
+                <p className={cls(`text-zinc-600 dark:text-zinc-400 capitalize`, textClass)}>{user.premium?.tier || 'Free'}</p>
               </div>
             </div>
             <Separator className="mb-6" />
-            <div className="space-y-2 px-6">
-              {menuItems.map(item =>
-                (
-                  <Link
-                    key={item.label}
-                    to={item.href}
-                    className="flex items-center justify-between py-2 px-4 hover:bg-zinc-50 dark:hover:bg-primary/10 text-zinc-100 dark:hover:!text-blue-300 rounded-lg transition-colors duration-200"
-                  >
-                    <div className="flex items-center gap-2">
-                      {item.icon}
-                      <span className="text-sm font-medium  ">{item.label}</span>
-                    </div>
-                    <div className="flex items-center">
-                      {item.value && (
-                        <span className="text-sm text-zinc-500 dark:text-zinc-400 mr-2">
-                          {item.value}
-                        </span>
-                      )}
-                      {item.external && <MoveUpRight className="w-4 h-4" />}
-                    </div>
-                  </Link>
-                ),
-              )}
-              <button
+            <div className="flex flex-col gap-2 px-6">
+              {menuItems.map((item) => {
+                const isExternal = item.external || item.href.startsWith('http://') || item.href.startsWith('https://');
+
+                return isExternal
+                  ? (
+                      <Button
+                        variant="custom"
+                        key={item.label}
+                        disabled={isPending}
+                        onClick={() => mutate(item.href)}
+                        className="flex w-full items-center justify-between  py-2 px-4 hover:bg-zinc-50 dark:hover:bg-primary/10 text-zinc-100 dark:hover:!text-blue-300 rounded-lg transition-colors duration-200 capitalize "
+                      >
+
+                        <div className="flex items-center gap-2">
+                          {item.icon}
+                          <span className="text-sm font-medium">{item.label}</span>
+                        </div>
+                        {item.external && <ExternalLink className="w-4 h-4" />}
+                      </Button>
+                    )
+                  : (
+
+                      <Link
+                        key={item.label}
+                        to={item.href}
+                      >
+
+                        <Button
+                          variant="custom"
+                          key={item.label}
+                          className="flex w-full items-center justify-between py-2 px-4 hover:bg-zinc-50 dark:hover:bg-primary/10 text-zinc-100 dark:hover:!text-blue-300 rounded-lg transition-colors duration-200 capitalize"
+                        >
+                          <div className="flex gap-2 items-center w-full">
+                            {item.icon}
+                            <span className="text-sm font-medium">{item.label}</span>
+                          </div>
+                          {item.value && (
+                            <span className={cls('text-sm text-zinc-500 dark:text-zinc-400 mr-2', textClass)}>
+                              {item.value}
+                            </span>
+                          )}
+
+                        </Button>
+                      </Link>
+                    );
+              })}
+              <Button
+                variant="custom"
                 onClick={async () => {
                   logoutAction();
                 }}
-                type="button"
-                className="w-full flex cursor-pointer items-center justify-between py-2 px-4 hover:bg-zinc-50 dark:hover:bg-primary/10 text-zinc-100 dark:hover:!text-blue-300 rounded-lg transition-colors duration-200"
+                className="w-full flex items-center justify-between py-2 px-4 hover:bg-zinc-50 dark:hover:bg-red-900/10 text-zinc-100 dark:hover:!text-blue-300 rounded-lg transition-colors duration-200"
               >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 text-red-300 ">
                   <LogOut className="w-4 h-4" />
                   <span className="text-sm font-medium ">Logout</span>
                 </div>
-              </button>
+              </Button>
+
+              {user.premium?.tier === 'free' && (
+                <Link to="/subscription" className="pt-3">
+                  <RainbowButton className="w-full">
+                    Upgrade Plan
+                  </RainbowButton>
+                </Link>
+              )}
             </div>
           </div>
         </div>

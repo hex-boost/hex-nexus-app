@@ -1,16 +1,19 @@
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
-import { useContextMenu } from '@/contexts/ContextMenuContext';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuShortcut,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, RefreshCw } from 'lucide-react';
 
 export function DefaultContextMenu({ children }: { children: React.ReactNode }) {
-  const { hasCustomMenu } = useContextMenu();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   // If there's a custom menu active, just render children without the default menu
-  if (hasCustomMenu) {
-    return <>{children}</>;
-  }
   const handleBack = () => {
     router.history.back();
   };
@@ -18,6 +21,15 @@ export function DefaultContextMenu({ children }: { children: React.ReactNode }) 
   const handleForward = () => {
     router.history.forward();
   };
+
+  const handleReload = () => {
+    try {
+      queryClient.invalidateQueries();
+    } catch (error) {
+      console.error('Erro ao tentar recarregar a página:', error);
+    }
+  };
+
   const canGoBack = router.history.canGoBack();
 
   return (
@@ -27,7 +39,7 @@ export function DefaultContextMenu({ children }: { children: React.ReactNode }) 
       </ContextMenuTrigger>
       <ContextMenuContent className="w-64">
         <ContextMenuItem onClick={handleForward} className="flex items-center space-x-2">
-          <ArrowLeft className="size-4" />
+          <ArrowRight className="size-4" />
           <span>Forward</span>
         </ContextMenuItem>
         <ContextMenuItem
@@ -35,17 +47,14 @@ export function DefaultContextMenu({ children }: { children: React.ReactNode }) 
           onClick={handleBack}
           className="flex items-center space-x-2"
         >
-          <ArrowRight className="size-4" />
+          <ArrowLeft className="size-4" />
           <span>Back</span>
         </ContextMenuItem>
-        {/* <ContextMenuItem onClick={() => router.invalidate()} className=""> */}
-        {/*  <div className="space-x-2 flex items-center"> */}
-        {/*    <RefreshCw className="size-4" /> */}
-        {/*    <span>Reload</span> */}
-        {/*  </div> */}
-        {/* <ContextMenuShortcut>Ctrl+R</ContextMenuShortcut> */}
-
-        {/* </ContextMenuItem> */}
+        <ContextMenuItem onClick={handleReload} className="flex items-center space-x-2">
+          <RefreshCw className="size-4" />
+          <span>Reload</span>
+          <ContextMenuShortcut>Ctrl+R</ContextMenuShortcut>
+        </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
   );

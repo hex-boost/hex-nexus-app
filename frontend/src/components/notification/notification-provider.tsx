@@ -226,10 +226,6 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     (notification: ServerNotification) => {
       console.info('New notification received', notification.event, notification.title);
 
-      if (notification.event === NOTIFICATION_EVENTS.ACCOUNT_EXPIRED) {
-        Utils.ForceCloseAllClients();
-      }
-
       // Add priority to the notification
       const newNotification: ServerNotification = {
         ...notification,
@@ -237,6 +233,11 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
       addNotification(newNotification);
 
+      if (notification.event === NOTIFICATION_EVENTS.ACCOUNT_EXPIRED) {
+        Utils.ForceCloseAllClients().then(() => {
+          toast.info('Your account has expired, and the league has been closed.');
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
     },
     [addNotification, premiumModalStore, getPriorityForType, queryClient],

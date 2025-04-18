@@ -27,7 +27,6 @@
 
     --radius: 0.6rem;
 
-
     /* Shade variables */
     --color-shade0: hsl(var(--hue) 14% 93%);
     --color-shade0-15: hsla(var(--hue), 14%, 93%, 0.15);
@@ -157,7 +156,6 @@ html {
     }
 }
 
-
 .game-overlay-shadow {
     box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
 }
@@ -261,4 +259,29 @@ html {
 .animate-bell {
     animation: bell-shake 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
     transform-origin: top center;
+}
+
+
+:root {
+    --color-1: 0 100% 63%;
+    --color-2: 270 100% 63%;
+    --color-3: 210 100% 63%;
+    --color-4: 195 100% 63%;
+    --color-5: 90 100% 63%;
+}
+@theme inline {
+    --color-color-1: var(--color-1);
+    --color-color-2: var(--color-2);
+    --color-color-3: var(--color-3);
+    --color-color-4: var(--color-4);
+    --color-color-5: var(--color-5);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    }
+  body {
+    @apply bg-background text-foreground;
+    }
 }

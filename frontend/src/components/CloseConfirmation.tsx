@@ -30,7 +30,7 @@ export function CloseConfirmationHandler() {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Confirm Close</DialogTitle>
-          <DialogDescription>We notice you're with a nexus account in using, close the app will close and logout you as well</DialogDescription>
+          <DialogDescription>We notice you're with a nexus account in using, close nexus will close your League of Legends</DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={() => setShowCloseDialog(false)}>Cancel</Button>
