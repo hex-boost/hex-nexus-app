@@ -1,12 +1,8 @@
 import type { AccountType, UserType } from '@/types/types';
 import type { StrapiError } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
-import { useDateTime } from '@/hooks/useDateTime.ts';
 import { useGoState } from '@/hooks/useGoBindings.ts';
-import { usePrice } from '@/hooks/usePrice.ts';
-import { useRiotAccount } from '@/hooks/useRiotAccount.ts';
 import { strapiClient } from '@/lib/strapi';
 import { useAccountStore } from '@/stores/useAccountStore.ts';
-import { useUserStore } from '@/stores/useUserStore.ts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -22,74 +18,12 @@ export function useAccountActions({
 }) {
   const { Utils } = useGoState();
   const queryClient = useQueryClient();
-  const { price, getAccountPrice } = usePrice();
-  const { addTimeToExpiry } = useDateTime();
-  const { currentRanking } = useRiotAccount({ account });
   const { isNexusAccount } = useAccountStore();
   const [selectedRentalOptionIndex, setSelectedRentalOptionIndex] = useState<number>(1);
   const [isDropDialogOpen, setIsDropDialogOpen] = useState(false);
   const [selectedExtensionIndex, setSelectedExtensionIndex] = useState<number>(1);
   const router = useRouter();
 
-  const updateAccountCacheOptimistically = (extensionIndex: number) => {
-    if (!account || !price) {
-      return;
-    }
-
-    const extensionOption = getAccountPrice(price, currentRanking?.elo)[extensionIndex];
-    if (!extensionOption) {
-      return;
-    }
-
-    const secondsToAdd = extensionOption.hours * 3600;
-    const cost = extensionOption.price;
-
-    // Update accounts cache
-    queryClient.setQueryData(['accounts'], (oldData: any) => {
-      if (!oldData) {
-        return oldData;
-      }
-
-      return {
-        ...oldData,
-        data: oldData.data.map((acc: AccountType) => {
-          if (acc.documentId === account.documentId) {
-            // Calculate new expiry time
-            const mostRecentAction = acc.actionHistory.sort(
-              (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-            )[0];
-
-            const updatedExpiry = addTimeToExpiry(
-              mostRecentAction?.expirationDate.toString(),
-              secondsToAdd,
-            );
-
-            return {
-              ...acc,
-              actionHistory: [
-                ...acc.actionHistory,
-                {
-                  ...mostRecentAction,
-                  expirationDate: new Date(updatedExpiry),
-                  createdAt: new Date(),
-                },
-              ],
-            };
-          }
-          return acc;
-        }),
-      };
-    });
-
-    // Update user store with reduced coins
-    if (user) {
-      const updatedUser = {
-        ...user,
-        coins: Math.round(Number((user.coins || 0) - cost)),
-      };
-      useUserStore.getState().setUser(updatedUser);
-    }
-  };
   const invalidateRelatedQueries = async () => {
     await queryClient.invalidateQueries({ queryKey: ['accounts'] });
 
@@ -102,11 +36,14 @@ export function useAccountActions({
     data: dropRefund,
   } = useQuery({
     queryKey: ['accounts', 'refund', account?.id],
-    queryFn: () => strapiClient.find<{
-      amount: number;
-    }>(`accounts/${account?.documentId}/refund`).then(res => res.data),
+    queryFn: async () => {
+      return (await strapiClient.request<{
+        data: { amount: number };
+      }>('get', `accounts/${account?.documentId}/refund`, {
+        validateStatus: status => status <= 500,
+      })).data;
+    },
     enabled: account?.user?.documentId === user?.documentId,
-    staleTime: 0,
   });
 
   const { mutate: handleDropAccount, isPending: isDropPending } = useMutation<{ message: string }, StrapiError>({
@@ -114,11 +51,9 @@ export function useAccountActions({
     mutationFn: async () => {
       setIsDropDialogOpen(false);
 
-      const response = await strapiClient.request<{
+      return await strapiClient.request<{
         message: string;
       }>('post', `accounts/${account?.documentId}/drop`);
-
-      return response;
     },
     onSuccess: (data) => {
       invalidateRelatedQueries();
@@ -154,10 +89,6 @@ export function useAccountActions({
         duration: 3000,
       });
     },
-    onMutate: async (timeIndex) => {
-      // Optimistically update the UI before the actual API call
-      updateAccountCacheOptimistically(timeIndex);
-    },
     onSuccess: () => {
       invalidateRelatedQueries();
     },
@@ -184,8 +115,7 @@ export function useAccountActions({
         },
       });
     },
-    onSuccess: async (data, variables) => {
-      updateAccountCacheOptimistically(variables);
+    onSuccess: async (data) => {
       await invalidateRelatedQueries();
       toast.success(data.message);
       setIsDropDialogOpen(false); // Reset dialog state after successful rental
@@ -211,6 +141,5 @@ export function useAccountActions({
     isExtendPending,
     dropRefund,
     isNexusAccount,
-    updateAccountCacheOptimistically,
   };
 }
