@@ -142,15 +142,7 @@ function RouteComponent() {
   return (
     <div className="w-full">
       <div className="flex text-center justify-center items-center gap-4 flex-col">
-        {/* <div className="flex gap-2 items-center flex-col"> */}
-        {/*  <h2 className="text-3xl tracking-tighter max-w-xl text-center font-semibold"> */}
-        {/*    Choose Your Boosting Experience */}
-        {/*  </h2> */}
-        {/*  <p className="leading-relaxed tracking-tight text-muted-foreground max-w-xl text-center"> */}
-        {/*    Access premium LoL accounts for your boosting services with flexible plans */}
-        {/*  </p> */}
 
-        {/* </div> */}
         <PricingCards
           pricingPlans={pricingPlans}
         />
