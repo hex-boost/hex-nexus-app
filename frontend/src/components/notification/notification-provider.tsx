@@ -60,24 +60,18 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   const sortNotifications = useCallback((notifications: ServerNotification[]) => {
     return [...notifications].sort((a, b) => {
-      // First sort by priority
-      // const priorityOrder = { high: 0, medium: 1, low: 2 };
-      // const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
-
-      // if (priorityDiff !== 0) {
-      //   return priorityDiff;
-      // }
-
-      // Then by read status (unread first)
-      if (a.isSeen !== b.isSeen) {
-        return a.isSeen ? 1 : -1;
+      // Não lidas (isSeen: false) sempre no topo
+      if (!a.isSeen && b.isSeen) {
+        return -1; // a (não lida) vem antes de b (lida)
+      }
+      if (a.isSeen && !b.isSeen) {
+        return 1; // b (não lida) vem antes de a (lida)
       }
 
-      // Finally by timestamp (newest first)
+      // Se ambas têm o mesmo status de leitura, ordene por data (mais recentes primeiro)
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
   }, []);
-
   const updateUserNotifications = useCallback((updaterFn: (notifications: ServerNotification[]) => ServerNotification[]) => {
     queryClient.setQueryData(['users', 'me'], (oldData?: UserType) => {
       if (!oldData) {
@@ -85,14 +79,16 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       }
 
       const updatedNotifications = updaterFn(oldData.notifications || []);
+      console.log('notifications before sorting:', updatedNotifications);
+      const sortedNotifications = sortNotifications(updatedNotifications);
+      console.log('notifications after sorting:', sortedNotifications);
 
       return {
         ...oldData,
-        notifications: sortNotifications(updatedNotifications),
+        notifications: sortedNotifications,
       };
     });
   }, [queryClient, sortNotifications]);
-
   const addNotification = useCallback((notification: ServerNotification) => {
     if (!preferences.enabledTypes[notification.event as ServerNotificationEvents]) {
       return;
