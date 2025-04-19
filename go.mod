@@ -6,7 +6,6 @@ toolchain go1.24.1
 
 require (
 	github.com/fynelabs/selfupdate v0.2.0
-	github.com/go-ole/go-ole v1.3.0
 	github.com/go-resty/resty/v2 v2.16.5
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
@@ -36,6 +35,7 @@ require (
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.6.0 // indirect
 	github.com/go-git/go-git/v5 v5.12.0 // indirect
+	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/uuid v1.4.0 // indirect
