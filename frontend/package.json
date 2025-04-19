@@ -3,12 +3,15 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build:dev": "vite build --minify false --mode development",
-    "build": "tsc && vite build",
-    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0 --fix",
-    "preview": "vite preview"
+    "dev:main": "npm run -w nexus-main dev",
+    "dev:updater": "npm run -w nexus-updater dev",
+    "build:main": "npm run -w nexus-main build",
+    "build:updater": "npm run -w nexus-updater build",
+    "build:all": "npm run build:main && npm run build:updater"
   },
   "dependencies": {
     "@antfu/eslint-config": "^4.10.1",
@@ -88,7 +91,7 @@
     "tailwindcss": "^4.0.14",
     "typescript": "^5.8.2",
     "url": "^0.11.4",
-    "vite": "^6.2.1"
+    "vite": "6.2.6"
   },
   "resolutions": {
     "@radix-ui/react-dismissable-layer": "^1.1.3"

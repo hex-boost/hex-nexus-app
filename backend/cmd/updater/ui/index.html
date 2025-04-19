@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: white;
+        }
+        .progress-container {
+            width: 80%;
+            height: 10px;
+            background-color: #1a1a1a;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: #4CAF50;
+            border-radius: 5px;
+            transition: width 0.3s;
+        }
+        .status {
+            margin: 10px 0;
+        }
+        .logo {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+<img alt="Nexus Logo" class="logo" src="logo.png">
+<div class="status" id="status">Iniciando...</div>
+<div class="progress-container">
+    <div class="progress-bar" id="progress"></div>
+</div>
+</body>
+</html>

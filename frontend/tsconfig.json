@@ -24,45 +24,6 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     /* Path */
-    "paths": {
-      "@/*": [
-        "src/*"
-      ],
-      "@app": [
-        "bindings/github.com/hex-boost/hex-nexus-app/backend/app"
-      ],
-
-      "@riot": [
-        "bindings/github.com/hex-boost/hex-nexus-app/backend/riot"
-      ],
-      "@discord": [
-        "bindings/github.com/hex-boost/hex-nexus-app/backend/discord"
-      ],
-      "@league": [
-        "bindings/github.com/hex-boost/hex-nexus-app/backend/league"
-      ],
-      "@repository": [
-        "bindings/github.com/hex-boost/hex-nexus-app/backend/repository"
-      ],
-      "@updater": [
-        "bindings/github.com/hex-boost/hex-nexus-app/backend/updater"
-      ],
-
-      "@events": [
-        "bindings/github.com/hex-boost/hex-nexus-app/backend/events"
-      ],
-      "@utils": [
-        "bindings/github.com/hex-boost/hex-nexus-app/backend/utils"
-      ],
-
-      "@stripe": [
-        "bindings/github.com/hex-boost/hex-nexus-app/backend/stripe"
-      ],
-      "@overlay": [
-        "bindings/github.com/hex-boost/hex-nexus-app/backend/overlay"
-      ]
-
-    }
   },
   "include": [
     "src",

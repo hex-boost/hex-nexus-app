@@ -5,7 +5,7 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/wails"
 )
 
-//go:embed all:frontend/dist
+//go:embed all:frontend/packages/main/dist
 var assets embed.FS
 
 //go:embed build/appicon16x16.png
