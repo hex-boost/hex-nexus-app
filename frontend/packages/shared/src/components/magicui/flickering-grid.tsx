@@ -1,13 +1,5 @@
-'use client';
-
 import { cn } from '@/lib/utils';
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 type FlickeringGridProps = {
   squareSize?: number;

@@ -11,23 +11,10 @@
       "@shared": [
         "shared/"
       ],
-
-      "@/hooks/*": [
-        "main/src/hooks/*"
-      ],
-      "@/assets/*": [
-        "main/src/assets/*"
-      ],
-      "@/stores/*": [
-        "main/src/stores/*"
-      ],
-      "@/types/*": [
-        "main/src/types/*"
+      "@time": [
+        "main/bindings/time"
       ],
 
-      "@/contexts/*": [
-        "main/src/contexts/*"
-      ],
       "@app": [
         "main/bindings/github.com/hex-boost/hex-nexus-app/backend/app"
       ],

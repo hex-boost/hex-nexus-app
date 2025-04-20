@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator.tsx';
 import { WindowControls } from '@/components/WindowControls.tsx';
 import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
-import { useGoState } from '@/hooks/useGoBindings.ts';
+import { useGoState } from '@/hooks/useGoBindings';
 import { useProfileAvatar } from '@/hooks/useProfileAvatar.ts';
 import { userAuth } from '@/lib/strapi';
 import { cn } from '@/lib/utils';
@@ -140,7 +140,7 @@ export function LoginForm({
 
     <>
       <WindowControls className="absolute w-screen top-0 right-0 px-4 py-2" />
-      <div className=" min-h-screen w-screen   bg-background">
+      <div className=" min-h-screen   bg-background">
         <div className="w-full min-h-screen  bg-background ">
           <div
             className={cn('  min-h-screen  gap-6', className)}
@@ -306,7 +306,8 @@ export function LoginForm({
                         </div>
                       </div>
                     </TabsContent>
-                    <Button loading={isLoading} type="submit" className="w-full" disabled={isLoading}>
+                    <button className="bg-background px-6">fodase</button>
+                    <Button loading={isLoading} type="submit" className="w-full bg-red-500" disabled={isLoading}>
                       {activeTab === 'login'
                         ? isLoading ? 'Signing in...' : 'Sign in'
                         : isLoading ? 'Registering...' : 'Register'}

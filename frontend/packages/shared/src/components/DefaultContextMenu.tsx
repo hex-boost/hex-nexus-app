@@ -5,11 +5,11 @@ import {
   ContextMenuShortcut,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
+import { useUserStore } from '@/stores/useUserStore';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { Events } from '@wailsio/runtime';
 import { ArrowLeft, ArrowRight, LogOut, RefreshCw } from 'lucide-react';
-import { useUserStore } from 'nexus-main/src/stores/useUserStore';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 

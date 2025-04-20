@@ -7,7 +7,6 @@
       "DOM.Iterable",
       "ESNext"
     ],
-    "baseUrl": ".",
     "module": "ESNext",
     "skipLibCheck": true,
     /* Bundler mode */

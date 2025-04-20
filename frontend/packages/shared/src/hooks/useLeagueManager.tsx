@@ -6,9 +6,9 @@ import { useAccountStore } from '@/stores/useAccountStore.ts';
 import { ClientMonitor } from '@league';
 import { RiotClient } from '@riot';
 import { useMutation } from '@tanstack/react-query';
+import { Duration } from '@time';
 import { Call } from '@wailsio/runtime';
 import { toast } from 'sonner';
-import { Duration } from '../../bindings/time/index';
 
 export function useLeagueManager({
   account,
