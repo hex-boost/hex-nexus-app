@@ -25,7 +25,7 @@ export const availableRegions: Server[] = [
   'VN2',
   'TH2',
 ];
-type SortKey = keyof AccountType | 'coin_price' | 'winrate';
+type SortKey = keyof AccountType | 'coin_price' | 'winrate' | 'blueEssence';
 
 export function getLeaverBusterInfo(account: AccountType) {
   if (!account.leaverBuster?.leaverBusterEntryDto) {
@@ -300,6 +300,8 @@ export function useAccounts(page = 1, pageSize = 10) {
           queryParams.sort = `rankings.elo:${sortDirection}`;
         } else if (sortConfig.key === 'winrate') {
           queryParams.sort = `rankings.wins:${sortDirection}`;
+        } else if (sortConfig.key === 'blueEssence') {
+          queryParams.sort = `blueEssence:${sortDirection}`;
         } else {
           // Default sort for regular fields
           queryParams.sort = `${sortConfig.key}:${sortDirection}`;
@@ -392,6 +394,8 @@ export function useAccounts(page = 1, pageSize = 10) {
                 queryParams.sort = `rankings.elo:${sortDirection}`;
               } else if (sortConfig.key === 'winrate') {
                 queryParams.sort = `rankings.wins:${sortDirection}`;
+              } else if (sortConfig.key === 'blueEssence') {
+                queryParams.sort = `blueEssence:${sortDirection}`;
               } else {
                 // Default sort for regular fields
                 queryParams.sort = `${sortConfig.key}:${sortDirection}`;

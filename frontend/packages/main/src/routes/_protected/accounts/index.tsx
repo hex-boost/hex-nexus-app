@@ -508,7 +508,15 @@ function AccountsTable({
                 <SortIndicator column="LCUskins" />
               </div>
             </th>
-            <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Blue Essence</th>
+            <th
+              className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400 cursor-pointer"
+              onClick={() => requestSort('blueEssence')}
+            >
+              <div className="flex items-center">
+                Blue Essence
+                <SortIndicator column="blueEssence" />
+              </div>
+            </th>
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Status</th>
             <th
               className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400 cursor-pointer"
@@ -686,7 +694,7 @@ function Accounts() {
                             {getRegionIcon(region)}
                           </div>
                           <span className="text-sm">
-                            {getFormattedServer(server)}
+                            {getFormattedServer(region)}
                           </span>
                         </SelectItem>
                       ))}
