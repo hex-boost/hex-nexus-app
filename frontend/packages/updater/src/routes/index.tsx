@@ -1,6 +1,7 @@
 import UpdateOverlay from '@/components/update-animation/update-overlay.tsx';
 import { useUpdateManager } from '@/hooks/useUpdateManager.tsx';
 import { createFileRoute } from '@tanstack/react-router';
+import { useEffect } from 'react';
 
 export const Route = createFileRoute('/')({
   component: RouteComponent,

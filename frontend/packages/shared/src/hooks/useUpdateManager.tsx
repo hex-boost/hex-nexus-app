@@ -1,3 +1,5 @@
+import { UpdateManager } from '@manager';
+import { Events } from '@wailsio/runtime';
 import { useEffect, useState } from 'react';
 
 type UpdateStatus = {
@@ -21,12 +23,12 @@ export function useUpdateManager() {
 
   useEffect(() => {
     // Inscrever-se para receber atualizações de status
-    const unsubscribe = Events.On('updater:status-change', (status: UpdateStatus) => {
-      setUpdateStatus(status);
+    const unsubscribe = Events.On('updater:status-change', (event) => {
+      setUpdateStatus(event.data[0]);
     });
 
     // Verificar se há atualizações ao montar o componente
-    checkForUpdates();
+    UpdateManager.CheckForUpdates();
 
     return () => {
       unsubscribe();
@@ -36,10 +38,10 @@ export function useUpdateManager() {
   const checkForUpdates = async () => {
     try {
       // Chama a função do backend para verificar atualizações
-      const status = await window.go.updater.UpdaterService.CheckForUpdates();
-      setUpdateStatus(status);
+      const [needsUpdate, version] = await UpdateManager.CheckForUpdates();
+      setUpdateStatus({ latestVersion: version, needsUpdate, status: updateStatus.status, progress: 0, currentVersion: updateStatus.currentVersion });
 
-      if (status.needsUpdate) {
+      if (needsUpdate) {
         setIsUpdateOverlayVisible(true);
       }
     } catch (error) {
@@ -47,17 +49,26 @@ export function useUpdateManager() {
     }
   };
 
-  const startUpdate = async () => {
+  const downloadUpdate = async () => {
     try {
-      const status = await window.go.updater.UpdaterService.StartUpdate();
-      setUpdateStatus(status);
+      const [downloadPath, version] = await UpdateManager.DownloadUpdate();
+      setUpdateStatus(updateStatus);
+    } catch (error) {
+      console.error('Erro ao iniciar atualização:', error);
+    }
+  };
+
+  const installUpdate = async (downloadPath: string, version: string) => {
+    try {
+      const [downloadPath, version] = await UpdateManager.InstallUpdate(downloadPath, version);
+      setUpdateStatus(updateStatus);
     } catch (error) {
       console.error('Erro ao iniciar atualização:', error);
     }
   };
 
   const restartApplication = async () => {
-    await window.go.updater.UpdaterService.RestartApplication();
+    await UpdateManager.StartMainApplication('Nexus');
   };
 
   const hideUpdateOverlay = () => {
@@ -68,7 +79,7 @@ export function useUpdateManager() {
     updateStatus,
     isUpdateOverlayVisible,
     checkForUpdates,
-    startUpdate,
+    downloadUpdate,
     restartApplication,
     hideUpdateOverlay,
   };

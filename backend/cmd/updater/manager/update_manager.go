@@ -20,12 +20,14 @@ type UpdateManager struct {
 	currentVer   string
 	updaterUtils *updaterUtils.UpdaterUtils
 	config       *config.Config
+	logger       *utils.Logger
 }
 
 func NewUpdateManager(config *config.Config, utils *updaterUtils.UpdaterUtils, logger *utils.Logger) *UpdateManager {
 	return &UpdateManager{
 		config:       config,
 		updaterUtils: utils,
+		logger:       logger,
 		client:       resty.New(),
 	}
 }
@@ -68,10 +70,11 @@ func (u *UpdateManager) CheckForUpdates() (bool, string) {
 	return result.NeedsUpdate, result.Version
 }
 
-func (u *UpdateManager) DownloadAndInstallUpdate() error {
+// DownloadUpdate baixa a última versão da atualização e retorna o caminho temporário e a versão
+func (u *UpdateManager) DownloadUpdate() (downloadPath string, version string, err error) {
 	resp, err := u.client.R().Get(fmt.Sprintf("%s/api/versions/latest", u.config.BackendURL))
 	if err != nil {
-		return err
+		return "", "", err
 	}
 
 	var versionResp struct {
@@ -84,12 +87,12 @@ func (u *UpdateManager) DownloadAndInstallUpdate() error {
 	}
 
 	if err := json.Unmarshal(resp.Body(), &versionResp); err != nil {
-		return err
+		return "", "", err
 	}
 
 	fileURL := versionResp.LatestVersion.File.URL
 	if fileURL == "" {
-		return fmt.Errorf("URL da atualização não encontrada")
+		return "", "", fmt.Errorf("URL da atualização não encontrada")
 	}
 
 	// Adicionar domínio base se necessário
@@ -105,9 +108,29 @@ func (u *UpdateManager) DownloadAndInstallUpdate() error {
 		SetDoNotParseResponse(true).
 		Get(fileURL)
 	if err != nil {
-		return err
+		return "", "", err
 	}
 
+	// Criar um arquivo temporário para o download
+	tempFile, err := os.CreateTemp("", "nexus-update-*.exe")
+	if err != nil {
+		return "", "", err
+	}
+	defer tempFile.Close()
+
+	// Extrair e salvar binário
+	binReader := respDownload.RawBody()
+	defer binReader.Close()
+
+	if _, err = io.Copy(tempFile, binReader); err != nil {
+		return "", "", err
+	}
+
+	return tempFile.Name(), versionResp.LatestVersion.Version, nil
+}
+
+// InstallUpdate instala a atualização baixada no local correto
+func (u *UpdateManager) InstallUpdate(downloadPath string, version string) error {
 	// Criar diretório de destino
 	baseDir, err := updaterUtils.ExecutableFn()
 	if err != nil {
@@ -115,7 +138,7 @@ func (u *UpdateManager) DownloadAndInstallUpdate() error {
 	}
 	// fix
 	baseDir = filepath.Dir(baseDir)
-	newAppDir := filepath.Join(baseDir, "app-"+versionResp.LatestVersion.Version)
+	newAppDir := filepath.Join(baseDir, "app-"+version)
 
 	if err := os.MkdirAll(newAppDir, 0755); err != nil {
 		return err
@@ -127,28 +150,39 @@ func (u *UpdateManager) DownloadAndInstallUpdate() error {
 	//u.ui.SetStatus("Instalando atualização...")
 	//u.ui.SetProgress(50)
 
-	// Extrair e salvar binário
-	binReader := respDownload.RawBody()
-	defer binReader.Close()
+	// Copiar do arquivo temporário para o destino
+	source, err := os.Open(downloadPath)
+	if err != nil {
+		return err
+	}
+	defer source.Close()
 
-	// Opção 1: Aplicar diretamente se for um executável completo
-	// err = selfupdate.Apply(binReader, selfupdate.Options{TargetPath: targetPath})
-
-	// Opção 2: Extrair arquivos se for um pacote
 	outFile, err := os.Create(targetPath)
 	if err != nil {
 		return err
 	}
 	defer outFile.Close()
 
-	if _, err = io.Copy(outFile, binReader); err != nil {
+	if _, err = io.Copy(outFile, source); err != nil {
 		return err
 	}
+
+	// Limpar o arquivo temporário
+	os.Remove(downloadPath)
 
 	//u.ui.SetProgress(100)
 	//u.ui.SetStatus("Atualização concluída!")
 
 	return nil
+}
+
+func (u *UpdateManager) DownloadAndInstallUpdate() error {
+	downloadPath, version, err := u.DownloadUpdate()
+	if err != nil {
+		return err
+	}
+
+	return u.InstallUpdate(downloadPath, version)
 }
 func (u *UpdateManager) StartMainApplication(exeName string) {
 	appDir, err := u.updaterUtils.GetLatestAppDir()
