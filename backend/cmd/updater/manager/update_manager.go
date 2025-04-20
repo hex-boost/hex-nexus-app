@@ -1,42 +1,39 @@
-package main
+package manager
 
 import (
 	"encoding/json"
 	"fmt"
+	updaterUtils "github.com/hex-boost/hex-nexus-app/backend/cmd/updater/utils"
 	"github.com/hex-boost/hex-nexus-app/backend/config"
+	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
 	"github.com/go-resty/resty/v2"
 )
 
-type UpdaterUI interface {
-	SetStatus(status string)
-	SetProgress(percent int)
-	SetError(errorMsg string)
-	Show()
-}
 type UpdateManager struct {
-	ui         UpdaterUI
-	client     *resty.Client
-	currentVer string
-	config     *config.Config
+	client       *resty.Client
+	currentVer   string
+	updaterUtils *updaterUtils.UpdaterUtils
+	config       *config.Config
 }
 
-func NewUpdateManager(ui UpdaterUI, config *config.Config) *UpdateManager {
+func NewUpdateManager(config *config.Config, utils *updaterUtils.UpdaterUtils, logger *utils.Logger) *UpdateManager {
 	return &UpdateManager{
-		config: config,
-		ui:     ui,
-		client: resty.New(),
+		config:       config,
+		updaterUtils: utils,
+		client:       resty.New(),
 	}
 }
 func (u *UpdateManager) CheckForUpdates() (bool, string) {
-	u.ui.SetStatus("Verificando atualizações...")
+	//u.ui.SetStatus("Verificando atualizações...")
 
 	// Obter a versão atual do diretório da aplicação
-	appDir, err := getLatestAppDir()
+	appDir, err := u.updaterUtils.GetLatestAppDir()
 	if err == nil {
 		dirName := filepath.Base(appDir)
 		if strings.HasPrefix(dirName, "app-") {
@@ -55,7 +52,7 @@ func (u *UpdateManager) CheckForUpdates() (bool, string) {
 		Get(fmt.Sprintf("%s/api/versions/update", u.config.BackendURL))
 
 	if err != nil {
-		u.ui.SetStatus("Erro ao conectar ao servidor")
+		//u.ui.SetStatus("Erro ao conectar ao servidor")
 		return false, ""
 	}
 
@@ -69,11 +66,6 @@ func (u *UpdateManager) CheckForUpdates() (bool, string) {
 	}
 
 	return result.NeedsUpdate, result.Version
-}
-
-// Variável para encapsular os.Executable e permitir testes
-var executableFn = func() (string, error) {
-	return os.Executable()
 }
 
 func (u *UpdateManager) DownloadAndInstallUpdate() error {
@@ -106,8 +98,8 @@ func (u *UpdateManager) DownloadAndInstallUpdate() error {
 	}
 
 	// Baixar atualização
-	u.ui.SetStatus("Baixando atualização...")
-	u.ui.SetProgress(0)
+	//u.ui.SetStatus("Baixando atualização...")
+	//u.ui.SetProgress(0)
 
 	respDownload, err := u.client.R().
 		SetDoNotParseResponse(true).
@@ -117,7 +109,7 @@ func (u *UpdateManager) DownloadAndInstallUpdate() error {
 	}
 
 	// Criar diretório de destino
-	baseDir, err := executableFn()
+	baseDir, err := updaterUtils.ExecutableFn()
 	if err != nil {
 		return err
 	}
@@ -132,8 +124,8 @@ func (u *UpdateManager) DownloadAndInstallUpdate() error {
 	// Salvar o novo executável
 	targetPath := filepath.Join(newAppDir, "Nexus.exe")
 
-	u.ui.SetStatus("Instalando atualização...")
-	u.ui.SetProgress(50)
+	//u.ui.SetStatus("Instalando atualização...")
+	//u.ui.SetProgress(50)
 
 	// Extrair e salvar binário
 	binReader := respDownload.RawBody()
@@ -153,8 +145,28 @@ func (u *UpdateManager) DownloadAndInstallUpdate() error {
 		return err
 	}
 
-	u.ui.SetProgress(100)
-	u.ui.SetStatus("Atualização concluída!")
+	//u.ui.SetProgress(100)
+	//u.ui.SetStatus("Atualização concluída!")
 
 	return nil
+}
+func (u *UpdateManager) StartMainApplication(exeName string) {
+	appDir, err := u.updaterUtils.GetLatestAppDir()
+	if err != nil {
+		fmt.Printf("Erro ao determinar diretório do aplicativo: %v\n", err)
+		os.Exit(1)
+	}
+
+	appPath := filepath.Join(appDir, exeName)
+	cmd := exec.Command(appPath)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Start(); err != nil {
+		fmt.Printf("Erro ao iniciar o aplicativo: %v\n", err)
+		os.Exit(1)
+	}
+
+	os.Exit(0)
 }

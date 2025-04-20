@@ -3,6 +3,7 @@ package ui
 import (
 	"embed"
 	"fmt"
+	"github.com/hex-boost/hex-nexus-app/backend/cmd/updater/manager"
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
@@ -14,9 +15,11 @@ type UpdaterWindow struct {
 	app    *application.App
 }
 
-func NewUpdaterWindow() *UpdaterWindow {
+func NewUpdaterWindow(updateManager *manager.UpdateManager) *UpdaterWindow {
 	app := application.New(application.Options{
-		Name:        "NexusUpdater",
+		Name: "NexusUpdater",
+
+		Services:    []application.Service{application.NewService(updateManager)},
 		Description: "Nexus Update Manager",
 		Assets: application.AssetOptions{
 			Handler: application.BundledAssetFileServer(assets),
@@ -25,13 +28,14 @@ func NewUpdaterWindow() *UpdaterWindow {
 
 	window := app.NewWebviewWindowWithOptions(
 		application.WebviewWindowOptions{
-			Title:         "Nexus Updater",
-			Width:         1280,
-			Height:        1024,
-			AlwaysOnTop:   false,
-			Hidden:        false,
-			DisableResize: true,
-			Frameless:     true,
+			Title:                      "Nexus Updater",
+			DefaultContextMenuDisabled: true,
+			Width:                      1024,
+			Height:                     768,
+			AlwaysOnTop:                false,
+			Hidden:                     false,
+			DisableResize:              true,
+			Frameless:                  true,
 		},
 	)
 
@@ -47,19 +51,4 @@ func (u *UpdaterWindow) Show() {
 		fmt.Printf("Error starting updater window: %v\n", err)
 		return
 	}
-}
-
-func (u *UpdaterWindow) SetStatus(status string) {
-	u.window.ExecJS(fmt.Sprintf(`document.getElementById('status').innerText = '%s';`, status))
-}
-
-func (u *UpdaterWindow) SetProgress(percent int) {
-	u.window.ExecJS(fmt.Sprintf(`document.getElementById('progress').style.width = '%d%%';`, percent))
-}
-
-func (u *UpdaterWindow) SetError(errorMsg string) {
-	u.window.ExecJS(fmt.Sprintf(`
-        document.getElementById('status').innerText = '%s';
-        document.getElementById('status').style.color = 'red';
-    `, errorMsg))
 }

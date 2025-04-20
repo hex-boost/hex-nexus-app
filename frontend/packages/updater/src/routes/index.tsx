@@ -1,14 +1,60 @@
 import UpdateOverlay from '@/components/update-animation/update-overlay.tsx';
+import { useUpdateManager } from '@/hooks/useUpdateManager.tsx';
 import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
 
 export const Route = createFileRoute('/')({
   component: RouteComponent,
 });
 
 function RouteComponent() {
-  // const [isMaximized, setIsMaximized] = useState(false);
-  const [_, setShowDemo] = useState(false);
+  const {
+    updateStatus,
+    isUpdateOverlayVisible,
+    startUpdate,
+    restartApplication,
+    hideUpdateOverlay,
+  } = useUpdateManager();
+
+  // Mapeamento do status do backend para o componente
+  const mapStatusToUiStatus = (): 'checking' | 'downloading' | 'installing' | 'complete' | 'error' => {
+    switch (updateStatus.status) {
+      case 'Verificando atualizações...':
+        return 'checking';
+      case 'Baixando atualização...':
+        return 'downloading';
+      case 'Instalando atualização...':
+        return 'installing';
+      case 'complete':
+        return 'complete';
+      case 'error':
+        return 'error';
+      default:
+        return 'checking';
+    }
+  };
+
+  const handleComplete = () => {
+    if (updateStatus.status === 'complete') {
+      restartApplication();
+    } else if (updateStatus.status === 'error') {
+      hideUpdateOverlay();
+    } else if (updateStatus.needsUpdate) {
+      startUpdate();
+    } else {
+      hideUpdateOverlay();
+    }
+  };
+
+  useEffect(() => {
+    if (updateStatus.status === 'complete') {
+      // Aguardar um tempo para mostrar a mensagem de conclusão
+      const timer = setTimeout(() => {
+        restartApplication();
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [updateStatus.status]);
 
   return (
   // <div

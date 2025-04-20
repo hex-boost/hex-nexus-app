@@ -6,11 +6,15 @@ import UpdateProgress from './update-progress';
 
 export type UpdateStatus = 'checking' | 'downloading' | 'installing' | 'complete' | 'error';
 
-type UpdateOverlayProps = {
+export type UpdateOverlayProps = {
   isVisible: boolean;
   onComplete: () => void;
   onError?: (error: string) => void;
-  simulateUpdate?: boolean; // For demo purposes
+  simulateUpdate?: boolean;
+  status?: UpdateStatus;
+  progress?: number;
+  errorMessage?: string;
+  version?: string;
 };
 const StatusMessage = memo(({ message }: { message: string }) => (
   <TextShimmer

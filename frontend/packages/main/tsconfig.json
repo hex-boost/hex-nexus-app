@@ -11,6 +11,9 @@
       "@/*": [
         "shared/src/*"
       ],
+      "@manager": [
+        "updater/bindings/github.com/hex-boost/hex-nexus-app/backend/cmd/updater/manager"
+      ],
 
       "@time": [
         "main/bindings/time"
