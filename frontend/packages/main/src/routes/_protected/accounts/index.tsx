@@ -579,7 +579,7 @@ function Accounts() {
     sortConfig,
   } = useAccounts(currentPage, pageSize);
 
-  const { getCompanyIcon } = useMapping();
+  const { getCompanyIcon, getFormattedServer } = useMapping();
   const { allChampions, allSkins, isLoading: isDataDragonLoading } = useAllDataDragon();
   const { price, isPriceLoading } = usePrice();
 
@@ -686,7 +686,7 @@ function Accounts() {
                             {getRegionIcon(region)}
                           </div>
                           <span className="text-sm">
-                            {region === 'LA1' ? 'LAN' : region === 'OC1' ? 'OCE' : region === 'ME1' ? 'MEA' : region === 'EUN1' ? 'EUNE' : region.slice(0, region.length - 1)}
+                            {getFormattedServer(server)}
                           </span>
                         </SelectItem>
                       ))}
