@@ -6,6 +6,7 @@ frontend/bindings
 build/bin/*
 bin/*
 .task
+bindings
 *.syso
 /build/icons.icns
 /build/windows/icons.ico
