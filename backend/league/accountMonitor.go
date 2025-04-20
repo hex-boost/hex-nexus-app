@@ -262,7 +262,6 @@ func (am *AccountMonitor) checkCurrentAccount() {
 
 	am.logger.Debug("Current logged-in account", zap.String("summonerNameWithTag", currentUsername))
 
-	// Use cached accounts instead of fetching every time
 	accounts, err := am.getAccountsWithCache()
 	if err != nil {
 		am.logger.Error("Failed to retrieve Nexus-managed accounts",

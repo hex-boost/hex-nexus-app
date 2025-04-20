@@ -1,17 +1,17 @@
 import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuShortcut,
-  ContextMenuTrigger,
+    ContextMenu,
+    ContextMenuContent,
+    ContextMenuItem,
+    ContextMenuShortcut,
+    ContextMenuTrigger,
 } from '@/components/ui/context-menu';
-import { useUserStore } from '@/stores/useUserStore';
-import { useQueryClient } from '@tanstack/react-query';
-import { useRouter } from '@tanstack/react-router';
-import { Events } from '@wailsio/runtime';
-import { ArrowLeft, ArrowRight, LogOut, RefreshCw } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { toast } from 'sonner';
+import {useUserStore} from '@/stores/useUserStore';
+import {useQueryClient} from '@tanstack/react-query';
+import {useRouter} from '@tanstack/react-router';
+import {Events} from '@wailsio/runtime';
+import {ArrowLeft, ArrowRight, LogOut, RefreshCw} from 'lucide-react';
+import {useEffect, useState} from 'react';
+import {toast} from 'sonner';
 
 export function DefaultContextMenu({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -71,7 +71,8 @@ export function DefaultContextMenu({ children }: { children: React.ReactNode }) 
       </ContextMenuTrigger>
       <ContextMenuContent className="w-64">
         <ContextMenuItem onClick={handleForward} className="flex items-center space-x-2">
-          <ArrowRight className="size-4" />
+
+            <ArrowLeft className="size-4" />
           <span>Forward</span>
         </ContextMenuItem>
         <ContextMenuItem
@@ -79,7 +80,7 @@ export function DefaultContextMenu({ children }: { children: React.ReactNode }) 
           onClick={handleBack}
           className="flex items-center  space-x-2"
         >
-          <ArrowLeft className="size-4" />
+            <ArrowRight className="size-4" />
           <span>Back</span>
         </ContextMenuItem>
         <ContextMenuItem disabled={isReloading} onClick={handleReload} className="flex items-center space-x-2">
