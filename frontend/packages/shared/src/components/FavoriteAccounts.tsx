@@ -1,5 +1,3 @@
-'use client';
-
 import type { UserType } from '@/types/types.ts';
 import { AccountCard } from '@/components/AccountCard.tsx';
 import { NoFavoritesFound } from '@/components/empty-states';

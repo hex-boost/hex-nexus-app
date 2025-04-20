@@ -17,14 +17,13 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        updater: path.resolve(__dirname, 'index.html'),
+        main: path.resolve(__dirname, 'index.html'),
       },
     },
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@shared': path.resolve(__dirname, '../shared/src'),
+      '@': path.resolve(__dirname, '../shared/src'),
     },
 
   },

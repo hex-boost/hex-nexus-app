@@ -2,7 +2,7 @@ import { createRouter, RouterProvider } from '@tanstack/react-router';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { routeTree } from './routeTree.gen.ts';
-import '@shared/index.css';
+import './index.css';
 
 // Router isolado para o updater
 const router = createRouter({ routeTree });
