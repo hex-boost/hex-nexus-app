@@ -16,7 +16,6 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/watchdog"
 	"os/signal"
 	"strconv"
-	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -72,15 +71,6 @@ func StartWatchdog() error {
 	return nil
 }
 func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
-	var protocolURL string
-	for _, arg := range os.Args {
-
-		fmt.Println(arg)
-		if strings.HasPrefix(arg, "nexus://") {
-			protocolURL = arg
-			break
-		}
-	}
 
 	cfg, _ := config.LoadConfig()
 
