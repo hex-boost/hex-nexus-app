@@ -12,7 +12,6 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/repository"
 	"github.com/hex-boost/hex-nexus-app/backend/riot"
 	"github.com/hex-boost/hex-nexus-app/backend/stripe"
-	"github.com/hex-boost/hex-nexus-app/backend/updater"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/hex-boost/hex-nexus-app/backend/watchdog"
 	"os/signal"
@@ -156,9 +155,8 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		panic(fmt.Sprintf("error starting watchdog %v", err))
 		return
 	}
-	updater.NewUpdater(cfg, appInstance.Log().Wails()).Start()
+	//updater.NewUpdater(cfg, appInstance.Log().Wails()).Start()
 	mainLogger := appInstance.Log().Wails()
-	mainLogger.Info(fmt.Sprintf("Initializing with version %s and backendUrl %s and apiToken %s and protocolUrl %s", cfg.Version, cfg.BackendURL, cfg.RefreshApiKey, protocolURL))
 	appProtocol := protocol.New(appInstance.Log().Protocol())
 	if err := appProtocol.Register(); err != nil {
 		mainLogger.Info("Warning: Failed to register custom protocol", zap.Error(err))

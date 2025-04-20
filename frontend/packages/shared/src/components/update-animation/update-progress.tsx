@@ -12,7 +12,6 @@ export default function UpdateProgress({ progress }: UpdateProgressProps) {
           {progress}
           %
         </span>
-        <span>100%</span>
       </div>
       <div className="h-2 bg-[#1F1F23] rounded-full overflow-hidden">
         <motion.div

@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/hex-boost/hex-nexus-app/backend/config"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,26 +15,27 @@ import (
 )
 
 func main() {
-	// Argumentos de linha de comando
 	processStart := flag.String("processStart", "", "Nome do processo a ser iniciado")
 	flag.Parse()
 
-	// Se chamado com --processStart, apenas inicie o aplicativo
 	if *processStart != "" {
 		startMainApplication(*processStart)
 		return
 	}
 
-	// Caso contrário, inicie a interface do atualizador
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		fmt.Printf("Erro ao carregar configuração: %v\n", err)
+		os.Exit(1)
+	}
 	updateWindow := ui.NewUpdaterWindow()
-	updateManager := NewUpdateManager(updateWindow)
+	updateManager := NewUpdateManager(updateWindow, cfg)
 
 	// Inicia a verificação de atualizações
 	go func() {
 		hasUpdate, newVersion := updateManager.CheckForUpdates()
 
 		if hasUpdate {
-			// Se houver atualização, mostra progresso e atualiza
 			updateWindow.SetStatus(fmt.Sprintf("Atualizando para versão %s...", newVersion))
 			err := updateManager.DownloadAndInstallUpdate()
 			if err != nil {
@@ -72,7 +74,7 @@ func startMainApplication(exeName string) {
 }
 
 func getLatestAppDir() (string, error) {
-	baseDir, err := os.Executable()
+	baseDir, err := executableFn()
 	if err != nil {
 		return "", err
 	}

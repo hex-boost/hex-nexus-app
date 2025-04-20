@@ -3,44 +3,56 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/hex-boost/hex-nexus-app/backend/config"
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/hex-boost/hex-nexus-app/backend/cmd/updater/ui"
 )
 
-const BackendURL = "https://nexus-back.up.railway.app"
-
+type UpdaterUI interface {
+	SetStatus(status string)
+	SetProgress(percent int)
+	SetError(errorMsg string)
+	Show()
+}
 type UpdateManager struct {
-	ui         *ui.UpdaterWindow
+	ui         UpdaterUI
 	client     *resty.Client
 	currentVer string
+	config     *config.Config
 }
 
-func NewUpdateManager(ui *ui.UpdaterWindow) *UpdateManager {
+func NewUpdateManager(ui UpdaterUI, config *config.Config) *UpdateManager {
 	return &UpdateManager{
+		config: config,
 		ui:     ui,
 		client: resty.New(),
 	}
 }
-
 func (u *UpdateManager) CheckForUpdates() (bool, string) {
 	u.ui.SetStatus("Verificando atualizações...")
 
-	// Obtém versão atual
-	currentVer, err := u.getCurrentVersion()
-	if err != nil {
-		u.ui.SetStatus("Erro ao verificar versão atual")
-		return false, ""
+	// Obter a versão atual do diretório da aplicação
+	appDir, err := getLatestAppDir()
+	if err == nil {
+		dirName := filepath.Base(appDir)
+		if strings.HasPrefix(dirName, "app-") {
+			u.currentVer = strings.TrimPrefix(dirName, "app-")
+		} else {
+			// Fallback para a versão do config
+			u.currentVer = u.config.Version
+		}
+	} else {
+		u.currentVer = u.config.Version
 	}
-	u.currentVer = currentVer
 
 	// Verifica se há atualização
 	resp, err := u.client.R().
-		SetHeader("x-client-version", currentVer).
-		Get(fmt.Sprintf("%s/api/versions/update", BackendURL))
+		SetHeader("x-client-version", u.currentVer).
+		Get(fmt.Sprintf("%s/api/versions/update", u.config.BackendURL))
 
 	if err != nil {
 		u.ui.SetStatus("Erro ao conectar ao servidor")
@@ -59,9 +71,13 @@ func (u *UpdateManager) CheckForUpdates() (bool, string) {
 	return result.NeedsUpdate, result.Version
 }
 
+// Variável para encapsular os.Executable e permitir testes
+var executableFn = func() (string, error) {
+	return os.Executable()
+}
+
 func (u *UpdateManager) DownloadAndInstallUpdate() error {
-	// Obter informações da versão mais recente
-	resp, err := u.client.R().Get(fmt.Sprintf("%s/api/versions/latest", BackendURL))
+	resp, err := u.client.R().Get(fmt.Sprintf("%s/api/versions/latest", u.config.BackendURL))
 	if err != nil {
 		return err
 	}
@@ -86,7 +102,7 @@ func (u *UpdateManager) DownloadAndInstallUpdate() error {
 
 	// Adicionar domínio base se necessário
 	if fileURL[0] == '/' {
-		fileURL = BackendURL + fileURL
+		fileURL = u.config.BackendURL + fileURL
 	}
 
 	// Baixar atualização
@@ -101,10 +117,11 @@ func (u *UpdateManager) DownloadAndInstallUpdate() error {
 	}
 
 	// Criar diretório de destino
-	baseDir, err := os.Executable()
+	baseDir, err := executableFn()
 	if err != nil {
 		return err
 	}
+	// fix
 	baseDir = filepath.Dir(baseDir)
 	newAppDir := filepath.Join(baseDir, "app-"+versionResp.LatestVersion.Version)
 
@@ -136,28 +153,8 @@ func (u *UpdateManager) DownloadAndInstallUpdate() error {
 		return err
 	}
 
-	// Atualizar versão atual
 	u.ui.SetProgress(100)
 	u.ui.SetStatus("Atualização concluída!")
 
 	return nil
-}
-
-func (u *UpdateManager) getCurrentVersion() (string, error) {
-	// Tentar ler de um arquivo version.txt
-	execPath, err := os.Executable()
-	if err != nil {
-		return "unknown", err
-	}
-
-	baseDir := filepath.Dir(execPath)
-	versionFile := filepath.Join(baseDir, "version.txt")
-
-	content, err := os.ReadFile(versionFile)
-	if err == nil {
-		return string(content), nil
-	}
-
-	// Fallback para versão embutida
-	return "1.0.0", nil
 }
