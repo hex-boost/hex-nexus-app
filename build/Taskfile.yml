@@ -27,7 +27,7 @@ tasks:
     sources:
       - "**/*"
     generates:
-      - dist/*
+      - packages/main/dist/*
     deps:
       - task: install:frontend:deps
       - task: generate:bindings
@@ -39,7 +39,7 @@ tasks:
       VITE_APP_VERSION: '{{.VERSION}}'
       VITE_API_URL: '{{.API_URL | default "http://localhost:1337"}}'
     vars:
-      BUILD_COMMAND: '{{if eq .PRODUCTION "true"}}build{{else}}build:dev{{end}}'
+      BUILD_COMMAND: '{{if eq .PRODUCTION "true"}}build:main{{else}}build:main{{end}}'
 
 
   generate:bindings:

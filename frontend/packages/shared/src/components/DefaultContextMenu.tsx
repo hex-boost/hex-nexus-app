@@ -8,13 +8,15 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { Events } from '@wailsio/runtime';
-import { ArrowLeft, ArrowRight, RefreshCw } from 'lucide-react';
+import { ArrowLeft, ArrowRight, LogOut, RefreshCw } from 'lucide-react';
+import { useUserStore } from 'nexus-main/src/stores/useUserStore';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 export function DefaultContextMenu({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { logout } = useUserStore();
 
   // If there's a custom menu active, just render children without the default menu
   const handleBack = () => {
@@ -82,6 +84,11 @@ export function DefaultContextMenu({ children }: { children: React.ReactNode }) 
           <span>Reload</span>
           <ContextMenuShortcut>Ctrl+R</ContextMenuShortcut>
         </ContextMenuItem>
+        <ContextMenuItem onClick={() => logout} className="flex items-center space-x-2">
+          <LogOut className="size-4" />
+          <span>Logout</span>
+        </ContextMenuItem>
+
       </ContextMenuContent>
     </ContextMenu>
   );
