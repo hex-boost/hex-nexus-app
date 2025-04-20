@@ -16,6 +16,7 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
+      '@shared': path.resolve(__dirname, '../shared'),
       '@': path.resolve(__dirname, '../shared/src'),
 
       '@app': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/app'),

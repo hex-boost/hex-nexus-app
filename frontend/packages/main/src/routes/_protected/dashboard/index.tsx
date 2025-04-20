@@ -16,7 +16,7 @@ export function HomeDashboard() {
         {user?.username}
       </h1>
 
-      <Dashboard user={user!} />
+      <Dashboard user={user} />
     </>
   );
 }

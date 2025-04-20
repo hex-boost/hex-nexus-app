@@ -9,7 +9,7 @@ import { ArrowRight } from 'lucide-react';
 type FavoriteAccountsProps = {
   className?: string;
   onViewAll?: () => void;
-  user: UserType;
+  user: UserType | null;
 };
 
 export default function FavoriteAccounts({
@@ -30,7 +30,7 @@ export default function FavoriteAccounts({
     navigate({ to: '/accounts' });
   };
 
-  const hasFavorites = user.favoriteAccounts && user.favoriteAccounts.length > 0;
+  const hasFavorites = user?.favoriteAccounts && user?.favoriteAccounts.length > 0;
 
   return (
     <>

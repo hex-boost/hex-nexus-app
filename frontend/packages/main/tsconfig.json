@@ -4,13 +4,14 @@
     "outDir": "lib",
     "baseUrl": "..",
     "paths": {
+
+      "@shared": [
+        "shared/*"
+      ],
       "@/*": [
         "shared/src/*"
       ],
 
-      "@shared": [
-        "shared/"
-      ],
       "@time": [
         "main/bindings/time"
       ],

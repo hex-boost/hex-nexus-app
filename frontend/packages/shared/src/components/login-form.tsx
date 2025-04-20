@@ -48,7 +48,7 @@ export function LoginForm({
         });
       },
       onSuccess: async (data) => {
-        if (import.meta.env.VITE_NODE_ENV !== 'development') {
+        if (import.meta.env.MODE !== 'development') {
           const currentHwid = await Utils.GetHWID();
           if (data.user.hwid && data.user.hwid !== currentHwid) {
             setAuthToken(''); // Clear token
@@ -170,9 +170,9 @@ export function LoginForm({
                     <FlickeringGrid
                       className="absolute h-full opacity-50 inset-0 z-0 w-screen pointer-events-none"
                       squareSize={4}
-                      gridGap={6}
+                      gridGap={12}
                       color="#4552B8"
-                      maxOpacity={0.2}
+                      maxOpacity={0.1}
                       flickerChance={0.1}
                     />
                     <Globe />
@@ -306,8 +306,7 @@ export function LoginForm({
                         </div>
                       </div>
                     </TabsContent>
-                    <button className="bg-background px-6">fodase</button>
-                    <Button loading={isLoading} type="submit" className="w-full bg-red-500" disabled={isLoading}>
+                    <Button loading={isLoading} type="submit" className="w-full " disabled={isLoading}>
                       {activeTab === 'login'
                         ? isLoading ? 'Signing in...' : 'Sign in'
                         : isLoading ? 'Registering...' : 'Register'}

@@ -49,7 +49,10 @@ export function DefaultContextMenu({ children }: { children: React.ReactNode }) 
       console.error('Erro ao tentar recarregar a página:', error);
     }
   };
-
+  function handleLogout() {
+    logout();
+    router.navigate({ to: '/login' });
+  }
   useEffect(() => {
     const cancel = Events.On('page:reload', () => {
       handleReload();
@@ -84,7 +87,7 @@ export function DefaultContextMenu({ children }: { children: React.ReactNode }) 
           <span>Reload</span>
           <ContextMenuShortcut>Ctrl+R</ContextMenuShortcut>
         </ContextMenuItem>
-        <ContextMenuItem onClick={() => logout} className="flex items-center space-x-2">
+        <ContextMenuItem onClick={() => handleLogout()} className="flex items-center space-x-2 text-red-300">
           <LogOut className="size-4" />
           <span>Logout</span>
         </ContextMenuItem>
