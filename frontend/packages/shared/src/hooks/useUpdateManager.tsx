@@ -1,4 +1,3 @@
-// frontend/packages/shared/src/hooks/useUpdateManager.tsx
 import type { UpdateStatusEnum } from '@/components/update-animation/update-overlay.tsx';
 import { UpdateManager } from '@manager';
 import { Events } from '@wailsio/runtime';

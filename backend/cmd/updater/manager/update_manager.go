@@ -3,6 +3,7 @@ package manager
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/go-resty/resty/v2"
 	updaterUtils "github.com/hex-boost/hex-nexus-app/backend/cmd/updater/utils"
 	"github.com/hex-boost/hex-nexus-app/backend/config"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
@@ -11,12 +12,8 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"os/signal"
 	"path/filepath"
 	"strings"
-	"syscall"
-
-	"github.com/go-resty/resty/v2"
 )
 
 // BackendUpdateStatus contains progress information to send to frontend
@@ -32,12 +29,14 @@ type UpdateManager struct {
 	config       *config.Config
 	logger       *utils.Logger
 	app          *application.App // Added for emitting events
+	utils        *utils.Utils
 }
 
-func NewUpdateManager(config *config.Config, utils *updaterUtils.UpdaterUtils, logger *utils.Logger) *UpdateManager {
+func NewUpdateManager(config *config.Config, updaterUtils *updaterUtils.UpdaterUtils, logger *utils.Logger, utils *utils.Utils) *UpdateManager {
 	return &UpdateManager{
 		config:       config,
-		updaterUtils: utils,
+		utils:        utils,
+		updaterUtils: updaterUtils,
 		logger:       logger,
 		client:       resty.New(),
 	}
@@ -273,9 +272,11 @@ func (u *UpdateManager) StartMainApplication(exeName string) error {
 
 	appPath := filepath.Join(appDir, exeName)
 	cmd := exec.Command(appPath)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd = u.utils.HideConsoleWindow(cmd)
+
+	//cmd.Stdin = os.Stdin
+	//cmd.Stdout = os.Stdout
+	//cmd.Stderr = os.Stderr
 
 	if err := cmd.Start(); err != nil {
 		u.logger.Error("Failed to start application", zap.Error(err))
@@ -304,15 +305,6 @@ func (u *UpdateManager) IsAnotherInstanceRunning() bool {
 		file.Close()
 		return false
 	}
-
-	// Set up cleanup on program exit
-	go func() {
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-		<-c
-		os.Remove(lockFilePath)
-		os.Exit(0)
-	}()
 
 	return false
 }

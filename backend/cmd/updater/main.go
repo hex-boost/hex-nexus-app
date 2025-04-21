@@ -26,7 +26,8 @@ func main() {
 	}
 	logger := utils.NewLogger("updater", cfg)
 	updaterUtils := updaterUtils.New()
-	updateManager := manager.NewUpdateManager(cfg, updaterUtils, logger)
+	utils := utils.NewUtils()
+	updateManager := manager.NewUpdateManager(cfg, updaterUtils, logger, utils)
 	if *processStart != "" {
 		processToStart := *processStart
 		if processToStart == "" {

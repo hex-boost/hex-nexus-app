@@ -15,6 +15,7 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/hex-boost/hex-nexus-app/backend/watchdog"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"sync"
 	"syscall"
@@ -311,6 +312,8 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		clientMonitor.Stop()
 		websocketService.Stop()
 		gameOverlayManager.Stop() // Stop the overlay manager
+		lockFilePath := filepath.Join(os.TempDir(), "Nexus.lock")
+		os.Remove(lockFilePath)
 
 	})
 	utilsBind.SetApp(app)

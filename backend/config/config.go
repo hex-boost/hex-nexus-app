@@ -12,6 +12,7 @@ import (
 
 var (
 	Version       = "dev"
+	LogLevel      = ""
 	BackendURL    = "http://127.0.0.1:1337"
 	RefreshApiKey = ""
 )
@@ -60,8 +61,7 @@ func LoadConfig() (*Config, error) {
 		DebugMode:      getBoolEnv("DEBUG_MODE", false),
 		Environment:    getEnv("ENVIRONMENT", "development"),
 		LogsDirectory:  getEnv("LOGS_DIR", "./logs"),
-		DataDirectory:  getEnv("DATA_DIR", "./data"),
-		LogLevel:       getEnv("LOG_LEVEL", "debug"),
+		LogLevel:       getEnv("LOG_LEVEL", LogLe),
 	}
 
 	// Try to load from config file if specified

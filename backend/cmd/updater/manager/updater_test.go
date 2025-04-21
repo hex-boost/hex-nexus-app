@@ -104,7 +104,8 @@ func TestUpdateProcess(t *testing.T) {
 
 		// Agora testConfig terá os valores que você definiu
 		updaterUtils := updaterUtils.New()
-		updateManager := NewUpdateManager(testConfig, updaterUtils, utils.NewLogger("test", testConfig))
+		utils := utils.NewUtils()
+		updateManager := NewUpdateManager(testConfig, updaterUtils, utils.NewLogger("test", testConfig), utils)
 		hasUpdate, newVersion := updateManager.CheckForUpdates()
 		if !hasUpdate {
 			t.Error("Falha ao detectar atualização disponível")
@@ -113,8 +114,6 @@ func TestUpdateProcess(t *testing.T) {
 			t.Errorf("Versão incorreta retornada: esperava 1.0.25, obteve %s", newVersion)
 		}
 
-		// 6. Testar download e instalação
-		// 6. Testar download e instalação
 		downloadPath, version, err := updateManager.DownloadUpdate()
 		if err != nil {
 			t.Errorf("Erro durante download: %v", err)

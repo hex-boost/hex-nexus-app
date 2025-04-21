@@ -27,31 +27,21 @@ SetCompressor /SOLID lzma
 ; Installer icon
 !define MUI_ICON "icon.ico"
 
-; Improving installation experience
-!define MUI_ABORTWARNING
+; Silent installation - no prompts
+SilentInstall silent
 
-; MUI2 modules
+; Include necessary headers
 !include "MUI2.nsh"
 !include "FileFunc.nsh"
 !include "LogicLib.nsh"
 !include "WinVer.nsh"
 
-; Installer pages - removed directory selection page
-!insertmacro MUI_PAGE_WELCOME
-!define MUI_COMPONENTSPAGE_SMALLDESC
-!insertmacro MUI_PAGE_COMPONENTS
-!define MUI_STARTMENUPAGE_REGISTRY_ROOT "HKLM"
-!define MUI_STARTMENUPAGE_REGISTRY_KEY "${PRODUCT_UNINST_KEY}"
-!define MUI_STARTMENUPAGE_REGISTRY_VALUENAME "StartMenuFolder"
-Var StartMenuFolder
-!insertmacro MUI_PAGE_STARTMENU "Application" $StartMenuFolder
-!insertmacro MUI_PAGE_INSTFILES
-
-; Custom finish page
+; Removed all UI pages except finish page which runs the app
 !define MUI_FINISHPAGE_RUN "$INSTDIR\updater.exe"
 !define MUI_FINISHPAGE_RUN_TEXT "Start ${PRODUCT_NAME} after installation"
 !define MUI_FINISHPAGE_LINK "Visit ${PRODUCT_NAME} website"
 !define MUI_FINISHPAGE_LINK_LOCATION "${PRODUCT_WEB_SITE}"
+!insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
 
 ; Uninstallation pages
@@ -65,7 +55,7 @@ Var StartMenuFolder
 ; Main settings
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
 OutFile "${PRODUCT_NAME}-Setup-${PRODUCT_VERSION}.exe"
-; Changed installation directory to AppData/Local instead of Program Files
+; Installation directory in AppData/Local
 InstallDir "$LOCALAPPDATA\${PRODUCT_NAME}"
 InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
 ShowInstDetails show
@@ -79,14 +69,15 @@ Function .onInit
     Abort
   ${EndIf}
 
-  ; Removed admin privileges check as it's not needed for AppData installation
-
   ; Check if program is already installed
   ReadRegStr $R0 HKLM "${PRODUCT_UNINST_KEY}" "UninstallString"
   StrCmp $R0 "" done
 
   done:
     ${nsProcess::Unload}
+
+  ; Set StartMenuFolder variable to just "Nexus"
+  StrCpy $StartMenuFolder "${PRODUCT_NAME}"
 FunctionEnd
 
 ; Main section (required)
@@ -148,32 +139,22 @@ Section "Core Files" SecCore
   ; Create uninstaller
   WriteUninstaller "$INSTDIR\uninstall.exe"
 
-  ; Start Menu shortcuts - always create them
-  !insertmacro MUI_STARTMENU_WRITE_BEGIN Application
-  CreateDirectory "$SMPROGRAMS\$StartMenuFolder"
-  CreateShortcut "$SMPROGRAMS\$StartMenuFolder\${PRODUCT_NAME}.lnk" "$INSTDIR\updater.exe" "" "$INSTDIR\icon.ico" 0
-  !insertmacro MUI_STARTMENU_WRITE_END
+  ; Create Start Menu folder and shortcut with just "Nexus" as the folder name
+  CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME}"
+  CreateShortcut "$SMPROGRAMS\${PRODUCT_NAME}\${PRODUCT_NAME}.lnk" "$INSTDIR\updater.exe" "" "$INSTDIR\icon.ico" 0
 
-  ; Desktop shortcut - always create
+  ; Create Desktop shortcut
   CreateShortcut "$DESKTOP\${PRODUCT_NAME}.lnk" "$INSTDIR\updater.exe" "" "$INSTDIR\icon.ico" 0
-SectionEnd
 
-; Auto-start with Windows section (optional)
-Section /o "Start with Windows" SecStartup
+  ; Enable auto-start with Windows
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "${PRODUCT_NAME}" '"$INSTDIR\updater.exe" --minimized'
-SectionEnd
 
-; Section descriptions
-!insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
-  !insertmacro MUI_DESCRIPTION_TEXT ${SecCore} "Essential files for ${PRODUCT_NAME}. Required for the application to work."
-  !insertmacro MUI_DESCRIPTION_TEXT ${SecStartup} "Starts ${PRODUCT_NAME} automatically when Windows starts."
-!insertmacro MUI_FUNCTION_DESCRIPTION_END
+  ; Auto-launch the application when installation completes
+  Exec '"$INSTDIR\updater.exe"'
+SectionEnd
 
 ; Uninstallation section
 Section "Uninstall"
-  ; Start Menu folder reference
-  !insertmacro MUI_STARTMENU_GETFOLDER Application $StartMenuFolder
-
   ; Remove updater and other files
   Delete "$INSTDIR\updater.exe"
   Delete "$INSTDIR\WebView2Loader.dll"
@@ -184,7 +165,7 @@ Section "Uninstall"
   RMDir /r "$INSTDIR\logs"
   Delete "$INSTDIR\uninstall.exe"
   Delete "$DESKTOP\${PRODUCT_NAME}.lnk"
-  RMDir /r "$SMPROGRAMS\$StartMenuFolder"
+  RMDir /r "$SMPROGRAMS\${PRODUCT_NAME}"
 
   ; Remove registry entries
   DeleteRegKey HKLM "${PRODUCT_UNINST_KEY}"
