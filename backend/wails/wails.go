@@ -57,18 +57,18 @@ func SetupSystemTray(app *application.App, window *application.WebviewWindow, ic
 	return systray
 }
 
-func StartWatchdog() error {
+func StartWatchdog() (*os.Process, error) {
 	execPath, err := os.Executable()
 	if err != nil {
-		return fmt.Errorf("failed to get executable path: %w", err)
+		return nil, fmt.Errorf("failed to get executable path: %w", err)
 	}
 
-	_, err = watchdog.LaunchStealthyWatchdog(execPath, os.Getpid())
+	watchdogProcess, err := watchdog.LaunchStealthyWatchdog(execPath, os.Getpid())
 	if err != nil {
-		return fmt.Errorf("failed to start watchdog: %w", err)
+		return nil, fmt.Errorf("failed to start watchdog: %w", err)
 	}
 
-	return nil
+	return watchdogProcess, nil
 }
 func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 
@@ -139,12 +139,15 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		wg.Wait()
 		return
 	}
-	// Normal application startup
-	err := StartWatchdog()
+	_, err := StartWatchdog()
 	if err != nil {
 		panic(fmt.Sprintf("error starting watchdog %v", err))
 		return
 	}
+
+	// Create a watchdog client for communication with the watchdog process
+	watchdogClient := watchdog.NewWatchdogClient()
+
 	//updater.NewUpdater(cfg, appInstance.Log().Wails()).Start()
 	mainLogger := appInstance.Log().Wails()
 	appProtocol := protocol.New(appInstance.Log().Protocol())
@@ -169,7 +172,15 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 	captcha := riot.NewCaptcha(appInstance.Log().Riot())
 	leagueService := league.NewLeagueService(appInstance.Log().Riot(), accountsRepository, summonerService, lcuConn)
 	riotClient := riot.NewRiotClient(appInstance.Log().Riot(), captcha)
-	accountMonitor := league.NewAccountMonitor(appInstance.Log().Riot(), leagueService, riotClient, accountsRepository, summonerClient, lcuConn)
+	accountMonitor := league.NewAccountMonitor(
+		appInstance.Log().Riot(),
+		leagueService,
+		riotClient,
+		accountsRepository,
+		summonerClient,
+		lcuConn,
+		watchdogClient, // Use the watchdog client here instead of creating a full watchdog
+	)
 	websocketService := league.NewWebSocketService(appInstance.Log().League(), accountMonitor, leagueService)
 	discordService := discord.New(cfg, appInstance.Log().Discord(), utilsBind)
 

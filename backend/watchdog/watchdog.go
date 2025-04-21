@@ -47,8 +47,90 @@ type WatchdogMessage struct {
 	Timestamp     time.Time `json:"timestamp"`
 }
 
-// UpdateWatchdogAccountStatus updates the account status by sending a message to the watchdog
-func UpdateWatchdogAccountStatus(active bool) error {
+// WatchdogClient is a lightweight client for communicating with the watchdog process
+type WatchdogClient struct {
+	logger *zap.Logger
+}
+
+// NewWatchdogClient creates a new watchdog client for communicating with the watchdog process
+func NewWatchdogClient() *WatchdogClient {
+	logger, _ := zap.NewProduction()
+	return &WatchdogClient{
+		logger: logger,
+	}
+}
+
+// Update implements the WatchdogUpdater interface
+// It sends an account status update to the watchdog process via named pipe
+func (c *WatchdogClient) Update(active bool) error {
+	c.logger.Info("Updating watchdog account status via named pipe",
+		zap.Bool("active", active))
+
+	// Prepare the message
+	msg := WatchdogMessage{
+		Type:          "account_status",
+		AccountActive: active,
+		Timestamp:     time.Now(),
+	}
+
+	// Marshal the message to JSON
+	data, err := json.Marshal(msg)
+	if err != nil {
+		c.logger.Error("Failed to marshal message", zap.Error(err))
+		return fmt.Errorf("failed to marshal message: %w", err)
+	}
+
+	// Connect to the named pipe
+	pipePath := PipeName
+	c.logger.Debug("Connecting to named pipe", zap.String("path", pipePath))
+
+	for i := 0; i < 3; i++ { // Try 3 times
+		pipe, err := windows.CreateFile(
+			windows.StringToUTF16Ptr(pipePath),
+			windows.GENERIC_WRITE,
+			0,
+			nil,
+			windows.OPEN_EXISTING,
+			windows.FILE_ATTRIBUTE_NORMAL,
+			0,
+		)
+
+		if err != nil {
+			c.logger.Warn("Failed to open pipe, retrying...", zap.Error(err), zap.Int("attempt", i+1))
+			time.Sleep(500 * time.Millisecond)
+			continue
+		}
+
+		defer windows.CloseHandle(pipe)
+
+		// Create a buffer for the data
+		buffer := make([]byte, len(data))
+		copy(buffer, data)
+
+		var bytesWritten uint32
+		err = windows.WriteFile(
+			pipe,
+			buffer,
+			&bytesWritten,
+			nil,
+		)
+		if err != nil {
+			c.logger.Error("Failed to write to pipe", zap.Error(err))
+			return fmt.Errorf("failed to send message: %w", err)
+		}
+
+		c.logger.Info("Successfully sent watchdog message via named pipe",
+			zap.String("type", msg.Type),
+			zap.Bool("accountActive", active))
+		return nil
+	}
+
+	c.logger.Error("Failed to connect to watchdog pipe after retries")
+	return fmt.Errorf("failed to connect to watchdog pipe after retries")
+}
+
+// Update updates the account status by sending a message to the watchdog
+func Update(active bool) error {
 	// Create a logger
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()

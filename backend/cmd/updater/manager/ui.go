@@ -1,9 +1,8 @@
-package ui
+package manager
 
 import (
 	"embed"
 	"fmt"
-	"github.com/hex-boost/hex-nexus-app/backend/cmd/updater/manager"
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
@@ -15,7 +14,7 @@ type UpdaterWindow struct {
 	app    *application.App
 }
 
-func NewUpdaterWindow(updateManager *manager.UpdateManager) *UpdaterWindow {
+func NewUpdaterWindow(assets embed.FS, updateManager *UpdateManager) *UpdaterWindow {
 	app := application.New(application.Options{
 		Name: "NexusUpdater",
 

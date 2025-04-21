@@ -42,23 +42,37 @@ const (
 	EventLeagueStateChanged = "league:state:changed"
 )
 
+type LeagueServicer interface {
+	IsLCUConnectionReady() bool
+	UpdateFromLCU(username string) error
+	IsRunning() bool
+	IsPlaying() bool
+}
+
+type AccountMonitorer interface {
+	GetLoggedInUsername() string
+	IsNexusAccount() bool
+}
+type AppEmitter interface {
+	EmitEvent(eventName string, data ...interface{})
+}
 type ClientMonitor struct {
 	accountUpdateStatus   AccountUpdateStatus
-	app                   *application.App
+	app                   AppEmitter
 	riotClient            *riot.RiotClient
 	isRunning             bool
 	pollingTicker         *time.Ticker
 	logger                *utils.Logger
 	captcha               *riot.Captcha
-	accountMonitor        *AccountMonitor
-	leagueService         *LeagueService
+	accountMonitor        AccountMonitorer
+	leagueService         LeagueServicer
 	stateMutex            sync.RWMutex
 	captchaFlowInProgress atomic.Bool
 	currentState          *LeagueClientState
 	isCheckingState       atomic.Bool
 }
 
-func NewClientMonitor(logger *utils.Logger, accountMonitor *AccountMonitor, leagueService *LeagueService, riotClient *riot.RiotClient, captcha *riot.Captcha) *ClientMonitor {
+func NewClientMonitor(logger *utils.Logger, accountMonitor *AccountMonitor, leagueService LeagueServicer, riotClient *riot.RiotClient, captcha *riot.Captcha) *ClientMonitor {
 	logger.Info("Creating new client monitor")
 	initialState := &LeagueClientState{
 		ClientState: ClientStateNone,
@@ -268,7 +282,7 @@ func (cm *ClientMonitor) initializeRiotClient() {
 
 // checkAndUpdateAccount checks and updates account information if needed
 func (cm *ClientMonitor) checkAndUpdateAccount() {
-	if !cm.leagueService.IsLCUConnectionReady() {
+	if !cm.leagueService.IsLCUConnectionReady() || !cm.accountMonitor.IsNexusAccount() {
 		return
 	}
 
@@ -288,7 +302,6 @@ func (cm *ClientMonitor) checkAndUpdateAccount() {
 		"lastUpdatedUsername", cm.accountUpdateStatus.Username,
 		"isUpdated", cm.accountUpdateStatus.IsUpdated)
 
-	// Update account
 	err := cm.leagueService.UpdateFromLCU(loggedInUsername)
 	if err != nil {
 		cm.logger.Error("Error updating account from LCU", zap.Error(err))

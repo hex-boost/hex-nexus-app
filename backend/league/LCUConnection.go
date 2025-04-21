@@ -126,3 +126,6 @@ func (c *LCUConnection) WaitUntilReady() error {
 		}
 	}
 }
+func (c *LCUConnection) IsClientInitialized() bool {
+	return c.client != nil
+}

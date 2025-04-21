@@ -15,9 +15,43 @@ import (
 	"time"
 )
 
+type RiotClientInterface interface {
+	IsRunning() bool
+	IsClientInitialized() bool
+	InitializeRestyClient() error
+	GetAuthenticationState() (*types.RiotIdentityResponse, error)
+	GetUserinfo() (*types.UserInfo, error)
+}
+
+// LeagueServiceInterface defines methods needed from LeagueService
+type LeagueServiceInterface interface {
+	IsRunning() bool
+	IsPlaying() bool
+}
+
+// SummonerClientInterface defines methods needed from SummonerClient
+type SummonerClientInterface interface {
+	GetLoginSession() (*types.LoginSession, error)
+}
+
+// LCUConnectionInterface defines methods needed from LCUConnection
+type LCUConnectionInterface interface {
+	InitializeConnection() error
+	IsClientInitialized() bool
+}
+
+// AccountsRepositoryInterface defines methods needed from AccountsRepository
+type AccountsRepositoryInterface interface {
+	GetAllRented() ([]types.SummonerRented, error)
+}
+
+// WindowInterface defines methods needed from window
+type WindowInterface interface {
+	EmitEvent(eventName string, data ...interface{})
+}
 type AccountMonitor struct {
-	riotClient          *riot.RiotClient
-	accountRepo         *repository.AccountsRepository
+	riotClient          RiotClientInterface
+	accountRepo         AccountsRepositoryInterface
 	logger              *utils.Logger
 	lastCheckedUsername string
 	running             bool
@@ -26,17 +60,17 @@ type AccountMonitor struct {
 	cachedAccounts      []types.SummonerRented
 	lastAccountsFetch   time.Time
 	accountCacheTTL     time.Duration
-	window              *application.WebviewWindow
+	window              WindowInterface
 	stopChan            chan struct{}
-	leagueService       *LeagueService
+	leagueService       LeagueServicer
 	mutex               sync.Mutex
-	watchdogState       *watchdog.Watchdog // Add this field to access watchdog
+	watchdogState       watchdog.WatchdogUpdater // Add this field to access watchdog
 
-	summoner      *SummonerClient
-	LCUConnection *LCUConnection
+	summoner      SummonerClientInterface
+	LCUConnection LCUConnectionInterface
 }
 
-func (am *AccountMonitor) SetWatchdog(watchdog *watchdog.Watchdog) {
+func (am *AccountMonitor) SetWatchdog(watchdog watchdog.WatchdogUpdater) {
 	am.watchdogState = watchdog
 }
 
@@ -45,11 +79,13 @@ func NewAccountMonitor(
 	leagueService *LeagueService,
 	riotClient *riot.RiotClient,
 	accountRepo *repository.AccountsRepository,
-	summoner *SummonerClient,
-	LCUConnection *LCUConnection,
+	summoner SummonerClientInterface,
+	LCUConnection LCUConnectionInterface,
+	watchdog watchdog.WatchdogUpdater,
 
 ) *AccountMonitor {
 	return &AccountMonitor{
+		watchdogState:   watchdog,
 		leagueService:   leagueService,
 		LCUConnection:   LCUConnection,
 		riotClient:      riotClient,
@@ -211,7 +247,7 @@ func (am *AccountMonitor) getSummonerNameByRiotClient() string {
 func (am *AccountMonitor) getUsernameByLeagueClient() (string, error) {
 
 	err := am.LCUConnection.InitializeConnection()
-	if err != nil || am.LCUConnection.client == nil {
+	if err != nil || !am.LCUConnection.IsClientInitialized() {
 		am.logger.Debug("Failed to initialize League client connection",
 			zap.Error(err),
 			zap.String("errorType", fmt.Sprintf("%T", err)))
@@ -247,13 +283,12 @@ func (am *AccountMonitor) GetLoggedInUsername() string {
 	return strings.ToLower(currentUsername)
 }
 
-// UpdateWatchdogAccountStatus updates the account status in the watchdog state file
 func (am *AccountMonitor) checkCurrentAccount() {
-	// Skip if Riot client is not running
 	if !am.riotClient.IsRunning() && !am.leagueService.IsRunning() && !am.leagueService.IsPlaying() {
+		am.cachedAccounts = []types.SummonerRented{}
+		am.lastAccountsFetch = time.Now() // Reset the timer
 		return
 	}
-
 	currentUsername := am.GetLoggedInUsername()
 	if currentUsername == "" {
 		am.logger.Debug("Skipping account check - no logged-in account found, username is empty")
@@ -271,15 +306,21 @@ func (am *AccountMonitor) checkCurrentAccount() {
 	}
 
 	isNexusAccount := false
-	if len(accounts) > 0 {
+	for _, account := range accounts {
+		if strings.ToLower(account.Username) == currentUsername {
+			isNexusAccount = true
+			break
+		}
+	}
+
+	// Only attempt a refresh if we didn't find a match and the cache might be stale
+	if !isNexusAccount && time.Since(am.lastAccountsFetch) > am.accountCacheTTL/2 {
 		am.logger.Debug("Account not found in cache, refreshing account data")
 		if err := am.refreshAccountCache(); err != nil {
 			am.logger.Error("Failed to refresh account cache", zap.Error(err))
 		} else {
-			// Try again with fresh data
-			accounts = am.cachedAccounts
-			for _, account := range accounts {
-
+			// Check again with fresh data
+			for _, account := range am.cachedAccounts {
 				if strings.ToLower(account.Username) == currentUsername {
 					isNexusAccount = true
 					am.logger.Info("Match found after cache refresh! Current account is a Nexus-managed account",
@@ -289,12 +330,6 @@ func (am *AccountMonitor) checkCurrentAccount() {
 			}
 		}
 	}
-
-	if !isNexusAccount {
-		am.logger.Debug("Current account is not a Nexus-managed account",
-			zap.String("summonerName", currentUsername))
-	}
-
 	previousState := am.IsNexusAccount()
 
 	am.mutex.Lock()
@@ -309,7 +344,7 @@ func (am *AccountMonitor) checkCurrentAccount() {
 			zap.Bool("currentStatus", isNexusAccount),
 			zap.String("summonerName", currentUsername))
 
-		err := watchdog.UpdateWatchdogAccountStatus(isNexusAccount)
+		err := am.watchdogState.Update(isNexusAccount)
 		am.window.EmitEvent("nexusAccount:state", isNexusAccount)
 		if err != nil {
 			am.logger.Error("Failed to update watchdog status via named pipe", zap.Error(err))

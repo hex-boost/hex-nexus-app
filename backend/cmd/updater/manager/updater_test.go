@@ -4,6 +4,7 @@ import (
 	"fmt"
 	updaterUtils "github.com/hex-boost/hex-nexus-app/backend/cmd/updater/utils"
 	"github.com/hex-boost/hex-nexus-app/backend/config"
+	"github.com/hex-boost/hex-nexus-app/backend/testutils"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"net/http"
 	"net/http/httptest"
@@ -20,35 +21,6 @@ func mockExecutable() (string, error) {
 }
 
 // withEnvironment define temporariamente variáveis de ambiente para testes
-func withEnvironment(vars map[string]string, testFunc func()) {
-	// Guardar valores originais
-	originals := make(map[string]string)
-	for k := range vars {
-		val, exists := os.LookupEnv(k)
-		if exists {
-			originals[k] = val
-		}
-	}
-
-	// Definir valores de teste
-	for k, v := range vars {
-		os.Setenv(k, v)
-	}
-
-	// Restaurar ao finalizar
-	defer func() {
-		for k := range vars {
-			if orig, ok := originals[k]; ok {
-				os.Setenv(k, orig)
-			} else {
-				os.Unsetenv(k)
-			}
-		}
-	}()
-
-	// Executar o teste
-	testFunc()
-}
 
 // TestUpdateProcess testa o fluxo completo de atualização
 func TestUpdateProcess(t *testing.T) {
@@ -121,7 +93,7 @@ func TestUpdateProcess(t *testing.T) {
 	}))
 	defer mockServer.Close()
 
-	withEnvironment(map[string]string{
+	testutils.WithEnvironment(map[string]string{
 		"VERSION": "1.0.24",
 		"API_URL": mockServer.URL,
 	}, func() {
