@@ -96,13 +96,18 @@ export function useUpdateManager() {
         // Start download process immediately
         await downloadUpdate();
       } else {
-        setUpdateStatus(prev => ({
-          ...prev,
-          latestVersion: version,
-          needsUpdate: false,
-          status: 'complete',
-          progress: 100,
-        }));
+        await new Promise((resolve, reject) => {
+          setTimeout(() => {
+            setUpdateStatus(prev => ({
+              ...prev,
+              latestVersion: version,
+              needsUpdate: false,
+              status: 'complete',
+              progress: 100,
+            }));
+            resolve(true);
+          }, 1000);
+        });
       }
     } catch (error) {
       console.error('Error checking for updates:', error);
