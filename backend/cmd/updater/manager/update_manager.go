@@ -6,6 +6,7 @@ import (
 	updaterUtils "github.com/hex-boost/hex-nexus-app/backend/cmd/updater/utils"
 	"github.com/hex-boost/hex-nexus-app/backend/config"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
+	"github.com/wailsapp/wails/v3/pkg/application"
 	"go.uber.org/zap"
 	"io"
 	"os"
@@ -16,13 +17,10 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-type UpdateStatus struct {
-	Status         string  `json:"status"`
-	Progress       float64 `json:"progress"`
-	LatestVersion  string  `json:"latestVersion,omitempty"`
-	CurrentVersion string  `json:"currentVersion"`
-	Error          string  `json:"error,omitempty"`
-	NeedsUpdate    bool    `json:"needsUpdate"`
+// BackendUpdateStatus contains progress information to send to frontend
+type BackendUpdateStatus struct {
+	Progress float64 `json:"progress"`
+	Error    string  `json:"error,omitempty"`
 }
 
 type UpdateManager struct {
@@ -31,6 +29,7 @@ type UpdateManager struct {
 	updaterUtils *updaterUtils.UpdaterUtils
 	config       *config.Config
 	logger       *utils.Logger
+	app          *application.App // Added for emitting events
 }
 
 func NewUpdateManager(config *config.Config, utils *updaterUtils.UpdaterUtils, logger *utils.Logger) *UpdateManager {
@@ -42,48 +41,39 @@ func NewUpdateManager(config *config.Config, utils *updaterUtils.UpdaterUtils, l
 	}
 }
 
-//func (u *UpdateManager) SetContext(ctx *ui.Context) {
-//	u.ctx = ctx
-//}
-
-func (u *UpdateManager) updateStatus(status UpdateStatus) {
-	//runtime.EventsEmit(u.ctx.Context, "updater:status-change", status)
+// emitProgress sends progress updates to the frontend
+func (u *UpdateManager) emitProgress(progress float64, errorMsg string) {
+	if u.app != nil {
+		u.app.EmitEvent("updater:status-change", BackendUpdateStatus{
+			Progress: progress,
+			Error:    errorMsg,
+		})
+	}
 }
 
+// CheckForUpdates verifies if an update is needed and returns the result
 func (u *UpdateManager) CheckForUpdates() (bool, string) {
-	status := UpdateStatus{
-		Status:      "Verificando atualizações...",
-		Progress:    0,
-		NeedsUpdate: false,
-	}
-	u.updateStatus(status)
-
-	// Obter a versão atual do diretório da aplicação
+	// Get current version from the application directory
 	appDir, err := u.updaterUtils.GetLatestAppDir()
 	if err == nil {
 		dirName := filepath.Base(appDir)
 		if strings.HasPrefix(dirName, "app-") {
 			u.currentVer = strings.TrimPrefix(dirName, "app-")
 		} else {
-			// Fallback para a versão do config
+			// Fallback to the version from config
 			u.currentVer = u.config.Version
 		}
 	} else {
 		u.currentVer = u.config.Version
 	}
 
-	status.CurrentVersion = u.currentVer
-	u.updateStatus(status)
-
-	// Verifica se há atualização
+	// Check for update
 	resp, err := u.client.R().
 		SetHeader("x-client-version", u.currentVer).
 		Get(fmt.Sprintf("%s/api/versions/update", u.config.BackendURL))
 
 	if err != nil {
-		status.Status = "error"
-		status.Error = "Erro ao conectar ao servidor"
-		u.updateStatus(status)
+		u.emitProgress(0, "Error connecting to server")
 		return false, ""
 	}
 
@@ -93,36 +83,20 @@ func (u *UpdateManager) CheckForUpdates() (bool, string) {
 	}
 
 	if err := json.Unmarshal(resp.Body(), &result); err != nil {
-		status.Status = "error"
-		status.Error = "Erro ao processar resposta do servidor"
-		u.updateStatus(status)
+		u.emitProgress(0, "Error processing server response")
 		return false, ""
 	}
 
-	status.NeedsUpdate = result.NeedsUpdate
-	status.LatestVersion = result.Version
-	//status.Status = result.NeedsUpdate ? "Atualização disponível" : "Atualizado"
-	status.Progress = 10
-	u.updateStatus(status)
-
+	// Just return data without managing UI state
 	return result.NeedsUpdate, result.Version
 }
 
-// DownloadUpdate baixa a última versão da atualização e retorna o caminho temporário e a versão
+// DownloadUpdate downloads the latest update and returns the path and version
 func (u *UpdateManager) DownloadUpdate() (downloadPath string, version string, err error) {
-	status := UpdateStatus{
-		Status:         "Obtendo informações da atualização...",
-		Progress:       10,
-		CurrentVersion: u.currentVer,
-		NeedsUpdate:    true,
-	}
-	u.updateStatus(status)
-
+	// Get update information
 	resp, err := u.client.R().Get(fmt.Sprintf("%s/api/versions/latest", u.config.BackendURL))
 	if err != nil {
-		status.Status = "error"
-		status.Error = "Erro ao obter informações da atualização"
-		u.updateStatus(status)
+		u.emitProgress(0, "Failed to get update information")
 		return "", "", err
 	}
 
@@ -136,179 +110,126 @@ func (u *UpdateManager) DownloadUpdate() (downloadPath string, version string, e
 	}
 
 	if err := json.Unmarshal(resp.Body(), &versionResp); err != nil {
-		status.Status = "error"
-		status.Error = "Erro ao processar informações da atualização"
-		u.updateStatus(status)
+		u.emitProgress(0, "Failed to parse update information")
 		return "", "", err
 	}
 
 	fileURL := versionResp.LatestVersion.File.URL
 	if fileURL == "" {
-		status.Status = "error"
-		status.Error = "URL da atualização não encontrada"
-		u.updateStatus(status)
-		return "", "", fmt.Errorf("URL da atualização não encontrada")
+		u.emitProgress(0, "Update URL not found")
+		return "", "", fmt.Errorf("update URL not found")
 	}
 
-	// Adicionar domínio base se necessário
+	// Add base domain if needed
 	if fileURL[0] == '/' {
 		fileURL = u.config.BackendURL + fileURL
 	}
 
-	// Baixar atualização
-	status.Status = "Baixando atualização..."
-	status.Progress = 20
-	status.LatestVersion = versionResp.LatestVersion.Version
-	u.updateStatus(status)
-
+	// Download update
+	u.emitProgress(20, "")
 	respDownload, err := u.client.R().
 		SetDoNotParseResponse(true).
 		Get(fileURL)
 	if err != nil {
-		status.Status = "error"
-		status.Error = "Erro ao baixar atualização"
-		u.updateStatus(status)
+		u.emitProgress(0, "Failed to download update")
 		return "", "", err
 	}
 
-	// Criar um arquivo temporário para o download
+	// Create a temp file for the download
 	tempFile, err := os.CreateTemp("", "nexus-update-*.exe")
 	if err != nil {
-		status.Status = "error"
-		status.Error = "Erro ao criar arquivo temporário"
-		u.updateStatus(status)
+		u.emitProgress(0, "Failed to create temporary file")
 		return "", "", err
 	}
 	defer tempFile.Close()
 
-	// Extrair e salvar binário
+	// Extract and save binary
 	binReader := respDownload.RawBody()
 	defer binReader.Close()
 
-	// Atualizar progresso durante o download
-	status.Progress = 40
-	u.updateStatus(status)
+	// Update progress during download
+	u.emitProgress(40, "")
 
 	if _, err = io.Copy(tempFile, binReader); err != nil {
-		status.Status = "error"
-		status.Error = "Erro ao salvar arquivo de atualização"
-		u.updateStatus(status)
+		u.emitProgress(0, "Failed to save update file")
 		return "", "", err
 	}
 
-	status.Status = "Download concluído"
-	status.Progress = 50
-	u.updateStatus(status)
-
+	u.emitProgress(50, "")
 	return tempFile.Name(), versionResp.LatestVersion.Version, nil
 }
 
-// InstallUpdate instala a atualização baixada no local correto
+// InstallUpdate installs the downloaded update
 func (u *UpdateManager) InstallUpdate(downloadPath string, version string) error {
-	status := UpdateStatus{
-		Status:         "Instalando atualização...",
-		Progress:       60,
-		CurrentVersion: u.currentVer,
-		LatestVersion:  version,
-		NeedsUpdate:    true,
-	}
-	u.updateStatus(status)
+	u.emitProgress(60, "")
 
-	// Criar diretório de destino
+	// Create destination directory
 	baseDir, err := updaterUtils.ExecutableFn()
 	if err != nil {
-		status.Status = "error"
-		status.Error = "Erro ao determinar diretório de instalação"
-		u.updateStatus(status)
+		u.emitProgress(0, "Failed to determine installation directory")
 		return err
 	}
-	// fix
+
 	baseDir = filepath.Dir(baseDir)
 	newAppDir := filepath.Join(baseDir, "app-"+version)
 
 	if err := os.MkdirAll(newAppDir, 0755); err != nil {
-		status.Status = "error"
-		status.Error = "Erro ao criar diretório de instalação"
-		u.updateStatus(status)
+		u.emitProgress(0, "Failed to create installation directory")
 		return err
 	}
 
-	// Salvar o novo executável
+	// Save the new executable
 	targetPath := filepath.Join(newAppDir, "Nexus.exe")
 
-	status.Progress = 75
-	u.updateStatus(status)
+	u.emitProgress(75, "")
 
-	// Copiar do arquivo temporário para o destino
+	// Copy from the temp file to the destination
 	source, err := os.Open(downloadPath)
 	if err != nil {
-		status.Status = "error"
-		status.Error = "Erro ao acessar arquivo de atualização"
-		u.updateStatus(status)
+		u.emitProgress(0, "Failed to access update file")
 		return err
 	}
 	defer source.Close()
 
 	outFile, err := os.Create(targetPath)
 	if err != nil {
-		status.Status = "error"
-		status.Error = "Erro ao criar arquivo de destino"
-		u.updateStatus(status)
+		u.emitProgress(0, "Failed to create destination file")
 		return err
 	}
 	defer outFile.Close()
 
 	if _, err = io.Copy(outFile, source); err != nil {
-		status.Status = "error"
-		status.Error = "Erro ao copiar atualização"
-		u.updateStatus(status)
+		u.emitProgress(0, "Failed to copy update")
 		return err
 	}
 
-	// Limpar o arquivo temporário
+	// Clean up the temp file
 	os.Remove(downloadPath)
 
-	status.Status = "complete"
-	status.Progress = 100
-	u.updateStatus(status)
-
+	u.emitProgress(100, "")
 	return nil
 }
 
-func (u *UpdateManager) DownloadAndInstallUpdate() error {
-	downloadPath, version, err := u.DownloadUpdate()
+// StartMainApplication starts the main application executable
+func (u *UpdateManager) StartMainApplication(exeName string) error {
+	appDir, err := u.updaterUtils.GetLatestAppDir()
 	if err != nil {
+		u.logger.Error("Failed to determine app directory", zap.Error(err))
 		return err
 	}
 
-	return u.InstallUpdate(downloadPath, version)
-}
-
-func (u *UpdateManager) StartMainApplication(exeName string) {
-	status := UpdateStatus{
-		Status:         "Iniciando aplicação...",
-		Progress:       100,
-		CurrentVersion: u.currentVer,
-		NeedsUpdate:    false,
-	}
-	u.updateStatus(status)
-
-	appDir, err := u.updaterUtils.GetLatestAppDir()
-	if err != nil {
-		u.logger.Error("Erro ao determinar diretório do aplicativo: %v", zap.Error(err))
-		os.Exit(1)
-	}
-
-	appPath := filepath.Join(appDir, exeName+".exe")
+	appPath := filepath.Join(appDir, exeName)
 	cmd := exec.Command(appPath)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
 	if err := cmd.Start(); err != nil {
-		u.logger.Error("Erro ao iniciar o aplicativo: %v", zap.Error(err))
-		os.Exit(1)
+		u.logger.Error("Failed to start application", zap.Error(err))
+		return err
 	}
 
+	// Exit this process after starting the main app
 	os.Exit(0)
+	return nil // This line is never reached but needed for compiler
 }

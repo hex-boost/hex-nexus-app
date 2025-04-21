@@ -11,23 +11,18 @@ function RouteComponent() {
     updateStatus,
     isUpdateOverlayVisible,
     downloadUpdate,
-    checkForUpdates,
-    restartApplication,
     hideUpdateOverlay,
   } = useUpdateManager();
 
-  // Mapeamento do status do backend para o componente
-  const mapStatusToUiStatus = (): 'checking' | 'starting' | 'downloading' | 'installing' | 'complete' | 'error' => {
+  // Map the frontend status to the UI component status
+  const mapStatusToUiStatus = () => {
     switch (updateStatus.status) {
-      case 'Verificando atualizações...':
+      case 'checking':
+      case 'available':
         return 'checking';
-      case 'Atualização disponível':
-        return 'checking';
-      case 'Baixando atualização...':
+      case 'downloading':
         return 'downloading';
-      case 'Download concluído':
-        return 'downloading';
-      case 'Instalando atualização...':
+      case 'installing':
         return 'installing';
       case 'complete':
         return 'complete';
@@ -38,26 +33,30 @@ function RouteComponent() {
     }
   };
 
+  // Handle completion or next steps based on current status
   const handleComplete = () => {
     if (updateStatus.status === 'complete') {
-
+      // Update is complete, restart will be handled automatically
+      // No need to do anything here as the restart is scheduled in useUpdateManager
     } else if (updateStatus.status === 'error') {
+      // On error, hide the overlay
       hideUpdateOverlay();
-    } else if (updateStatus.needsUpdate && !updateStatus.status.includes('Baixando') && !updateStatus.status.includes('Instalando')) {
-      // Se há atualização disponível e não está baixando ou instalando
+    } else if (updateStatus.status === 'available') {
+      // If update is available and not yet downloading, start the download
       downloadUpdate();
     } else {
+      // For other states, just hide the overlay
       hideUpdateOverlay();
     }
   };
 
   return (
     <UpdateOverlay
-      isVisible
+      isVisible={isUpdateOverlayVisible}
       status={mapStatusToUiStatus()}
       progress={updateStatus.progress}
       error={updateStatus.error}
-      onComplete={() => handleComplete()}
+      onComplete={handleComplete}
     />
   );
 }

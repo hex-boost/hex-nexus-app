@@ -22,20 +22,35 @@ export function useUpdateManager() {
 
   const [isUpdateOverlayVisible, setIsUpdateOverlayVisible] = useState(false);
 
-  useEffect(() => {
-    // Inscrever-se para receber atualizações de status
-    const unsubscribe = Events.On('updater:status-change', (event) => {
-      setUpdateStatus(prev => ({ ...prev, ...event.data[0] }));
-    });
+  const restartApplication = async () => {
+    await UpdateManager.StartMainApplication('Nexus.exe');
+  };
 
-    // Verificar se há atualizações ao montar o componente
-    checkForUpdates();
+  const installUpdate = async (downloadPath: string, version: string) => {
+    try {
+      setUpdateStatus(prev => ({ ...prev, status: 'Instalando atualização...', progress: 60 }));
 
-    return () => {
-      unsubscribe();
-    };
-  }, []);
+      await UpdateManager.InstallUpdate(downloadPath, version);
 
+      setUpdateStatus(prev => ({
+        ...prev,
+        status: 'complete',
+        progress: 100,
+      }));
+
+      // Configurar um timeout para reiniciar automaticamente após a conclusão da instalação
+      setTimeout(() => {
+        restartApplication();
+      }, 2000);
+    } catch (error) {
+      console.error('Erro ao instalar atualização:', error);
+      setUpdateStatus(prev => ({
+        ...prev,
+        status: 'error',
+        error: 'Erro ao instalar atualização',
+      }));
+    }
+  };
   const checkForUpdates = async () => {
     try {
       setUpdateStatus(prev => ({ ...prev, status: 'Verificando atualizações...', progress: 0 }));
@@ -66,6 +81,18 @@ export function useUpdateManager() {
       }));
     }
   };
+  useEffect(() => {
+    // Inscrever-se para receber atualizações de status
+    const unsubscribe = Events.On('updater:status-change', (event) => {
+      setUpdateStatus(prev => ({ ...prev, ...event.data[0] }));
+    });
+
+    checkForUpdates();
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   const downloadUpdate = async () => {
     try {
@@ -91,36 +118,6 @@ export function useUpdateManager() {
         error: 'Erro ao baixar atualização',
       }));
     }
-  };
-
-  const installUpdate = async (downloadPath: string, version: string) => {
-    try {
-      setUpdateStatus(prev => ({ ...prev, status: 'Instalando atualização...', progress: 60 }));
-
-      await UpdateManager.InstallUpdate(downloadPath, version);
-
-      setUpdateStatus(prev => ({
-        ...prev,
-        status: 'complete',
-        progress: 100,
-      }));
-
-      // Configurar um timeout para reiniciar automaticamente após a conclusão da instalação
-      setTimeout(() => {
-        restartApplication();
-      }, 2000);
-    } catch (error) {
-      console.error('Erro ao instalar atualização:', error);
-      setUpdateStatus(prev => ({
-        ...prev,
-        status: 'error',
-        error: 'Erro ao instalar atualização',
-      }));
-    }
-  };
-
-  const restartApplication = async () => {
-    await UpdateManager.StartMainApplication('Nexus.exe');
   };
 
   const hideUpdateOverlay = () => {
