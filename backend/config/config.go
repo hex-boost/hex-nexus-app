@@ -18,29 +18,12 @@ var (
 )
 
 type Config struct {
-	Version string `json:"version"`
-	// API URLs
-	RefreshApiKey  string `json:"refresh_api_key"`
-	BackendURL     string `json:"backendUrl"`
-	RiotAPIBaseURL string `json:"riotApiBaseUrl"`
+	Version       string `json:"version"`
+	RefreshApiKey string `json:"refresh_api_key"`
+	BackendURL    string `json:"backendUrl"`
 
-	// Timeouts and intervals
-	RequestTimeout       time.Duration `json:"requestTimeout"`
-	PollingInterval      time.Duration `json:"pollingInterval"`
-	MonitorCheckInterval time.Duration `json:"monitorCheckInterval"`
-
-	// Feature flags
-	DebugMode   bool   `json:"debugMode"`
-	Environment string `json:"environment"`
-
-	// Credentials
-	ClientID string `json:"clientId"`
-
-	// Paths
 	LogsDirectory string `json:"logsDirectory"`
-	DataDirectory string `json:"dataDirectory"`
 
-	// Logging
 	LogLevel string `json:"logLevel"`
 }
 
@@ -53,15 +36,11 @@ func LoadConfig() (*Config, error) {
 
 	// Default configuration
 	config := &Config{
-		Version:        getEnv("VERSION", Version),
-		RefreshApiKey:  getEnv("REFRESH_API_KEY", RefreshApiKey),
-		BackendURL:     getEnv("API_URL", BackendURL),
-		RiotAPIBaseURL: getEnv("RIOT_API_URL", "https://127.0.0.1"),
-		RequestTimeout: getDurationEnv("REQUEST_TIMEOUT", 10*time.Second),
-		DebugMode:      getBoolEnv("DEBUG_MODE", false),
-		Environment:    getEnv("ENVIRONMENT", "development"),
-		LogsDirectory:  getEnv("LOGS_DIR", "./logs"),
-		LogLevel:       getEnv("LOG_LEVEL", LogLevel),
+		Version:       getEnv("VERSION", Version),
+		RefreshApiKey: getEnv("REFRESH_API_KEY", RefreshApiKey),
+		BackendURL:    getEnv("API_URL", BackendURL),
+		LogsDirectory: getEnv("LOGS_DIR", "./logs"),
+		LogLevel:      getEnv("LOG_LEVEL", LogLevel),
 	}
 
 	// Try to load from config file if specified
