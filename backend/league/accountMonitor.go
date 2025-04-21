@@ -70,10 +70,6 @@ type AccountMonitor struct {
 	LCUConnection LCUConnectionInterface
 }
 
-func (am *AccountMonitor) SetWatchdog(watchdog watchdog.WatchdogUpdater) {
-	am.watchdogState = watchdog
-}
-
 func NewAccountMonitor(
 	logger *utils.Logger,
 	leagueService *LeagueService,

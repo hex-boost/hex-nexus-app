@@ -193,7 +193,6 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		Windows: application.WindowsOptions{
 			DisableQuitOnLastWindowClosed: true,
 		},
-		// In the application.New options where you see "KeyBindings:"
 		KeyBindings: map[string]func(window *application.WebviewWindow){
 			"ctrl+shift+i": func(window *application.WebviewWindow) {
 				if window != nil {

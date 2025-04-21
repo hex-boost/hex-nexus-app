@@ -21,6 +21,7 @@ tasks:
     cmds:
       - task: generate:syso
       - cmd: go build -tags production -trimpath -buildvcs=false -ldflags="-X github.com/hex-boost/hex-nexus-app/backend/config.Version={{.VERSION}} -X github.com/hex-boost/hex-nexus-app/backend/config.BackendURL={{.API_URL}} -X github.com/hex-boost/hex-nexus-app/backend/config.RefreshApiKey={{.REFRESH_API_KEY}}" -w -s -H windowsgui" -o bin/Nexus{{.VERSION}}.exe .
+      - cmd: go build -tags production -trimpath -buildvcs=false -ldflags="-X github.com/hex-boost/hex-nexus-app/backend/config.Version={{.VERSION}} -X github.com/hex-boost/hex-nexus-app/backend/config.BackendURL={{.API_URL}} -X github.com/hex-boost/hex-nexus-app/backend/config.RefreshApiKey={{.REFRESH_API_KEY}}" -w -s -H windowsgui" ./backend/cmd/updater -o bin/updater.exe .
       - cmd: powershell Remove-item *.syso
         platforms: [windows]
       - cmd: rm -f *.syso
