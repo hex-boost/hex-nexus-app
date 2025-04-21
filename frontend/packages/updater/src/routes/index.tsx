@@ -23,7 +23,7 @@ function RouteComponent() {
       restartApplication().then(() => {
         const timer = setTimeout(() => {
           Exit();
-        }, 2000); // Wait 2 seconds before restartin
+        }, 2000);
           // g
         console.log('Application restarted successfully');
         return () => clearTimeout(timer);

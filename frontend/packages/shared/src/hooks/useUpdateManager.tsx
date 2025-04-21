@@ -96,7 +96,7 @@ export function useUpdateManager() {
         // Start download process immediately
         await downloadUpdate();
       } else {
-        await new Promise((resolve, reject) => {
+        await new Promise((resolve, _) => {
           setTimeout(() => {
             setUpdateStatus(prev => ({
               ...prev,
