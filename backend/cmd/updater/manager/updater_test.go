@@ -114,9 +114,17 @@ func TestUpdateProcess(t *testing.T) {
 		}
 
 		// 6. Testar download e instalação
-		err = updateManager.DownloadAndInstallUpdate()
+		// 6. Testar download e instalação
+		downloadPath, version, err := updateManager.DownloadUpdate()
 		if err != nil {
-			t.Errorf("Erro durante download e instalação: %v", err)
+			t.Errorf("Erro durante download: %v", err)
+			return
+		}
+
+		// Install the downloaded update
+		err = updateManager.InstallUpdate(downloadPath, version)
+		if err != nil {
+			t.Errorf("Erro durante instalação: %v", err)
 		}
 
 		// 7. Verificar se o diretório da nova versão foi criado
