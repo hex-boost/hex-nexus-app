@@ -1,3 +1,4 @@
+// frontend/packages/shared/src/hooks/useUpdateManager.tsx
 import type { UpdateStatusEnum } from '@/components/update-animation/update-overlay.tsx';
 import { UpdateManager } from '@manager';
 import { Events } from '@wailsio/runtime';
@@ -37,49 +38,14 @@ export function useUpdateManager() {
         progress: 100,
       }));
     } catch (error) {
-      console.error('Erro ao instalar atualização:', error);
+      console.error('Error installing update:', error);
       setUpdateStatus(prev => ({
         ...prev,
         status: 'error',
-        error: 'Erro ao instalar atualização',
+        error: 'Error installing update',
       }));
     }
   };
-  const checkForUpdates = async () => {
-    try {
-      setUpdateStatus(prev => ({ ...prev, status: 'checking', progress: 0 }));
-
-      // Chama a função do backend para verificar atualizações
-      const [needsUpdate, version] = await UpdateManager.CheckForUpdates();
-
-      setUpdateStatus(prev => ({
-        ...prev,
-        latestVersion: version,
-        needsUpdate,
-        status: 'available',
-        progress: 0,
-      }));
-    } catch (error) {
-      console.error('Erro ao verificar atualizações:', error);
-      setUpdateStatus(prev => ({
-        ...prev,
-        status: 'error',
-        error: 'Erro ao verificar atualizações',
-      }));
-    }
-  };
-  useEffect(() => {
-    // Inscrever-se para receber atualizações de status
-    const unsubscribe = Events.On('updater:status-change', (event) => {
-      setUpdateStatus(prev => ({ ...prev, ...event.data[0] }));
-    });
-
-    checkForUpdates();
-
-    return () => {
-      unsubscribe();
-    };
-  }, []);
 
   const downloadUpdate = async () => {
     try {
@@ -93,16 +59,73 @@ export function useUpdateManager() {
         latestVersion: version,
         progress: 50,
       }));
+
+      // Immediately install after download
+      await installUpdate(downloadPath, version);
+
       return { downloadPath, version };
     } catch (error) {
-      console.error('Erro ao baixar atualização:', error);
+      console.error('Error downloading update:', error);
       setUpdateStatus(prev => ({
         ...prev,
         status: 'error',
-        error: 'Erro ao baixar atualização',
+        error: 'Error downloading update',
+      }));
+      return null;
+    }
+  };
+const Exit = async () => {
+    UpdateManager.
+}
+  const checkForUpdates = async () => {
+    try {
+      setUpdateStatus(prev => ({ ...prev, status: 'checking', progress: 0 }));
+
+      // Call backend function to check for updates
+      const [needsUpdate, version] = await UpdateManager.CheckForUpdates();
+
+      if (needsUpdate) {
+        setUpdateStatus(prev => ({
+          ...prev,
+          latestVersion: version,
+          needsUpdate: true,
+          status: 'downloading', // Start downloading immediately
+          progress: 5,
+        }));
+
+        // Start download process immediately
+        await downloadUpdate();
+      } else {
+        setUpdateStatus(prev => ({
+          ...prev,
+          latestVersion: version,
+          needsUpdate: false,
+          status: 'complete',
+          progress: 100,
+        }));
+      }
+    } catch (error) {
+      console.error('Error checking for updates:', error);
+      setUpdateStatus(prev => ({
+        ...prev,
+        status: 'error',
+        error: 'Error checking for updates',
       }));
     }
   };
+
+  useEffect(() => {
+    // Subscribe to receive status updates
+    const unsubscribe = Events.On('updater:status-change', (event) => {
+      setUpdateStatus(prev => ({ ...prev, ...event.data[0] }));
+    });
+
+    checkForUpdates();
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   return {
     updateStatus,

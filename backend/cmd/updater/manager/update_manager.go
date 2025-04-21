@@ -92,6 +92,7 @@ func (u *UpdateManager) CheckForUpdates() (bool, string) {
 }
 
 // DownloadUpdate downloads the latest update and returns the path and version
+// DownloadUpdate downloads the latest update and returns the path and version
 func (u *UpdateManager) DownloadUpdate() (downloadPath string, version string, err error) {
 	// Get update information
 	resp, err := u.client.R().Get(fmt.Sprintf("%s/api/versions/latest", u.config.BackendURL))
@@ -125,6 +126,8 @@ func (u *UpdateManager) DownloadUpdate() (downloadPath string, version string, e
 		fileURL = u.config.BackendURL + fileURL
 	}
 
+	u.logger.Info("Downloading update from", zap.String("url", fileURL))
+
 	// Download update
 	u.emitProgress(20, "")
 	respDownload, err := u.client.R().
@@ -135,13 +138,20 @@ func (u *UpdateManager) DownloadUpdate() (downloadPath string, version string, e
 		return "", "", err
 	}
 
-	// Create a temp file for the download
-	tempFile, err := os.CreateTemp("", "nexus-update-*.exe")
+	// Create a temp file for the download with .exe extension
+	tempDir, err := os.MkdirTemp("", "nexus-update-*")
+	if err != nil {
+		u.emitProgress(0, "Failed to create temporary directory")
+		return "", "", err
+	}
+
+	tempFile := filepath.Join(tempDir, "Nexus.exe")
+	outFile, err := os.Create(tempFile)
 	if err != nil {
 		u.emitProgress(0, "Failed to create temporary file")
 		return "", "", err
 	}
-	defer tempFile.Close()
+	defer outFile.Close()
 
 	// Extract and save binary
 	binReader := respDownload.RawBody()
@@ -150,15 +160,24 @@ func (u *UpdateManager) DownloadUpdate() (downloadPath string, version string, e
 	// Update progress during download
 	u.emitProgress(40, "")
 
-	if _, err = io.Copy(tempFile, binReader); err != nil {
+	written, err := io.Copy(outFile, binReader)
+	if err != nil {
 		u.emitProgress(0, "Failed to save update file")
 		return "", "", err
 	}
 
+	// Log download size for debugging
+	u.logger.Info("Downloaded update file", zap.Int64("bytes", written))
+
+	// Make sure file is written to disk
+	outFile.Sync()
+	outFile.Close()
+
 	u.emitProgress(50, "")
-	return tempFile.Name(), versionResp.LatestVersion.Version, nil
+	return tempFile, versionResp.LatestVersion.Version, nil
 }
 
+// InstallUpdate installs the downloaded update
 // InstallUpdate installs the downloaded update
 func (u *UpdateManager) InstallUpdate(downloadPath string, version string) error {
 	u.emitProgress(60, "")
@@ -173,38 +192,68 @@ func (u *UpdateManager) InstallUpdate(downloadPath string, version string) error
 	baseDir = filepath.Dir(baseDir)
 	newAppDir := filepath.Join(baseDir, "app-"+version)
 
+	// Remove existing directory if it exists
+	if _, err := os.Stat(newAppDir); err == nil {
+		if err := os.RemoveAll(newAppDir); err != nil {
+			u.emitProgress(0, "Failed to clean existing directory")
+			return err
+		}
+	}
+
 	if err := os.MkdirAll(newAppDir, 0755); err != nil {
 		u.emitProgress(0, "Failed to create installation directory")
 		return err
 	}
 
-	// Save the new executable
+	// Target path for the new executable
 	targetPath := filepath.Join(newAppDir, "Nexus.exe")
 
 	u.emitProgress(75, "")
 
-	// Copy from the temp file to the destination
-	source, err := os.Open(downloadPath)
+	// Log file sizes for debugging
+	sourceInfo, err := os.Stat(downloadPath)
 	if err != nil {
-		u.emitProgress(0, "Failed to access update file")
+		u.logger.Error("Failed to stat source file", zap.Error(err))
+		u.emitProgress(0, "Failed to verify update file")
 		return err
 	}
-	defer source.Close()
 
-	outFile, err := os.Create(targetPath)
+	u.logger.Info("Copying update",
+		zap.String("from", downloadPath),
+		zap.String("to", targetPath),
+		zap.Int64("size", sourceInfo.Size()))
+
+	// Copy file with OS-specific commands to ensure binary integrity
+	source, err := os.ReadFile(downloadPath)
 	if err != nil {
-		u.emitProgress(0, "Failed to create destination file")
-		return err
-	}
-	defer outFile.Close()
-
-	if _, err = io.Copy(outFile, source); err != nil {
-		u.emitProgress(0, "Failed to copy update")
+		u.emitProgress(0, "Failed to read update file")
 		return err
 	}
 
-	// Clean up the temp file
+	if err = os.WriteFile(targetPath, source, 0755); err != nil {
+		u.emitProgress(0, "Failed to write update file")
+		return err
+	}
+
+	// Verify the file was copied correctly
+	targetInfo, err := os.Stat(targetPath)
+	if err != nil {
+		u.logger.Error("Failed to verify installed file", zap.Error(err))
+	} else {
+		u.logger.Info("Update installed",
+			zap.String("path", targetPath),
+			zap.Int64("size", targetInfo.Size()))
+
+		if sourceInfo.Size() != targetInfo.Size() {
+			u.logger.Error("Size mismatch in installed file",
+				zap.Int64("source", sourceInfo.Size()),
+				zap.Int64("target", targetInfo.Size()))
+		}
+	}
+
+	// Clean up the temp file and directory
 	os.Remove(downloadPath)
+	os.RemoveAll(filepath.Dir(downloadPath))
 
 	u.emitProgress(100, "")
 	return nil

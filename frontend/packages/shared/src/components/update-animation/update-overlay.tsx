@@ -1,3 +1,4 @@
+// frontend/packages/shared/src/components/update-animation/update-overlay.tsx
 import { TextShimmer } from '@/components/ui/text-shimmer.tsx';
 import { AnimatePresence, motion } from 'framer-motion';
 import { memo } from 'react';
@@ -10,7 +11,6 @@ export type UpdateOverlayProps = {
   status: UpdateStatusEnum;
   progress: number;
   error?: string;
-  onComplete: () => void;
 };
 
 const StatusMessage = memo(({ message }: { message: string }) => (
@@ -30,11 +30,10 @@ export default function UpdateOverlay({
   status,
   progress,
   error,
-  onComplete,
 }: UpdateOverlayProps) {
   // Status messages
   const statusMessages: Record<UpdateStatusEnum, string> = {
-    available: 'Update available',
+    available: 'Update available, preparing to download...',
     checking: 'Checking for updates...',
     downloading: 'Downloading update...',
     installing: 'Installing update...',
@@ -64,17 +63,6 @@ export default function UpdateOverlay({
             <div className="flex justify-center w-full">
               <StatusMessage message={statusMessages[status]} />
             </div>
-            {status === 'error' && (
-              <motion.button
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="mt-6 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md mx-auto block"
-                onClick={onComplete}
-              >
-                Close
-              </motion.button>
-            )}
           </motion.div>
         </div>
       </motion.div>

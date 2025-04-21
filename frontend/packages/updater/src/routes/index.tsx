@@ -1,6 +1,8 @@
+// frontend/packages/updater/src/routes/index.tsx
 import UpdateOverlay from '@/components/update-animation/update-overlay.tsx';
 import { useUpdateManager } from '@/hooks/useUpdateManager.tsx';
 import { createFileRoute } from '@tanstack/react-router';
+import { useEffect } from 'react';
 
 export const Route = createFileRoute('/')({
   component: RouteComponent,
@@ -9,32 +11,27 @@ export const Route = createFileRoute('/')({
 function RouteComponent() {
   const {
     updateStatus,
-    downloadUpdate,
     restartApplication,
-    installUpdate,
   } = useUpdateManager();
 
-  // Map the frontend status to the UI component status
-
   // Handle completion or next steps based on current status
-  const handleComplete = async () => {
-    if (updateStatus.status === 'complete') {
-      await restartApplication();
-    } else if (updateStatus.status === 'error') {
-      console.error('Error during update:', updateStatus);
-    } else if (updateStatus.status === 'available') {
-      const result = await downloadUpdate();
 
-      await installUpdate(result?.downloadPath as string, result?.version as string);
+  // Auto-restart when complete
+  useEffect(() => {
+    if (updateStatus.status === 'complete' || updateStatus.status === 'error') {
+      const timer = setTimeout(() => {
+        restartApplication();
+      }, 2000); // Wait 2 seconds before restarting
+
+      return () => clearTimeout(timer);
     }
-  };
+  }, [updateStatus.status, restartApplication]);
 
   return (
     <UpdateOverlay
       status={updateStatus.status}
       progress={updateStatus.progress}
       error={updateStatus.error}
-      onComplete={handleComplete}
     />
   );
 }

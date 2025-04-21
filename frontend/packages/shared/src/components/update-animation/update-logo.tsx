@@ -1,9 +1,9 @@
-import type { UpdateStatus } from './update-overlay';
+import type { UpdateStatusEnum } from './update-overlay';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 
 type UpdateLogoProps = {
-  status: UpdateStatus;
+  status: UpdateStatusEnum;
 };
 function RotationAnimation() {
   const [isPlaying, _] = useState(true);
