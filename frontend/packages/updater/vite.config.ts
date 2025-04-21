@@ -19,10 +19,13 @@ export default defineConfig({
       input: {
         main: path.resolve(__dirname, 'index.html'),
       },
+
+      output: { dir: '../../../backend/cmd/updater/dist' },
     },
   },
   resolve: {
     alias: {
+      '@manager': path.resolve(__dirname, '../updater/bindings/github.com/hex-boost/hex-nexus-app/backend/cmd/updater/manager'),
       '@': path.resolve(__dirname, '../shared/src'),
     },
 

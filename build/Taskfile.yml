@@ -21,6 +21,25 @@ tasks:
     cmds:
       - npm install
 
+  build:frontend:updater:
+    summary: Build the frontend project
+    dir: frontend
+    sources:
+      - "**/*"
+    generates:
+      - ../backend/cmd/updater/dist/*
+    deps:
+      - task: install:frontend:deps
+      - task: generate:bindings:updater
+    cmds:
+      - npm run {{.BUILD_COMMAND}}
+    env:
+      NODE_ENV: production
+      VITE_APP_VERSION: '{{.VERSION}}'
+      VITE_API_URL: '{{.API_URL | default "http://localhost:1337"}}'
+    vars:
+      BUILD_COMMAND: '{{if eq .PRODUCTION "true"}}build:all{{else}}build:updater{{end}}'
+
   build:frontend:
     summary: Build the frontend project
     dir: frontend
@@ -28,20 +47,32 @@ tasks:
       - "**/*"
     generates:
       - packages/main/dist/*
+      - ../backend/cmd/updater/dist/*
     deps:
       - task: install:frontend:deps
       - task: generate:bindings
     cmds:
-      - echo "Starting frontend build..."
-      - npm run {{.BUILD_COMMAND}} --loglevel verbose
+      - npm run {{.BUILD_COMMAND}}
     env:
       NODE_ENV: production
       VITE_APP_VERSION: '{{.VERSION}}'
       VITE_API_URL: '{{.API_URL | default "http://localhost:1337"}}'
     vars:
-      BUILD_COMMAND: '{{if eq .PRODUCTION "true"}}build:main{{else}}build:main{{end}}'
+      BUILD_COMMAND: '{{if eq .PRODUCTION "true"}}build:all{{else}}build:all{{end}}'
 
 
+  generate:bindings:updater:
+    summary: Generates bindings for the frontend
+    deps:
+      - task: go:mod:tidy
+    sources:
+      - "**/*.go"
+      - go.mod
+      - go.sum
+    generates:
+      - packages/updater/bindings/**/*
+    cmds:
+      - wails3 generate bindings -names -i -v -ts -f '{{.BUILD_FLAGS}}' -clean=true ./backend/cmd/updater -d frontend/packages/updater/bindings
   generate:bindings:
     summary: Generates bindings for the frontend
     deps:
@@ -51,8 +82,8 @@ tasks:
       - go.mod
       - go.sum
     generates:
-      - "frontend/packages/updater/bindings/**/*"
-      - "frontend/packages/main/bindings/**/*"
+      - packages/updater/bindings/**/*
+      - packages/main/bindings/**/*
     cmds:
       - wails3 generate bindings -names -i -v -ts -f '{{.BUILD_FLAGS}}' -clean=true -d frontend/packages/main/bindings
       - wails3 generate bindings -names -i -v -ts -f '{{.BUILD_FLAGS}}' -clean=true ./backend/cmd/updater -d frontend/packages/updater/bindings

@@ -1,14 +1,19 @@
 package main
 
 import (
+	"embed"
 	"flag"
 	"fmt"
 	"github.com/hex-boost/hex-nexus-app/backend/cmd/updater/manager"
 	updaterUtils "github.com/hex-boost/hex-nexus-app/backend/cmd/updater/utils"
 	"github.com/hex-boost/hex-nexus-app/backend/config"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
+	"go.uber.org/zap"
 	"os"
 )
+
+//go:embed all:dist
+var assets embed.FS
 
 func main() {
 	processStart := flag.String("processStart", "", "Nome do processo a ser iniciado")
@@ -24,15 +29,18 @@ func main() {
 	updateManager := manager.NewUpdateManager(cfg, updaterUtils, logger)
 
 	if *processStart != "" {
-		updateManager.StartMainApplication(*processStart)
+		err := updateManager.StartMainApplication(*processStart)
+		if err != nil {
+			logger.Error("Erro ao iniciar o processo principal:", zap.String("process", *processStart), zap.Error(err))
+			return
+		}
 		return
 	}
 
-	//updateWindow := manager.NewUpdaterWindow(updateManager)
-	//updateManager.SetContext(updateWindow)
-	//
-	//// O fluxo de atualização será controlado pelo frontend
-	//// que começa verificando atualizações automaticamente
-	//
-	//updateWindow.Show()
+	updateWindow := manager.NewUpdaterWindow(assets, updateManager)
+	err = updateWindow.App.Run()
+	if err != nil {
+		logger.Error("Erro ao iniciar o aplicativo:", zap.Error(err))
+		os.Exit(1)
+	}
 }

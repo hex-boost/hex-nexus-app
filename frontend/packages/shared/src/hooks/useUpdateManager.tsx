@@ -1,9 +1,10 @@
+import type { UpdateStatusEnum } from '@/components/update-animation/update-overlay.tsx';
 import { UpdateManager } from '@manager';
 import { Events } from '@wailsio/runtime';
 import { useEffect, useState } from 'react';
 
 type UpdateStatus = {
-  status: string;
+  status: UpdateStatusEnum;
   progress: number;
   latestVersion?: string;
   currentVersion: string;
@@ -20,15 +21,13 @@ export function useUpdateManager() {
     needsUpdate: false,
   });
 
-  const [isUpdateOverlayVisible, setIsUpdateOverlayVisible] = useState(false);
-
   const restartApplication = async () => {
     await UpdateManager.StartMainApplication('Nexus.exe');
   };
 
   const installUpdate = async (downloadPath: string, version: string) => {
     try {
-      setUpdateStatus(prev => ({ ...prev, status: 'Instalando atualização...', progress: 60 }));
+      setUpdateStatus(prev => ({ ...prev, status: 'installing', progress: 60 }));
 
       await UpdateManager.InstallUpdate(downloadPath, version);
 
@@ -37,11 +36,6 @@ export function useUpdateManager() {
         status: 'complete',
         progress: 100,
       }));
-
-      // Configurar um timeout para reiniciar automaticamente após a conclusão da instalação
-      setTimeout(() => {
-        restartApplication();
-      }, 2000);
     } catch (error) {
       console.error('Erro ao instalar atualização:', error);
       setUpdateStatus(prev => ({
@@ -53,7 +47,7 @@ export function useUpdateManager() {
   };
   const checkForUpdates = async () => {
     try {
-      setUpdateStatus(prev => ({ ...prev, status: 'Verificando atualizações...', progress: 0 }));
+      setUpdateStatus(prev => ({ ...prev, status: 'checking', progress: 0 }));
 
       // Chama a função do backend para verificar atualizações
       const [needsUpdate, version] = await UpdateManager.CheckForUpdates();
@@ -62,16 +56,9 @@ export function useUpdateManager() {
         ...prev,
         latestVersion: version,
         needsUpdate,
-        status: needsUpdate ? 'Atualização disponível' : 'Atualizado',
+        status: 'available',
         progress: 0,
       }));
-
-      if (needsUpdate) {
-        setIsUpdateOverlayVisible(true);
-      } else {
-        // Se não precisar de atualização, iniciar a aplicação principal
-        await restartApplication();
-      }
     } catch (error) {
       console.error('Erro ao verificar atualizações:', error);
       setUpdateStatus(prev => ({
@@ -96,7 +83,7 @@ export function useUpdateManager() {
 
   const downloadUpdate = async () => {
     try {
-      setUpdateStatus(prev => ({ ...prev, status: 'Baixando atualização...', progress: 10 }));
+      setUpdateStatus(prev => ({ ...prev, status: 'downloading', progress: 10 }));
 
       const [downloadPath, version] = await UpdateManager.DownloadUpdate();
 
@@ -104,12 +91,9 @@ export function useUpdateManager() {
         ...prev,
         downloadPath,
         latestVersion: version,
-        status: 'Download concluído',
         progress: 50,
       }));
-
-      // Após download bem-sucedido, proceder com a instalação
-      await installUpdate(downloadPath, version);
+      return { downloadPath, version };
     } catch (error) {
       console.error('Erro ao baixar atualização:', error);
       setUpdateStatus(prev => ({
@@ -120,16 +104,11 @@ export function useUpdateManager() {
     }
   };
 
-  const hideUpdateOverlay = () => {
-    setIsUpdateOverlayVisible(false);
-  };
-
   return {
     updateStatus,
-    isUpdateOverlayVisible,
+    installUpdate,
     checkForUpdates,
     downloadUpdate,
     restartApplication,
-    hideUpdateOverlay,
   };
 }
