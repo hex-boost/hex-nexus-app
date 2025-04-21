@@ -93,7 +93,7 @@ func (rc *RiotClient) getCredentials(riotClientPid int) (port string, authToken 
 		authHeader := base64.StdEncoding.EncodeToString([]byte("riot:" + token))
 		return portMatch[1], authHeader, nil
 	}
-	return "", "", fmt.Errorf("unable to extract credentials from process %s (PID: %d)", riotClientPid)
+	return "", "", fmt.Errorf("unable to extract credentials from process (PID: %d)", riotClientPid)
 }
 
 func (rc *RiotClient) LoginWithCaptcha(ctx context.Context, username, password, captchaToken string) (string, error) {

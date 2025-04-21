@@ -43,7 +43,6 @@ func (u *Utils) OpenBrowser(url string) error {
 var forceCloseFlag = false
 var forceCloseMutex sync.Mutex
 
-// Add these functions to handle the flag
 func (u *Utils) SetForceClose(force bool) {
 	forceCloseMutex.Lock()
 	defer forceCloseMutex.Unlock()
@@ -71,7 +70,7 @@ func (u *Utils) ForceCloseAllClients() error {
 		"RiotClientUxRender.exe",
 		"Riot Client.exe",
 		"LeagueClientUx.exe",
-		//"League of Legends.exe",
+		"League of Legends.exe",
 		"LeagueCrashHandler.exe",
 		"LeagueCrashHandler64.exe",
 		"LeagueClient.exe",
@@ -92,7 +91,7 @@ func (u *Utils) ForceCloseAllClients() error {
 				cmd := exec.Command("taskkill", "/F", "/PID", fmt.Sprintf("%d", process.Pid()))
 				cmd = u.HideConsoleWindow(cmd)
 				if err := cmd.Run(); err != nil {
-					fmt.Println(fmt.Sprintf("Failed to kill process",
+					fmt.Println(fmt.Sprintf("Failed to kill process %v %v %v",
 						zap.String("process", processName),
 						zap.Int("pid", process.Pid()),
 						zap.Error(err)))
