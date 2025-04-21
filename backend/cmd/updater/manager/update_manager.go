@@ -11,8 +11,10 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/go-resty/resty/v2"
 )
@@ -281,4 +283,36 @@ func (u *UpdateManager) StartMainApplication(exeName string) error {
 	}
 
 	return nil // This line is never reached but needed for compiler
+}
+
+func (u *UpdateManager) IsAnotherInstanceRunning() bool {
+
+	// Option 1: Check for a lock file
+	lockFilePath := filepath.Join(os.TempDir(), "Nexus.lock")
+
+	// Try to create/open the lock file
+	file, err := os.OpenFile(lockFilePath, os.O_CREATE|os.O_EXCL|os.O_RDWR, 0666)
+	if err != nil {
+		// If we can't create the file, another instance is likely running
+		return true
+	}
+
+	// If we created the file, clean it up when the app exits
+	pid := os.Getpid()
+	_, err = fmt.Fprintf(file, "%d", pid)
+	if err != nil {
+		file.Close()
+		return false
+	}
+
+	// Set up cleanup on program exit
+	go func() {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+		<-c
+		os.Remove(lockFilePath)
+		os.Exit(0)
+	}()
+
+	return false
 }

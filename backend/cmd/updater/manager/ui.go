@@ -26,14 +26,14 @@ func NewUpdaterWindow(assets embed.FS, updateManager *UpdateManager) *UpdaterWin
 			Title:                      "Nexus Updater",
 			DefaultContextMenuDisabled: true,
 			Width:                      1024,
-			DevToolsEnabled:            true,
+			//DevToolsEnabled:            true,
 
-			OpenInspectorOnStartup: true,
-			Height:                 768,
-			AlwaysOnTop:            false,
-			Hidden:                 false,
-			DisableResize:          true,
-			Frameless:              true,
+			//OpenInspectorOnStartup: true,
+			Height:        768,
+			AlwaysOnTop:   false,
+			Hidden:        false,
+			DisableResize: true,
+			Frameless:     true,
 		},
 	)
 

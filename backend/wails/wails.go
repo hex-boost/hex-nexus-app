@@ -289,8 +289,8 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 				Blue:  0,
 				Alpha: 80,
 			},
-			DevToolsEnabled:        true,
-			OpenInspectorOnStartup: true,
+			//DevToolsEnabled:        true,
+			//OpenInspectorOnStartup: true,
 		},
 	)
 

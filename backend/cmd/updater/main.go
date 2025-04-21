@@ -27,16 +27,31 @@ func main() {
 	logger := utils.NewLogger("updater", cfg)
 	updaterUtils := updaterUtils.New()
 	updateManager := manager.NewUpdateManager(cfg, updaterUtils, logger)
-
 	if *processStart != "" {
-		err := updateManager.StartMainApplication(*processStart)
+		processToStart := *processStart
+		if processToStart == "" {
+			processToStart = "Nexus" // Replace with your default process name
+		}
+
+		err := updateManager.StartMainApplication(processToStart)
 		if err != nil {
-			logger.Error("Erro ao iniciar o processo principal:", zap.String("process", *processStart), zap.Error(err))
+			logger.Error("Erro ao iniciar o processo principal:", zap.String("process", processToStart), zap.Error(err))
 			return
 		}
 		return
 	}
 
+	// Check if another instance is already running
+	if updateManager.IsAnotherInstanceRunning() {
+		logger.Info("Outra instância já está em execução. Iniciando aplicação diretamente.")
+		err := updateManager.StartMainApplication("Nexus") // Replace with your default process name
+		if err != nil {
+			logger.Error("Erro ao iniciar o processo principal:", zap.Error(err))
+		}
+		return
+	}
+
+	// Normal first instance flow - proceed with update window
 	updateWindow := manager.NewUpdaterWindow(assets, updateManager)
 	err = updateWindow.App.Run()
 	if err != nil {
