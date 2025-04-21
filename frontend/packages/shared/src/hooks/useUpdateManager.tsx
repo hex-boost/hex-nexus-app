@@ -74,9 +74,9 @@ export function useUpdateManager() {
       return null;
     }
   };
-const Exit = async () => {
-    UpdateManager.
-}
+  const Exit = async () => {
+    UpdateManager.Exit();
+  };
   const checkForUpdates = async () => {
     try {
       setUpdateStatus(prev => ({ ...prev, status: 'checking', progress: 0 }));
@@ -133,5 +133,6 @@ const Exit = async () => {
     checkForUpdates,
     downloadUpdate,
     restartApplication,
+    Exit,
   };
 }

@@ -12,6 +12,7 @@ function RouteComponent() {
   const {
     updateStatus,
     restartApplication,
+    Exit,
   } = useUpdateManager();
 
   // Handle completion or next steps based on current status
@@ -19,13 +20,19 @@ function RouteComponent() {
   // Auto-restart when complete
   useEffect(() => {
     if (updateStatus.status === 'complete' || updateStatus.status === 'error') {
-      const timer = setTimeout(() => {
-        restartApplication();
-      }, 2000); // Wait 2 seconds before restarting
-
-      return () => clearTimeout(timer);
+      restartApplication().then(() => {
+        const timer = setTimeout(() => {
+          Exit();
+        }, 2000); // Wait 2 seconds before restartin
+          // g
+        console.log('Application restarted successfully');
+        return () => clearTimeout(timer);
+      }).catch((e) => {
+        console.error('Error restarting application:', e);
+      },
+      );
     }
-  }, [updateStatus.status, restartApplication]);
+  }, [updateStatus.status, restartApplication, Exit]);
 
   return (
     <UpdateOverlay

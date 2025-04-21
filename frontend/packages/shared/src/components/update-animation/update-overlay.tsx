@@ -37,7 +37,7 @@ export default function UpdateOverlay({
     checking: 'Checking for updates...',
     downloading: 'Downloading update...',
     installing: 'Installing update...',
-    complete: 'Update complete! Restarting...',
+    complete: 'Update complete! Starting...',
     error: `Update failed: ${error || 'Unknown error'}`,
   };
 

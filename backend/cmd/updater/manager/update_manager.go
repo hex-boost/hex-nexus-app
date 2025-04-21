@@ -91,8 +91,6 @@ func (u *UpdateManager) CheckForUpdates() (bool, string) {
 	return result.NeedsUpdate, result.Version
 }
 
-// DownloadUpdate downloads the latest update and returns the path and version
-// DownloadUpdate downloads the latest update and returns the path and version
 func (u *UpdateManager) DownloadUpdate() (downloadPath string, version string, err error) {
 	// Get update information
 	resp, err := u.client.R().Get(fmt.Sprintf("%s/api/versions/latest", u.config.BackendURL))
@@ -175,6 +173,10 @@ func (u *UpdateManager) DownloadUpdate() (downloadPath string, version string, e
 
 	u.emitProgress(50, "")
 	return tempFile, versionResp.LatestVersion.Version, nil
+}
+
+func (u *UpdateManager) Exit() {
+	os.Exit(0)
 }
 
 // InstallUpdate installs the downloaded update
@@ -278,7 +280,5 @@ func (u *UpdateManager) StartMainApplication(exeName string) error {
 		return err
 	}
 
-	// Exit this process after starting the main app
-	os.Exit(0)
 	return nil // This line is never reached but needed for compiler
 }
