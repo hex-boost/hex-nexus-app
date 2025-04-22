@@ -10,7 +10,12 @@ const __dirname = dirname(__filename);
 
 export default defineConfig({
   plugins: [
-    TanStackRouterVite({ target: 'react', autoCodeSplitting: true }),
+    TanStackRouterVite({
+      target: 'react',
+      generationMode: 'build-time',
+      routesDirectory: './src/routes',
+      generatedRouteTree: './src/routeTree.gen.ts',
+    }),
     react(),
     tailwindcss(),
   ],
