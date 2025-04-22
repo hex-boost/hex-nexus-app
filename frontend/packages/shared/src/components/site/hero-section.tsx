@@ -19,13 +19,12 @@ export function HeroSection() {
       >
         <div className="text-center mb-16 ">
           <h1 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight">
-            Boost Your League Career,
+            Empower Your Boosting Career
             <br />
-            Maximize Your Earnings
+            Accounts On Demand, Zero Hassle
           </h1>
           <p className="text-gray-400 text-lg mb-8 max-w-2xl mx-auto">
-            The ultimate desktop application for League of Legends boosters. Manage multiple accounts, track your
-            earnings, and optimize your boosting workflow with our advanced tools.
+            Transform Your Workflow with All-in-One Account Renter
           </p>
           <Link
             to={downloadUrl as string}
