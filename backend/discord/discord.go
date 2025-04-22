@@ -28,14 +28,13 @@ import (
 const (
 	discordCallbackPort = 45986
 	discordApiBaseURL   = "https://discord.com/api"
-	authWaitTimeout     = 2 * time.Minute
+	authWaitTimeout     = 30 * time.Minute
 )
 
 // Add these global variables at the package level
 var (
 	globalServer     *http.Server
 	globalRouter     *mux.Router
-	callbackHandlers map[string]func(*types.UserWithJWT, error) // Map to store callback handlers by ID
 	serverMutex      sync.Mutex
 	isServerRunning  bool
 	isAuthInProgress bool                    // New flag to track if authentication is in progress
@@ -53,7 +52,6 @@ type Discord struct {
 func New(config *config.Config, logger *utils.Logger, utils *utils.Utils) *Discord {
 	client := resty.New()
 	client.SetBaseURL(config.BackendURL)
-	callbackHandlers = make(map[string]func(*types.UserWithJWT, error))
 	return &Discord{
 		backendClient: client,
 		config:        config,
@@ -401,80 +399,4 @@ func (d *Discord) uploadDiscordAvatar(accessToken string, userJwt string, userId
 
 	d.logger.Info("Avatar updated successfully", zap.Int("user_id", userId), zap.Float64("avatar_id", avatarId))
 	return nil
-}
-
-func (d *Discord) handleDiscordCallback(callback func(token string, err error)) {
-	// Create a context with timeout to ensure proper cleanup
-	ctx, cancel := context.WithTimeout(context.Background(), authWaitTimeout)
-	defer cancel()
-
-	router := mux.NewRouter()
-	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%d", discordCallbackPort),
-		Handler: router,
-	}
-
-	d.logger.Info("Setting up server for Discord callback", zap.Int("port", discordCallbackPort))
-
-	router.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {
-		code := r.URL.Query().Get("access_token")
-		d.logger.Debug("Callback received with token", zap.Int("token_length", len(code)))
-
-		authURL := fmt.Sprintf("/api/auth/discord/callback?access_token=%s", code)
-		resp, err := d.backendClient.R().Get(authURL)
-
-		var token string
-		if err == nil {
-			var result struct {
-				JWT string `json:"jwt"`
-			}
-			if jsonErr := json.Unmarshal(resp.Body(), &result); jsonErr == nil {
-				token = result.JWT
-				d.logger.Info("Authentication successful", zap.Int("token_length", len(token)))
-			} else {
-				err = jsonErr
-				d.logger.Error("Error decoding JWT response", zap.Error(jsonErr))
-			}
-		} else {
-			d.logger.Error("Authentication error", zap.Error(err))
-		}
-
-		if err := d.renderTemplate(w, "discord_auth_success.html"); err != nil {
-			d.logger.Error("Error rendering success template", zap.Error(err))
-		}
-
-		// Call the callback with the result
-		callback(token, err)
-
-		// Schedule server shutdown
-		go func() {
-			time.Sleep(2 * time.Second)
-			d.logger.Debug("Shutting down HTTP server")
-			// Use a separate context for shutdown
-			shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer shutdownCancel()
-			srv.Shutdown(shutdownCtx)
-		}()
-	})
-
-	go func() {
-		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			d.logger.Error("HTTP server error", zap.Error(err))
-			callback("", fmt.Errorf("HTTP server error: %v", err))
-		}
-	}()
-
-	// Ensure server gets shut down after context timeout
-	go func() {
-		<-ctx.Done()
-		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
-			d.logger.Warn("Authentication timeout exceeded")
-			callback("", fmt.Errorf("authentication timeout exceeded"))
-
-			// Ensure server shutdown
-			shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer shutdownCancel()
-			srv.Shutdown(shutdownCtx)
-		}
-	}()
 }

@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import notificationSound from '@/assets/sounds/notification.ogg';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { useWebSocket } from '@/hooks/use-websocket';
+import { useMembership } from '@/hooks/useMembership.ts';
 import { strapiClient } from '@/lib/strapi.ts';
 import { useAccountStore } from '@/stores/useAccountStore.ts';
 import { usePremiumPaymentModalStore } from '@/stores/usePremiumPaymentModalStore';
@@ -19,6 +20,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const { isNexusAccount } = useAccountStore();
   const { user } = useUserStore();
   const premiumModalStore = usePremiumPaymentModalStore();
+  const { pricingPlans } = useMembership();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [filterType, setFilterType] = useState<'all' | 'unread' | 'read'>('all');
   const [initialized, setInitialized] = useState(false);
@@ -230,6 +232,11 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       };
 
       addNotification(newNotification);
+
+      if (notification.event === NOTIFICATION_EVENTS.MEMBERSHIP_PAID && !notification.isSeen) {
+        premiumModalStore.open({ amount: pricingPlans?.find(plan => notification.metadata.tier.toLowerCase() === plan.tier_enum)?.price ?? 10, tier: notification.metadata.tier.slice(0, 1).toUpperCase() + notification.metadata.tier.slice(1), paymentMethod: notification.metadata.paymentMethod });
+        markAsRead(notification.documentId);
+      }
       if (notification.event === NOTIFICATION_EVENTS.ACCOUNT_EXPIRED) {
         if (isNexusAccount) {
           Utils.ForceCloseAllClients().then(() => {

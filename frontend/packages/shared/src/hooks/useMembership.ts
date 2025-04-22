@@ -1,4 +1,4 @@
-import type { PaymentMethod } from '@/types/membership.ts';
+import type { PaymentMethod, PricingPlan } from '@/types/membership.ts';
 import type { PremiumTiers } from '@/types/types.ts';
 
 export function useMembership() {
@@ -44,6 +44,131 @@ export function useMembership() {
     return colorMap[tier];
   };
 
+  const pricingPlans: PricingPlan[] = [
+    {
+      tier: 'Free',
+      tier_enum: 'free',
+      description: 'Thanks for being part of Nexus.',
+      price: 0,
+
+      benefits: [
+
+        {
+          title: 'Earns 300 coins',
+        },
+        {
+          title: 'Accounts up to Platinum',
+        },
+
+        {
+          title: 'Community Support',
+        },
+        {
+          title: 'No credit card required',
+        },
+
+      ],
+
+      buttonText: 'Get Started for Free',
+    },
+    {
+      tier: 'Basic',
+      description: 'Perfect for part-time boosters',
+      price: 10,
+      period: '/mo',
+
+      benefits: [
+        {
+          title: 'Instantly earns 3000 coins',
+          icon: 'check',
+        },
+
+        {
+          title: 'Accounts up to Emerald',
+          icon: 'check',
+
+        },
+        {
+          title: 'Secure Payment',
+          icon: 'check',
+
+        },
+        {
+          title: 'Ready to use in seconds',
+          icon: 'check',
+
+        },
+
+      ],
+      tier_enum: 'basic',
+      buttonText: 'Choose Basic',
+    },
+    {
+      tier: 'Premium',
+      description: 'The ideal solution for serious boosters.',
+      price: 20,
+      tier_enum: 'premium',
+      benefits: [
+        {
+          title: 'Instantly earns 10000 coins',
+          icon: 'check',
+
+        },
+
+        {
+          title: 'Accounts up to Diamond',
+          icon: 'check',
+        },
+        {
+          title: 'Exclusive support',
+          icon: 'check',
+
+        },
+        {
+          title: 'Discord Role',
+          icon: 'check',
+
+        },
+
+      ],
+      period: '/mo',
+      buttonText: 'Choose Premium',
+    },
+    {
+      tier: 'Pro',
+      tier_enum: 'pro',
+      description: 'For full-time professional boosters',
+      price: 30,
+      benefits: [
+        {
+          title: 'Unlimited coins & accounts',
+          icon: 'check',
+
+        },
+
+        {
+          title: 'All ranks available',
+          icon: 'check',
+        },
+
+        {
+          title: 'Access to Skin-Changer',
+          icon: 'check',
+          isNew: true,
+
+        },
+        {
+          title: 'Access to Lobby Revealer',
+          icon: 'check',
+          isNew: true,
+
+        },
+
+      ],
+      period: '/mo',
+      buttonText: 'Choose Pro',
+    },
+  ];
   const getBackgroundColor = (tier: PremiumTiers) => {
     const bgMap: Record<string, string> = {
       basic: 'bg-[#0a1525]',
@@ -77,5 +202,6 @@ export function useMembership() {
     paymentMethods,
     getTierColorClass,
     getBackgroundColor,
+    pricingPlans,
   };
 }

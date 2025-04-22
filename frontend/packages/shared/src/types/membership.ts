@@ -9,11 +9,10 @@ export type PricingPlan = {
   tier: string;
   tier_enum: PremiumTiers;
   price: number;
+  buttonText: string;
   period?: string;
   description: string;
   benefits: { title: string; description?: string; isNew?: boolean; icon?: string }[];
-  buttonText: string;
-  isCurrentPlan: boolean;
   note?: string;
 };
 export type SubscriptionRequest = {

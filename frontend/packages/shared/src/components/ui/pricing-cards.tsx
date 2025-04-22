@@ -1,6 +1,5 @@
 'use client';
 
-import type { PricingPlan } from '@/types/membership.ts';
 import type { PremiumTiers } from '@/types/types.ts';
 import { FlickeringGrid } from '@/components/magicui/flickering-grid.tsx';
 import { PaymentMethodDialog } from '@/components/PaymentMethodDialog.tsx';
@@ -11,10 +10,10 @@ import { useUserStore } from '@/stores/useUserStore.ts';
 import { ArrowDownCircle, CircleCheckBig } from 'lucide-react';
 import { useRef } from 'react';
 
-export default function PricingCards({ pricingPlans }: { pricingPlans: PricingPlan[] }) {
+export default function PricingCards() {
   const pricingRef = useRef<HTMLDivElement>(null);
   const { user } = useUserStore();
-  const { getBackgroundColor, getTierColorClass } = useMembership();
+  const { getBackgroundColor, getTierColorClass, pricingPlans } = useMembership();
   const scrollToPricing = () => {
     pricingRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -24,7 +23,7 @@ export default function PricingCards({ pricingPlans }: { pricingPlans: PricingPl
     return <span className={`${colorClass.text} rounded-full bg-opacity-10 p-0.5`}>✓</span>;
   };
 
-  const currentPlan = pricingPlans.find(plan => plan.isCurrentPlan);
+  const currentPlan = pricingPlans.find(plan => plan.tier_enum === user?.premium?.tier?.toLowerCase());
 
   return (
     <div className="text-white flex flex-col items-center justify-center  w-full p-4">
@@ -48,7 +47,7 @@ export default function PricingCards({ pricingPlans }: { pricingPlans: PricingPl
           </Button>
         </div>
 
-        {currentPlan && (
+        { currentPlan && (
           <div className={`${getTierColorClass(currentPlan.tier_enum).bgLight}  rounded-xl px-8 pb-8 pt-16 flex flex-col items-center relative overflow-hidden`}>
             <div className=" w-24 h-24 rounded-full  mb-6">
               <div className="w-full h-full rounded-full overflow-hidden">
