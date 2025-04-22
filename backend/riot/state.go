@@ -32,10 +32,8 @@ func findWindow(className, windowName string) uintptr {
 	return ret
 }
 func (rc *RiotClient) IsRunning() bool {
-	// Look for the "Riot Client" window
 	hwnd := findWindow("", "Riot Client")
 	if hwnd != 0 {
-		rc.logger.Debug("Riot Client window found")
 		return true
 	}
 

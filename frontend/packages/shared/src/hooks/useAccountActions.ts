@@ -94,7 +94,7 @@ export function useAccountActions({
           setTimeout(async () => {
             await invalidateRelatedQueries();
             resolve(null);
-          }, 1000);
+          }, 1500);
         });
 
         // Após timeout e invalidação, atualizar o toast

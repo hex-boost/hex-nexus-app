@@ -192,7 +192,6 @@ func (am *AccountMonitor) monitorLoop() {
 	}
 }
 func (am *AccountMonitor) getSummonerNameByRiotClient() string {
-	am.logger.Debug("Riot client found but not initialized, attempting initialization")
 	if !am.riotClient.IsClientInitialized() {
 		if err := am.riotClient.InitializeRestyClient(); err != nil {
 			am.logger.Error("Failed to initialize Riot client",
@@ -201,9 +200,6 @@ func (am *AccountMonitor) getSummonerNameByRiotClient() string {
 			return ""
 		}
 	}
-	am.logger.Debug("Successfully initialized Riot client")
-
-	am.logger.Debug("Checking user authentication state")
 	authState, err := am.riotClient.GetAuthenticationState()
 	if err != nil {
 		am.logger.Error("Failed to retrieve authentication state",
@@ -211,19 +207,12 @@ func (am *AccountMonitor) getSummonerNameByRiotClient() string {
 			zap.String("errorType", fmt.Sprintf("%T", err)))
 		return ""
 	}
-	am.logger.Debug("Authentication state retrieved",
-		zap.String("authType", authState.Type),
-		zap.Any("authDetails", authState))
 
-	// Skip further checks if not authenticated
 	if authState.Type != "success" {
-		am.logger.Debug("User not successfully authenticated, skipping user info check",
-			zap.String("currentAuthType", authState.Type))
 		return ""
 	}
 
 	// Get user info
-	am.logger.Debug("Attempting to retrieve user info")
 	userInfo, err := am.riotClient.GetUserinfo()
 	if err != nil {
 		am.logger.Error("Failed to get user info",
@@ -231,11 +220,6 @@ func (am *AccountMonitor) getSummonerNameByRiotClient() string {
 			zap.String("errorType", fmt.Sprintf("%T", err)))
 		return ""
 	}
-	am.logger.Debug("User info retrieved successfully",
-		zap.String("username", userInfo.Username),
-		zap.String("gameName", userInfo.Acct.GameName),
-		zap.String("tagLine", userInfo.Acct.TagLine),
-		zap.String("puuid", userInfo.Sub))
 	return userInfo.Username
 	// Check if it's a system account
 }
@@ -283,11 +267,11 @@ func (am *AccountMonitor) checkCurrentAccount() {
 	if !am.riotClient.IsRunning() && !am.leagueService.IsRunning() && !am.leagueService.IsPlaying() {
 		am.cachedAccounts = []types.SummonerRented{}
 		am.lastAccountsFetch = time.Now() // Reset the timer
+		am.SetNexusAccount(false)
 		return
 	}
 	currentUsername := am.GetLoggedInUsername()
 	if currentUsername == "" {
-		am.logger.Debug("Skipping account check - no logged-in account found, username is empty")
 		return
 	}
 
@@ -326,19 +310,24 @@ func (am *AccountMonitor) checkCurrentAccount() {
 			}
 		}
 	}
+	am.SetNexusAccount(isNexusAccount)
+}
+func (am *AccountMonitor) IsNexusAccount() bool {
+	am.mutex.Lock()
+	defer am.mutex.Unlock()
+	return am.isNexusAccount
+}
+func (am *AccountMonitor) SetNexusAccount(isNexusAccount bool) {
 	previousState := am.IsNexusAccount()
-
 	am.mutex.Lock()
 	am.isNexusAccount = isNexusAccount
 	am.mutex.Unlock()
-
 	// Update watchdog if state changed
 	if previousState != isNexusAccount {
 		// Your existing watchdog update code
 		am.logger.Info("Nexus account status changed",
 			zap.Bool("previousStatus", previousState),
-			zap.Bool("currentStatus", isNexusAccount),
-			zap.String("summonerName", currentUsername))
+			zap.Bool("currentStatus", isNexusAccount))
 
 		err := am.watchdogState.Update(isNexusAccount)
 		am.window.EmitEvent("nexusAccount:state", isNexusAccount)
@@ -349,9 +338,4 @@ func (am *AccountMonitor) checkCurrentAccount() {
 				zap.Bool("isNexusAccount", isNexusAccount))
 		}
 	}
-}
-func (am *AccountMonitor) IsNexusAccount() bool {
-	am.mutex.Lock()
-	defer am.mutex.Unlock()
-	return am.isNexusAccount
 }
