@@ -6,6 +6,7 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/config"
 	"github.com/hex-boost/hex-nexus-app/backend/testutils"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
+	loggerUtils "github.com/hex-boost/hex-nexus-app/backend/utils"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -105,7 +106,7 @@ func TestUpdateProcess(t *testing.T) {
 		// Agora testConfig terá os valores que você definiu
 		updaterUtils := updaterUtils.New()
 		utils := utils.NewUtils()
-		updateManager := NewUpdateManager(testConfig, updaterUtils, utils.NewLogger("test", testConfig), utils)
+		updateManager := NewUpdateManager(testConfig, updaterUtils, loggerUtils.NewLogger("test", testConfig), utils)
 		hasUpdate, newVersion := updateManager.CheckForUpdates()
 		if !hasUpdate {
 			t.Error("Falha ao detectar atualização disponível")

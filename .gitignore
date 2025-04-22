@@ -8,7 +8,6 @@ bin/*
 .task
 bindings
 *.syso
-dist
 /build/icons.icns
 /build/windows/icons.ico
 /build/windows/nsis/MicrosoftEdgeWebview2Setup.exe

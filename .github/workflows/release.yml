@@ -61,11 +61,20 @@ jobs:
           API_KEY: ${{ secrets.API_KEY }}
           API_URL: ${{ secrets.API_URL }}
         run: |
-          EXE_PATH=$(find . -name "Nexus*.exe" -type f | head -1)
-    
+          # Find main executable
+          EXE_PATH=$(find ./bin -name "Nexus.exe" -type f | head -1)
+          
+          # Find installer executable
+          INSTALLER_PATH=$(find ./build/windows/nsis -name "Nexus-Setup*.exe" -type f | head -1)
+
           if [ -z "$EXE_PATH" ]; then
-          echo "❌ No executable found"
-          exit 1
+            echo "❌ No main executable found"
+            exit 1
+          fi
+          
+          if [ -z "$INSTALLER_PATH" ]; then
+            echo "❌ No installer executable found"
+            exit 1
           fi
 
           # Create version record with verbose output
@@ -83,14 +92,15 @@ jobs:
           echo "Extracted Version ID: $VERSION_ID"
           
           if [ -z "$VERSION_ID" ]; then
-          echo "Failed to extract version ID"
-          exit 1
+            echo "Failed to extract version ID"
+            exit 1
           fi
-          echo "Found executable at: $EXE_PATH"
           
+          echo "Found main executable at: $EXE_PATH"
+          echo "Found installer at: $INSTALLER_PATH"
           
-          # Upload file with status code tracking
-          echo "Uploading application binary..."
+          # Upload main executable
+          echo "Uploading main application binary..."
           UPLOAD_RESULT=$(curl -v -X POST "${{env.API_URL}}/api/upload" \
           -H "Authorization: Bearer ${{ env.API_KEY }}" \
           -F "files=@$EXE_PATH" \
@@ -100,13 +110,35 @@ jobs:
           -w "\nStatus code: %{http_code}" \
           -L)
           
-          echo "Upload Result:"
+          echo "Main Upload Result:"
           echo "$UPLOAD_RESULT"
           
-          # Check if upload was successful
+          # Check if main upload was successful
           if echo "$UPLOAD_RESULT" | grep -q "Status code: 2[0-9][0-9]"; then
-            echo "✅ Upload completed successfully"
+            echo "✅ Main executable upload completed successfully"
+          
+            # Upload installer executable
+            echo "Uploading installer binary..."
+            INSTALLER_UPLOAD_RESULT=$(curl -v -X POST "${{env.API_URL}}/api/upload" \
+            -H "Authorization: Bearer ${{ env.API_KEY }}" \
+            -F "files=@$INSTALLER_PATH" \
+            -F "refId=$VERSION_ID" \
+            -F "ref=api::version.version" \
+            -F "field=installer" \
+            -w "\nStatus code: %{http_code}" \
+            -L)
+          
+            echo "Installer Upload Result:"
+            echo "$INSTALLER_UPLOAD_RESULT"
+          
+            # Check if installer upload was successful
+            if echo "$INSTALLER_UPLOAD_RESULT" | grep -q "Status code: 2[0-9][0-9]"; then
+              echo "✅ Installer upload completed successfully"
+            else
+              echo "❌ Installer upload failed"
+              exit 1
+            fi
           else
-          echo "❌ Upload failed"
-          exit 1
+            echo "❌ Main executable upload failed"
+            exit 1
           fi
