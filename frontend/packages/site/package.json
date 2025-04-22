@@ -5,9 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "start": "serve -s dist",
     "build:dev": "vite build --minify false --mode development",
     "build": "tsc && vite build --emptyOutDir",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0 --fix",
     "preview": "vite preview"
+  },
+  "dependencies": {
+    "serve": "^14.2.4"
   }
 }
