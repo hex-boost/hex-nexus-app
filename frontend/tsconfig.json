@@ -9,20 +9,67 @@
     ],
     "module": "ESNext",
     "skipLibCheck": true,
-    /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    /* Linting */
     "strict": false,
     "noUnusedLocals": true,
     "strictNullChecks": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    /* Path */
+
+    "baseUrl": ".",
+    "paths": {
+
+      "@shared": [
+        "packages/shared/*"
+      ],
+      "@/*": [
+        "packages/shared/src/*"
+      ],
+
+      "@time": [
+        "packages/main/bindings/time"
+      ],
+
+      "@app": [
+        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/app"
+      ],
+
+      "@riot": [
+        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/riot"
+      ],
+      "@discord": [
+        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/discord"
+      ],
+      "@league": [
+        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/league"
+      ],
+      "@repository": [
+        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/repository"
+      ],
+      "@updater": [
+        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/updater"
+      ],
+
+      "@events": [
+        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/events"
+      ],
+      "@utils": [
+        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/utils"
+      ],
+
+      "@stripe": [
+        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/stripe"
+      ],
+      "@overlay": [
+        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/overlay"
+      ]
+
+    }
   },
   "include": [
     "packages/main/**/*",
@@ -36,6 +83,7 @@
   "types": [
     "node"
   ],
+
   "references": [
     {
       "path": "./tsconfig.node.json"

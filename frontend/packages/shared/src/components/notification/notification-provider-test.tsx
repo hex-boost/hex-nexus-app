@@ -96,8 +96,7 @@ describe('handleNotification function', () => {
   test('should open premium modal for MEMBERSHIP_PAID notification', () => {
     // Setup
     const handleMessage = renderComponent();
-    import { mockPremiumModalOpen } from '@/stores/usePremiumPaymentModalStore';
-
+    const mockPremiumModalOpen = jest.requireMock('@/stores/usePremiumPaymentModalStore').mockPremiumModalOpen;
     const membershipPaidNotification = {
       documentId: '456',
       event: NOTIFICATION_EVENTS.MEMBERSHIP_PAID,

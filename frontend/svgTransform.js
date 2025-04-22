@@ -1,8 +1,7 @@
-module.exports = {
-  process() {
-    return { code: 'module.exports = {};' };
-  },
-  getCacheKey() {
-    return 'svgTransform';
-  },
-};
+export function process() {
+  return { code: 'export default {};' };
+}
+
+export function getCacheKey() {
+  return 'svgTransform';
+}
