@@ -14,17 +14,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.24.1'
-
-      - name: Install gotestsum
-        run: go install gotest.tools/gotestsum@latest
-
-      - name: Run tests
-        run: |
-          gotestsum --format short --hide-summary skipped --format-hide-empty-pkg
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
@@ -46,6 +35,17 @@ jobs:
           API_URL: ${{ secrets.API_URL }}
           API_KEY: ${{ secrets.API_KEY }}
           PRODUCTION: true
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.24.1'
+      - name: Install gotestsum
+        run: go install gotest.tools/gotestsum@latest
+
+      - name: Run tests
+        run: |
+          gotestsum --format short --hide-summary skipped --format-hide-empty-pkg
       - name: Check build artifacts
         shell: bash
         run: |
