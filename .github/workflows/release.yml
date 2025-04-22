@@ -39,7 +39,7 @@ jobs:
         shell: bash
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
       - name: Build with taskfile
-        run: wails3 task build -v
+        run: wails3 task package
         env:
           APP_NAME: Nexus
           VERSION: ${{ env.VERSION }}

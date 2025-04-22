@@ -1,24 +1,24 @@
-import { GradientCard } from "@/components/ui/gradient-card"
-import Image from "next/image"
+import { GradientCard } from '@/components/ui/gradient-card';
+import Image from 'next/image';
 
 export function FeaturesSection() {
   const features = [
     {
-      title: "Multi-Account Management",
-      description: "Easily switch between accounts and track progress",
-      image: "/placeholder.svg?height=200&width=300",
+      title: 'Multi-Account Management',
+      description: 'Easily switch between accounts and track progress',
+      image: '/placeholder.svg?height=200&width=300',
     },
     {
-      title: "Earnings Dashboard",
-      description: "Track your boosting income and performance",
-      image: "/placeholder.svg?height=200&width=300",
+      title: 'Earnings Dashboard',
+      description: 'Track your boosting income and performance',
+      image: '/placeholder.svg?height=200&width=300',
     },
     {
-      title: "Auto Queue & Accept",
-      description: "Optimize your boosting workflow",
-      image: "/placeholder.svg?height=200&width=300",
+      title: 'Auto Queue & Accept',
+      description: 'Optimize your boosting workflow',
+      image: '/placeholder.svg?height=200&width=300',
     },
-  ]
+  ];
 
   return (
     <section className="py-16 px-6">
@@ -28,14 +28,14 @@ export function FeaturesSection() {
         </h2>
         <p className="text-gray-400 text-center mb-12 max-w-2xl mx-auto">
           Our suite of tools is designed specifically for League of Legends boosters to maximize efficiency and
-          earnings. Manage multiple accounts, automate repetitive tasks, and track your performance all in one
+          earnings. Rent multiple accounts, automate repetitive tasks, and track your performance all in one
           application.
         </p>
         <div className="grid md:grid-cols-3 gap-8">
-          {features.map((feature) => (
+          {features.map(feature => (
             <GradientCard key={feature.title}>
               <Image
-                src={feature.image || "/placeholder.svg"}
+                src={feature.image || '/placeholder.svg'}
                 alt={feature.title}
                 width={300}
                 height={200}
@@ -48,5 +48,5 @@ export function FeaturesSection() {
         </div>
       </div>
     </section>
-  )
+  );
 }

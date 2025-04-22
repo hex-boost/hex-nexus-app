@@ -265,17 +265,18 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 			Name:                       "Main",
 			DefaultContextMenuDisabled: true,
 
-			Title:         "Nexus",
-			Width:         1440,
-			Height:        900,
+			Title:  "Nexus",
+			Width:  1920,
+			Height: 1080,
+
 			AlwaysOnTop:   false,
 			URL:           "",
 			DisableResize: true,
 			Frameless:     true,
-			MinWidth:      1280,
-			MinHeight:     720,
-			MaxWidth:      1600,
-			MaxHeight:     900,
+			//MinWidth:      1280,
+			//MinHeight:     720,
+			//MaxWidth:      1600,
+			//MaxHeight:     900,
 			Windows: application.WindowsWindow{
 				Theme:                   1,
 				CustomTheme:             nil,
@@ -290,6 +291,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 				Blue:  0,
 				Alpha: 80,
 			},
+
 			//DevToolsEnabled:        true,
 			//OpenInspectorOnStartup: true,
 		},

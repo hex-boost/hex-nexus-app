@@ -5,7 +5,7 @@ import { routeTree } from './routeTree.gen.ts';
 import '@/index.css';
 
 import 'non.geist';
-// Router isolado para o updater
+
 const router = createRouter({ routeTree });
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
