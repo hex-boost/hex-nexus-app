@@ -6,6 +6,8 @@ frontend/bindings
 build/bin/*
 bin/*
 .task
+backend/cmd/updater/dist/assets
+frontend/packages/main/dist/assets
 bindings
 *.syso
 /build/icons.icns
