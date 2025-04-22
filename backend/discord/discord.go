@@ -2,6 +2,8 @@ package discord
 
 import (
 	"bytes"
+	"net"
+
 	"context"
 	"encoding/json"
 	"errors"
@@ -123,20 +125,27 @@ func (d *Discord) StartOAuth() (*types.UserWithJWT, error) {
 		}
 
 		// Schedule server shutdown
-		go func() {
-			time.Sleep(1 * time.Second)
-			d.logger.Debug("Shutting down temporary HTTP server")
-			// Use a new context for shutdown to ensure it happens even if parent is canceled
-			shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer shutdownCancel()
-			srv.Shutdown(shutdownCtx)
-		}()
+		//go func() {
+		//	time.Sleep(1 * time.Second)
+		//	d.logger.Debug("Shutting down temporary HTTP server")
+		//	// Use a new context for shutdown to ensure it happens even if parent is canceled
+		//	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		//	defer shutdownCancel()
+		//	srv.Shutdown(shutdownCtx)
+		//}()
 	})
 
 	// Start the HTTP server in a separate goroutine
 	serverErrChan := make(chan error, 1)
 	go func() {
 		d.logger.Info("Starting HTTP server for OAuth callback", zap.Int("port", discordCallbackPort))
+
+		// Check if port is available first
+		if !d.isPortAvailable(discordCallbackPort) {
+			d.logger.Info("Port already being used", zap.Int("port", discordCallbackPort))
+			return
+		}
+
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			d.logger.Error("HTTP server error", zap.Error(err))
 			serverErrChan <- fmt.Errorf("HTTP server error: %v", err)
@@ -153,15 +162,25 @@ func (d *Discord) StartOAuth() (*types.UserWithJWT, error) {
 		d.logger.Error("Server error", zap.Error(err))
 		return nil, err
 	case <-ctx.Done():
-		d.logger.Warn("Authentication timeout exceeded", zap.Duration("timeout", authWaitTimeout))
-		// Ensure server is shut down
-		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer shutdownCancel()
-		if err := srv.Shutdown(shutdownCtx); err != nil {
-			d.logger.Error("Error shutting down server", zap.Error(err))
-		}
+		//d.logger.Warn("Authentication timeout exceeded", zap.Duration("timeout", authWaitTimeout))
+		//// Ensure server is shut down
+		//shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		//defer shutdownCancel()
+		//if err := srv.Shutdown(shutdownCtx); err != nil {
+		//	d.logger.Error("Error shutting down server", zap.Error(err))
+		//}
 		return nil, fmt.Errorf("authentication timeout exceeded")
 	}
+}
+func (d *Discord) isPortAvailable(port int) bool {
+	addr := fmt.Sprintf(":%d", port)
+	ln, err := net.Listen("tcp", addr)
+	if err != nil {
+		d.logger.Warn("Port is already in use", zap.Int("port", port))
+		return false
+	}
+	ln.Close()
+	return true
 }
 
 func (d *Discord) fetchDiscordUserInfo(accessToken string) (*types.DiscordUser, error) {

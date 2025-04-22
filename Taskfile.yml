@@ -32,7 +32,7 @@ tasks:
           PRODUCTION: '{{.PRODUCTION}}'
       - task: common:generate:icons
     cmds:
-      - go build -tags development  -gcflags="all=-N -l" -ldflags="-X github.com/hex-boost/hex-nexus-app/backend/config.Version={{.VERSION}} -X github.com/hex-boost/hex-nexus-app/backend/config.LogLevel=info -X github.com/hex-boost/hex-nexus-app/backend/config.BackendURL={{.API_URL}} -X github.com/hex-boost/hex-nexus-app/backend/config.RefreshApiKey={{.REFRESH_API_KEY}}" -o bin/Nexus.exe .
+      - go build -tags development  -gcflags="all=-N -l" -ldflags="-X github.com/hex-boost/hex-nexus-app/backend/config.Version={{.VERSION}} -X github.com/hex-boost/hex-nexus-app/backend/config.LogLevel=debug -X github.com/hex-boost/hex-nexus-app/backend/config.Debug=true -X github.com/hex-boost/hex-nexus-app/backend/config.BackendURL={{.API_URL}} -X github.com/hex-boost/hex-nexus-app/backend/config.RefreshApiKey={{.REFRESH_API_KEY}}" -o bin/Nexus.exe .
       - powershell -Command "while (1) { dlv exec bin/Nexus.exe --headless --listen :2345 --api-version 2 }"
 
   package:

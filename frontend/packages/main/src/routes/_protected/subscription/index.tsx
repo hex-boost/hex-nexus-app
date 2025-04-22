@@ -21,7 +21,7 @@ function RouteComponent() {
       benefits: [
 
         {
-          title: 'Earns 300 coins/m',
+          title: 'Earns 300 coins',
         },
         {
           title: 'Accounts up to Platinum',

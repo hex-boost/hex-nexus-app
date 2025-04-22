@@ -184,7 +184,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 	)
 	websocketService := league.NewWebSocketService(appInstance.Log().League(), accountMonitor, leagueService)
 	discordService := discord.New(cfg, appInstance.Log().Discord(), utilsBind)
-
+	debugMode := cfg.Debug
 	clientMonitor := league.NewClientMonitor(appInstance.Log().League(), accountMonitor, leagueService, riotClient, captcha)
 	app := application.New(application.Options{
 		Name:        "Nexus",
@@ -196,7 +196,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		},
 		KeyBindings: map[string]func(window *application.WebviewWindow){
 			"ctrl+shift+i": func(window *application.WebviewWindow) {
-				if window != nil {
+				if window != nil && debugMode {
 					window.OpenDevTools()
 				}
 			},
@@ -291,8 +291,8 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 				Alpha: 80,
 			},
 
-			//DevToolsEnabled:        true,
-			//OpenInspectorOnStartup: true,
+			DevToolsEnabled:        debugMode,
+			OpenInspectorOnStartup: debugMode,
 		},
 	)
 
