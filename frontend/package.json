@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "workspaces": [
-    "packages/*"
+    "packages/main",
+    "packages/updater",
+    "packages/shared"
   ],
   "scripts": {
     "dev:main": "npm run -w nexus-main dev",

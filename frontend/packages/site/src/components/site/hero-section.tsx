@@ -19,7 +19,7 @@ export function HeroSection() {
       >
         <div className="text-center mb-16 ">
           <h1 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight">
-            Empower Your Boosting Career
+            Empower Your Boosting Experience
             <br />
             Accounts On Demand, Zero Hassle
           </h1>
