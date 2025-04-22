@@ -3,6 +3,7 @@ package discord
 import (
 	"bytes"
 	"net"
+	"sync"
 
 	"context"
 	"encoding/json"
@@ -30,6 +31,18 @@ const (
 	authWaitTimeout     = 2 * time.Minute
 )
 
+// Add these global variables at the package level
+var (
+	globalServer     *http.Server
+	globalRouter     *mux.Router
+	callbackHandlers map[string]func(*types.UserWithJWT, error) // Map to store callback handlers by ID
+	serverMutex      sync.Mutex
+	isServerRunning  bool
+	isAuthInProgress bool                    // New flag to track if authentication is in progress
+	currentAuthChan  chan *types.UserWithJWT // Channel for the current auth flow
+	currentErrChan   chan error              // Error channel for current auth flow
+)
+
 type Discord struct {
 	config        *config.Config
 	backendClient *resty.Client
@@ -40,7 +53,7 @@ type Discord struct {
 func New(config *config.Config, logger *utils.Logger, utils *utils.Utils) *Discord {
 	client := resty.New()
 	client.SetBaseURL(config.BackendURL)
-
+	callbackHandlers = make(map[string]func(*types.UserWithJWT, error))
 	return &Discord{
 		backendClient: client,
 		config:        config,
@@ -59,7 +72,6 @@ func (d *Discord) renderTemplate(w http.ResponseWriter, tmplName string) error {
 	}
 	return tmpl.Execute(w, nil)
 }
-
 func (d *Discord) renderErrorTemplate(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusBadRequest)
 	if err := d.renderTemplate(w, "discord_auth_error.html"); err != nil {
@@ -69,6 +81,34 @@ func (d *Discord) renderErrorTemplate(w http.ResponseWriter) {
 }
 
 func (d *Discord) StartOAuth() (*types.UserWithJWT, error) {
+	// Check if authentication is already in progress
+	serverMutex.Lock()
+	if isAuthInProgress {
+		serverMutex.Unlock()
+		return nil, errors.New("authentication_already_in_progress")
+	}
+
+	// Set the auth in progress flag
+	isAuthInProgress = true
+
+	// Create channels for this authentication flow
+	userWithJWTChan := make(chan *types.UserWithJWT, 1)
+	errChan := make(chan error, 1)
+
+	// Store the current channels
+	currentAuthChan = userWithJWTChan
+	currentErrChan = errChan
+	serverMutex.Unlock()
+
+	// Make sure we reset the auth flag when this function returns
+	defer func() {
+		serverMutex.Lock()
+		isAuthInProgress = false
+		currentAuthChan = nil
+		currentErrChan = nil
+		serverMutex.Unlock()
+	}()
+
 	strapiAuthURL := fmt.Sprintf("%s/api/connect/discord", d.config.BackendURL)
 	d.logger.Sugar().Infow("Starting OAuth authentication with Discord", "url", strapiAuthURL)
 	if err := browser.OpenURL(strapiAuthURL); err != nil {
@@ -80,77 +120,31 @@ func (d *Discord) StartOAuth() (*types.UserWithJWT, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), authWaitTimeout)
 	defer cancel()
 
-	userWithJWTChan := make(chan *types.UserWithJWT, 1)
-	errChan := make(chan error, 1)
-	router := mux.NewRouter()
-	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%d", discordCallbackPort),
-		Handler: router,
+	// Set up server if it's not already running
+	serverMutex.Lock()
+	if !isServerRunning {
+		globalRouter = mux.NewRouter()
+		globalServer = &http.Server{
+			Addr:    fmt.Sprintf(":%d", discordCallbackPort),
+			Handler: globalRouter,
+		}
+
+		// Set up the persistent callback route handler
+		globalRouter.HandleFunc("/callback", d.handleCallback)
+
+		// Start the server in a goroutine
+		go func() {
+			d.logger.Info("Starting HTTP server for OAuth callback", zap.Int("port", discordCallbackPort))
+			if err := globalServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				d.logger.Error("HTTP server error", zap.Error(err))
+			}
+		}()
+
+		isServerRunning = true
 	}
-	router.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {
-		code := r.URL.Query().Get("access_token")
-		if code == "" {
-			errMsg := errors.New("authorization code not found")
-			d.renderErrorTemplate(w)
-			select {
-			case errChan <- errMsg:
-			default:
-			}
-			return
-		}
+	serverMutex.Unlock()
 
-		d.logger.Info("Authorization code received", zap.Int("code_length", len(code)))
-		userWithJWT, err := d.authenticateWithStrapiAndProcessAvatar(code)
-		if err != nil {
-			errMsg := errors.New("error in Strapi authentication")
-			d.renderErrorTemplate(w)
-			select {
-			case errChan <- errMsg:
-			default:
-			}
-			return
-		}
-		if err := d.renderTemplate(w, "discord_auth_success.html"); err != nil {
-			d.logger.Error("Error rendering success template", zap.Error(err))
-			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Error rendering success page"))
-			return
-		}
-		d.logger.Info("Authentication successful")
-		select {
-		case userWithJWTChan <- userWithJWT:
-		case <-ctx.Done():
-			return
-		}
-
-		// Schedule server shutdown
-		//go func() {
-		//	time.Sleep(1 * time.Second)
-		//	d.logger.Debug("Shutting down temporary HTTP server")
-		//	// Use a new context for shutdown to ensure it happens even if parent is canceled
-		//	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
-		//	defer shutdownCancel()
-		//	srv.Shutdown(shutdownCtx)
-		//}()
-	})
-
-	// Start the HTTP server in a separate goroutine
-	serverErrChan := make(chan error, 1)
-	go func() {
-		d.logger.Info("Starting HTTP server for OAuth callback", zap.Int("port", discordCallbackPort))
-
-		// Check if port is available first
-		if !d.isPortAvailable(discordCallbackPort) {
-			d.logger.Info("Port already being used", zap.Int("port", discordCallbackPort))
-			return
-		}
-
-		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			d.logger.Error("HTTP server error", zap.Error(err))
-			serverErrChan <- fmt.Errorf("HTTP server error: %v", err)
-		}
-	}()
+	// Wait for authentication result or timeout
 	select {
 	case result := <-userWithJWTChan:
 		d.logger.Info("Authentication completed successfully")
@@ -158,25 +152,79 @@ func (d *Discord) StartOAuth() (*types.UserWithJWT, error) {
 	case err := <-errChan:
 		d.logger.Error("Authentication failed", zap.Error(err))
 		return nil, err
-	case err := <-serverErrChan:
-		d.logger.Error("Server error", zap.Error(err))
-		return nil, err
 	case <-ctx.Done():
-		//d.logger.Warn("Authentication timeout exceeded", zap.Duration("timeout", authWaitTimeout))
-		//// Ensure server is shut down
-		//shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
-		//defer shutdownCancel()
-		//if err := srv.Shutdown(shutdownCtx); err != nil {
-		//	d.logger.Error("Error shutting down server", zap.Error(err))
-		//}
 		return nil, fmt.Errorf("authentication timeout exceeded")
 	}
 }
+
+// Create a separate handler function for the callback
+func (d *Discord) handleCallback(w http.ResponseWriter, r *http.Request) {
+	// Get a lock to ensure we're accessing the channels safely
+	serverMutex.Lock()
+	userWithJWTChan := currentAuthChan
+	errChan := currentErrChan
+
+	// Check if we have an active authentication flow
+	if !isAuthInProgress || userWithJWTChan == nil || errChan == nil {
+		serverMutex.Unlock()
+		d.logger.Warn("Received callback but no authentication is in progress")
+		d.renderErrorTemplate(w)
+		return
+	}
+	serverMutex.Unlock()
+
+	code := r.URL.Query().Get("access_token")
+	if code == "" {
+		errMsg := errors.New("authorization code not found")
+		d.renderErrorTemplate(w)
+		select {
+		case errChan <- errMsg:
+		default:
+		}
+		return
+	}
+
+	d.logger.Info("Authorization code received", zap.Int("code_length", len(code)))
+	userWithJWT, err := d.authenticateWithStrapiAndProcessAvatar(code)
+	if err != nil {
+		errMsg := errors.New("error in Strapi authentication")
+		d.renderErrorTemplate(w)
+		select {
+		case errChan <- errMsg:
+		default:
+		}
+		return
+	}
+
+	if err := d.renderTemplate(w, "discord_auth_success.html"); err != nil {
+		d.logger.Error("Error rendering success template", zap.Error(err))
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Error rendering success page"))
+		return
+	}
+
+	d.logger.Info("Authentication successful")
+	// Send the result to the waiting goroutine
+	select {
+	case userWithJWTChan <- userWithJWT:
+	default:
+		d.logger.Warn("Could not send authentication result - channel may be closed")
+	}
+}
 func (d *Discord) isPortAvailable(port int) bool {
+	serverMutex.Lock()
+	defer serverMutex.Unlock()
+
+	if isServerRunning {
+		// If our server is already running, the port is "available" for our use
+		return false
+	}
+
 	addr := fmt.Sprintf(":%d", port)
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
-		d.logger.Warn("Port is already in use", zap.Int("port", port))
+		d.logger.Warn("Port is already in use by another process", zap.Int("port", port))
 		return false
 	}
 	ln.Close()
