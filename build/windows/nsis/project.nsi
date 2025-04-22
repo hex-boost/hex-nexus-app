@@ -35,7 +35,6 @@ SetCompressor /SOLID lzma
 !include ".\Plugins\nsProcess.nsh"
 
 ; Replace the UI pages section with just the installation page
-!define MUI_INSTFILESPAGE_COLORS "FFFFFF 000000" ; Optional: customize colors (text/background)
 !define MUI_INSTFILESPAGE_PROGRESSBAR "colored"  ; Use colored progress bar
 !insertmacro MUI_PAGE_INSTFILES  ; Only include installation page
 
