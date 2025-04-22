@@ -1,0 +1,13 @@
+{
+  "name": "nexus-updater",
+  "private": true,
+  "version": "1.0.18",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build:dev": "vite build --minify false --mode development",
+    "build": "tsc && vite build --emptyOutDir",
+    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0 --fix",
+    "preview": "vite preview"
+  }
+}

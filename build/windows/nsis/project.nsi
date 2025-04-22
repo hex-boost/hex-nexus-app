@@ -27,22 +27,17 @@ SetCompressor /SOLID lzma
 ; Installer icon
 !define MUI_ICON "icon.ico"
 
-; Silent installation - no prompts
-SilentInstall silent
-
-; Include necessary headers
+; Include necessary headers first
 !include "MUI2.nsh"
 !include "FileFunc.nsh"
 !include "LogicLib.nsh"
 !include "WinVer.nsh"
+!include ".\Plugins\nsProcess.nsh"
 
-; Removed all UI pages except finish page which runs the app
-!define MUI_FINISHPAGE_RUN "$INSTDIR\updater.exe"
-!define MUI_FINISHPAGE_RUN_TEXT "Start ${PRODUCT_NAME} after installation"
-!define MUI_FINISHPAGE_LINK "Visit ${PRODUCT_NAME} website"
-!define MUI_FINISHPAGE_LINK_LOCATION "${PRODUCT_WEB_SITE}"
-!insertmacro MUI_PAGE_INSTFILES
-!insertmacro MUI_PAGE_FINISH
+; Replace the UI pages section with just the installation page
+!define MUI_INSTFILESPAGE_COLORS "FFFFFF 000000" ; Optional: customize colors (text/background)
+!define MUI_INSTFILESPAGE_PROGRESSBAR "colored"  ; Use colored progress bar
+!insertmacro MUI_PAGE_INSTFILES  ; Only include installation page
 
 ; Uninstallation pages
 !insertmacro MUI_UNPAGE_CONFIRM
@@ -60,7 +55,6 @@ InstallDir "$LOCALAPPDATA\${PRODUCT_NAME}"
 InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
 ShowInstDetails show
 ShowUnInstDetails show
-!include ".\Plugins\nsProcess.nsh"
 
 Function .onInit
   ; Check Windows version
@@ -76,8 +70,6 @@ Function .onInit
   done:
     ${nsProcess::Unload}
 
-  ; Set StartMenuFolder variable to just "Nexus"
-  StrCpy $StartMenuFolder "${PRODUCT_NAME}"
 FunctionEnd
 
 ; Main section (required)
