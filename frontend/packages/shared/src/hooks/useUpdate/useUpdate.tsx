@@ -1,5 +1,6 @@
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { useQuery } from '@tanstack/react-query';
+import { Utils } from '@utils';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -89,7 +90,7 @@ export function useUpdate() {
     }
   };
   async function handleStartUpdate() {
-    Utils.StartUpdatar();
+    await Utils.StartUpdate();
   }
   return {
     handleStartUpdate,

@@ -10,12 +10,12 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip.tsx';
 import { useUpdate } from '@/hooks/useUpdate/useUpdate.tsx';
 import { Download } from 'lucide-react';
-import {  useState } from 'react';
+import { useState } from 'react';
 import { cls } from 'react-image-crop';
 
 export function UpdateDialog() {
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
-  const {  updateInfo, isAvailable ,handleStartUpdate} = useUpdate();
+  const { updateInfo, isAvailable, handleStartUpdate } = useUpdate();
   return (
     <>
       <TooltipProvider delayDuration={100}>
@@ -36,7 +36,7 @@ export function UpdateDialog() {
           <TooltipContent side="bottom" className="bg-[#1F1F23] border-[#2B2B30] text-gray-200">
             <p>
               {
-                isAvailable &&
+                isAvailable
                   ? (
                       <>
                         Update
