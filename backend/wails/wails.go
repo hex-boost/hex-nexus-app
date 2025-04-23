@@ -231,6 +231,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 
 			},
 		},
+
 		Services: []application.Service{
 			application.NewService(riotClient),
 			application.NewService(discordService),

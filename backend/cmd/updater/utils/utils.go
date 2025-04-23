@@ -1,22 +1,33 @@
 package updaterUtils
 
 import (
+	"fmt"
+	"github.com/hex-boost/hex-nexus-app/backend/utils"
+	"go.uber.org/zap"
+	"golang.org/x/sys/windows/registry"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type UpdaterUtils struct {
+	logger *utils.Logger
+	utils  *utils.Utils
 }
 
 var ExecutableFn = func() (string, error) {
 	return os.Executable()
 }
 
-func New() *UpdaterUtils {
-	return &UpdaterUtils{}
+func New(logger *utils.Logger, utils *utils.Utils) *UpdaterUtils {
+	return &UpdaterUtils{
+		logger: logger,
+		utils:  utils,
+	}
 }
 func (u *UpdaterUtils) GetLatestAppDir() (string, error) {
 	baseDir, err := ExecutableFn()
@@ -90,4 +101,72 @@ func (u *UpdaterUtils) GetLatestAppDir() (string, error) {
 
 	// Retorna o caminho da versão mais alta
 	return versions[0].path, nil
+}
+func (u *UpdaterUtils) CheckWebView2Installation() bool {
+	// Check 64-bit registry first
+	key, err := registry.OpenKey(registry.LOCAL_MACHINE, `SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}`, registry.QUERY_VALUE)
+	if err == nil {
+		key.Close()
+		return true
+	}
+
+	// Check 32-bit registry if 64-bit check failed
+	key, err = registry.OpenKey(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}`, registry.QUERY_VALUE)
+	if err == nil {
+		key.Close()
+		return true
+	}
+
+	return false
+}
+
+// InstallWebView2 installs WebView2 Runtime
+func (u *UpdaterUtils) InstallWebView2() error {
+	// Get the executable directory
+	exePath, err := os.Executable()
+	if err != nil {
+		u.logger.Error("Failed to get executable path", zap.Error(err))
+		return err
+	}
+
+	execDir := filepath.Dir(exePath)
+	webviewPath := filepath.Join(execDir, "MicrosoftEdgeWebview2Setup.exe")
+
+	// Check if installer exists
+	if _, err := os.Stat(webviewPath); os.IsNotExist(err) {
+		u.logger.Error("WebView2 installer not found", zap.String("path", webviewPath))
+		return fmt.Errorf("WebView2 installer not found at %s", webviewPath)
+	}
+
+	u.logger.Info("Installing WebView2 Runtime...", zap.String("path", webviewPath))
+
+	// Run the installer
+	cmd := exec.Command(webviewPath)
+	cmd = u.utils.HideConsoleWindow(cmd)
+	err = cmd.Start()
+	if err != nil {
+		u.logger.Error("Failed to start WebView2 installer", zap.Error(err))
+		return err
+	}
+
+	// Wait for installation to complete with a timeout
+	done := make(chan error, 1)
+	go func() {
+		done <- cmd.Wait()
+	}()
+
+	// 5 minute timeout for installation
+	select {
+	case err = <-done:
+		if err != nil {
+			u.logger.Error("WebView2 installation failed", zap.Error(err))
+			return err
+		}
+		u.logger.Info("WebView2 installation completed successfully")
+	case <-time.After(5 * time.Minute):
+		u.logger.Warn("WebView2 installation timed out, but might still be running")
+		// We don't kill the process as it might still be installing
+	}
+
+	return nil
 }

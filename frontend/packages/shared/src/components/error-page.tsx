@@ -12,7 +12,7 @@ export function ErrorPage({ error }: ErrorPageProps) {
   const router = useRouter();
   const [errorMessage, setErrorMessage] = useState<string>('An unexpected error occurred');
   const [isAnimating, setIsAnimating] = useState(true);
-  const isDevelopment = process.env.NODE_ENV === 'development';
+  const isDevelopment = import.meta.env.MODE === 'development';
 
   useEffect(() => {
     setIsAnimating(true);

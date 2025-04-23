@@ -23,33 +23,12 @@ export function BoostRoyalInnerDialog({ children }: { children: React.ReactNode 
           </InnerDialogDescription>
         </InnerDialogHeader>
         <div className="p-4">
-          Total tralha na pista
-          Total tralha na pista
-          Total tralha na pista
-          Total tralha na pista
-          Total tralha na pista
-          Total tralha na pista
-          Total tralha na pista
-          Total tralha na pista
-          Total tralha na pista
-          Total tralha na pista
-          Total tralha na pista
-          Total tralha na pista
-          Total tralha na pista
-          Total tralha na pista
-          Total tralha na pista
-          Total tralha na pista
-          Total tralha na pista
-          Total tralha na pista
-          Total tralha na pista
-          Total tralha na pista
-          Total tralha na pista
-          Total tralha na pista
-          Total tralha na pista
+
+          lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, voluptatibus. Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, voluptatibus.
 
         </div>
         <InnerDialogFooter className="flex flex-col items-center justify-between space-y-2 border-t px-4 py-2 sm:flex-row sm:space-x-2 sm:space-y-0">
-          fodase maximo padrin
+          lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, voluptatibus.
           {/* Add BR Balance specific footer content here */}
         </InnerDialogFooter>
       </InnerDialogContent>

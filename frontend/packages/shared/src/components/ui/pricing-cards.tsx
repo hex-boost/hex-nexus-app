@@ -99,7 +99,7 @@ export default function PricingCards() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
             {pricingPlans
-              .filter(plan => !plan.isCurrentPlan)
+              .filter(plan => !plan.tier_enum || plan.tier_enum !== user?.premium?.tier?.toLowerCase())
               .map((plan, index) => (
                 <div
                   key={index}

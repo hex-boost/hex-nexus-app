@@ -1,36 +1,18 @@
-import path, { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import tailwindcss from '@tailwindcss/vite';
-import TanStackRouterVite from '@tanstack/router-plugin/vite';
-import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vite';
+import path from 'node:path';
+import { defineConfig, mergeConfig } from 'vite';
+import baseConfig from '../../vite.config.ts';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-export default defineConfig({
-  plugins: [
-    TanStackRouterVite({ target: 'react', autoCodeSplitting: true }),
-    react(),
-    tailwindcss(),
-  ],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, '../shared/src'),
-
-      '@app': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/app'),
-      '@discord': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/discord'),
-      '@league': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/league'),
-      '@riot': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/riot'),
-      '@repository': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/repository'),
-      '@updater': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/updater'),
-      '@events': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/events'),
-      '@utils': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/utils'),
-      '@stripe': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/stripe'),
-      '@overlay': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/overlay'),
-      '@time': path.resolve(__dirname, './bindings/time'),
-
+export default defineConfig(
+  mergeConfig(baseConfig, {
+    resolve: {
+      alias: {
+        // Ensure paths are relative to this package
+        '@': path.resolve(__dirname, '../../packages/shared/src'),
+      },
     },
-
-  },
-});
+    // Package-specific config
+    build: {
+      outDir: 'dist',
+    },
+  }),
+);

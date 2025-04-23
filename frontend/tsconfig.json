@@ -8,6 +8,7 @@
       "ESNext"
     ],
     "module": "ESNext",
+    "esModuleInterop": true,
     "skipLibCheck": true,
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
@@ -69,7 +70,8 @@
         "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/overlay"
       ]
 
-    }
+    },
+    "types": ["vitest/globals","node"]
   },
   "include": [
     "packages/main/**/*",
@@ -81,7 +83,7 @@
   ],
 
   "types": [
-    "node"
+    "node",
   ],
 
   "references": [

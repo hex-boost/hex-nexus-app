@@ -25,8 +25,8 @@ func main() {
 		os.Exit(1)
 	}
 	logger := utils.NewLogger("updater", cfg)
-	updaterUtils := updaterUtils.New()
 	utils := utils.NewUtils()
+	updaterUtils := updaterUtils.New(logger, utils)
 	updateManager := manager.NewUpdateManager(cfg, updaterUtils, logger, utils)
 	if *processStart != "" {
 		processToStart := *processStart
@@ -40,6 +40,18 @@ func main() {
 			return
 		}
 		return
+	}
+	if !updaterUtils.CheckWebView2Installation() {
+		logger.Info("WebView2 not detected, installing...")
+		err := updaterUtils.InstallWebView2()
+		if err != nil {
+			logger.Error("Failed to install WebView2", zap.Error(err))
+			panic("WebView2 installation failed")
+		} else {
+			logger.Info("WebView2 installation completed")
+		}
+	} else {
+		logger.Info("WebView2 is already installed")
 	}
 
 	// Check if another instance is already running
