@@ -104,9 +104,10 @@ func TestUpdateProcess(t *testing.T) {
 		}
 
 		// Agora testConfig terá os valores que você definiu
-		updaterUtils := updaterUtils.New()
+		logger := loggerUtils.NewLogger("test", testConfig)
 		utils := utils.NewUtils()
-		updateManager := NewUpdateManager(testConfig, updaterUtils, loggerUtils.NewLogger("test", testConfig), utils)
+		updaterUtils := updaterUtils.New(logger, utils)
+		updateManager := NewUpdateManager(testConfig, updaterUtils, logger, utils)
 		hasUpdate, newVersion := updateManager.CheckForUpdates()
 		if !hasUpdate {
 			t.Error("Falha ao detectar atualização disponível")
