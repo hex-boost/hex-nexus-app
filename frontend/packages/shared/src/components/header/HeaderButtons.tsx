@@ -7,9 +7,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Download, HelpCircle, X } from 'lucide-react';
+import { Download, HelpCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 type UpdateInfo = {
@@ -53,7 +53,7 @@ export function HeaderButtons() {
     <>
       <div className="flex items-center gap-2">
         {updateInfo.available && (
-          <TooltipProvider>
+          <TooltipProvider delayDuration={100}>
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
@@ -109,20 +109,6 @@ export function HeaderButtons() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-3">
-            <h3 className="font-medium text-white">What's new:</h3>
-            <ul className="space-y-2">
-              {updateInfo.features.map((feature, index) => (
-                <li key={index} className="flex items-start gap-2">
-                  <div className="h-5 w-5 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-blue-400 text-xs">✓</span>
-                  </div>
-                  <span className="text-gray-300">{feature}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
           <DialogFooter className="sm:justify-between">
             <Button
               variant="outline"
@@ -143,24 +129,15 @@ export function HeaderButtons() {
         <DialogContent className="bg-[#0F0F12] border-[#1F1F23] text-gray-200 sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
           <DialogHeader className="flex flex-row items-center justify-between">
             <DialogTitle className="text-xl font-bold text-white">Help & FAQ</DialogTitle>
-            <Button variant="ghost" onClick={() => setHelpOpen(false)} className="h-8 w-8 p-0 rounded-full">
-              <X className="h-4 w-4 text-gray-400" />
-              <span className="sr-only">Close</span>
-            </Button>
           </DialogHeader>
 
           <Tabs defaultValue="general" className="w-full">
-            <TabsList className="grid grid-cols-3 bg-[#1F1F23]">
-              <TabsTrigger value="general">General</TabsTrigger>
-              <TabsTrigger value="accounts">Accounts</TabsTrigger>
-              <TabsTrigger value="coins">Coins & Rental</TabsTrigger>
-            </TabsList>
 
             <TabsContent value="general" className="space-y-4 mt-4">
               <div className="space-y-2">
                 <h3 className="text-lg font-medium text-white">Getting Started</h3>
                 <p className="text-gray-400">
-                  Welcome to the League of Legends Account Rental service. This application allows you to rent accounts
+                  Welcome to Nexus. This application allows you to rent accounts
                   for a specific duration using coins.
                 </p>
               </div>
@@ -171,7 +148,7 @@ export function HeaderButtons() {
                   <li>Browse available accounts in the Accounts section</li>
                   <li>Select an account that matches your requirements</li>
                   <li>Choose a rental duration and confirm using your coins</li>
-                  <li>Use the account for the selected duration</li>
+                  <li>Log in into the account and use it by the chosen duration</li>
                   <li>Return or extend the rental when needed</li>
                 </ol>
               </div>

@@ -3,7 +3,6 @@ import AdminPanelLayout from '@/components/admin-panel/admin-panel-layout.tsx';
 import { CloseConfirmationHandler } from '@/components/CloseConfirmation.tsx';
 import { CoinIcon } from '@/components/coin-icon.tsx';
 import { DefaultContextMenu } from '@/components/DefaultContextMenu.tsx';
-import { HeaderButtons } from '@/components/header/HeaderButtons.tsx';
 import { NotificationProvider } from '@/components/notification/notification-provider.tsx';
 import { NotificationBell } from '@/components/notification/NotificationBell.tsx';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
@@ -17,6 +16,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog.tsx';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu.tsx';
+import { Separator } from '@/components/ui/separator.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { Textarea } from '@/components/ui/textarea.tsx';
 import { UserProfile } from '@/components/UserProfile.tsx';
@@ -47,7 +47,6 @@ function DashboardLayout() {
   const isLoading = isUserLoading;
   const userAvatar = import.meta.env.VITE_API_URL + user?.avatar?.url;
 
-  // Include dialog state from original _protected.tsx
   const { updateFavoriteNote, isNoteDialogOpen, setIsNoteDialogOpen, noteText, setNoteText, handleSaveNote } = useFavoriteAccounts();
 
   return (
@@ -64,7 +63,7 @@ function DashboardLayout() {
                 className={cls('sticky top-0 z-50 bg-black/20 border-b ml-[89px]')}
                 style={{ '--wails-draggable': 'drag' } as React.CSSProperties}
               >
-                <div className="flex justify-end items-center gap-6 py-2">
+                <div className="grid grid-flow-col justify-end items-center gap-4 py-2">
                   <div className="hidden sm:flex justify-center items-center gap-2 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-full">
                     <CoinIcon className="h-4 w-4 text-amber-500 dark:text-amber-400" />
                     {isLoading
@@ -76,8 +75,8 @@ function DashboardLayout() {
                             coins
                           </span>
                         )}
+
                   </div>
-                  <HeaderButtons />
                   <NotificationBell />
                   <DropdownMenu>
                     <DropdownMenuTrigger className="focus:outline-none">
@@ -102,7 +101,9 @@ function DashboardLayout() {
                         : <UserProfile updateAction={refetchUser} user={user} logoutAction={handleLogout} />}
                     </DropdownMenuContent>
                   </DropdownMenu>
-                  <WindowControls className="px-4 py-2" />
+
+                  <Separator orientation="vertical" className="h-3" />
+                  <WindowControls className="pr-4 py-2" />
                 </div>
               </div>
 

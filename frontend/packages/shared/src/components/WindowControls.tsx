@@ -1,3 +1,4 @@
+import { HeaderButtons } from '@/components/header/HeaderButtons.tsx';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { Window } from '@wailsio/runtime';
@@ -59,7 +60,10 @@ export function WindowControls({ className }: { className?: string }) {
     <div
       style={{ '--wails-draggable': 'drag' } as React.CSSProperties}
       className={cn('flex items-center gap-2', className)}
+
     >
+
+      <HeaderButtons />
       <TooltipProvider>
         <div
           className="flex-grow h-8"
