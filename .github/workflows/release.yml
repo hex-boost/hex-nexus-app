@@ -49,6 +49,11 @@ jobs:
       - name: Run tests
         run: |
           gotestsum --format short --hide-summary skipped --format-hide-empty-pkg
+
+      - name: Run frontend tests
+        run: |
+            cd frontend
+            pnpm test
       - name: Check build artifacts
         shell: bash
         run: |

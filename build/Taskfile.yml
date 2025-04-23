@@ -69,7 +69,7 @@ tasks:
       - go.mod
       - go.sum
     generates:
-      - packages/updater/bindings/**/*
+      - frontend/packages/updater/bindings/**/*
     cmds:
       - wails3 generate bindings -names -i -v -ts -f '{{.BUILD_FLAGS}}' -clean=true ./backend/cmd/updater -d frontend/packages/updater/bindings
   generate:bindings:
@@ -81,11 +81,9 @@ tasks:
       - go.mod
       - go.sum
     generates:
-      - packages/updater/bindings/**/*
-      - packages/main/bindings/**/*
+      - frontend/packages/main/bindings/**/*
     cmds:
       - wails3 generate bindings -names -i -v -ts -f '{{.BUILD_FLAGS}}' -clean=true -d frontend/packages/main/bindings
-      - wails3 generate bindings -names -i -v -ts -f '{{.BUILD_FLAGS}}' -clean=true ./backend/cmd/updater -d frontend/packages/updater/bindings
 
   generate:icons:
     summary: Generates Windows `.ico` and Mac `.icns` files from an image

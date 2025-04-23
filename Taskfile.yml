@@ -27,7 +27,7 @@ tasks:
   go:build:
     deps:
       - task: windows:clean
-#      - task: common:build:frontend
+      - task: common:build:frontend
         vars:
           PRODUCTION: '{{.PRODUCTION}}'
       - task: common:generate:icons
