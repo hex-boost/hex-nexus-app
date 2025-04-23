@@ -273,39 +273,33 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
       strapiFilters.type = filters.company;
     }
 
-    // Build $and conditions
-    const andConditions: any[] = [];
-
-    // Champions filter
     if (filters.selectedChampions?.length > 0) {
-      andConditions.push({
-        LCUchampions: {
-          $contains: filters.selectedChampions.map(id => Number.parseInt(id)),
-        },
+      const championsFilter = {} as any;
+      filters.selectedChampions.forEach((id, index) => {
+        championsFilter.$contains = championsFilter.$contains || {};
+        championsFilter.$contains[index] = Number.parseInt(id);
       });
+      strapiFilters.LCUchampions = championsFilter;
     }
 
     // Skins filter
     if (filters.selectedSkins?.length > 0) {
-      andConditions.push({
-        LCUskins: {
-          $contains: filters.selectedSkins.map(id => Number.parseInt(id)),
-        },
+      const skinsFilter = {} as any;
+      filters.selectedSkins.forEach((id, index) => {
+        skinsFilter.$contains = skinsFilter.$contains || {};
+        skinsFilter.$contains[index] = Number.parseInt(id);
       });
+      strapiFilters.LCUskins = skinsFilter;
     }
 
     // Restrictions filter
     if (filters.leaverStatus?.length > 0) {
-      andConditions.push({
-        restrictions: {
-          $contains: filters.leaverStatus,
-        },
+      const restrictionFilter: any = {} as any;
+      filters.leaverStatus.forEach((status, index) => {
+        restrictionFilter.$contains = restrictionFilter.$contains || {};
+        restrictionFilter.$contains[index] = status;
       });
-    }
-
-    // Add $and conditions if needed
-    if (andConditions.length > 0) {
-      strapiFilters.$and = andConditions;
+      strapiFilters.restriction = restrictionFilter;
     }
 
     // Rank and division filters
