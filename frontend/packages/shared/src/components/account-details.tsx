@@ -84,7 +84,7 @@ export default function AccountDetails({ account, onAccountChange }: {
 }) {
   const { user } = useUserStore();
   const { championsSearch, setChampionsSearch, skinsSearch, setSkinsSearch, filteredChampions, filteredSkins } = useAccountFilters({ account });
-  const { dropRefund, selectedRentalOptionIndex, handleExtendAccount, isExtendPending, setSelectedRentalOptionIndex, isRentPending, handleRentAccount } = useAccountActions({ account, onAccountChange, user: user as any });
+  const { dropRefund, selectedRentalOptionIndex, handleExtendAccount, isExtendPending, setSelectedRentalOptionIndex, isRentPending, handleRentAccount } = useAccountActions({ account, onAccountChange, user });
   const [activeTab, setActiveTab] = useState(0);
   const { getCompanyIcon, getGameIcon, getFormattedServer } = useMapping();
   const soloQueueRank = account.rankings?.find(lc => lc.queueType === 'soloqueue');
@@ -332,7 +332,7 @@ export default function AccountDetails({ account, onAccountChange }: {
 
       {/* Right column - Rental options */}
       <div className="space-y-6 col-span-2">
-        {account.user && account.user.id === user!.id
+        {account.user && account.user.id === user?.id
           ? (
 
               <Card>
@@ -407,7 +407,7 @@ export default function AccountDetails({ account, onAccountChange }: {
 
                   <DropAccountAction
                     account={account}
-                    user={user!}
+                    user={user}
                     onSuccess={onAccountChange}
                     buttonVariant="outline"
                   />

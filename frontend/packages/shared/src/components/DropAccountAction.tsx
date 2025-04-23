@@ -21,7 +21,7 @@ import { toast } from 'sonner';
 
 export type DropAccountActionProps = {
   account: AccountType;
-  user?: UserType;
+  user: UserType | null;
   onSuccess?: () => Promise<void>;
   variant?: 'button' | 'dropdown';
   asChild?: boolean;

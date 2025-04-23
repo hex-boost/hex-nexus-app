@@ -13,7 +13,7 @@ export function useAccountActions({
   user,
 }: {
   account?: AccountType;
-  user?: UserType;
+  user: UserType | null;
   onAccountChange: () => Promise<void>;
 }) {
   const { Utils } = useGoState();

@@ -34,7 +34,7 @@ export function DefaultContextMenu({ children }: { children: React.ReactNode }) 
       if (!isReloading) {
         setIsReloading(true);
 
-        toast.promise(queryClient.refetchQueries(), {
+        toast.promise(queryClient.refetchQueries({ exact: false, type: 'active', queryKey: ['accounts'] }), {
           loading: 'Reloading',
           success: () => {
             setIsReloading(false);
