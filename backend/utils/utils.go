@@ -9,7 +9,9 @@ import (
 	"github.com/pkg/browser"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"go.uber.org/zap"
+	"os"
 	"os/exec"
+	"path"
 	"sync"
 	"syscall"
 )
@@ -115,4 +117,31 @@ func (u *Utils) HideConsoleWindow(cmd *exec.Cmd) *exec.Cmd {
 	}
 	cmd.SysProcAttr.CreationFlags = 0x08000000
 	return cmd
+}
+
+func (u *Utils) StartUpdate() error {
+	execPath, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("failed to get executable path: %w", err)
+	}
+
+	parentPath := path.Dir(execPath)
+	updatePath := path.Join(parentPath, "update.exe")
+
+	// Check if update.exe exists
+	if _, err := os.Stat(updatePath); err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("update.exe not found in %s", parentPath)
+		}
+		return fmt.Errorf("failed to check for update.exe: %w", err)
+	}
+
+	cmd := exec.Command(updatePath, execPath)
+	cmd = u.HideConsoleWindow(cmd)
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("failed to start update process: %w", err)
+	}
+
+	os.Exit(0)
+	return nil // This line is never reached due to os.Exit, but included for completeness
 }

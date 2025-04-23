@@ -1,82 +1,19 @@
+import { UpdateDialog } from '@/components/header/UpdateDialog.tsx';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Download, HelpCircle } from 'lucide-react';
-import { useEffect, useState } from 'react';
-
-type UpdateInfo = {
-  available: boolean;
-  version: string;
-  features: string[];
-};
+import { HelpCircle } from 'lucide-react';
+import { useState } from 'react';
 
 export function HeaderButtons() {
-  const [updateInfo, setUpdateInfo] = useState<UpdateInfo>({
-    available: false,
-    version: '1.2.0',
-    features: ['Improved account security', 'Faster loading times', 'New payment options'],
-  });
-
   const [helpOpen, setHelpOpen] = useState(false);
-  const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
-  // Simulate checking for updates
-  useEffect(() => {
-    // This would normally be an API call to check for updates
-    const checkForUpdates = () => {
-      // Simulate an update being available (for demo purposes)
-      // eslint-disable-next-line react-web-api/no-leaked-timeout
-      setTimeout(() => {
-        setUpdateInfo({
-          available: true,
-          version: '1.2.0',
-          features: ['Improved account security', 'Faster loading times', 'New payment options'],
-        });
-      }, 3000);
-    };
-
-    checkForUpdates();
-  }, []);
-
-  const handleStartUpdate = () => {
-    setUpdateDialogOpen(false);
-  };
 
   return (
     <>
       <div className="flex items-center gap-2">
-        {updateInfo.available && (
-          <TooltipProvider delayDuration={100}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => setUpdateDialogOpen(true)}
-                  className="relative p-2 rounded-full hover:bg-[#1F1F23] transition-colors duration-200 text-blue-400 group"
-                >
-                  <Download className="h-5 w-5" />
-                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-500 rounded-full"></span>
-                  <span className="sr-only">Update Available</span>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="bg-[#1F1F23] border-[#2B2B30] text-gray-200">
-                <p>
-                  Update v
-                  {updateInfo.version}
-                  {' '}
-                  available
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
 
+        <UpdateDialog />
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -96,34 +33,6 @@ export function HeaderButtons() {
       </div>
 
       {/* Update Dialog */}
-      <Dialog open={updateDialogOpen} onOpenChange={setUpdateDialogOpen}>
-        <DialogContent className="bg-[#0F0F12] border-[#1F1F23] text-gray-200 sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-white">Update Available</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Version
-              {' '}
-              {updateInfo.version}
-              {' '}
-              is now available for download
-            </DialogDescription>
-          </DialogHeader>
-
-          <DialogFooter className="sm:justify-between">
-            <Button
-              variant="outline"
-              onClick={() => setUpdateDialogOpen(false)}
-              className="border-[#2B2B30] text-gray-300 hover:bg-[#1F1F23] hover:text-white"
-            >
-              Later
-            </Button>
-            <Button onClick={handleStartUpdate} className="bg-blue-600 hover:bg-blue-700 text-white">
-              Update Now
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* Help Dialog */}
       <Dialog open={helpOpen} onOpenChange={setHelpOpen}>
         <DialogContent className="bg-[#0F0F12] border-[#1F1F23] text-gray-200 sm:max-w-[600px] max-h-[80vh] overflow-y-auto">

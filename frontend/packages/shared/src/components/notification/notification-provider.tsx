@@ -1,5 +1,5 @@
 import type { NotificationPreferences, NotificationPriority } from '@/types/notification.ts';
-import type { ServerNotification, ServerNotificationEvents, UserType } from '@/types/types.ts';
+import type { ServerNotification, ServerNotificationEvents, UserType, Version } from '@/types/types.ts';
 import type { ReactNode } from 'react';
 import notificationSound from '@/assets/sounds/notification.ogg';
 import { useLocalStorage } from '@/hooks/use-local-storage';
@@ -24,6 +24,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [filterType, setFilterType] = useState<'all' | 'unread' | 'read'>('all');
   const [initialized, setInitialized] = useState(false);
+  const [_, setValue] = useLocalStorage<Version | null>('last-update', null);
 
   const queryClient = useQueryClient();
 
@@ -233,6 +234,19 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
       addNotification(newNotification);
 
+      if (notification.event === NOTIFICATION_EVENTS.NEW_UPDATE && !notification.isSeen) {
+        setValue(notification.metadata as Version);
+        toast.info('New update available!', {
+          description: 'Update to the latest version to receive new features and improvements.',
+          action: {
+            type: 'button',
+            label: 'Update now',
+            onClick: () => void 0,
+          },
+        });
+        markAsRead(notification.documentId);
+        return;
+      }
       if (notification.event === NOTIFICATION_EVENTS.MEMBERSHIP_PAID && !notification.isSeen) {
         premiumModalStore.open({ amount: pricingPlans?.find(plan => notification.metadata.tier.toLowerCase() === plan.tier_enum)?.price ?? 10, tier: notification.metadata.tier.slice(0, 1).toUpperCase() + notification.metadata.tier.slice(1), paymentMethod: notification.metadata.paymentMethod });
         markAsRead(notification.documentId);

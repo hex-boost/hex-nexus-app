@@ -14,6 +14,7 @@ import type {
   ApiPricePrice,
   ApiRankingRanking,
   ApiTransactionTransaction,
+  ApiVersionVersion,
   PluginContentReleasesRelease,
   PluginContentReleasesReleaseAction,
   PluginI18NLocale,
@@ -33,6 +34,7 @@ export type FavoriteAccounts = Entity<ApiFavoriteAccountFavoriteAccount>;
 export type Server = AccountType['server'];
 export type ServerNotification = Entity<ApiNotificationNotification>;
 export type ServerNotificationEvents = ServerNotification['event'];
+export type Version = Entity<ApiVersionVersion>;
 
 export type AccountPermissions = Entity<PluginUsersPermissionsUser>['accountPermissions'];
 export type ApiTokenType = Entity<AdminApiToken>;

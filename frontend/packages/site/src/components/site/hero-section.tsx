@@ -4,7 +4,7 @@ import { RainbowButton } from '@/components/ui/rainbow-button.tsx';
 import { ShineBorder } from '@/components/ui/shine-border.tsx';
 import { useDownloadLink } from '@/hooks/useDownloadLink.ts';
 import { Link } from '@tanstack/react-router';
-import { Download } from 'lucide-react';
+import { Download, Loader2 } from 'lucide-react';
 
 export function HeroSection() {
   const { downloadUrl, loading } = useDownloadLink();
@@ -35,8 +35,10 @@ export function HeroSection() {
             <RainbowButton
               className="w-full max-w-xs "
             >
-              {loading ? 'Loading...' : 'Download'}
-              {!loading && <Download className="ml-1 w-4 h-4" />}
+              {loading
+                ? <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                : 'Download for Free'}
+              {!loading && <Download className="ml-2 w-4 h-4" />}
             </RainbowButton>
           </Link>
         </div>
