@@ -3,17 +3,12 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "workspaces": [
-    "packages/main",
-    "packages/updater",
-    "packages/shared"
-  ],
   "scripts": {
-    "dev:main": "npm run -w nexus-main dev",
-    "dev:updater": "npm run -w nexus-updater dev",
-    "build:main": "npm run -w nexus-main build",
-    "build:updater": "npm run -w nexus-updater build",
-    "build:all": "npm run build:main && npm run build:updater",
+    "dev:main": "pnpm --filter nexus-main dev",
+    "build:main": "pnpm --filter nexus-main build",
+    "dev:updater": "pnpm --filter nexus-updater dev",
+    "build:updater": "pnpm --filter nexus-updater build",
+    "build:all": "pnpm run build:main && pnpm run build:updater",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
@@ -50,6 +45,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "cobe": "^0.6.3",
+    "date-fns": "^4.1.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "framer-motion": "^12.7.4",
     "idb": "^8.0.2",
@@ -89,7 +85,6 @@
     "@types/node": "^22.13.10",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
-    "@types/testing-library__react": "^10.0.1",
     "@typescript-eslint/eslint-plugin": "^8.26.1",
     "@typescript-eslint/parser": "^8.26.1",
     "@vitejs/plugin-react": "^4.4.1",

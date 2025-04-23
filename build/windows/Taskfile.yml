@@ -13,9 +13,13 @@ tasks:
     summary: Builds the application for Windows
     deps:
       - task: common:go:mod:tidy
-      - task: common:build:frontend
-      - task: common:build:frontend:updater
       - task: clean
+        vars:
+          PRODUCTION: '{{.PRODUCTION}}'
+      - task: common:build:frontend
+        vars:
+          PRODUCTION: '{{.PRODUCTION}}'
+      - task: common:build:frontend:updater
         vars:
           PRODUCTION: '{{.PRODUCTION}}'
       - task: common:generate:icons
