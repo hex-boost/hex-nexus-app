@@ -31,7 +31,7 @@ type MenuItem = {
 };
 
 export type UserProfileProps = {
-  user: UserType;
+  user: UserType | null;
   logoutAction: () => void;
   updateAction: () => void;
 };
@@ -42,6 +42,8 @@ export function UserProfile({
 }: UserProfileProps) {
   const queryClient = useQueryClient();
   const { updateUserAvatarFromBase64 } = useProfileAvatar();
+
+  const [isHover, setHover] = useState(false);
   const [previewAvatar, setPreviewAvatar] = useState<string | null>(null);
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
@@ -83,9 +85,9 @@ export function UserProfile({
   };
 
   const { mutate: handleChangeAvatar } = useMutation({
-    mutationKey: ['update-avatar', user.id],
+    mutationKey: ['update-avatar', user?.id],
     mutationFn: async () => {
-      return toast.promise(updateUserAvatarFromBase64(previewAvatar!, user.id), {
+      return toast.promise(updateUserAvatarFromBase64(previewAvatar!, user?.id || 0), {
         loading: 'Updating avatar',
         success: 'Avatar updated successfully',
         error: 'An unexpected error occurred',
@@ -152,11 +154,15 @@ export function UserProfile({
       setImageToCrop(null);
     }
   };
-  const textClass = getTierColorClass(user.premium.tier).text;
+  const textClass = user?.premium?.tier
+    ? getTierColorClass(user.premium.tier).text
+    : getTierColorClass('free').text;
   const menuItems: MenuItem[] = [
     {
       label: 'Membership',
-      value: (user.premium?.tier.slice(0, 1).toUpperCase() + user.premium.tier.slice(1)) || 'Free',
+      value: user?.premium?.tier
+        ? user.premium.tier.slice(0, 1).toUpperCase() + user.premium.tier.slice(1)
+        : 'Free',
       href: '/subscription',
       icon: <Crown className="w-4 h-4" />,
     },
@@ -196,8 +202,8 @@ export function UserProfile({
                         }}
                       >
                         <AvatarImage
-                          src={previewAvatar || import.meta.env.VITE_API_URL + user.avatar?.url}
-                          alt={user.username}
+                          src={previewAvatar || (user?.avatar?.url ? import.meta.env.VITE_API_URL + user.avatar.url : undefined)}
+                          alt={user?.username || 'User'}
                         />
 
                         <AvatarFallback><Skeleton className="w-[72px] h-[72px]" /></AvatarFallback>
@@ -264,15 +270,14 @@ export function UserProfile({
                 </TooltipProvider>
               </div>
               <div className="flex-1">
-                <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">{user.username}</h2>
-                <p className={cls(` capitalize`, textClass)}>{user.premium?.tier || 'Free'}</p>
+                <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">{user?.username}</h2>
+                <p className={cls(` capitalize`, textClass)}>{user?.premium?.tier || 'Free'}</p>
               </div>
             </div>
             <Separator className="mb-6" />
             <div className="flex flex-col gap-2 px-6">
               {menuItems.map((item) => {
                 const isDiscord = item.label === 'Discord';
-                const [isHover, setHover] = useState(false);
                 return isDiscord
                   ? (
                       <Button
@@ -331,7 +336,7 @@ export function UserProfile({
                 </div>
               </Button>
 
-              {user.premium?.tier === 'free' && (
+              {user?.premium?.tier === 'free' && (
                 <>
                   <Separator />
                   <Link to="/subscription" className="pt-2">

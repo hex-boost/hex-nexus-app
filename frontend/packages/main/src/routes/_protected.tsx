@@ -98,7 +98,7 @@ function DashboardLayout() {
                     >
                       {isLoading
                         ? <Skeleton></Skeleton>
-                        : <UserProfile updateAction={refetchUser} user={user!} logoutAction={handleLogout} />}
+                        : <UserProfile updateAction={refetchUser} user={user} logoutAction={handleLogout} />}
                     </DropdownMenuContent>
                   </DropdownMenu>
                   <WindowControls className="px-4 py-2" />

@@ -520,11 +520,11 @@ function AccountsTable({
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Status</th>
             <th
               className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400 cursor-pointer"
-              onClick={() => requestSort('coin_price')}
+              onClick={() => requestSort('price')}
             >
               <div className="flex relative items-center">
                 Price
-                <SortIndicator column="coin_price" />
+                <SortIndicator column="price" />
               </div>
             </th>
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400"></th>
@@ -564,11 +564,11 @@ function Accounts() {
     isLoading,
     filteredAccounts,
     filters,
-    setFiltersPersisted,
+    setFilters,
     showFilters,
-    setShowFiltersPersisted,
+    setShowFilters,
     searchQuery,
-    setSearchQueryPersisted,
+    setSearchQuery,
     requestSort,
     resetFilters,
     SortIndicator,
@@ -577,8 +577,8 @@ function Accounts() {
     getEloIcon,
     getRegionIcon,
     availableRegions,
-    setSelectedSkinIdsPersisted,
-    setSelectedChampionIdsPersisted,
+    setSelectedSkinIds,
+    setSelectedChampionIds,
     selectedChampionIds,
     selectedSkinIds,
     handlePageChange,
@@ -608,8 +608,8 @@ function Accounts() {
 
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row gap-4 justify-between">
-          <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQueryPersisted} />
-          <FilterButton showFilters={showFilters} setShowFilters={setShowFiltersPersisted} />
+          <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+          <FilterButton showFilters={showFilters} setShowFilters={setShowFilters} />
         </div>
 
         {showFilters && (
@@ -626,7 +626,7 @@ function Accounts() {
                   </Label>
                   <Select
                     value={filters.rank}
-                    onValueChange={value => setFiltersPersisted({ ...filters, rank: value })}
+                    onValueChange={value => setFilters({ ...filters, rank: value })}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Any rank" />
@@ -648,7 +648,7 @@ function Accounts() {
                   </Label>
                   <Select
                     value={filters.division}
-                    onValueChange={value => setFiltersPersisted({ ...filters, division: value })}
+                    onValueChange={value => setFilters({ ...filters, division: value })}
                     disabled={['Master', 'Grandmaster', 'Challenger', 'Radiant'].includes(filters.division)}
                   >
                     <SelectTrigger className="w-full">
@@ -672,7 +672,7 @@ function Accounts() {
                   <Select
                     defaultValue="any"
                     value={filters.region}
-                    onValueChange={value => setFiltersPersisted({ ...filters, region: value })}
+                    onValueChange={value => setFilters({ ...filters, region: value })}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Any Server" />
@@ -717,9 +717,9 @@ function Accounts() {
                     }))}
                     value={selectedChampionIds}
                     onChange={(values) => {
-                      setFiltersPersisted({ ...filters, selectedChampions: values });
+                      setFilters({ ...filters, selectedChampions: values });
 
-                      setSelectedChampionIdsPersisted(values);
+                      setSelectedChampionIds(values);
                     }}
                     renderItem={option => (
                       <div className="flex items-center gap-2">
@@ -763,8 +763,8 @@ function Accounts() {
                     value={selectedSkinIds}
                     isLoading={isDataDragonLoading}
                     onChange={(values) => {
-                      setSelectedSkinIdsPersisted(values);
-                      setFiltersPersisted({ ...filters, selectedSkins: values });
+                      setSelectedSkinIds(values);
+                      setFilters({ ...filters, selectedSkins: values });
                     }}
                     renderItem={option => (
                       <div className="flex items-center gap-2">
@@ -820,7 +820,7 @@ function Accounts() {
                           'h-7 px-2  text-xs',
                           filters.minBlueEssence === value ? 'bg-blue-100 dark:bg-blue-900/20 border-blue-500' : '',
                         )}
-                        onClick={() => setFiltersPersisted({
+                        onClick={() => setFilters({
                           ...filters,
                           minBlueEssence: value,
                         })}
@@ -834,7 +834,7 @@ function Accounts() {
                       variant="outline"
                       size="sm"
                       className="h-7 px-2 text-xs"
-                      onClick={() => setFiltersPersisted({
+                      onClick={() => setFilters({
                         ...filters,
                         minBlueEssence: 0,
                       })}
@@ -848,7 +848,7 @@ function Accounts() {
                     max={30000}
                     step={100}
                     onValueChange={value =>
-                      setFiltersPersisted({
+                      setFilters({
                         ...filters,
                         minBlueEssence: value[0],
                       })}
@@ -887,7 +887,7 @@ function Accounts() {
                                 ? currentStatuses.filter(s => s !== status.value)
                                 : [...currentStatuses, status.value];
 
-                              setFiltersPersisted({
+                              setFilters({
                                 ...filters,
                                 leaverStatus: newStatuses,
                               });

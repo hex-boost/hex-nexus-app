@@ -25,7 +25,64 @@ export const availableRegions: Server[] = [
   'VN2',
   'TH2',
 ];
-type SortKey = keyof AccountType | 'coin_price' | 'winrate' | 'blueEssence';
+
+type SortKey = keyof AccountType | 'coin_price' | 'price' | 'winrate' | 'blueEssence' | 'LCUchampions' | 'LCUskins';
+
+type FilterState = {
+  leaverStatus: string[];
+  game: string;
+  division: string;
+  rank: string;
+  region: string;
+  company: string;
+  status: string;
+  selectedChampions: string[];
+  minBlueEssence: number;
+  selectedSkins: string[];
+};
+
+type AccountsState = {
+  searchQuery: string;
+  showFilters: boolean;
+  selectedChampionIds: string[];
+  selectedSkinIds: string[];
+  filters: FilterState;
+  sortConfig: {
+    key: SortKey | null;
+    direction: 'ascending' | 'descending' | null;
+  };
+  pagination: {
+    page: number;
+    pageSize: number;
+  };
+};
+
+const DEFAULT_STATE: AccountsState = {
+  searchQuery: '',
+  showFilters: false,
+  selectedChampionIds: [],
+  selectedSkinIds: [],
+  filters: {
+    leaverStatus: [],
+    game: '',
+    division: '',
+    rank: '',
+    region: '',
+    company: '',
+    status: '',
+    selectedChampions: [],
+    minBlueEssence: 0,
+    selectedSkins: [],
+  },
+  sortConfig: {
+    key: null,
+    direction: null,
+  },
+  pagination: {
+    page: 1,
+    pageSize: 20,
+  },
+};
 
 export function getLeaverBusterInfo(account: AccountType) {
   if (!account.leaverBuster?.leaverBusterEntryDto) {
@@ -68,373 +125,278 @@ export function getLeaverBusterInfo(account: AccountType) {
   return null; // No active penalties
 }
 
-export function useAccounts(page = 1, pageSize = 10) {
+export function useAccounts(initialPage = 1, initialPageSize = 20) {
   const queryClient = useQueryClient();
-
-  const persistedState: any = queryClient.getQueryData(['accounts-filter-state']) || {
-    searchQuery: '',
-    showFilters: false,
-    selectedChampionIds: [], // Ensure this is always an array
-    selectedSkinIds: [], // Ensure this is always an array
-    filters: {
-      leaverStatus: [],
-      game: '',
-      division: '',
-      rank: '',
-      region: '',
-      company: '',
-      status: '',
-      selectedChampions: [], // Ensure this is always an array
-      minBlueEssence: 0,
-      selectedSkins: [], // Ensure this is always an array
-    },
-    sortConfig: {
-      key: null,
-      direction: null,
-    },
-    pagination: {
-      page: 1,
-      pageSize: 20,
-    },
-  };
-
-  // Initialize state with persisted values and ensure arrays
-  const [searchQuery, setSearchQuery] = useState(persistedState.searchQuery || '');
-  const [showFilters, setShowFilters] = useState(persistedState.showFilters || false);
-  const [selectedChampionIds, setSelectedChampionIds] = useState(Array.isArray(persistedState.selectedChampionIds) ? persistedState.selectedChampionIds : []);
-  const [selectedSkinIds, setSelectedSkinIds] = useState(Array.isArray(persistedState.selectedSkinIds) ? persistedState.selectedSkinIds : []);
-  const [filters, setFilters] = useState({
-    ...persistedState.filters,
-    selectedChampions: Array.isArray(persistedState.filters?.selectedChampions) ? persistedState.filters.selectedChampions : [],
-    selectedSkins: Array.isArray(persistedState.filters?.selectedSkins) ? persistedState.filters.selectedSkins : [],
-    leaverStatus: Array.isArray(persistedState.filters?.leaverStatus) ? persistedState.filters.leaverStatus : [],
-  });
-  const [sortConfig, setSortConfig] = useState(persistedState.sortConfig || { key: null, direction: null });
-  const [pagination, setPagination] = useState(persistedState.pagination || { page, pageSize });
-
+  const router = useRouter();
   const { getRankColor, getEloIcon, getRegionIcon, getGameIcon } = useMapping();
 
-  // Update persisted state when filters or pagination change
+  // Get persisted state or use defaults
+  const persistedState = (() => {
+    const state = queryClient.getQueryData(['accounts-filter-state']);
+    if (!state) {
+      return {
+        ...DEFAULT_STATE,
+        pagination: { page: initialPage, pageSize: initialPageSize },
+      };
+    }
+
+    return {
+      ...state as AccountsState,
+      selectedChampionIds: Array.isArray((state as any).selectedChampionIds) ? (state as any).selectedChampionIds : [],
+      selectedSkinIds: Array.isArray((state as any).selectedSkinIds) ? (state as any).selectedSkinIds : [],
+      filters: {
+        ...(state as any).filters,
+        selectedChampions: Array.isArray((state as any).filters?.selectedChampions) ? (state as any).filters.selectedChampions : [],
+        selectedSkins: Array.isArray((state as any).filters?.selectedSkins) ? (state as any).filters.selectedSkins : [],
+        leaverStatus: Array.isArray((state as any).filters?.leaverStatus) ? (state as any).filters.leaverStatus : [],
+      },
+    };
+  })();
+
+  const [state, setState] = useState<AccountsState>(persistedState);
+
+  // Update persisted state when any part changes
   const updatePersistedState = useCallback(() => {
-    queryClient.setQueryData(['accounts-filter-state'], {
-      searchQuery,
-      showFilters,
-      selectedChampionIds,
-      selectedSkinIds,
-      filters,
-      sortConfig,
-      pagination,
+    queryClient.setQueryData(['accounts-filter-state'], state);
+  }, [queryClient, state]);
+
+  // Individual setters for state properties
+  const setSearchQuery = useCallback((value: string) => {
+    setState((prev) => {
+      const newState = { ...prev, searchQuery: value };
+      queryClient.setQueryData(['accounts-filter-state'], newState);
+      return newState;
     });
-  }, [queryClient, searchQuery, showFilters, selectedChampionIds, selectedSkinIds, filters, sortConfig, pagination]);
-
-  // Custom setters that update both local state and persisted state
-  const setSearchQueryPersisted = useCallback((value: string) => {
-    setSearchQuery(value);
-    queryClient.setQueryData(['accounts-filter-state'], (old: any) => ({ ...old, searchQuery: value }));
   }, [queryClient]);
 
-  const setShowFiltersPersisted = useCallback((value: boolean) => {
-    setShowFilters(value);
-    queryClient.setQueryData(['accounts-filter-state'], (old: any) => ({ ...old, showFilters: value }));
+  const setShowFilters = useCallback((value: boolean) => {
+    setState((prev) => {
+      const newState = { ...prev, showFilters: value };
+      queryClient.setQueryData(['accounts-filter-state'], newState);
+      return newState;
+    });
   }, [queryClient]);
 
-  const setFiltersPersisted = useCallback((value: typeof filters) => {
-    setFilters(value);
-    queryClient.setQueryData(['accounts-filter-state'], (old: any) => ({ ...old, filters: value }));
+  const setFilters = useCallback((value: FilterState) => {
+    setState((prev) => {
+      const newState = { ...prev, filters: value };
+      queryClient.setQueryData(['accounts-filter-state'], newState);
+      return newState;
+    });
   }, [queryClient]);
 
-  const setSelectedChampionIdsPersisted = useCallback((value: string[]) => {
-    const safeValue = Array.isArray(value) ? value : [];
-    setSelectedChampionIds(safeValue);
-    queryClient.setQueryData(['accounts-filter-state'], (old: any) => ({ ...old, selectedChampionIds: safeValue }));
+  const setSelectedChampionIds = useCallback((value: string[]) => {
+    setState((prev) => {
+      const newState = { ...prev, selectedChampionIds: value };
+      queryClient.setQueryData(['accounts-filter-state'], newState);
+      return newState;
+    });
   }, [queryClient]);
 
-  const setSelectedSkinIdsPersisted = useCallback((value: string[]) => {
-    const safeValue = Array.isArray(value) ? value : [];
-    setSelectedSkinIds(safeValue);
-    queryClient.setQueryData(['accounts-filter-state'], (old: any) => ({ ...old, selectedSkinIds: safeValue }));
+  const setSelectedSkinIds = useCallback((value: string[]) => {
+    setState((prev) => {
+      const newState = { ...prev, selectedSkinIds: value };
+      queryClient.setQueryData(['accounts-filter-state'], newState);
+      return newState;
+    });
   }, [queryClient]);
 
-  // New function to update pagination
-  const setPaginationPersisted = useCallback((newPagination: typeof pagination) => {
-    setPagination(newPagination);
-    queryClient.setQueryData(['accounts-filter-state'], (old: any) => ({ ...old, pagination: newPagination }));
+  const setPagination = useCallback((value: AccountsState['pagination']) => {
+    setState((prev) => {
+      const newState = { ...prev, pagination: value };
+      queryClient.setQueryData(['accounts-filter-state'], newState);
+      return newState;
+    });
   }, [queryClient]);
+  // Reset all filters
+  const resetFilters = useCallback(() => {
+    const newState = {
+      ...DEFAULT_STATE,
+      pagination: {
+        page: 1,
+        pageSize: state.pagination.pageSize,
+      },
+    };
+    setState(newState);
+    queryClient.setQueryData(['accounts-filter-state'], newState);
+  }, [queryClient, state.pagination.pageSize]);
 
-  // Update persisted sort config
+  // Sort handling
   const requestSort = useCallback((key: SortKey) => {
-    let direction: 'ascending' | 'descending' | null = 'ascending';
+    setState((prev) => {
+      let direction: 'ascending' | 'descending' | null = 'ascending';
 
-    if (sortConfig.key === key) {
-      if (sortConfig.direction === 'ascending') {
-        direction = 'descending';
-      } else if (sortConfig.direction === 'descending') {
-        const newConfig = { key: null, direction: null };
-        setSortConfig(newConfig);
-        queryClient.setQueryData(['accounts-filter-state'], (old: any) => ({ ...old, sortConfig: newConfig }));
-        return;
+      if (prev.sortConfig.key === key) {
+        if (prev.sortConfig.direction === 'ascending') {
+          direction = 'descending';
+        } else if (prev.sortConfig.direction === 'descending') {
+          direction = null;
+        }
+      }
+
+      const newConfig = direction === null
+        ? { key: null, direction: null }
+        : { key, direction };
+
+      const newState = {
+        ...prev,
+        sortConfig: newConfig,
+      };
+
+      queryClient.setQueryData(['accounts-filter-state'], newState);
+      return newState;
+    });
+  }, [queryClient]);
+
+  // Build API query parameters
+  const buildQueryParams = useCallback((page: number) => {
+    const { filters, searchQuery, sortConfig } = state;
+    const strapiFilters: any = {};
+
+    // Document ID search
+    if (searchQuery) {
+      strapiFilters.documentId = { $containsi: searchQuery };
+    }
+
+    // Blue essence minimum
+    if (filters.minBlueEssence > 0) {
+      strapiFilters.blueEssence = { $gte: filters.minBlueEssence };
+    }
+
+    // Region filter
+    if (filters.region && filters.region !== 'any') {
+      strapiFilters.server = filters.region;
+    }
+
+    // Company/account type filter
+    if (filters.company && filters.company !== 'any') {
+      strapiFilters.type = filters.company;
+    }
+
+    // Build $and conditions
+    const andConditions: any[] = [];
+
+    // Champions filter
+    if (filters.selectedChampions?.length > 0) {
+      andConditions.push({
+        LCUchampions: {
+          $contains: filters.selectedChampions.map(id => Number.parseInt(id)),
+        },
+      });
+    }
+
+    // Skins filter
+    if (filters.selectedSkins?.length > 0) {
+      andConditions.push({
+        LCUskins: {
+          $contains: filters.selectedSkins.map(id => Number.parseInt(id)),
+        },
+      });
+    }
+
+    // Restrictions filter
+    if (filters.leaverStatus?.length > 0) {
+      andConditions.push({
+        restrictions: {
+          $contains: filters.leaverStatus,
+        },
+      });
+    }
+
+    // Add $and conditions if needed
+    if (andConditions.length > 0) {
+      strapiFilters.$and = andConditions;
+    }
+
+    // Rank and division filters
+    if ((filters.rank && filters.rank !== 'any') || (filters.division && filters.division !== 'any')) {
+      strapiFilters.rankings = {
+        queueType: 'soloqueue',
+        type: 'current',
+      };
+
+      if (filters.rank && filters.rank !== 'any') {
+        strapiFilters.rankings.elo = { $eqi: filters.rank };
+      }
+
+      if (filters.division && filters.division !== 'any') {
+        strapiFilters.rankings.division = filters.division;
       }
     }
 
-    const newConfig = { key, direction };
-    setSortConfig(newConfig);
-    queryClient.setQueryData(['accounts-filter-state'], (old: any) => ({ ...old, sortConfig: newConfig }));
-  }, [sortConfig, queryClient]);
-
-  const resetFilters = useCallback(() => {
-    const initialState = {
-      searchQuery: '',
-      showFilters: false,
-      selectedChampionIds: [],
-      selectedSkinIds: [],
-      filters: {
-        minBlueEssence: 0,
-        game: '',
-        division: '',
-        rank: '',
-        region: '',
-        company: '',
-        status: '',
-        selectedChampions: [],
-        selectedSkins: [],
-        leaverStatus: [],
-      },
-      sortConfig: {
-        key: null,
-        direction: null,
-      },
-
+    // Build final query params
+    const queryParams: any = {
       pagination: {
-        page: 1,
-        pageSize: 10,
+        page,
+        pageSize: state.pagination.pageSize,
       },
     };
 
-    setSearchQuery(initialState.searchQuery);
-    setSelectedChampionIds(initialState.selectedChampionIds);
-    setSelectedSkinIds(initialState.selectedSkinIds);
-    setFilters(initialState.filters);
-    setSortConfig(initialState.sortConfig);
-    setPagination(initialState.pagination);
+    if (Object.keys(strapiFilters).length > 0) {
+      queryParams.filters = strapiFilters;
+    }
 
-    // Reset persisted state
-    queryClient.setQueryData(['accounts-filter-state'], initialState);
-  }, [queryClient]);
+    if (sortConfig.key && sortConfig.direction) {
+      const sortDirection = sortConfig.direction === 'ascending' ? 'asc' : 'desc';
+      queryParams.sort = `${sortConfig.key}:${sortDirection}`;
+    }
 
-  const router = useRouter();
+    return queryParams;
+  }, [state]);
 
+  // Main data query
   const { data, isLoading } = useQuery({
-    queryKey: ['accounts', filters, searchQuery, pagination.page, pagination.pageSize, sortConfig],
+    queryKey: ['accounts', state.filters, state.searchQuery, state.pagination.page, state.pagination.pageSize, state.sortConfig],
     queryFn: async () => {
-      const strapiFilters: any = {};
-
-      // Document ID search
-      if (searchQuery) {
-        strapiFilters.documentId = { $containsi: searchQuery };
-      }
-
-      // Blue essence minimum
-      if (filters.minBlueEssence > 0) {
-        strapiFilters.blueEssence = { $gte: filters.minBlueEssence };
-      }
-
-      // Region filter
-      if (filters.region && filters.region !== 'any') {
-        strapiFilters.server = filters.region;
-      }
-
-      // Company/account type filter
-      if (filters.company && filters.company !== 'any') {
-        strapiFilters.type = filters.company;
-      }
-
-      // Champions filter
-      if (filters.selectedChampions && filters.selectedChampions.length > 0) {
-        strapiFilters.LCUchampions = {
-          $containsi: filters.selectedChampions.map(id => Number.parseInt(id)),
-        };
-      }
-
-      // Skins filter
-      if (filters.selectedSkins && filters.selectedSkins.length > 0) {
-        strapiFilters.LCUskins = {
-          $containsi: filters.selectedSkins.map(id => Number.parseInt(id)),
-        };
-      }
-
-      // Rank and division filters - if these rely on related data structure
-      if ((filters.rank && filters.rank !== 'any') || (filters.division && filters.division !== 'any')) {
-        strapiFilters.rankings = {
-          queueType: 'soloqueue',
-          type: 'current',
-        };
-
-        if (filters.rank && filters.rank !== 'any') {
-          strapiFilters.rankings.elo = { $eqi: filters.rank };
-        }
-
-        if (filters.division && filters.division !== 'any') {
-          strapiFilters.rankings.division = filters.division;
-        }
-      }
-
-      // Prepare parameters for the request
-      const queryParams: any = {
-        filters: strapiFilters,
-        pagination: {
-          page: pagination.page,
-          pageSize: pagination.pageSize,
-        },
-      };
-
-      // Add sorting if configured
-      if (sortConfig.key && sortConfig.direction) {
-        const sortDirection = sortConfig.direction === 'ascending' ? 'asc' : 'desc';
-
-        // Handle special sort cases and map to the correct field names
-        if (sortConfig.key === 'LCUchampions') {
-          queryParams.sort = `LCUchampions_count:${sortDirection}`;
-        } else if (sortConfig.key === 'LCUskins') {
-          queryParams.sort = `LCUskins_count:${sortDirection}`;
-        } else if (sortConfig.key === 'coin_price') {
-          queryParams.sort = `rankings.elo:${sortDirection}`;
-        } else if (sortConfig.key === 'winrate') {
-          queryParams.sort = `rankings.wins:${sortDirection}`;
-        } else if (sortConfig.key === 'blueEssence') {
-          queryParams.sort = `blueEssence:${sortDirection}`;
-        } else {
-          // Default sort for regular fields
-          queryParams.sort = `${sortConfig.key}:${sortDirection}`;
-        }
-      }
-
+      const queryParams = buildQueryParams(state.pagination.page);
       return await strapiClient.find<AccountType[]>('accounts/available', queryParams) as StrapiResponse<AccountType[]>;
     },
   });
 
-  // Use useEffect for prefetching the next page when data changes
+  // Prefetch next page
   useEffect(() => {
     if (data) {
-      const nextPage = pagination.page + 1;
-      if (nextPage <= Math.ceil(data.meta.pagination.total / pagination.pageSize)) {
+      const nextPage = state.pagination.page + 1;
+      if (nextPage <= Math.ceil(data.meta.pagination.total / state.pagination.pageSize)) {
         queryClient.prefetchQuery({
-          queryKey: ['accounts', filters, searchQuery, nextPage, pagination.pageSize, sortConfig],
+          queryKey: ['accounts', state.filters, state.searchQuery, nextPage, state.pagination.pageSize, state.sortConfig],
           queryFn: async () => {
-            const strapiFilters: any = {};
-
-            // Document ID search
-            if (searchQuery) {
-              strapiFilters.documentId = { $containsi: searchQuery };
-            }
-
-            // Blue essence minimum
-            if (filters.minBlueEssence > 0) {
-              strapiFilters.blueEssence = { $gte: filters.minBlueEssence };
-            }
-
-            // Region filter
-            if (filters.region && filters.region !== 'any') {
-              strapiFilters.server = filters.region;
-            }
-
-            // Company/account type filter
-            if (filters.company && filters.company !== 'any') {
-              strapiFilters.type = filters.company;
-            }
-
-            // Champions filter - use comma-separated array instead of $and conditions
-            if (filters.selectedChampions && filters.selectedChampions.length > 0) {
-              strapiFilters.LCUchampions = {
-                $containsi: filters.selectedChampions.map(id => Number.parseInt(id)),
-              };
-            }
-
-            // Skins filter - use comma-separated array instead of $and conditions
-            if (filters.selectedSkins && filters.selectedSkins.length > 0) {
-              strapiFilters.LCUskins = {
-                $containsi: filters.selectedSkins.map(id => Number.parseInt(id)),
-              };
-            }
-
-            // Rank and division filters - if these rely on related data structure
-            if ((filters.rank && filters.rank !== 'any') || (filters.division && filters.division !== 'any')) {
-              strapiFilters.rankings = {
-                queueType: 'soloqueue',
-                type: 'current',
-              };
-
-              if (filters.rank && filters.rank !== 'any') {
-                strapiFilters.rankings.elo = { $eqi: filters.rank };
-              }
-
-              if (filters.division && filters.division !== 'any') {
-                strapiFilters.rankings.division = filters.division;
-              }
-            }
-
-            // Prepare parameters for the request
-            const queryParams: any = {
-              filters: strapiFilters,
-              pagination: {
-                page: nextPage,
-                pageSize: pagination.pageSize,
-              },
-            };
-
-            // Add sorting if configured - using same format as main query
-            if (sortConfig.key && sortConfig.direction) {
-              const sortDirection = sortConfig.direction === 'ascending' ? 'asc' : 'desc';
-
-              // Handle special sort cases
-              if (sortConfig.key === 'LCUchampions') {
-                queryParams.sort = `LCUchampions_count:${sortDirection}`;
-              } else if (sortConfig.key === 'LCUskins') {
-                queryParams.sort = `LCUskins_count:${sortDirection}`;
-              } else if (sortConfig.key === 'coin_price') {
-                queryParams.sort = `rankings.elo:${sortDirection}`;
-              } else if (sortConfig.key === 'winrate') {
-                queryParams.sort = `rankings.wins:${sortDirection}`;
-              } else if (sortConfig.key === 'blueEssence') {
-                queryParams.sort = `blueEssence:${sortDirection}`;
-              } else {
-                // Default sort for regular fields
-                queryParams.sort = `${sortConfig.key}:${sortDirection}`;
-              }
-            }
-
+            const queryParams = buildQueryParams(nextPage);
             return await strapiClient.find<AccountType[]>('accounts/available', queryParams);
           },
         });
       }
     }
-  }, [data, filters, pagination, queryClient, searchQuery, sortConfig]);
+  }, [data, state, queryClient, buildQueryParams]);
 
+  // Navigation handler
   const handleViewAccountDetails = (accountId: string) => {
     router.navigate({ to: `/accounts/${accountId}` });
   };
+
+  // Sort indicator component
   const SortIndicator = ({ column }: { column: SortKey }) => {
-    // Add null check here too
-    if (!sortConfig || sortConfig.key !== column || sortConfig.direction === null) {
+    if (!state.sortConfig || state.sortConfig.key !== column || state.sortConfig.direction === null) {
       return <ArrowUpDown className="ml-1 h-4 w-4" />;
     }
 
-    return sortConfig.direction === 'ascending'
+    return state.sortConfig.direction === 'ascending'
       ? <ArrowUp className="ml-1 h-4 w-4" />
       : <ArrowDown className="ml-1 h-4 w-4" />;
   };
 
+  // Page change handler
   const handlePageChange = useCallback((newPage: number) => {
-    setPaginationPersisted({ ...pagination, page: newPage });
-  }, [pagination, setPaginationPersisted]);
+    setPagination({ ...state.pagination, page: newPage });
+  }, [state.pagination, setPagination]);
 
   return {
     availableRegions,
-    searchQuery,
+    searchQuery: state.searchQuery,
     filteredAccounts: data?.data || [],
-    setSearchQuery,
-    showFilters,
+    showFilters: state.showFilters,
     setShowFilters,
-    filters,
+    filters: state.filters,
     setFilters,
     data,
     isLoading,
@@ -443,23 +405,19 @@ export function useAccounts(page = 1, pageSize = 10) {
     getRegionIcon,
     getGameIcon,
     requestSort,
-    setSearchQueryPersisted,
-    setSelectedChampionIdsPersisted,
-    setSelectedSkinIdsPersisted,
     resetFilters,
     SortIndicator,
     handleViewAccountDetails,
-    selectedChampionIds,
-    setFiltersPersisted,
+    selectedChampionIds: state.selectedChampionIds,
     setSelectedChampionIds,
-    setSelectedSkinIds,
-    setShowFiltersPersisted,
-    sortConfig,
-    selectedSkinIds,
+    sortConfig: state.sortConfig,
+    selectedSkinIds: state.selectedSkinIds,
     updatePersistedState,
-    pagination,
+    pagination: state.pagination,
     handlePageChange,
     totalPages: data?.meta.pagination.pageCount || 1,
     totalItems: data?.meta.pagination.total || 0,
+    setSearchQuery,
+    setSelectedSkinIds,
   };
 }
