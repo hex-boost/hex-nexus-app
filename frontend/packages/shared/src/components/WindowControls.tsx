@@ -57,7 +57,7 @@ export function WindowControls({ className }: { className?: string }) {
     console.log(toggleMaximize);
     window.Hide();
   };
-  const controlButtonClass = 'h-8 w-8 flex items-center justify-center rounded-md hover:bg-white/[0.1] transition-colors';
+  const controlButtonClass = 'h-8 w-8 flex items-center justify-center rounded-md hover:bg-shade7 transition-colors';
 
   return (
     <div
@@ -72,7 +72,7 @@ export function WindowControls({ className }: { className?: string }) {
         <div
           className="flex-grow h-8"
         />
-        <Tooltip delayDuration={300}>
+        <Tooltip delayDuration={100}>
           <TooltipTrigger asChild>
             <button
               onClick={() => window.Minimise()}
@@ -86,7 +86,7 @@ export function WindowControls({ className }: { className?: string }) {
             <p>Minimize</p>
           </TooltipContent>
         </Tooltip>
-        <Tooltip delayDuration={300}>
+        <Tooltip delayDuration={100}>
           <TooltipTrigger asChild>
             <button
               onClick={minimizeToTray}

@@ -31,8 +31,8 @@ type SortKey = keyof AccountType | 'coin_price' | 'price' | 'winrate' | 'blueEss
 type FilterState = {
   leaverStatus: string[];
   game: string;
-  division: string;
-  rank: string;
+  divisions: string[];
+  ranks: string[];
   region: string;
   company: string;
   status: string;
@@ -65,8 +65,8 @@ const DEFAULT_STATE: AccountsState = {
   filters: {
     leaverStatus: [],
     game: '',
-    division: '',
-    rank: '',
+    divisions: [],
+    ranks: [],
     region: '',
     company: '',
     status: '',
@@ -304,21 +304,26 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
     }
 
     // Rank and division filters
-    if ((filters.rank && filters.rank !== 'any') || (filters.division && filters.division !== 'any')) {
+    if ((filters.ranks?.length > 0) || (filters.divisions?.length > 0)) {
       strapiFilters.rankings = {
         queueType: 'soloqueue',
         type: 'current',
       };
 
-      if (filters.rank && filters.rank !== 'any') {
-        strapiFilters.rankings.elo = { $eqi: filters.rank };
+      if (filters.ranks?.length > 0) {
+        // Handle multiple ranks with $in operator
+        strapiFilters.rankings.elo = {
+          $in: filters.ranks,
+        };
       }
 
-      if (filters.division && filters.division !== 'any') {
-        strapiFilters.rankings.division = filters.division;
+      if (filters.divisions?.length > 0) {
+        // Handle multiple divisions with $in operator
+        strapiFilters.rankings.division = {
+          $in: filters.divisions,
+        };
       }
     }
-
     // Build final query params
     const queryParams: any = {
       pagination: {

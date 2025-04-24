@@ -1,6 +1,7 @@
 import type { PaymentMethodsAccepted } from '@/types/membership.ts';
 import type { PremiumTiers } from '@/types/types.ts';
 import { BoostRoyalInnerDialog } from '@/components/BoostRoyalInnerDialog.tsx';
+import { Badge } from '@/components/ui/badge.tsx';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -50,19 +51,35 @@ export function PaymentMethodDialog({ children, selectedTier }: { selectedTier: 
             {paymentMethods.map(method => (
               <div
                 key={method.title}
-                className={`flex cursor-pointer items-center justify-between rounded-lg border p-4 hover:bg-accent ${
-                  selectedPaymentMethod === method.title ? 'bg-accent' : ''
+                className={`flex cursor-pointer items-center justify-between rounded-lg border p-4 hover:bg-primary/10 ${
+                  selectedPaymentMethod === method.title ? 'bg-primary/20  border-blue-500' : method.title === 'BR Balance' ? 'opacity-60 pointer-events-none' : ''
                 }`}
                 onClick={() => setSelectedPaymentMethod(method.title)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSelectedPaymentMethod(method.title);
+                  }
+                }}
+                role="radio"
+                aria-checked={selectedPaymentMethod === method.title}
+                tabIndex={0}
               >
                 <div className="flex items-center justify-center space-x-4">
-
                   <div
                     className="h-8 w-8 flex items-center justify-center"
                     dangerouslySetInnerHTML={{ __html: method.icon }}
                   />
                   <div>
-                    <h3 className="text-sm font-medium">{method.title}</h3>
+                    <div className="flex gap-4">
+                      <h3 className="text-sm font-medium">{method.title}</h3>
+
+                      {method.title.includes('BR') && (
+                        <Badge className="rounded-full ">
+                          Coming Soon
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-sm text-muted-foreground">
                       {method.description}
                     </p>
@@ -98,8 +115,9 @@ export function PaymentMethodDialog({ children, selectedTier }: { selectedTier: 
               : (
                   <BoostRoyalInnerDialog>
                     <Button
+                      disabled
                       loading={isPending}
-                      className="w-full sm:w-auto"
+                      className="w-full sm:w-auto relative"
                       onClick={handleContinue}
                     >
                       Continue

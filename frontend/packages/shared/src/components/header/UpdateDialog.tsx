@@ -23,7 +23,7 @@ export function UpdateDialog() {
           <TooltipTrigger asChild>
             <button
               onClick={() => isAvailable ? setUpdateDialogOpen(true) : refetchVersion()}
-              className={cls('relative p-2 rounded-full hover:bg-[#1F1F23] transition-colors duration-200 group', isAvailable && 'text-blue-400')}
+              className={cls('relative p-2 rounded-full hover:bg-shade7 transition-colors duration-200 group', isAvailable && 'text-blue-400')}
             >
               <Download className="h-5 w-5" />
               {
@@ -33,7 +33,7 @@ export function UpdateDialog() {
               <span className="sr-only">Update Available</span>
             </button>
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="bg-[#1F1F23] border-[#2B2B30] text-gray-200">
+          <TooltipContent side="bottom" className="">
             <p>
               {
                 isAvailable
@@ -57,10 +57,10 @@ export function UpdateDialog() {
         </Tooltip>
       </TooltipProvider>
       <Dialog open={updateDialogOpen} onOpenChange={setUpdateDialogOpen}>
-        <DialogContent className="bg-[#0F0F12] border-[#1F1F23] text-gray-200 sm:max-w-md">
+        <DialogContent className=" sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-white">Update Available</DialogTitle>
-            <DialogDescription className="text-gray-400">
+            <DialogDescription className="">
               Nexus
               {' '}
               {updateInfo.version}
