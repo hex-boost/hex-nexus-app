@@ -34,7 +34,7 @@ import {
   Search,
   Shield,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 export const Route = createFileRoute('/_protected/accounts/')({
   component: Accounts,
@@ -58,7 +58,37 @@ function SearchBar({ searchQuery, setSearchQuery }: SearchBarProps) {
     </div>
   );
 }
+type ItemsPerPageSelectorProps = {
+  pageSize: number;
+  onPageSizeChange: (pageSize: number) => void;
+  options?: number[];
+};
 
+export function ItemsPerPageSelector({
+  pageSize,
+  onPageSizeChange,
+  options = [10, 20, 50, 100],
+}: ItemsPerPageSelectorProps) {
+  return (
+    <div className="flex items-center gap-2">
+      <Select
+        value={pageSize.toString()}
+        onValueChange={value => onPageSizeChange(Number.parseInt(value))}
+      >
+        <SelectTrigger className="w-[80px] h-8">
+          <SelectValue placeholder={pageSize} />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map(option => (
+            <SelectItem key={option} value={option.toString()}>
+              {option}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
 type FilterButtonProps = {
   showFilters: boolean;
   setShowFilters: (show: boolean) => void;
@@ -82,14 +112,15 @@ function FilterButton({ showFilters, setShowFilters }: FilterButtonProps) {
 type ResultsCountProps = {
   filteredCount: number;
   totalCount?: number;
+  children: React.ReactNode;
 };
 
-function ResultsCount({ filteredCount, totalCount }: ResultsCountProps) {
+function ResultsCount({ totalCount, children }: ResultsCountProps) {
   return (
-    <div className="text-sm text-zinc-600 dark:text-zinc-400">
+    <div className="flex gap-2 items-center text-sm text-zinc-600 dark:text-zinc-400">
       Showing
       {' '}
-      {filteredCount}
+      {children}
       {' '}
       of
       {' '}
@@ -557,7 +588,6 @@ function AccountsTable({
 }
 
 function Accounts() {
-  const [pageSize] = useState(10); // Fixed page size
   const [currentPage, setCurrentPage] = useState(1);
 
   const {
@@ -570,11 +600,14 @@ function Accounts() {
     searchQuery,
     setSearchQuery,
     requestSort,
+
     resetFilters,
     SortIndicator,
     handleViewAccountDetails,
     getRankColor,
     getEloIcon,
+    setPageSize,
+
     getRegionIcon,
     availableRegions,
     setSelectedSkinIds,
@@ -585,7 +618,8 @@ function Accounts() {
     totalPages,
     totalItems,
     sortConfig,
-  } = useAccounts(currentPage, pageSize);
+    pagination,
+  } = useAccounts(currentPage);
 
   const { getCompanyIcon, getFormattedServer } = useMapping();
   const { allChampions, allSkins, isLoading: isDataDragonLoading } = useAllDataDragon();
@@ -913,8 +947,6 @@ function Accounts() {
           </div>
         )}
 
-        <ResultsCount filteredCount={filteredAccounts.length} totalCount={totalItems} />
-
         <AccountsTable
           isLoading={isLoading}
           filteredAccounts={filteredAccounts}
@@ -930,15 +962,27 @@ function Accounts() {
         />
 
         {/* Pagination component */}
-        {totalPages > 1 && (
-          <div className="mt-6">
-            <AccountsPagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={onPageChange}
-            />
+        <div className="flex w-full justify-between items-center">
+          <div className="flex items-center gap-4">
+            <ResultsCount filteredCount={filteredAccounts.length} totalCount={totalItems}>
+
+              <ItemsPerPageSelector
+                pageSize={pagination.pageSize}
+                onPageSizeChange={setPageSize}
+              />
+
+            </ResultsCount>
           </div>
-        )}
+          {totalPages > 1 && (
+            <div className="mt-4">
+              <AccountsPagination
+                currentPage={pagination.page}
+                totalPages={totalPages}
+                onPageChange={onPageChange}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </>
   );

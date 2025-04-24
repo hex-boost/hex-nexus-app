@@ -128,6 +128,7 @@ export function getLeaverBusterInfo(account: AccountType) {
 export function useAccounts(initialPage = 1, initialPageSize = 20) {
   const queryClient = useQueryClient();
   const router = useRouter();
+
   const { getRankColor, getEloIcon, getRegionIcon, getGameIcon } = useMapping();
 
   // Get persisted state or use defaults
@@ -383,7 +384,9 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
   const handlePageChange = useCallback((newPage: number) => {
     setPagination({ ...state.pagination, page: newPage });
   }, [state.pagination, setPagination]);
-
+  const setPageSize = useCallback((newSize: number) => {
+    setPagination({ page: 1, pageSize: newSize });
+  }, [setPagination]);
   return {
     availableRegions,
     searchQuery: state.searchQuery,
@@ -409,6 +412,7 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
     updatePersistedState,
     pagination: state.pagination,
     handlePageChange,
+    setPageSize,
     totalPages: data?.meta.pagination.pageCount || 1,
     totalItems: data?.meta.pagination.total || 0,
     setSearchQuery,
