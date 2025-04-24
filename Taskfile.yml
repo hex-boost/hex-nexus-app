@@ -39,6 +39,8 @@ tasks:
     summary: Packages a production build of the application
     cmds:
       - task: "{{OS}}:package"
+    method: checksum  # Add this to ensure single execution
+
 
   run:
     summary: Runs the application

@@ -20,6 +20,7 @@ tasks:
           powershell -Command "if (-not (Get-Command pnpm -ErrorAction SilentlyContinue)) { echo 'PNPM not found, installing...'; npm install -g pnpm } else { echo 'PNPM already installed' }"
         platforms: [windows]
       - pnpm install
+    method: checksum  # Add this to prevent parallel execution
 
   build:frontend:updater:
     summary: Build the frontend project
