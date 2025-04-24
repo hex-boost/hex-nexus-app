@@ -53,7 +53,7 @@ export function FavoriteStar({
             />
           </button>
         </TooltipTrigger>
-        <TooltipContent className="text-xs">
+        <TooltipContent className="text-sm">
           {isFavorite ? 'Remove from favorites' : 'Add to favorites'}
         </TooltipContent>
       </Tooltip>

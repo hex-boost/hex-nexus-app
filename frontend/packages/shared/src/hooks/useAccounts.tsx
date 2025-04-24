@@ -304,27 +304,49 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
     }
 
     // Rank and division filters
-    if ((filters.ranks?.length > 0) || (filters.divisions?.length > 0)) {
+    // Rank and division filters
+
+    if (filters.ranks?.length > 0 && filters.divisions?.length > 0) {
+      // Create an array of OR conditions for each rank+division combination
+      const combinationFilters = [];
+
+      for (const rank of filters.ranks) {
+        for (const division of filters.divisions) {
+          combinationFilters.push({
+            $and: [
+              { elo: { $eqi: rank } },
+              { division: { $eqi: division } },
+            ],
+          });
+        }
+      }
+
       strapiFilters.rankings = {
-        queueType: 'soloqueue',
-        type: 'current',
+        $and: [
+          { queueType: { $eq: 'soloqueue' } },
+          { type: { $eq: 'current' } },
+          { $or: combinationFilters },
+        ],
       };
-
-      if (filters.ranks?.length > 0) {
-        // Handle multiple ranks with $in operator
-        strapiFilters.rankings.elo = {
-          $in: filters.ranks,
-        };
-      }
-
-      if (filters.divisions?.length > 0) {
-        // Handle multiple divisions with $in operator
-        strapiFilters.rankings.division = {
-          $in: filters.divisions,
-        };
-      }
+    } else if (filters.ranks?.length > 0) {
+      // Only ranks selected
+      strapiFilters.rankings = {
+        $and: [
+          { queueType: { $eqi: 'soloqueue' } },
+          { type: { $eqi: 'current' } },
+          { elo: { $in: filters.ranks.map(rank => rank.toUpperCase()) } },
+        ],
+      };
+    } else if (filters.divisions?.length > 0) {
+      strapiFilters.rankings = {
+        $and: [
+          { queueType: { $eq: 'soloqueue' } },
+          { type: { $eq: 'current' } },
+          { division: { $in: filters.divisions } },
+        ],
+      };
     }
-    // Build final query params
+
     const queryParams: any = {
       pagination: {
         page,

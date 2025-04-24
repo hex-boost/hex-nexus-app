@@ -3,7 +3,7 @@ import { strapiClient } from '@/lib/strapi.ts';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useAccounts } from './useAccounts';
+import { useAccounts } from './useAccounts'; // Mock dependencies
 
 // Mock dependencies
 vi.mock('@/lib/strapi.ts', () => ({
@@ -89,8 +89,8 @@ describe('useAccounts', () => {
     expect(result.current.filters).toEqual(expect.objectContaining({
       leaverStatus: [],
       game: '',
-      division: '',
-      rank: '',
+      divisions: [],
+      ranks: [],
       region: '',
       company: '',
       status: '',
@@ -702,6 +702,234 @@ describe('useAccounts', () => {
       expect(filters?.LCUchampions?.$contains[0]).toEqual(123);
       expect(filters?.LCUchampions?.$contains[1]).toEqual(456);
       expect(filters?.LCUskins?.$contains[0]).toEqual(789);
+    });
+  });
+
+  describe('Rank and Division filters', () => {
+    let queryClient: QueryClient;
+
+    beforeEach(() => {
+      queryClient = new QueryClient({
+        defaultOptions: {
+          queries: {
+            retry: false,
+          },
+        },
+      });
+
+      vi.mocked(strapiClient.find).mockResolvedValue(mockAccountsResponse);
+    });
+
+    afterEach(() => {
+      vi.clearAllMocks();
+      queryClient.clear();
+    });
+
+    it('should filter by ranks only', async () => {
+      const { result } = renderHook(() => useAccounts(), {
+        wrapper: createWrapper(queryClient),
+      });
+
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      act(() => {
+        result.current.setFilters({
+          ...result.current.filters,
+          ranks: ['gold', 'silver'],
+        });
+      });
+
+      await waitFor(() => expect(strapiClient.find).toHaveBeenCalledTimes(2));
+
+      const filters = vi.mocked(strapiClient.find).mock.calls[1][1]?.filters as any;
+
+      expect(filters).toHaveProperty('rankings');
+      expect(filters.rankings.$and).toEqual([
+        { queueType: { $eqi: 'soloqueue' } },
+        { type: { $eqi: 'current' } },
+        { elo: { $in: ['GOLD', 'SILVER'] } },
+      ]);
+    });
+
+    it('should filter by divisions only', async () => {
+      const { result } = renderHook(() => useAccounts(), {
+        wrapper: createWrapper(queryClient),
+      });
+
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      act(() => {
+        result.current.setFilters({
+          ...result.current.filters,
+          divisions: ['I', 'II'],
+        });
+      });
+
+      await waitFor(() => expect(strapiClient.find).toHaveBeenCalledTimes(2));
+
+      const filters = vi.mocked(strapiClient.find).mock.calls[1][1]?.filters as any;
+
+      expect(filters).toHaveProperty('rankings');
+      expect(filters.rankings.$and).toEqual([
+        { queueType: { $eq: 'soloqueue' } },
+        { type: { $eq: 'current' } },
+        { division: { $in: ['I', 'II'] } },
+      ]);
+    });
+
+    it('should create combination filters when both ranks and divisions are specified', async () => {
+      const { result } = renderHook(() => useAccounts(), {
+        wrapper: createWrapper(queryClient),
+      });
+
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      act(() => {
+        result.current.setFilters({
+          ...result.current.filters,
+          ranks: ['gold', 'silver'],
+          divisions: ['I', 'II'],
+        });
+      });
+
+      await waitFor(() => expect(strapiClient.find).toHaveBeenCalledTimes(2));
+
+      const filters = vi.mocked(strapiClient.find).mock.calls[1][1]?.filters as any;
+
+      expect(filters).toHaveProperty('rankings');
+
+      // Check the first two conditions (queueType and type)
+      expect(filters.rankings.$and[0]).toEqual({ queueType: { $eq: 'soloqueue' } });
+      expect(filters.rankings.$and[1]).toEqual({ type: { $eq: 'current' } });
+
+      // Check the $or array for all rank+division combinations
+      const orConditions = filters.rankings.$and[2].$or;
+
+      expect(orConditions).toHaveLength(4); // 2 ranks × 2 divisions = 4 combinations
+
+      // Check individual combinations
+      expect(orConditions).toContainEqual({
+        $and: [
+          { elo: { $eqi: 'gold' } },
+          { division: { $eqi: 'I' } },
+        ],
+      });
+      expect(orConditions).toContainEqual({
+        $and: [
+          { elo: { $eqi: 'gold' } },
+          { division: { $eqi: 'II' } },
+        ],
+      });
+      expect(orConditions).toContainEqual({
+        $and: [
+          { elo: { $eqi: 'silver' } },
+          { division: { $eqi: 'I' } },
+        ],
+      });
+      expect(orConditions).toContainEqual({
+        $and: [
+          { elo: { $eqi: 'silver' } },
+          { division: { $eqi: 'II' } },
+        ],
+      });
+    });
+
+    it('should uppercase rank values when filtering by rank', async () => {
+      const { result } = renderHook(() => useAccounts(), {
+        wrapper: createWrapper(queryClient),
+      });
+
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      act(() => {
+        result.current.setFilters({
+          ...result.current.filters,
+          ranks: ['gold', 'silver'],
+        });
+      });
+
+      await waitFor(() => expect(strapiClient.find).toHaveBeenCalledTimes(2));
+
+      const filters = vi.mocked(strapiClient.find).mock.calls[1][1]?.filters as any;
+
+      // Check that ranks are uppercased in the API call
+      expect(filters.rankings.$and[2].elo.$in).toEqual(['GOLD', 'SILVER']);
+    });
+
+    it('should correctly handle empty rank and division filters', async () => {
+      const { result } = renderHook(() => useAccounts(), {
+        wrapper: createWrapper(queryClient),
+      });
+
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      act(() => {
+        result.current.setFilters({
+          ...result.current.filters,
+          ranks: [],
+          divisions: [],
+        });
+      });
+
+      await waitFor(() => expect(strapiClient.find).toHaveBeenCalledTimes(2));
+
+      const filters = vi.mocked(strapiClient.find).mock.calls[1][1]?.filters as any;
+
+      expect(filters?.rankings).toBeUndefined();
+    });
+
+    it('should handle resetting rank and division filters', async () => {
+      const { result } = renderHook(() => useAccounts(), {
+        wrapper: createWrapper(queryClient),
+      });
+
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      // Set filters
+      act(() => {
+        result.current.setFilters({
+          ...result.current.filters,
+          ranks: ['gold'],
+          divisions: ['I'],
+        });
+      });
+
+      await waitFor(() => expect(strapiClient.find).toHaveBeenCalledTimes(2));
+
+      // Reset filters
+      act(() => {
+        result.current.resetFilters();
+      });
+
+      await waitFor(() => expect(strapiClient.find).toHaveBeenCalledTimes(3));
+
+      const filters = vi.mocked(strapiClient.find).mock.calls[2][1]?.filters as any;
+
+      expect(filters?.rankings).toBeUndefined();
+    });
+
+    it('should preserve other filters when applying rank/division filters', async () => {
+      const { result } = renderHook(() => useAccounts(), {
+        wrapper: createWrapper(queryClient),
+      });
+
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      act(() => {
+        result.current.setFilters({
+          ...result.current.filters,
+          region: 'NA1',
+          ranks: ['gold'],
+          divisions: ['I'],
+        });
+      });
+
+      await waitFor(() => expect(strapiClient.find).toHaveBeenCalledTimes(2));
+
+      const filters = vi.mocked(strapiClient.find).mock.calls[1][1]?.filters as any;
+
+      expect(filters).toHaveProperty('server', 'NA1');
+      expect(filters).toHaveProperty('rankings');
     });
   });
 });

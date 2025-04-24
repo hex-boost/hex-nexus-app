@@ -52,7 +52,7 @@ export function CopyToClipboard({ className, text }: { className: string; text: 
             </div>
           </Button>
         </TooltipTrigger>
-        <TooltipContent className="px-2 py-1 text-xs">Click to copy</TooltipContent>
+        <TooltipContent className="px-2 py-1 text-sm">Click to copy</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );
