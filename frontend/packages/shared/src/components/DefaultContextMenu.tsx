@@ -34,18 +34,34 @@ export function DefaultContextMenu({ children }: { children: React.ReactNode }) 
       if (!isReloading) {
         setIsReloading(true);
 
-        toast.promise(queryClient.refetchQueries({ exact: false, type: 'active', queryKey: ['accounts'] }), {
+        // Create a promise that refetches all queries
+        const allQueriesPromise = queryClient.refetchQueries({
+          type: 'active',
+          predicate: query => !query.queryKey.includes('accounts'),
+        });
+
+        // Handle accounts queries separately with the specific parameters
+        const accountsPromise = queryClient.refetchQueries({
+          exact: false,
+          type: 'active',
+          queryKey: ['accounts'],
+        });
+
+        // Wait for both to complete
+        toast.promise(Promise.all([allQueriesPromise, accountsPromise]), {
           loading: 'Reloading',
           success: () => {
             setIsReloading(false);
-            return 'Reloaded Successfuly';
+            return 'Reloaded Successfully';
           },
           error: () => {
+            setIsReloading(false);
             return 'Reload failed';
           },
         });
       }
     } catch (error) {
+      setIsReloading(false);
       console.error('Erro ao tentar recarregar a página:', error);
     }
   };

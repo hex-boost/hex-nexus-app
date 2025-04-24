@@ -35,6 +35,7 @@ export default antfu({
   ],
 }, {
   rules: {
+    'ts/ban-ts-comment': 'off', // Allow using @ts-ignore
     'no-console': 'off',
     'antfu/no-top-level-await': 'off', // Allow top-level await
     'style/brace-style': ['error', '1tbs'], // Use the default brace style
