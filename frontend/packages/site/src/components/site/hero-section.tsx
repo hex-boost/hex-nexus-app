@@ -6,7 +6,9 @@ import { useDownloadLink } from '@/hooks/useDownloadLink.ts';
 import { Download, Loader2 } from 'lucide-react';
 
 export function HeroSection() {
-  const { downloadUrl, loading } = useDownloadLink();
+  const { loading } = useDownloadLink();
+  const downloadPageUrl = '/download.html';
+
   return (
     <section className="relative min-h-screen pt-32 pb-16 overflow-hidden  bg-background">
 
@@ -26,15 +28,12 @@ export function HeroSection() {
             Transform Your Workflow with All-in-One Account Renter
           </p>
           <a
-            href={downloadUrl as string}
-            // disabled={loading || !downloadUrl}
-            download="Nexus_Setup.exe"
-            className="flex gap-4 justify-center  pointer-events-auto z-30 relative rounded-2xl overflow-hidden"
+            href={loading ? '#' : downloadPageUrl}
+            className="flex gap-4 justify-center pointer-events-auto z-30 relative rounded-2xl overflow-hidden"
             target="_blank"
+            // Remove download attribute as we're using the redirect page now
           >
-            <RainbowButton
-              className="w-full max-w-xs "
-            >
+            <RainbowButton className="w-full max-w-xs">
               {loading
                 ? <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                 : 'Download for Free'}
