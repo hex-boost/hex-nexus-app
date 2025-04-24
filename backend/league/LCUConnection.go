@@ -31,7 +31,6 @@ func NewLCUConnection(logger *utils.Logger) *LCUConnection {
 }
 
 func (c *LCUConnection) InitializeConnection() error {
-	c.logger.Debug("Initializing LeagueService client connection")
 
 	port, token, _, err := c.getLeagueCredentials()
 	if err != nil {
@@ -47,13 +46,11 @@ func (c *LCUConnection) InitializeConnection() error {
 	client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 
 	c.client = client
-	c.logger.Debug("Client connection initialized successfully")
 
 	return nil
 }
 func (c *LCUConnection) getProcessCommandLine() ([]byte, error) {
 
-	c.logger.Debug("Looking for LeagueService client process")
 	cmd := exec.Command("wmic", "process", "where", "name='LeagueClientUx.exe'", "get", "commandline")
 	cmd = c.utils.HideConsoleWindow(cmd)
 	output, err := cmd.Output()
@@ -91,10 +88,6 @@ func (c *LCUConnection) getLeagueCredentials() (port, token, pid string, err err
 	token = tokenMatches[1]
 	pid = pidMatches[1]
 
-	c.logger.Debug("Found LeagueService client",
-		zap.String("port", port),
-		zap.String("pid", pid))
-
 	return port, token, pid, nil
 }
 
@@ -127,5 +120,31 @@ func (c *LCUConnection) WaitUntilReady() error {
 	}
 }
 func (c *LCUConnection) IsClientInitialized() bool {
-	return c.client != nil
+	if c.client == nil {
+		return false
+	}
+
+	// Create a context with short timeout for the test request
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Test the connection with a lightweight endpoint
+	resp, err := c.client.R().
+		SetContext(ctx).
+		Get("/lol-summoner/v1/current-summoner")
+
+	// If we get any error (including TLS handshake timeout), connection is not valid
+	if err != nil {
+		return false
+	}
+
+	// Check for valid HTTP status code
+	statusOK := resp.StatusCode() >= 200 && resp.StatusCode() < 300
+	return statusOK
+}
+func (lc *LCUConnection) ResetConnection() {
+	if lc.client != nil {
+		lc.client.SetCloseConnection(true)
+		lc.client = nil
+	}
 }

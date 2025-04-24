@@ -1,5 +1,7 @@
 package types
 
+import "time"
+
 // RankedDetails represents a ranked queue's stats
 type RankedDetails struct {
 	Division                      string      `json:"division"`
@@ -142,4 +144,34 @@ func (s *SummonerRented) ToRefreshAccount() RefreshAccount {
 		RankedStats: s.SummonerBase.Rankings,
 		Server:      s.SummonerBase.Server,
 	}
+}
+
+type RefreshResponseData struct {
+	Data SummonerResponse `json:"data"`
+}
+
+type SummonerResponse struct {
+	Id           int         `json:"id"`
+	DocumentId   string      `json:"documentId"`
+	LCUchampions []int       `json:"LCUchampions"`
+	LCUskins     []int       `json:"LCUskins"`
+	Username     string      `json:"username"`
+	Password     interface{} `json:"password"`
+	Type         string      `json:"type"`
+	LeaverBuster interface{} `json:"leaverBuster"`
+	Gamename     string      `json:"gamename"`
+	Tagline      string      `json:"tagline"`
+	Server       string      `json:"server"`
+	CreatedAt    time.Time   `json:"createdAt"`
+	UpdatedAt    time.Time   `json:"updatedAt"`
+	PublishedAt  time.Time   `json:"publishedAt"`
+	Locale       interface{} `json:"locale"`
+	BlueEssence  int         `json:"blueEssence"`
+	RiotPoints   int         `json:"riotPoints"`
+	Ban          struct {
+		Restrictions []interface{} `json:"restrictions"`
+	} `json:"ban"`
+	IsPhoneVerified   interface{} `json:"isPhoneVerified"`
+	IsEmailVerified   interface{} `json:"isEmailVerified"`
+	PartyRestrictions interface{} `json:"party_restrictions"`
 }

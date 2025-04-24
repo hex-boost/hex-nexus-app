@@ -61,6 +61,7 @@ type ClientMonitor struct {
 	app                   AppEmitter
 	riotClient            *riot.RiotClient
 	isRunning             bool
+	done                  chan struct{}
 	pollingTicker         *time.Ticker
 	logger                *utils.Logger
 	captcha               *riot.Captcha
@@ -84,6 +85,7 @@ func NewClientMonitor(logger *utils.Logger, accountMonitor *AccountMonitor, leag
 			IsUpdated: false,
 		},
 		app:            nil,
+		done:           make(chan struct{}),
 		accountMonitor: accountMonitor,
 		captcha:        captcha,
 		logger:         logger,
@@ -166,15 +168,12 @@ func (cm *ClientMonitor) checkClientState() {
 		previousState,
 	)
 
-	// Update account if needed
-	if isLeagueClientRunning {
-		go cm.checkAndUpdateAccount()
+	cm.updateState(newState)
+	if isLeagueClientRunning && !cm.accountUpdateStatus.IsUpdated {
+		cm.checkAndUpdateAccount()
 	} else if cm.currentState.ClientState != ClientStateLoggedIn && cm.accountUpdateStatus.IsUpdated {
 		cm.resetAccountUpdateStatus()
 	}
-
-	// Apply the new state
-	cm.updateState(newState)
 }
 
 func (cm *ClientMonitor) WaitUntilAuthenticationIsReady(timeout time.Duration) error {
@@ -335,17 +334,41 @@ func (cm *ClientMonitor) Start() {
 	}
 
 	cm.logger.Info("Starting LeagueService client monitor")
-	cm.isRunning = true
+
+	// Use a done channel for signaling shutdown
+	done := make(chan struct{})
 	cm.pollingTicker = time.NewTicker(500 * time.Millisecond)
+
+	cm.stateMutex.Lock()
+	cm.isRunning = true
+	cm.done = done
+	cm.stateMutex.Unlock()
 
 	go func() {
 		for {
 			select {
 			case <-cm.pollingTicker.C:
 				cm.checkClientState()
+			case <-done:
+				cm.logger.Debug("Client monitor polling stopped")
+				return
 			}
 		}
 	}()
+}
+
+func (cm *ClientMonitor) Stop() {
+	cm.stateMutex.Lock()
+	defer cm.stateMutex.Unlock()
+
+	if !cm.isRunning {
+		return
+	}
+
+	cm.logger.Info("Stopping LeagueService client monitor")
+	close(cm.done)
+	cm.pollingTicker.Stop()
+	cm.isRunning = false
 }
 
 // OpenWebviewAndGetToken opens a webview for captcha and returns the token
@@ -481,15 +504,6 @@ func (cm *ClientMonitor) SetWindow(app *application.App) {
 	cm.app = app
 }
 
-func (cm *ClientMonitor) Stop() {
-	if !cm.isRunning {
-		return
-	}
-
-	cm.logger.Info("Stopping LeagueService client monitor")
-	cm.pollingTicker.Stop()
-	cm.isRunning = false
-}
 func (cm *ClientMonitor) HandleLogin(username string, password string, captchaToken string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -535,23 +549,11 @@ func (lc *LeagueService) IsLCUConnectionReady() bool {
 	if lc.LCUconnection.client == nil {
 		err := lc.LCUconnection.InitializeConnection()
 		if err != nil {
-			lc.logger.Debug("Failed to initialize LCU connection", zap.Error(err))
 			return false
 		}
 	}
 
 	// Test connection with a simple endpoint
-	resp, err := lc.LCUconnection.client.R().Get("/lol-summoner/v1/current-summoner")
-	if err != nil {
-		lc.logger.Debug("LCU connection test failed", zap.Error(err))
-		return false
-	}
+	return lc.LCUconnection.IsClientInitialized()
 
-	// Check if we got a valid response (2xx status)
-	if resp.StatusCode() >= 200 && resp.StatusCode() < 300 {
-		return true
-	}
-
-	lc.logger.Debug("LCU connection not ready", zap.Int("statusCode", resp.StatusCode()))
-	return false
 }

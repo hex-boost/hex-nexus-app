@@ -308,7 +308,7 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
 
     if (filters.ranks?.length > 0 && filters.divisions?.length > 0) {
       // Create an array of OR conditions for each rank+division combination
-      const combinationFilters = [];
+      const combinationFilters: any[] = [];
 
       for (const rank of filters.ranks) {
         for (const division of filters.divisions) {

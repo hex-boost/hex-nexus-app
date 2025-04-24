@@ -147,7 +147,7 @@ func (lc *LeagueService) UpdateFromLCU(username string) error {
 		return err
 	}
 
-	err = lc.Api.Save(*summonerRented) // You may need to update the repository to accept the new format
+	_, err = lc.Api.Save(*summonerRented) // You may need to update the repository to accept the new format
 	if err != nil {
 		lc.logger.Error("failed to save account to database", zap.Error(err))
 		return err

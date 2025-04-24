@@ -17,7 +17,7 @@ export function useAccountByID({ documentId, username }: { username?: string; do
     data: rentedAccounts,
     isLoading: isRentedLoading,
   } = useQuery({
-    queryKey: ['accounts', 'rented'],
+    queryKey: ['accounts', 'rented', documentId],
     queryFn: () => strapiClient.find<AccountType[]>('accounts/rented', {
       filters: { documentId, username },
     }).then(res => res.data),

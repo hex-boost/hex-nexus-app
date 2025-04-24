@@ -18,31 +18,27 @@ func NewAccountsRepository(api *APIRepository) *AccountsRepository {
 	}
 }
 
-func (s *AccountsRepository) Save(summoner types.SummonerRented) error {
+func (s *AccountsRepository) Save(summoner types.PartialSummonerRented) (*types.SummonerResponse, error) {
 	client := resty.New()
 	client.SetBaseURL(config.BackendURL)
 	client.SetHeader("Content-Type", "application/json")
 	client.SetHeader("Accept", "application/json")
 	client.SetAuthToken(config.RefreshApiKey)
-	marshalledSummoner, err := summoner.MarshalJSON()
-	if err != nil {
-		s.api.Logger.Error("error marshalling summoner", zap.Error(err))
-		return err
-	}
-	req := client.R().SetBody(marshalledSummoner)
+	var refreshResponseData types.RefreshResponseData
+	req := client.R().SetBody(summoner).SetResult(&refreshResponseData)
 
 	// Make the request manually instead of using s.api.Put
 	resp, err := req.Put("/api/accounts/refresh")
 	if err != nil {
 		s.api.Logger.Error("error saving summoner", zap.Error(err), zap.Int("statusCode", resp.StatusCode()), zap.Any("body", resp.String()))
-		return err
+		return nil, err
 	}
 	if resp.IsError() {
 		s.api.Logger.Error("error saving summoner", zap.Int("statusCode", resp.StatusCode()), zap.Any("body", resp.String()))
-		return fmt.Errorf("error saving summoner: %d - %s", resp.StatusCode(), resp.String())
+		return nil, fmt.Errorf("error saving summoner: %d - %s", resp.StatusCode(), resp.String())
 	}
 
-	return nil
+	return &refreshResponseData.Data, nil
 }
 
 func (s *AccountsRepository) GetAllRented() ([]types.SummonerRented, error) {

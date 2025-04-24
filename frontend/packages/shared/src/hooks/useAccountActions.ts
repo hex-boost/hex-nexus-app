@@ -116,8 +116,6 @@ export function useAccountActions({
   >({
     mutationKey: ['accounts', 'rent', account?.documentId],
     mutationFn: async (timeIndex) => {
-      setIsDropDialogOpen(false);
-
       return strapiClient.request<{
         message: string;
       }>('post', `accounts/${account?.documentId}/rentals`, {
@@ -130,7 +128,6 @@ export function useAccountActions({
     onSuccess: async (data) => {
       await invalidateRelatedQueries();
       toast.success(data.message);
-      setIsDropDialogOpen(false); // Reset dialog state after successful rental
     },
     onError: (error) => {
       toast.error(error.error.message);

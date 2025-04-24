@@ -38,6 +38,7 @@ type SummonerClientInterface interface {
 type LCUConnectionInterface interface {
 	InitializeConnection() error
 	IsClientInitialized() bool
+	ResetConnection()
 }
 
 // AccountsRepositoryInterface defines methods needed from AccountsRepository
@@ -137,11 +138,6 @@ func (am *AccountMonitor) getAccountsWithCache() ([]types.SummonerRented, error)
 		am.logger.Debug("Updated account cache",
 			zap.Int("accountCount", len(accounts)),
 			zap.Time("cacheTimestamp", am.lastAccountsFetch))
-	} else {
-		am.logger.Debug("Using cached account data",
-			zap.Int("accountCount", len(am.cachedAccounts)),
-			zap.Time("cacheTimestamp", am.lastAccountsFetch),
-			zap.Duration("age", time.Since(am.lastAccountsFetch)))
 	}
 
 	return am.cachedAccounts, nil
@@ -226,12 +222,11 @@ func (am *AccountMonitor) getSummonerNameByRiotClient() string {
 
 func (am *AccountMonitor) getUsernameByLeagueClient() (string, error) {
 
-	err := am.LCUConnection.InitializeConnection()
-	if err != nil || !am.LCUConnection.IsClientInitialized() {
-		am.logger.Debug("Failed to initialize League client connection",
-			zap.Error(err),
-			zap.String("errorType", fmt.Sprintf("%T", err)))
-		return "", errors.New("failed to initialize League client connection")
+	if !am.LCUConnection.IsClientInitialized() {
+		err := am.LCUConnection.InitializeConnection()
+		if err != nil || !am.LCUConnection.IsClientInitialized() {
+			return "", errors.New(fmt.Sprintf("failed to initialize League client connection %v", err))
+		}
 	}
 
 	currentSummoner, err := am.summoner.GetLoginSession()
@@ -244,6 +239,7 @@ func (am *AccountMonitor) getUsernameByLeagueClient() (string, error) {
 	return currentSummoner.Username, nil
 
 }
+
 func (am *AccountMonitor) GetLoggedInUsername() string {
 	var currentUsername string
 	if am.riotClient.IsRunning() {
@@ -251,9 +247,6 @@ func (am *AccountMonitor) GetLoggedInUsername() string {
 	} else if am.leagueService.IsRunning() {
 		leagueCurrentUsername, err := am.getUsernameByLeagueClient()
 		if err != nil {
-			am.logger.Debug("Failed to get current summoner from League client",
-				zap.Error(err),
-				zap.String("errorType", fmt.Sprintf("%T", err)))
 			return ""
 		}
 		currentUsername = leagueCurrentUsername
@@ -274,8 +267,6 @@ func (am *AccountMonitor) checkCurrentAccount() {
 	if currentUsername == "" {
 		return
 	}
-
-	am.logger.Debug("Current logged-in account", zap.String("summonerNameWithTag", currentUsername))
 
 	accounts, err := am.getAccountsWithCache()
 	if err != nil {

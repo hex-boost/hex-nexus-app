@@ -161,7 +161,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		mainLogger.Info("Not running as admin")
 	}
 	var mainWindow *application.WebviewWindow
-
+	accountState := league.NewAccountState()
 	gameOverlayManager := gameOverlay.NewGameOverlayManager(appInstance.Log().League())
 	stripeService := stripe.NewStripe(appInstance.Log().Stripe())
 	lcuConn := league.NewLCUConnection(appInstance.Log().League())
@@ -182,7 +182,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		lcuConn,
 		watchdogClient, // Use the watchdog client here instead of creating a full watchdog
 	)
-	websocketService := league.NewWebSocketService(appInstance.Log().League(), accountMonitor, leagueService)
+	websocketService := league.NewWebSocketService(appInstance.Log().League(), accountMonitor, leagueService, accountState, accountsRepository)
 	discordService := discord.New(cfg, appInstance.Log().Discord(), utilsBind)
 	debugMode := cfg.Debug
 	clientMonitor := league.NewClientMonitor(appInstance.Log().League(), accountMonitor, leagueService, riotClient, captcha)

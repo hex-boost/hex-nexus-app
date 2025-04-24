@@ -24,7 +24,7 @@ func NewSummonerService(summonerClient *SummonerClient, repoClient *repository.A
 	}
 }
 
-func (l *SummonerService) UpdateFromLCU(username string) (*types.SummonerRented, error) {
+func (l *SummonerService) UpdateFromLCU(username string) (*types.PartialSummonerRented, error) {
 	var (
 		champions   []int
 		skins       []int
@@ -100,32 +100,29 @@ func (l *SummonerService) UpdateFromLCU(username string) (*types.SummonerRented,
 		return nil, err
 	}
 
-	currencies := types.Currencies{}
+	currencies := types.CurrenciesPointer{}
 	if rpVal, ok := currencyMap["RP"]; ok {
 		if rpFloat, ok := rpVal.(float64); ok {
-			currencies.RP = int(rpFloat)
+			rpInt := int(rpFloat)
+			currencies.RP = &rpInt
 		}
 	}
 	if beVal, ok := currencyMap["lol_blue_essence"]; ok {
 		if beFloat, ok := beVal.(float64); ok {
-			currencies.LolBlueEssence = int(beFloat)
+			beInt := int(beFloat)
+			currencies.LolBlueEssence = &beInt
 		}
 	}
+	summoner := &types.PartialSummonerRented{
+		Username:     username,
+		Tagline:      &userinfo.Acct.TagLine,
+		LCUchampions: &champions,
 
-	summoner := &types.SummonerRented{
-		Username: username,
-		SummonerBase: types.SummonerBase{
-			Tagline:      userinfo.Acct.TagLine,
-			LCUchampions: champions,
-
-			LCUskins:    skins,
-			BlueEssence: currencies.LolBlueEssence,
-			RiotPoints:  currencies.RP,
-			Rankings:    *rankingMap,
-			Server:      userinfo.LOL.CPID,
-			Ban:         userinfo.Ban,
-		},
-		GameName: userinfo.Acct.GameName,
+		LCUskins:   &skins,
+		Currencies: &currencies,
+		Rankings:   rankingMap,
+		Server:     &userinfo.LOL.CPID,
+		Ban:        &userinfo.Ban,
 	}
 
 	return summoner, nil

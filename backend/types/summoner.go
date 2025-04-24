@@ -9,6 +9,28 @@ type SummonerRented struct {
 	GameName string `json:"gamename,omitempty"`
 }
 
+type CurrenciesPointer struct {
+	RP             *int `json:"RP"`
+	LolBlueEssence *int `json:"lol_blue_essence"`
+}
+type PartialSummonerRented struct {
+	Username        string             `json:"username,omitempty"`
+	Password        *string            `json:"password,omitempty"`
+	GameName        *string            `json:"gamename,omitempty"`
+	Type            *string            `json:"type,omitempty"`
+	LeaverBuster    *interface{}       `json:"leaverBuster,omitempty"`
+	Tagline         *string            `json:"tagline,omitempty"`
+	Server          *string            `json:"server,omitempty"`
+	LCUchampions    *[]int             `json:"champions,omitempty"`
+	LCUskins        *[]int             `json:"championSkins,omitempty"`
+	Currencies      *CurrenciesPointer `json:"currencies,omitempty"`
+	Ban             *Ban               `json:"ban,omitempty"`
+	IsPhoneVerified *bool              `json:"isPhoneVerified,omitempty"`
+	IsEmailVerified *bool              `json:"isEmailVerified,omitempty"`
+	Rankings        *RankedStats       `json:"rankedStats,omitempty"`
+	AccountLevel    *int               `json:"accountLevel,omitempty"`
+}
+
 type SummonerBase struct {
 	ID              int         `json:"id,omitempty"`
 	DocumentID      string      `json:"documentId,omitempty"`

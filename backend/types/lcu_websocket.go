@@ -17,3 +17,6 @@ type LCUInventoryItem struct {
 	UUID           string        `json:"uuid"`
 	Wins           int           `json:"wins"`
 }
+type Wallet struct {
+	LolBlueEssence int `json:"lol_blue_essence"`
+}
