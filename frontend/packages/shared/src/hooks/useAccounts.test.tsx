@@ -863,6 +863,18 @@ describe('useAccounts', () => {
 
       await waitFor(() => expect(result.current.isLoading).toBe(false));
 
+      // First set some ranks/divisions
+      act(() => {
+        result.current.setFilters({
+          ...result.current.filters,
+          ranks: ['gold'],
+          divisions: ['I'],
+        });
+      });
+
+      await waitFor(() => expect(strapiClient.find).toHaveBeenCalledTimes(2));
+
+      // Then clear them
       act(() => {
         result.current.setFilters({
           ...result.current.filters,
@@ -871,9 +883,11 @@ describe('useAccounts', () => {
         });
       });
 
-      await waitFor(() => expect(strapiClient.find).toHaveBeenCalledTimes(2));
+      // Wait for the second update to complete
+      await waitFor(() => expect(strapiClient.find).toHaveBeenCalledTimes(3));
 
-      const filters = vi.mocked(strapiClient.find).mock.calls[1][1]?.filters as any;
+      // Check the most recent call
+      const filters = vi.mocked(strapiClient.find).mock.calls[2][1]?.filters as any;
 
       expect(filters?.rankings).toBeUndefined();
     });
