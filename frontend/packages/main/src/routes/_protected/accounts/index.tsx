@@ -820,9 +820,23 @@ function Accounts() {
                 </div>
 
                 <div>
-                  <Label htmlFor="region" className="text-sm font-medium mb-1.5 block">
-                    Server
-                  </Label>
+
+                  <div className="flex justify-between items-center mb-1">
+
+                    <Label className="text-sm font-medium mb-1.5 block">
+                      Server
+                    </Label>
+                    {filters.region !== '' && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setFilters({ ...filters, region: '' })}
+                        className="h-6 text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        Clear server
+                      </Button>
+                    )}
+                  </div>
                   <Select
                     defaultValue="any"
                     value={filters.region}
@@ -839,7 +853,7 @@ function Accounts() {
                           {getRegionIcon('any')}
                         </div>
                         <span>
-                          Any region
+                          Any Server
                         </span>
                       </SelectItem>
                       {availableRegions.map(region => (
