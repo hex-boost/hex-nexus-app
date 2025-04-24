@@ -75,7 +75,7 @@ export function useAccountActions({
       }>('put', `accounts/${account?.documentId}/extend`, {
         data: {
           game: 'league',
-          timeEnum: timeIndex,
+          time: timeIndex,
         },
       });
 
