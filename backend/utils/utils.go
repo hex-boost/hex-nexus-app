@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 	"os"
 	"os/exec"
-	"path"
+	"path/filepath"
 	"sync"
 	"syscall"
 )
@@ -125,23 +125,39 @@ func (u *Utils) StartUpdate() error {
 		return fmt.Errorf("failed to get executable path: %w", err)
 	}
 
-	parentPath := path.Dir(execPath)
-	updatePath := path.Join(parentPath, "update.exe")
-
-	// Check if update.exe exists
-	if _, err := os.Stat(updatePath); err != nil {
-		if os.IsNotExist(err) {
-			return fmt.Errorf("update.exe not found in %s", parentPath)
-		}
-		return fmt.Errorf("failed to check for update.exe: %w", err)
+	// Ensure we have the absolute path
+	execPath, err = filepath.Abs(execPath)
+	if err != nil {
+		return fmt.Errorf("failed to get absolute executable path: %w", err)
 	}
 
+	parentPath := filepath.Dir(execPath)
+	// Instead of calculating grandparent path, use a hardcoded relative path or check both locations
+	updatePath := filepath.Join(filepath.Dir(parentPath), "updater.exe")
+
+	// Check if updater exists at calculated path
+	if _, err := os.Stat(updatePath); os.IsNotExist(err) {
+		// Try alternate location - same directory as the app
+		alternativePath := filepath.Join(filepath.Dir(parentPath), "updater.exe")
+		if _, err := os.Stat(alternativePath); err == nil {
+			updatePath = alternativePath
+		} else {
+			return fmt.Errorf("updater.exe not found at either %s or %s", updatePath, alternativePath)
+		}
+	}
+
+	// Rest of your code remains the same
 	cmd := exec.Command(updatePath, execPath)
+	cmd.Dir = parentPath
 	cmd = u.HideConsoleWindow(cmd)
+
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("failed to start update process: %w", err)
 	}
 
+	lockFilePath := filepath.Join(os.TempDir(), "Nexus.lock")
+	os.Remove(lockFilePath)
+
 	os.Exit(0)
-	return nil // This line is never reached due to os.Exit, but included for completeness
+	return nil
 }

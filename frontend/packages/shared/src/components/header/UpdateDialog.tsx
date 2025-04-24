@@ -15,14 +15,14 @@ import { cls } from 'react-image-crop';
 
 export function UpdateDialog() {
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
-  const { updateInfo, isAvailable, handleStartUpdate } = useUpdate();
+  const { updateInfo, isAvailable, handleStartUpdate, refetchVersion } = useUpdate();
   return (
     <>
       <TooltipProvider delayDuration={100}>
         <Tooltip>
           <TooltipTrigger asChild>
             <button
-              onClick={() => isAvailable && setUpdateDialogOpen(true)}
+              onClick={() => isAvailable ? setUpdateDialogOpen(true) : refetchVersion()}
               className={cls('relative p-2 rounded-full hover:bg-[#1F1F23] transition-colors duration-200 group', isAvailable && 'text-blue-400')}
             >
               <Download className="h-5 w-5" />
@@ -40,6 +40,7 @@ export function UpdateDialog() {
                   ? (
                       <>
                         Update
+                        {' '}
                         {updateInfo.version}
                         {' '}
                         available
@@ -60,7 +61,7 @@ export function UpdateDialog() {
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-white">Update Available</DialogTitle>
             <DialogDescription className="text-gray-400">
-              Version
+              Nexus
               {' '}
               {updateInfo.version}
               {' '}

@@ -260,7 +260,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       }
       queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
     },
-    [addNotification, premiumModalStore, getPriorityForType, queryClient],
+    [addNotification, queryClient, setValue, markAsRead, premiumModalStore, pricingPlans, isNexusAccount],
   );
   // Initialize notifications from the user object
   useEffect(() => {

@@ -6,6 +6,7 @@
   "scripts": {
     "dev:main": "pnpm --filter nexus-main dev",
     "build:main": "pnpm --filter nexus-main build",
+    "build:dev:main": "pnpm --filter nexus-main build:dev",
     "dev:updater": "pnpm --filter nexus-updater dev",
     "build:updater": "pnpm --filter nexus-updater build",
     "build:all": "pnpm run build:main && pnpm run build:updater",

@@ -1,5 +1,7 @@
 import type { PremiumType } from '@/types/types';
+import { useMembership } from '@/hooks/useMembership.ts';
 import { cn } from '@/lib/utils';
+import { useUserStore } from '@/stores/useUserStore.ts';
 import { AlertCircle, Calendar, CheckCircle2, Shield } from 'lucide-react';
 
 type SubscriptionStatusProps = {
@@ -8,8 +10,8 @@ type SubscriptionStatusProps = {
 };
 
 export default function SubscriptionStatus({ className, subscription }: SubscriptionStatusProps) {
-  const features = ['Unlimited account rentals', 'Priority customer support', 'Exclusive high-tier accounts', 'Discounted rental rates'];
-
+  const { pricingPlans } = useMembership();
+  const { user } = useUserStore();
   const hasValidExpiry = subscription?.expiresAt !== undefined;
   const expiryDate = hasValidExpiry ? new Date(subscription.expiresAt) : new Date();
   const today = new Date();
@@ -95,10 +97,10 @@ export default function SubscriptionStatus({ className, subscription }: Subscrip
       <div className="space-y-2 ">
         <p className="text-xs font-medium text-zinc-900 dark:text-zinc-100">Plan Features:</p>
         <ul className="space-y-1">
-          {features.map((feature, index) => (
+          {pricingPlans.find(plan => plan.tier_enum === user?.premium?.tier)?.benefits.map((feature, index) => (
             <li key={index} className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              {feature}
+              {feature.title}
             </li>
           ))}
         </ul>
