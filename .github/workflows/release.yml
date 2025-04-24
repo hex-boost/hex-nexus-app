@@ -1,0 +1,152 @@
+name: Release e Deploy de Atualização
+
+on:
+  push:
+    tags:
+      - 'v*'  # Ativa quando uma tag com formato 'v*' é empurrada (ex: v1.0.1)
+
+jobs:
+  build-and-deploy:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22'
+
+      - name: Get Tag Version
+        id: get_version
+        shell: bash
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.24.1'
+
+      - name: Install Wails
+        run: go install -v github.com/wailsapp/wails/v3/cmd/wails3@latest
+
+      - name: Build with taskfile
+        run: wails3 task package
+        env:
+          APP_NAME: Nexus
+          VERSION: ${{ env.VERSION }}
+          API_URL: ${{ secrets.API_URL }}
+          API_KEY: ${{ secrets.API_KEY }}
+          PRODUCTION: true
+
+      - name: Install gotestsum
+        run: go install gotest.tools/gotestsum@latest
+
+      - name: Run tests
+        run: |
+          gotestsum --format short --hide-summary skipped --format-hide-empty-pkg
+
+      - name: Run frontend tests
+        run: |
+            cd frontend
+            pnpm test
+      - name: Check build artifacts
+        shell: bash
+        run: |
+          echo "Listing build directory contents:"
+          ls -la build/
+          echo "Listing bin directory contents:"
+          ls -la build/bin/ || echo "bin directory not found"
+          echo "Searching for executable:"
+          find . -name "*.exe" -type f
+      - name: Upload to Update Server
+        shell: bash
+        env:
+          API_KEY: ${{ secrets.API_KEY }}
+          API_URL: ${{ secrets.API_URL }}
+        run: |
+          # Find main executable
+          EXE_PATH=$(find ./bin -name "Nexus.exe" -type f | head -1)
+          
+          # Find installer executable
+          INSTALLER_PATH=$(find ./build/windows/nsis -name "Nexus-Setup*.exe" -type f | head -1)
+
+          if [ -z "$EXE_PATH" ]; then
+            echo "❌ No main executable found"
+            exit 1
+          fi
+          
+          if [ -z "$INSTALLER_PATH" ]; then
+            echo "❌ No installer executable found"
+            exit 1
+          fi
+
+          # Create version record with verbose output
+          echo "Creating version record for ${{ env.VERSION }}..."
+          VERSION_RESPONSE=$(curl -v -s -X POST "${{env.API_URL}}/api/versions" \
+          -H "Authorization: Bearer ${{ env.API_KEY }}" \
+          -H "Content-Type: application/json" \
+          -d "{\"data\":{\"version\":\"${{ env.VERSION }}\"}}")
+          
+          echo "API Response for version creation:"
+          echo "$VERSION_RESPONSE"
+          
+          # Extract version ID
+          VERSION_ID=$(echo "$VERSION_RESPONSE" | grep -o '"id":[0-9]*' | head -1 | sed 's/"id"://')
+          echo "Extracted Version ID: $VERSION_ID"
+          
+          if [ -z "$VERSION_ID" ]; then
+            echo "Failed to extract version ID"
+            exit 1
+          fi
+          
+          echo "Found main executable at: $EXE_PATH"
+          echo "Found installer at: $INSTALLER_PATH"
+          
+          # Upload main executable
+          echo "Uploading main application binary..."
+          UPLOAD_RESULT=$(curl -v -X POST "${{env.API_URL}}/api/upload" \
+          -H "Authorization: Bearer ${{ env.API_KEY }}" \
+          -F "files=@$EXE_PATH" \
+          -F "refId=$VERSION_ID" \
+          -F "ref=api::version.version" \
+          -F "field=file" \
+          -w "\nStatus code: %{http_code}" \
+          -L)
+          
+          echo "Main Upload Result:"
+          echo "$UPLOAD_RESULT"
+          
+          # Check if main upload was successful
+          if echo "$UPLOAD_RESULT" | grep -q "Status code: 2[0-9][0-9]"; then
+            echo "✅ Main executable upload completed successfully"
+          
+            # Upload installer executable
+            echo "Uploading installer binary..."
+            INSTALLER_UPLOAD_RESULT=$(curl -v -X POST "${{env.API_URL}}/api/upload" \
+            -H "Authorization: Bearer ${{ env.API_KEY }}" \
+            -F "files=@$INSTALLER_PATH" \
+            -F "refId=$VERSION_ID" \
+            -F "ref=api::version.version" \
+            -F "field=installer" \
+            -w "\nStatus code: %{http_code}" \
+            -L)
+          
+            echo "Installer Upload Result:"
+            echo "$INSTALLER_UPLOAD_RESULT"
+          
+            # Check if installer upload was successful
+            if echo "$INSTALLER_UPLOAD_RESULT" | grep -q "Status code: 2[0-9][0-9]"; then
+              echo "✅ Installer upload completed successfully"
+            else
+              echo "❌ Installer upload failed"
+              exit 1
+            fi
+          else
+            echo "❌ Main executable upload failed"
+            exit 1
+          fi

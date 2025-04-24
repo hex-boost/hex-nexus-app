@@ -1,0 +1,59 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "ts-lib",
+    "baseUrl": "..",
+    "paths": {
+      "@/*": [
+        "shared/src/*"
+      ],
+
+      "@shared": [
+        "shared/"
+      ],
+
+      "@manager": [
+        "updater/bindings/github.com/hex-boost/hex-nexus-app/backend/cmd/updater/manager"
+      ],
+      "@time": [
+        "main/bindings/time"
+      ],
+
+      "@app": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/app"
+      ],
+
+      "@riot": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/riot"
+      ],
+      "@discord": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/discord"
+      ],
+      "@league": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/league"
+      ],
+      "@repository": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/repository"
+      ],
+      "@updater": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/updater"
+      ],
+
+      "@events": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/events"
+      ],
+      "@utils": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/utils"
+      ],
+
+      "@stripe": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/stripe"
+      ],
+      "@overlay": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/overlay"
+      ]
+
+    }
+  },
+  "include": ["src"],
+}

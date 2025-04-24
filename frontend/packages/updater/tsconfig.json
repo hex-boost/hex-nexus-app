@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "lib",
+    "baseUrl": "..",
+    "paths": {
+      "@manager": [
+        "updater/bindings/github.com/hex-boost/hex-nexus-app/backend/cmd/updater/manager"
+      ],
+      "@/*": [
+        "shared/src/*"
+      ],
+    }
+  },
+  "include": ["src"],
+}

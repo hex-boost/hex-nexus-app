@@ -1,0 +1,4 @@
+packages:
+  - 'packages/main'
+  - 'packages/updater'
+  - 'packages/shared'

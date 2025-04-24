@@ -1,0 +1,52 @@
+version: '3'
+
+includes:
+  common: ./build/Taskfile.yml
+  windows: ./build/windows/Taskfile.yml
+
+
+
+dotenv: [ '.env' ]
+vars:
+  APP_NAME: "Nexus"
+  BIN_DIR: "bin"
+  DIST_DIR: "dist"
+  API_URL: '{{.API_URL | default "http://localhost:1337"}}'
+  REFRESH_API_KEY: '{{.REFRESH_API_KEY}}'
+  VITE_PORT: '{{.WAILS_VITE_PORT | default 9245}}'
+  VERSION: '{{.VERSION | default "dev"}}'
+  ENV_FILE: '.env'
+
+tasks:
+  build:
+    summary: Builds the application
+    cmds:
+      - task: "{{OS}}:build"
+        vars:
+          VERSION: "{{.VERSION}}"
+  go:build:
+    deps:
+      - task: windows:clean
+#      - task: common:build:frontend
+        vars:
+          PRODUCTION: '{{.PRODUCTION}}'
+      - task: common:generate:icons
+    cmds:
+      - go build -tags development  -gcflags="all=-N -l" -ldflags="-X github.com/hex-boost/hex-nexus-app/backend/config.Version={{.VERSION}} -X github.com/hex-boost/hex-nexus-app/backend/config.LogLevel=debug -X github.com/hex-boost/hex-nexus-app/backend/config.Debug=true -X github.com/hex-boost/hex-nexus-app/backend/config.BackendURL={{.API_URL}} -X github.com/hex-boost/hex-nexus-app/backend/config.RefreshApiKey={{.REFRESH_API_KEY}}" -o bin/Nexus.exe .
+      - powershell -Command "while (1) { dlv exec bin/Nexus.exe --headless --listen :2345 --api-version 2 }"
+
+  package:
+    summary: Packages a production build of the application
+    cmds:
+      - task: "{{OS}}:package"
+
+  run:
+    summary: Runs the application
+    cmds:
+      - task: "{{OS}}:run"
+
+  dev:
+    summary: Runs the application in development mode
+    cmds:
+      - wails3 dev -config ./build/config.yml -port {{.VITE_PORT}}
+
