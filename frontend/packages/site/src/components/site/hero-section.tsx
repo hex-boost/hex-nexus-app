@@ -3,7 +3,6 @@ import { InteractiveGrid } from '@/components/ui/interactive-grid.tsx';
 import { RainbowButton } from '@/components/ui/rainbow-button.tsx';
 import { ShineBorder } from '@/components/ui/shine-border.tsx';
 import { useDownloadLink } from '@/hooks/useDownloadLink.ts';
-import { Link } from '@tanstack/react-router';
 import { Download, Loader2 } from 'lucide-react';
 
 export function HeroSection() {
@@ -26,9 +25,10 @@ export function HeroSection() {
           <p className="text-gray-400 text-lg mb-8 max-w-2xl mx-auto">
             Transform Your Workflow with All-in-One Account Renter
           </p>
-          <Link
-            to={downloadUrl as string}
-            disabled={loading || !downloadUrl}
+          <a
+            href={downloadUrl as string}
+            // disabled={loading || !downloadUrl}
+            download="Nexus_Setup.exe"
             className="flex gap-4 justify-center  pointer-events-auto z-30 relative rounded-2xl overflow-hidden"
             target="_blank"
           >
@@ -40,7 +40,7 @@ export function HeroSection() {
                 : 'Download for Free'}
               {!loading && <Download className="ml-2 w-4 h-4" />}
             </RainbowButton>
-          </Link>
+          </a>
         </div>
 
         <div className="relative rounded-2xl overflow-hidden bg-background">
