@@ -1,6 +1,7 @@
 import { HeaderButtons } from '@/components/header/HeaderButtons.tsx';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { useRouter } from '@tanstack/react-router';
 import { Window } from '@wailsio/runtime';
 import { Minus, XIcon } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
@@ -12,6 +13,8 @@ type Position = {
 
 export function WindowControls({ className }: { className?: string }) {
   const window = Window;
+
+  const router = useRouter();
   const [isMaximized, setIsMaximized] = useState(false);
   const [previousSize, setPreviousSize] = useState<any | null>(null);
   const [previousPosition, setPreviousPosition] = useState<Position | null>();
@@ -62,8 +65,9 @@ export function WindowControls({ className }: { className?: string }) {
       className={cn('flex items-center gap-2', className)}
 
     >
-
-      <HeaderButtons />
+      {
+        router.state.location.pathname !== '/login' && <HeaderButtons />
+      }
       <TooltipProvider>
         <div
           className="flex-grow h-8"

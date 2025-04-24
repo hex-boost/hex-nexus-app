@@ -201,7 +201,7 @@ export default function AccountDetails({ account, onAccountChange }: {
           </CardContent>
         </Card>
 
-        <div className="w-full bg-card p-6 min-h-[50vh] border rounded-lg">
+        <div className="w-full bg-input p-6 min-h-[50vh] border rounded-lg">
           <ChampionsSkinsTab
             tabLabel={[`Champions (${account?.LCUchampions?.length})`, `Skins (${account?.LCUskins?.length})`]}
             activeTab={activeTab}

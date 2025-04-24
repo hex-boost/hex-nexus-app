@@ -57,7 +57,7 @@
     --color-card: hsl(246, 28%, 7%);
     --color-card-darker: hsla(0, 0%, 0%, 0.2);
     --color-card-foreground: hsl(0 0% 98%);
-    --color-popover: hsl(240, 9%, 6%);
+    --color-popover: hsl(240, 21%, 9%);
     --color-popover-foreground: hsl(0 0% 98%);
     --color-primary: hsla(233 45% 50%);
     --color-primary-foreground: hsl(0, 0%, 100%);
@@ -70,7 +70,8 @@
     --color-destructive: hsl(0 62.8% 30.6%);
     --color-destructive-foreground: hsl(0 0% 98%);
     --color-border: hsla(0, 0%, 100%, 0.05);
-    --color-input: hsl(240 3.7% 15.9%);
+    --color-input: hsl(240, 21%, 9%);
+    /*--color-input: hsl(240 3.7% 15.9%);*/
     --color-ring: hsl(240 4.9% 83.9%);
     --color-chart-1: hsl(220 70% 50%);
     --color-chart-2: hsl(160 60% 45%);

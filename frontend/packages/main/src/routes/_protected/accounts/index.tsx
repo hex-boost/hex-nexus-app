@@ -75,10 +75,10 @@ export function ItemsPerPageSelector({
         value={pageSize.toString()}
         onValueChange={value => onPageSizeChange(Number.parseInt(value))}
       >
-        <SelectTrigger className="w-[80px] h-8">
+        <SelectTrigger className="min-w-20 h-8 !bg-popover" style={{ backgroundColor: 'var(--popover)' }}>
           <SelectValue placeholder={pageSize} />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="min-w-none">
           {options.map(option => (
             <SelectItem key={option} value={option.toString()}>
               {option}
@@ -844,15 +844,15 @@ function Accounts() {
                     {filters.minBlueEssence?.toLocaleString() || '0'}
                     )
                   </Label>
-                  <div className="flex flex-wrap gap-2 my-2">
-                    {[450, 1350, 3150, 4800, 6300, 7800].map(value => (
+                  <div className="grid grid-cols-4 gap-2">
+                    {[450, 1350, 3150, 4444, 4800, 6300, 7800].map(value => (
                       <Button
                         key={value}
                         variant="outline"
                         size="sm"
                         className={cn(
-                          'h-7 px-2  text-xs',
-                          filters.minBlueEssence === value ? 'bg-blue-100 dark:bg-blue-900/20 border-blue-500' : '',
+                          'h-7 px-2  text-xs min-w-fit',
+                          filters.minBlueEssence === value ? 'border   cursor-pointer transition-all border-blue-500 dark:bg-blue-900/20 ' : '',
                         )}
                         onClick={() => setFilters({
                           ...filters,

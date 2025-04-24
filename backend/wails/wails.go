@@ -267,7 +267,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 			DefaultContextMenuDisabled: true,
 
 			Title:         "Nexus",
-			Width:         1440,
+			Width:         1600,
 			Height:        900,
 			AlwaysOnTop:   false,
 			URL:           "",
