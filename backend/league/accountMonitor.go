@@ -38,7 +38,6 @@ type SummonerClientInterface interface {
 type LCUConnectionInterface interface {
 	InitializeConnection() error
 	IsClientInitialized() bool
-	ResetConnection()
 }
 
 // AccountsRepositoryInterface defines methods needed from AccountsRepository

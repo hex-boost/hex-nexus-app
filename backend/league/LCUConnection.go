@@ -142,9 +142,3 @@ func (c *LCUConnection) IsClientInitialized() bool {
 	statusOK := resp.StatusCode() >= 200 && resp.StatusCode() < 300
 	return statusOK
 }
-func (lc *LCUConnection) ResetConnection() {
-	if lc.client != nil {
-		lc.client.SetCloseConnection(true)
-		lc.client = nil
-	}
-}
