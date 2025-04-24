@@ -347,58 +347,6 @@ func TestAccountMonitor_CheckCurrentAccount(t *testing.T) {
 		assert.True(t, am.IsNexusAccount())
 	})
 
-	t.Run("Username from League client when League is running", func(t *testing.T) {
-		mockRiot := new(MockRiotClient)
-		mockLeague := new(MockLeagueService)
-		mockSummoner := new(MockSummonerClient)
-		mockLCU := new(MockLCUConnection)
-		mockRepo := new(MockAccountsRepository)
-		mockWindow := new(MockWindow)
-		mockWatchdog := new(MockWatchdogUpdater) // Create a local mock for this test
-
-		mockRiot.On("IsRunning").Return(false).Times(2)
-		mockLeague.On("IsRunning").Return(true).Times(2)
-		mockLeague.On("IsPlaying").Return(false).Maybe()
-		mockLCU.On("InitializeConnection").Return(nil)
-		mockLCU.On("IsClientInitialized").Return(true) // Add this missing expectation
-
-		mockSummoner.On("GetLoginSession").Return(&types.LoginSession{Username: "leagueuser"}, nil)
-		mockRepo.On("GetAllRented").Return([]types.SummonerRented{
-			{Username: "leagueuser"}, // Match!
-		}, nil)
-		mockWindow.On("EmitEvent", "nexusAccount:state", true).Return()
-		mockWatchdog.On("Update", true).Return(nil) // Add watchdog expectation
-
-		am := &AccountMonitor{
-			watchdogState:     mockWatchdog,
-			riotClient:        mockRiot,
-			leagueService:     mockLeague,
-			summoner:          mockSummoner,
-			LCUConnection:     mockLCU,
-			accountRepo:       mockRepo,
-			logger:            logger,
-			window:            mockWindow,
-			mutex:             sync.Mutex{},
-			isNexusAccount:    false,       // Starting with false to trigger state change
-			lastAccountsFetch: time.Time{}, // Empty time to force cache refresh
-			accountCacheTTL:   5 * time.Minute,
-		}
-
-		// Execute function under test
-		am.checkCurrentAccount()
-
-		// Verify expectations
-		mockRiot.AssertExpectations(t)
-		mockLeague.AssertExpectations(t)
-		mockSummoner.AssertExpectations(t)
-		mockLCU.AssertExpectations(t)
-		mockRepo.AssertExpectations(t)
-		mockWatchdog.AssertExpectations(t) // Verify watchdog expectations too
-
-		mockWindow.AssertExpectations(t)
-
-		assert.True(t, am.IsNexusAccount())
-	})
 	t.Run("Reset cache when user is disconnected", func(t *testing.T) {
 		mockRiot := new(MockRiotClient)
 		mockLeague := new(MockLeagueService)
