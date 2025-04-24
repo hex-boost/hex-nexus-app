@@ -79,7 +79,6 @@ export function DefaultContextMenu({ children }: { children: React.ReactNode }) 
     };
   }, [isReloading]);
   const canGoBack = router.history.canGoBack();
-
   return (
     <ContextMenu>
       <ContextMenuTrigger className="">
