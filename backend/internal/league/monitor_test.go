@@ -3,7 +3,7 @@ package league
 import (
 	"errors"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
-	websocketEvent "github.com/hex-boost/hex-nexus-app/backend/league/websocket/event"
+	websocketEvent "github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket/event"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

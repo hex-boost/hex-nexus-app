@@ -1,8 +1,8 @@
 package systemtray
 
 import (
-	"github.com/hex-boost/hex-nexus-app/backend/league/account"
-	"github.com/hex-boost/hex-nexus-app/backend/league/manager"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/league/manager"
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 

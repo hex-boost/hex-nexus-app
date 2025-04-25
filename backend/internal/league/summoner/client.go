@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/hex-boost/hex-nexus-app/backend/league/lcu"
+	lcu2 "github.com/hex-boost/hex-nexus-app/backend/internal/league/lcu"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"go.uber.org/zap"
@@ -14,13 +14,13 @@ import (
 )
 
 type Client struct {
-	conn   *lcu.Connection
-	lcuJwt *lcu.JWT
+	conn   *lcu2.Connection
+	lcuJwt *lcu2.JWT
 	logger *logger.Logger
 	ctx    context.Context
 }
 
-func NewClient(logger *logger.Logger, conn *lcu.Connection) *Client {
+func NewClient(logger *logger.Logger, conn *lcu2.Connection) *Client {
 	return &Client{
 		conn:   conn,
 		logger: logger,

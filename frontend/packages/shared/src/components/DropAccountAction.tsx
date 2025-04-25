@@ -13,7 +13,7 @@ import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
 import { useGoState } from '@/hooks/useGoBindings.ts';
 import { strapiClient } from '@/lib/strapi';
 import { useAccountStore } from '@/stores/useAccountStore.ts';
-import { AccountMonitor } from '@league';
+import { Monitor as AccountMonitor } from '@league';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { ArrowDownToLine } from 'lucide-react';
 import { useState } from 'react';
@@ -50,7 +50,6 @@ export function DropAccountAction({
     staleTime: 0,
   });
   // Handle dialog open
-
   // Drop account mutation
   const { mutate: handleDropAccount, isPending } = useMutation({
     mutationKey: ['accounts', 'drop', account.documentId],

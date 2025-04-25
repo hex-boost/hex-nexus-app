@@ -6,10 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
-	"github.com/hex-boost/hex-nexus-app/backend/league"
-	"github.com/hex-boost/hex-nexus-app/backend/league/account"
-	"github.com/hex-boost/hex-nexus-app/backend/league/account/events"
-	websocketEvent "github.com/hex-boost/hex-nexus-app/backend/league/websocket/event"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/league"
+	account2 "github.com/hex-boost/hex-nexus-app/backend/internal/league/account"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account/events"
+	websocketEvent "github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket/event"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -24,7 +24,6 @@ type HandlerInterface interface {
 	WalletEvent(event LCUWebSocketEvent)
 }
 
-// Define events
 const JsonApiPrefix = "OnJsonApiEvent_"
 
 type LCUWebSocketEvent struct {
@@ -39,15 +38,15 @@ type EventType int
 
 type Service struct {
 	app                *application.App
-	accountsRepository *account.Client
+	accountsRepository *account2.Client
 	conn               *websocket.Conn
 	leagueService      *league.Service
-	accountMonitor     *account.Monitor
+	accountMonitor     *account2.Monitor
 	logger             *logger.Logger
 	mutex              sync.Mutex
 	isRunning          bool
 	stopChan           chan struct{}
-	accountState       *account.State
+	accountState       *account2.State
 	subscriptions      map[string]bool
 	router             *Router
 	manager            *Manager
@@ -55,13 +54,12 @@ type Service struct {
 	handler HandlerInterface
 }
 
-// NewWebSocketService creates a new WebSocket service
 func NewService(
 	logger *logger.Logger,
-	accountMonitor *account.Monitor,
+	accountMonitor *account2.Monitor,
 	leagueService *league.Service,
-	accountState *account.State,
-	accountsRepository *account.Client,
+	accountState *account2.State,
+	accountsRepository *account2.Client,
 	router *Router,
 	handler HandlerInterface,
 	manager *Manager,
@@ -294,7 +292,7 @@ func (ws *Service) handleWebSocketEvent(message []byte) {
 	// Converte campo data para json.RawMessage
 	if dataObj, ok := eventData["data"]; ok {
 		if dataBytes, err := json.Marshal(dataObj); err == nil {
-			lcuEvent.Data = json.RawMessage(dataBytes)
+			lcuEvent.Data = dataBytes
 		}
 	}
 
@@ -313,18 +311,15 @@ func (ws *Service) runWebSocketLoop() {
 			return
 
 		case <-reconnectTicker.C:
-			// If League client is not running or we already have a connection, continue
 			if !ws.leagueService.IsRunning() || (ws.conn != nil && ws.isConnected()) {
 				continue
 			}
 
-			// Try to connect or reconnect
 			if err := ws.connectToLCUWebSocket(); err != nil {
 				ws.logger.Debug("Failed to connect to LCU WebSocket", zap.Error(err))
 				continue
 			}
 
-			// Start reading messages in a goroutine
 			go ws.readMessages()
 		}
 	}

@@ -1,9 +1,9 @@
 package league
 
 import (
-	"github.com/hex-boost/hex-nexus-app/backend/league/account"
-	"github.com/hex-boost/hex-nexus-app/backend/league/lcu"
-	"github.com/hex-boost/hex-nexus-app/backend/league/summoner"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/league/lcu"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/league/summoner"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/mitchellh/go-ps"
 	"go.uber.org/zap"

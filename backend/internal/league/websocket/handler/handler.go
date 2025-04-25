@@ -1,8 +1,9 @@
-package websocket
+package handler
 
 import (
 	"encoding/json"
-	"github.com/hex-boost/hex-nexus-app/backend/league/account"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"go.uber.org/zap"
@@ -15,7 +16,7 @@ type Handler struct {
 }
 
 // NewWebSocketHandler creates a new WebSocket event handler
-func NewHandler(logger *logger.Logger, accountState *account.State) *Handler {
+func New(logger *logger.Logger, accountState *account.State) *Handler {
 	return &Handler{
 		accountState: accountState,
 		logger:       logger,
@@ -23,7 +24,7 @@ func NewHandler(logger *logger.Logger, accountState *account.State) *Handler {
 }
 
 // WalletEvent handles wallet update events from the LCU
-func (h *Handler) WalletEvent(event LCUWebSocketEvent) {
+func (h *Handler) WalletEvent(event websocket.LCUWebSocketEvent) {
 	h.logger.Info("Received wallet event", zap.String("uri", event.URI))
 
 	var walletData types.Wallet
