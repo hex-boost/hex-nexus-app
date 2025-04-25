@@ -3,11 +3,12 @@ package main
 import (
 	"embed"
 	"flag"
+	updater "github.com/hex-boost/hex-nexus-app/backend/cmd/updater/manager"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 
 	"fmt"
 	updaterUtils "github.com/hex-boost/hex-nexus-app/backend/cmd/updater/utils"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
-	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"go.uber.org/zap"
 	"os"
 )
@@ -24,10 +25,9 @@ func main() {
 		fmt.Printf("Erro ao carregar configuração: %v\n", err)
 		os.Exit(1)
 	}
-	logger := utils.NewLogger("updater", cfg)
-	utils := utils.New()
-	updaterUtils := updaterUtils.New(logger, utils)
-	updateManager := manager.NewUpdateManager(cfg, updaterUtils, logger, utils)
+	newLogger := logger.New("updater", cfg)
+	newUpdaterUtils := updaterUtils.New(newLogger)
+	updateManager := updater.NewUpdateManager(cfg, newUpdaterUtils, newLogger)
 	if *processStart != "" {
 		processToStart := *processStart
 		if processToStart == "" {
@@ -36,39 +36,39 @@ func main() {
 
 		err := updateManager.StartMainApplication(processToStart)
 		if err != nil {
-			logger.Error("Erro ao iniciar o processo principal:", zap.String("process", processToStart), zap.Error(err))
+			newLogger.Error("Erro ao iniciar o processo principal:", zap.String("process", processToStart), zap.Error(err))
 			return
 		}
 		return
 	}
-	if !updaterUtils.CheckWebView2Installation() {
-		logger.Info("WebView2 not detected, installing...")
-		err := updaterUtils.InstallWebView2()
+	if !newUpdaterUtils.CheckWebView2Installation() {
+		newLogger.Info("WebView2 not detected, installing...")
+		err := newUpdaterUtils.InstallWebView2()
 		if err != nil {
-			logger.Error("Failed to install WebView2", zap.Error(err))
+			newLogger.Error("Failed to install WebView2", zap.Error(err))
 			panic("WebView2 installation failed")
 		} else {
-			logger.Info("WebView2 installation completed")
+			newLogger.Info("WebView2 installation completed")
 		}
 	} else {
-		logger.Info("WebView2 is already installed")
+		newLogger.Info("WebView2 is already installed")
 	}
 
 	// Check if another instance is already running
 	if updateManager.IsAnotherInstanceRunning() {
-		logger.Info("Outra instância já está em execução. Iniciando aplicação diretamente.")
+		newLogger.Info("Outra instância já está em execução. Iniciando aplicação diretamente.")
 		err := updateManager.StartMainApplication("Nexus") // Replace with your default process name
 		if err != nil {
-			logger.Error("Erro ao iniciar o processo principal:", zap.Error(err))
+			newLogger.Error("Erro ao iniciar o processo principal:", zap.Error(err))
 		}
 		return
 	}
 
 	// Normal first instance flow - proceed with update window
-	updateWindow := manager.NewUpdaterWindow(assets, updateManager)
+	updateWindow := updater.NewUpdaterWindow(assets, updateManager)
 	err = updateWindow.App.Run()
 	if err != nil {
-		logger.Error("Erro ao iniciar o aplicativo:", zap.Error(err))
+		newLogger.Error("Erro ao iniciar o aplicativo:", zap.Error(err))
 		os.Exit(1)
 	}
 }
