@@ -1,8 +1,7 @@
-package updater_test
+package updater
 
 import (
 	"fmt"
-	updater "github.com/hex-boost/hex-nexus-app/backend/cmd/updater/manager"
 	updaterUtils "github.com/hex-boost/hex-nexus-app/backend/cmd/updater/utils"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
@@ -106,7 +105,7 @@ func TestUpdateProcess(t *testing.T) {
 		// Agora testConfig terá os valores que você definiu
 		testLogger := logger.New("test", testConfig)
 		updaterService := updaterUtils.New(testLogger)
-		updateManager := updater.NewUpdateManager(testConfig, updaterService, testLogger)
+		updateManager := NewUpdateManager(testConfig, updaterService, testLogger)
 		hasUpdate, newVersion := updateManager.CheckForUpdates()
 		if !hasUpdate {
 			t.Error("Falha ao detectar atualização disponível")

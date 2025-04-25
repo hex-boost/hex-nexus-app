@@ -3,7 +3,7 @@ package main
 import (
 	"embed"
 	"flag"
-	updater "github.com/hex-boost/hex-nexus-app/backend/cmd/updater/manager"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/updater"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 
 	"fmt"

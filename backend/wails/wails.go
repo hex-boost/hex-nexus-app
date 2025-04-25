@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/hex-boost/hex-nexus-app/backend/app"
 	"github.com/hex-boost/hex-nexus-app/backend/client"
+	updaterUtils "github.com/hex-boost/hex-nexus-app/backend/cmd/updater/utils"
 	"github.com/hex-boost/hex-nexus-app/backend/discord"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league"
@@ -15,6 +16,7 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket/handler"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/systemtray"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/updater"
 	gameOverlay "github.com/hex-boost/hex-nexus-app/backend/overlay"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/command"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/hwid"
@@ -154,6 +156,8 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 	captchaService := captcha.New(appInstance.Log().Riot())
 	leagueService := league.NewService(appInstance.Log().Riot(), accountClient, summonerService, lcuConn)
 	riotService := riot.NewService(appInstance.Log().Riot(), captchaService)
+	newUpdaterUtils := updaterUtils.New(appInstance.Log().Wails())
+	updateManager := updater.NewUpdateManager(cfg, newUpdaterUtils, appInstance.Log().League())
 	accountMonitor := account.NewMonitor(
 		appInstance.Log().Riot(),
 		leagueService,
@@ -232,6 +236,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 			application.NewService(leagueManager),
 			application.NewService(stripeService),
 			application.NewService(gameOverlayManager),
+			application.NewService(updateManager),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.BundledAssetFileServer(assets),

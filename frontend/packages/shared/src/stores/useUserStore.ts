@@ -1,4 +1,5 @@
 import type { UserType } from '@/types/types';
+import { BaseClient } from '@client';
 import { create } from 'zustand';
 
 type AuthState = {
@@ -25,9 +26,9 @@ const getUserFromStorage = () => {
 const storedJWT = localStorage.getItem('authToken') || null;
 // Set it in BaseRepository immediately
 if (storedJWT) {
-  BaseRepository.SetJWT(storedJWT);
+  BaseClient.SetJWT(storedJWT);
 } else {
-  BaseRepository.ClearJWT();
+  BaseClient.ClearJWT();
 }
 export const useUserStore = create<AuthState>((set, get) => ({
   user: getUserFromStorage(),
@@ -43,14 +44,14 @@ export const useUserStore = create<AuthState>((set, get) => ({
   login: (user: UserType, jwt: string) => {
     localStorage.setItem('user', JSON.stringify(user));
     localStorage.setItem('authToken', jwt);
-    BaseRepository.SetJWT(jwt);
+    BaseClient.SetJWT(jwt);
 
     set({ user, jwt });
   },
 
   logout: () => {
     localStorage.clear();
-    BaseRepository.ClearJWT();
+    BaseClient.ClearJWT();
 
     set({ user: null, jwt: '' });
   },

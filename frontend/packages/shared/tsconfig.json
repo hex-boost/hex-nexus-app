@@ -8,6 +8,9 @@
         "shared/src/*"
       ],
 
+      "@client": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/client"
+      ],
       "@hwid": [
         "main/bindings/github.com/hex-boost/hex-nexus-app/backend/pkg/hwid"
       ],
@@ -27,9 +30,6 @@
         "updater/bindings/github.com/hex-boost/hex-nexus-app/backend/cmd/updater/manager"
       ],
 
-      "@client": [
-        "main/bindings/client"
-      ],
       "@time": [
         "main/bindings/time"
       ],
@@ -51,7 +51,7 @@
         "main/bindings/github.com/hex-boost/hex-nexus-app/backend/repository"
       ],
       "@updater": [
-        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/updater"
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/internal/updater"
       ],
 
       "@events": [

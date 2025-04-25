@@ -1,9 +1,9 @@
 import * as AccountStore from '@/stores/useAccountStore.ts';
 import { NOTIFICATION_EVENTS } from '@/types/notification.ts';
+import { Manager } from '@leagueManager';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { act, render } from '@testing-library/react';
-import { Utils } from '@utils';
 import { toast } from 'sonner';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NotificationProvider } from './notification-provider';
@@ -38,8 +38,8 @@ const mockHowlInstance = {
 vi.mock('howler', () => ({
   Howl: vi.fn(() => mockHowlInstance),
 }));// Mock dependencies
-vi.mock('@utils', () => ({
-  Utils: {
+vi.mock('@leagueManager', () => ({
+  Manager: {
     ForceCloseAllClients: vi.fn().mockImplementation((): CancellablePromise<void> => {
       const promise = Promise.resolve() as CancellablePromise<void>;
       promise.cancel = vi.fn();
@@ -140,7 +140,7 @@ describe('handleNotification function', () => {
     mockPromise.cancel = vi.fn();
 
     // Mock the function to return our controllable promise
-    vi.mocked(Utils.ForceCloseAllClients).mockReturnValue(mockPromise);
+    vi.mocked(Manager.ForceCloseAllClients).mockReturnValue(mockPromise);
 
     // Setup
     const handleMessage = renderComponent();
@@ -159,7 +159,7 @@ describe('handleNotification function', () => {
     });
 
     // Verify ForceCloseAllClients was called
-    expect(Utils.ForceCloseAllClients).toHaveBeenCalled();
+    expect(Manager.ForceCloseAllClients).toHaveBeenCalled();
 
     // Now resolve the promise to trigger the .then callback
     act(() => {
@@ -196,7 +196,7 @@ describe('handleNotification function', () => {
     });
 
     // Assertions
-    expect(Utils.ForceCloseAllClients).not.toHaveBeenCalled();
+    expect(Manager.ForceCloseAllClients).not.toHaveBeenCalled();
     expect(toast.info).not.toHaveBeenCalled();
   });
 

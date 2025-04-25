@@ -10,8 +10,8 @@ import { useAccountStore } from '@/stores/useAccountStore.ts';
 import { usePremiumPaymentModalStore } from '@/stores/usePremiumPaymentModalStore';
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { DEFAULT_PREFERENCES, NOTIFICATION_EVENTS, NotificationContext } from '@/types/notification.ts';
+import { Manager } from '@leagueManager';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Utils } from '@utils';
 import { Howl } from 'howler';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -253,7 +253,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       }
       if (notification.event === NOTIFICATION_EVENTS.ACCOUNT_EXPIRED) {
         if (isNexusAccount) {
-          Utils.ForceCloseAllClients().then(() => {
+          Manager.ForceCloseAllClients().then(() => {
             toast.info('Your account has expired, and the league has been closed.');
           });
         }

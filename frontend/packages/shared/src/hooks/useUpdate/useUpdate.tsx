@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Utils } from '@utils';
+import { UpdateManager } from '@updater';
 import { useState } from 'react';
 
 export type UpdateInfo = {
@@ -48,7 +48,7 @@ export function useUpdate() {
 
   // Function to handle update
   async function handleStartUpdate() {
-    await Utils.StartUpdate();
+    await UpdateManager.StartUpdate();
   }
 
   return {

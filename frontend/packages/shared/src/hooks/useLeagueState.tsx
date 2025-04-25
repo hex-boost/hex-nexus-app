@@ -1,6 +1,6 @@
 import type { LeagueClientState } from '@league';
 import { logger } from '@/lib/logger';
-import { ClientMonitor } from '@league';
+import { Monitor as ClientMonitor } from '@league';
 import { Events } from '@wailsio/runtime';
 import { useEffect, useState } from 'react';
 

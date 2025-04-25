@@ -23,59 +23,62 @@
     "noFallthroughCasesInSwitch": true,
 
     "baseUrl": ".",
-    "paths": {
-
-      "@shared": [
-        "packages/shared/*"
-      ],
-      "@/*": [
-        "packages/shared/src/*"
-      ],
-
-      "@time": [
-        "packages/main/bindings/time"
-      ],
-
-      "@app": [
-        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/app"
-      ],
-
-      "@riot": [
-        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/riot"
-      ],
-      "@discord": [
-        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/discord"
-      ],
-      "@league": [
-        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/internal/league/index"
-      ],
-      "@repository": [
-        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/repository"
-      ],
-
-      "@manager": [
-        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/internal/league/manager"
-      ],
-      "@updater": [
-        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/updater"
-      ],
-
-      "@events": [
-        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/events"
-      ],
-      "@utils": [
-        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/utils"
-      ],
-
-      "@stripe": [
-        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/stripe"
-      ],
-      "@overlay": [
-        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/overlay"
-      ]
-
-    },
-    "types": ["vitest/globals","node"]
+//    "paths": {
+//
+//      "@shared": [
+//        "packages/shared/*"
+//      ],
+//      "@/*": [
+//        "packages/shared/src/*"
+//      ],
+//
+//      "@time": [
+//        "packages/main/bindings/time"
+//      ],
+//
+//      "@client": [
+//        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/client"
+//      ],
+//      "@app": [
+//        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/app"
+//      ],
+//
+//      "@riot": [
+//        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/riot"
+//      ],
+//      "@discord": [
+//        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/discord"
+//      ],
+//      "@league": [
+//        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/internal/league/index"
+//      ],
+//      "@repository": [
+//        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/repository"
+//      ],
+//
+//      "@manager": [
+//        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/internal/league/manager"
+//      ],
+//      "@updater": [
+//        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/updater"
+//      ],
+//
+//      "@events": [
+//        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/events"
+//      ],
+//      "@utils": [
+//        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/utils"
+//      ],
+//
+//      "@stripe": [
+//        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/stripe"
+//      ],
+//      "@overlay": [
+//        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/overlay"
+//      ]
+//
+//    },
+    "types": ["node"]
   },
   "include": [
     "packages/main/**/*",
