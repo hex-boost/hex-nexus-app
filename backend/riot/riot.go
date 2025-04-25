@@ -8,44 +8,43 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-resty/resty/v2"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/command"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
+	"github.com/hex-boost/hex-nexus-app/backend/riot/captcha"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
-	"github.com/inkeliz/gowebview"
 	"github.com/mitchellh/go-ps"
 	"go.uber.org/zap"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
 )
 
 type Service struct {
-	client           *resty.Client
-	logger           *utils.Logger
-	captcha          *Captcha
-	hcaptchaResponse chan string
-	ctx              context.Context
-	captchaData      string
-	webview          gowebview.WebView
-	utils            *utils.Utils
+	client  *resty.Client
+	logger  *logger.Logger
+	captcha *captcha.Captcha
+	ctx     context.Context
+	utils   *utils.Utils
+	cmd     *command.Command
 }
 
-func NewService(logger *utils.Logger, captcha *Captcha) *Service {
+func NewService(logger *logger.Logger, captcha *captcha.Captcha, cmd *command.Command) *Service {
 	return &Service{
-		utils:            utils.NewUtils(),
-		client:           nil,
-		logger:           logger,
-		captcha:          captcha,
-		ctx:              context.Background(),
-		hcaptchaResponse: make(chan string),
+		utils:   utils.New(),
+		client:  nil,
+		cmd:     cmd,
+		logger:  logger,
+		captcha: captcha,
+		ctx:     context.Background(),
 	}
 }
-func (rc *Service) ResetRestyClient() {
-	rc.client = nil
+func (s *Service) ResetRestyClient() {
+	s.client = nil
 }
 
-func (rc *Service) getProcess() (pid int, err error) {
+func (s *Service) getProcess() (pid int, err error) {
 	processes, err := ps.Processes()
 	if err != nil {
 		return 0, fmt.Errorf("failed to list processes: %w", err)
@@ -68,12 +67,10 @@ func (rc *Service) getProcess() (pid int, err error) {
 	return 0, errors.New("unable to find League Service or Riot Service process")
 }
 
-func (rc *Service) getCredentials(riotClientPid int) (port string, authToken string, err error) {
+func (s *Service) getCredentials(riotClientPid int) (port string, authToken string, err error) {
 	var cmdLine string
 
-	cmd := exec.Command("wmic", "process", "where", fmt.Sprintf("ProcessId=%d", riotClientPid), "get", "CommandLine", "/format:list")
-	cmd = rc.utils.HideConsoleWindow(cmd)
-	output, err := cmd.Output()
+	output, err := s.cmd.Execute("wmic", "process", "where", fmt.Sprintf("ProcessId=%d", riotClientPid), "get", "CommandLine", "/format:list")
 	if err != nil {
 		return "", "", fmt.Errorf("failed to get command line: %w", err)
 	}
@@ -96,8 +93,8 @@ func (rc *Service) getCredentials(riotClientPid int) (port string, authToken str
 	return "", "", fmt.Errorf("unable to extract credentials from process (PID: %d)", riotClientPid)
 }
 
-func (rc *Service) LoginWithCaptcha(ctx context.Context, username, password, captchaToken string) (string, error) {
-	rc.logger.Info("Authenticating with captcha token", zap.String("token_length", fmt.Sprintf("%d", len(captchaToken))))
+func (s *Service) LoginWithCaptcha(ctx context.Context, username, password, captchaToken string) (string, error) {
+	s.logger.Info("Authenticating with captcha token", zap.String("token_length", fmt.Sprintf("%d", len(captchaToken))))
 
 	authPayload := types.Authentication{
 		Campaign: nil,
@@ -113,7 +110,7 @@ func (rc *Service) LoginWithCaptcha(ctx context.Context, username, password, cap
 	}
 
 	var loginResult types.RiotIdentityResponse
-	req := rc.client.R().
+	req := s.client.R().
 		SetBody(authPayload).
 		SetResult(&loginResult)
 
@@ -130,26 +127,26 @@ func (rc *Service) LoginWithCaptcha(ctx context.Context, username, password, cap
 	// Wait for either context cancellation or request completion
 	select {
 	case <-ctx.Done():
-		rc.logger.Error("Authentication timed out", zap.Error(ctx.Err()))
+		s.logger.Error("Authentication timed out", zap.Error(ctx.Err()))
 		return "", fmt.Errorf("authentication timed out: %w", ctx.Err())
 	case err := <-done:
 		if err != nil {
-			rc.logger.Error("Authentication with captcha failed", zap.Error(err))
+			s.logger.Error("Authentication with captcha failed", zap.Error(err))
 			return "", fmt.Errorf("authentication request failed: %w", err)
 		}
 	}
 
 	if loginResult.Type == "multifactor" {
-		rc.logger.Info("multifactor required for authentication")
+		s.logger.Info("multifactor required for authentication")
 		return "", errors.New("captcha required")
 	}
 	if loginResult.Type == "success" {
-		rc.logger.Info("Authentication with captcha successful")
-		err := rc.completeAuthentication(loginResult.Success.LoginToken)
+		s.logger.Info("Authentication with captcha successful")
+		err := s.completeAuthentication(loginResult.Success.LoginToken)
 		if err != nil {
 			return "", err
 		}
-		_, err = rc.getAuthorization()
+		_, err = s.getAuthorization()
 		if err != nil {
 			return "", err
 		}
@@ -159,12 +156,12 @@ func (rc *Service) LoginWithCaptcha(ctx context.Context, username, password, cap
 		return loginResult.Captcha.Hcaptcha.Data, errors.New(loginResult.Error)
 	}
 
-	rc.logger.Error("Authentication with captcha failed", zap.Any("response", loginResult))
+	s.logger.Error("Authentication with captcha failed", zap.Any("response", loginResult))
 	return "", errors.New("authentication with captcha failed")
 }
-func (rc *Service) Launch() error {
-	rc.ResetRestyClient()
-	rc.logger.Info("Attempting to launch Riot client")
+func (s *Service) Launch() error {
+	s.ResetRestyClient()
+	s.logger.Info("Attempting to launch Riot client")
 	var riotClientPath string
 	programData := os.Getenv("PROGRAMDATA")
 	if programData == "" {
@@ -173,72 +170,72 @@ func (rc *Service) Launch() error {
 	riotClientPath = filepath.Join(programData, "Riot Games", "RiotClientInstalls.json")
 	fileContent, err := os.ReadFile(riotClientPath)
 	if err != nil {
-		rc.logger.Error("Failed to read Riot client installs file", zap.Error(err))
+		s.logger.Error("Failed to read Riot client installs file", zap.Error(err))
 		return fmt.Errorf("failed to read Riot client installs file: %w", err)
 	}
 	var clientInstalls struct {
 		RcDefault string `json:"rc_default"`
 	}
 	if err := json.Unmarshal(fileContent, &clientInstalls); err != nil {
-		rc.logger.Error("Failed to parse Riot client installs file", zap.Error(err))
+		s.logger.Error("Failed to parse Riot client installs file", zap.Error(err))
 		return fmt.Errorf("failed to parse Riot client installs file: %w", err)
 	}
 	if clientInstalls.RcDefault == "" {
 		return errors.New("could not find Riot client path in installs file")
 	}
 	args := []string{"--launch-product=league_of_legends", "--launch-patchline=live"}
-	rc.logger.Info("Launching Riot client",
+	s.logger.Info("Launching Riot client",
 		zap.String("path", clientInstalls.RcDefault),
 		zap.Strings("args", args))
-	cmd := exec.Command(clientInstalls.RcDefault, args...)
-	rc.logger.Info("Starting Riot client process")
-	cmd = rc.utils.HideConsoleWindow(cmd)
-	if err := cmd.Start(); err != nil {
-		rc.logger.Error("Failed to start Riot client", zap.Error(err))
+
+	s.logger.Info("Starting Riot client process")
+	err = s.cmd.Start(clientInstalls.RcDefault, args...)
+	if err != nil {
+		s.logger.Error("Failed to start Riot client", zap.Error(err))
 		return fmt.Errorf("failed to start Riot client: %w", err)
 	}
 	return nil
 }
 
-func (rc *Service) InitializeRestyClient() error {
-	riotClientPid, err := rc.getProcess()
+func (s *Service) InitializeClient() error {
+	riotClientPid, err := s.getProcess()
 	if err != nil {
-		rc.logger.Error("Failed to get Riot client pid", zap.Error(err))
+		s.logger.Error("Failed to get Riot client pid", zap.Error(err))
 		return err
 	}
-	port, authToken, err := rc.getCredentials(riotClientPid)
+	port, authToken, err := s.getCredentials(riotClientPid)
 	if err != nil {
-		rc.logger.Error("Failed to get client credentials", zap.Error(err))
+		s.logger.Error("Failed to get client credentials", zap.Error(err))
 		return err
 	}
-	rc.logger.Info("Credentials obtained", zap.String("port", port), zap.Any("authToken", authToken))
+	s.logger.Info("Credentials obtained", zap.String("port", port), zap.Any("authToken", authToken))
 	client := resty.New().
 		SetBaseURL("https://127.0.0.1:"+port).
 		SetHeader("Authorization", "Basic "+authToken)
 	client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
-	rc.client = client
+	s.client = client
 	return nil
 }
-func (rc *Service) InitializeCaptchaHandling() error {
+func (s *Service) SetupCaptchaVerification() error {
 
-	if err := rc.InitializeRestyClient(); err != nil {
+	if err := s.InitializeClient(); err != nil {
 		return err
 	}
-	rqdata, err := rc.getCaptchaData()
+	rqdata, err := s.getCaptchaData()
 	if err != nil {
 		return err
 	}
-	rc.captcha.setRqData(rqdata)
-	if err := rc.captcha.startServer(); err != nil {
+	s.captcha.SetRQData(rqdata)
+	if err := s.captcha.StartServer(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (rc *Service) completeAuthentication(loginToken string) error {
+func (s *Service) completeAuthentication(loginToken string) error {
 	var loginTokenResp types.LoginTokenResponse
-	putResp, err := rc.client.R().
+	putResp, err := s.client.R().
 		SetBody(types.LoginTokenRequest{
 			AuthenticationType: "RiotAuth",
 			CodeVerifier:       "",
@@ -248,68 +245,68 @@ func (rc *Service) completeAuthentication(loginToken string) error {
 		SetResult(&loginTokenResp).
 		Put("/rso-auth/v1/session/login-token")
 	if err != nil {
-		rc.logger.Error("Error sending login token", zap.Error(err))
+		s.logger.Error("Error sending login token", zap.Error(err))
 		return err
 	}
 	if putResp.IsError() {
-		rc.logger.Error("Login token response error", zap.Any("response", putResp))
+		s.logger.Error("Login token response error", zap.Any("response", putResp))
 		return errors.New("login token request failed")
 	}
 	if loginTokenResp.Type != "authenticated" {
-		rc.logger.Error("Authentication failed", zap.String("type", loginTokenResp.Type))
+		s.logger.Error("Authentication failed", zap.String("type", loginTokenResp.Type))
 		return errors.New("authentication not successful")
 	}
-	rc.logger.Info("Successfully authenticated with login token")
+	s.logger.Info("Successfully authenticated with login token")
 	return nil
 }
 
-func (rc *Service) getAuthorization() (map[string]interface{}, error) {
+func (s *Service) getAuthorization() (map[string]interface{}, error) {
 	var authResult map[string]interface{}
-	postResp, err := rc.client.R().
+	postResp, err := s.client.R().
 		SetBody(getAuthorizationRequestPayload()).
 		SetResult(&authResult).
 		Post("/rso-auth/v2/authorizations/riot-client")
 	if err != nil {
-		rc.logger.Error("Authorization request failed", zap.Error(err))
+		s.logger.Error("Authorization request failed", zap.Error(err))
 		return nil, err
 	}
 
 	if postResp.IsError() {
-		rc.logger.Error("Authorization response error", zap.Any("response", postResp))
+		s.logger.Error("Authorization response error", zap.Any("response", postResp))
 		return nil, errors.New("authorization request failed")
 	}
 
-	rc.logger.Info("Authorization successful")
+	s.logger.Info("Authorization successful")
 	return authResult, nil
 }
 
-func (rc *Service) Logout() error {
-	res, err := rc.client.R().Delete("/rso-authenticator/v1/authentication")
+func (s *Service) Logout() error {
+	res, err := s.client.R().Delete("/rso-authenticator/v1/authentication")
 	if err != nil {
-		rc.logger.Error("Error logging out", zap.Error(err))
+		s.logger.Error("Error logging out", zap.Error(err))
 		return err
 	}
 	if res.IsError() {
-		rc.logger.Error("Error logging out", zap.String("response", string(res.Body())))
+		s.logger.Error("Error logging out", zap.String("response", string(res.Body())))
 		return err
 	}
 	return err
 
 }
-func (rc *Service) GetAuthenticationState() (*types.RiotIdentityResponse, error) {
-	if rc.client == nil {
+func (s *Service) GetAuthenticationState() (*types.RiotIdentityResponse, error) {
+	if s.client == nil {
 		return nil, errors.New("client is not initialized")
 	}
 	var getCurrentAuthResult types.RiotIdentityResponse
-	result, err := rc.client.R().SetResult(&getCurrentAuthResult).Get("/rso-authenticator/v1/authentication")
+	result, err := s.client.R().SetResult(&getCurrentAuthResult).Get("/rso-authenticator/v1/authentication")
 
 	if err != nil {
-		rc.logger.Error("Authentication failed", zap.Error(err))
+		s.logger.Error("Authentication failed", zap.Error(err))
 		return nil, err
 	}
 
 	if result.IsError() {
-		rc.logger.Error("Authentication failed",
+		s.logger.Error("Authentication failed",
 			zap.String("message", string(result.Body())),
 			zap.Int("status_code", result.StatusCode()))
 
@@ -317,8 +314,8 @@ func (rc *Service) GetAuthenticationState() (*types.RiotIdentityResponse, error)
 		var errorResponse types.ErrorResponse
 		if err := json.Unmarshal(result.Body(), &errorResponse); err == nil {
 			if errorResponse.ErrorCode == "CREDENTIALS_INVALID" {
-				rc.logger.Info("Detected invalid credentials, attempting to re-initialize client")
-				if err := rc.InitializeRestyClient(); err != nil {
+				s.logger.Info("Detected invalid credentials, attempting to re-initialize client")
+				if err := s.InitializeClient(); err != nil {
 					return nil, fmt.Errorf("failed to re-initialize client: %w", err)
 				}
 				return nil, errors.New("client re-initialized after invalid credentials")
@@ -330,10 +327,10 @@ func (rc *Service) GetAuthenticationState() (*types.RiotIdentityResponse, error)
 	}
 	return &getCurrentAuthResult, nil
 }
-func (rc *Service) IsAuthStateValid() error {
-	currentAuth, err := rc.GetAuthenticationState()
+func (s *Service) IsAuthStateValid() error {
+	currentAuth, err := s.GetAuthenticationState()
 	if err != nil {
-		rc.logger.Error("Failed to get authentication state", zap.Error(err))
+		s.logger.Error("Failed to get authentication state", zap.Error(err))
 		return err
 	}
 	if currentAuth.Type == "auth" {
@@ -346,33 +343,33 @@ func (rc *Service) IsAuthStateValid() error {
 	return nil
 }
 
-func (rc *Service) getCaptchaData() (string, error) {
-	err := rc.IsAuthStateValid()
+func (s *Service) getCaptchaData() (string, error) {
+	err := s.IsAuthStateValid()
 	if err != nil {
-		rc.logger.Error("Invalid authentication state", zap.Error(err))
+		s.logger.Error("Invalid authentication state", zap.Error(err))
 		return "", err
 	}
-	_, err = rc.client.R().
+	_, err = s.client.R().
 		Delete("/rso-authenticator/v1/authentication")
 	if err != nil {
-		rc.logger.Error("Error in authentication delete session", zap.Error(err))
+		s.logger.Error("Error in authentication delete session", zap.Error(err))
 		return "", err
 	}
 	var startAuthResult types.RiotIdentityResponse
-	startAuthRes, err := rc.client.R().
+	startAuthRes, err := s.client.R().
 		SetBody(getRiotIdentityStartPayload()).
 		SetResult(&startAuthResult).
 		Post("/rso-authenticator/v1/authentication/riot-identity/start")
 	if err != nil {
-		rc.logger.Error("Error in authentication start request", zap.Error(err))
+		s.logger.Error("Error in authentication start request", zap.Error(err))
 		return "", err
 	}
 	if startAuthRes.IsError() {
 		var errorResponse types.ErrorResponse
 		if err := json.Unmarshal(startAuthRes.Body(), &errorResponse); err != nil {
-			rc.logger.Error("Failed to parse error response", zap.Error(err))
+			s.logger.Error("Failed to parse error response", zap.Error(err))
 		}
-		rc.logger.Error("Authentication failed", zap.String("message", errorResponse.Message))
+		s.logger.Error("Authentication failed", zap.String("message", errorResponse.Message))
 		return "", errors.New(errorResponse.Message)
 	}
 	if startAuthResult.Captcha.Hcaptcha.Data == "" {

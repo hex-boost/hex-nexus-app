@@ -2,6 +2,7 @@ package discord
 
 import (
 	"bytes"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
 	"net"
 	"sync"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/gorilla/mux"
 	"github.com/hex-boost/hex-nexus-app/backend"
-	"github.com/hex-boost/hex-nexus-app/backend/config"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/pkg/browser"

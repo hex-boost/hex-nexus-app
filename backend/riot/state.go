@@ -31,7 +31,7 @@ func findWindow(className, windowName string) uintptr {
 	)
 	return ret
 }
-func (rc *Service) IsRunning() bool {
+func (s *Service) IsRunning() bool {
 	hwnd := findWindow("", "Riot Client")
 	if hwnd != 0 {
 		return true
@@ -40,41 +40,41 @@ func (rc *Service) IsRunning() bool {
 	return false
 }
 
-func (rc *Service) WaitUntilIsRunning(timeout time.Duration) error {
+func (s *Service) WaitUntilIsRunning(timeout time.Duration) error {
 	deadline := time.Now().Add(timeout)
 	checkInterval := 500 * time.Millisecond
 
-	rc.logger.Info("Aguardando o cliente Riot iniciar", zap.Duration("timeout", timeout))
+	s.logger.Info("Aguardando o cliente Riot iniciar", zap.Duration("timeout", timeout))
 
 	for time.Now().Before(deadline) {
-		if rc.IsRunning() {
-			rc.logger.Info("Cliente Riot está em execução")
+		if s.IsRunning() {
+			s.logger.Info("Cliente Riot está em execução")
 			return nil
 		}
 
-		rc.logger.Debug("Cliente Riot não encontrado, verificando novamente")
+		s.logger.Debug("Cliente Riot não encontrado, verificando novamente")
 		time.Sleep(checkInterval)
 	}
 
 	return fmt.Errorf("timeout ao aguardar o cliente Riot iniciar")
 }
-func (rc *Service) IsAuthenticationReady() bool {
+func (s *Service) IsAuthenticationReady() bool {
 
-	pid, err := rc.getProcess()
+	pid, err := s.getProcess()
 	if err != nil {
 		return false
 	}
 
-	_, _, err = rc.getCredentials(pid)
+	_, _, err = s.getCredentials(pid)
 	return err == nil
 }
 
-func (rc *Service) IsClientInitialized() bool {
-	return rc.client != nil
+func (s *Service) IsClientInitialized() bool {
+	return s.client != nil
 }
-func (rc *Service) GetUserinfo() (*types.UserInfo, error) {
+func (s *Service) GetUserinfo() (*types.UserInfo, error) {
 	var rawResponse types.RCUUserinfo
-	resp, err := rc.client.R().SetResult(&rawResponse).Get("/rso-auth/v1/authorization/userinfo")
+	resp, err := s.client.R().SetResult(&rawResponse).Get("/rso-auth/v1/authorization/userinfo")
 	if err != nil {
 		return nil, err
 	}
@@ -83,25 +83,25 @@ func (rc *Service) GetUserinfo() (*types.UserInfo, error) {
 	}
 	var userInfoData types.UserInfo
 	if err := json.Unmarshal([]byte(rawResponse.UserInfo), &userInfoData); err != nil {
-		rc.logger.Debug("Erro ao decodificar dados do usuário", zap.Error(err))
+		s.logger.Debug("Erro ao decodificar dados do usuário", zap.Error(err))
 		return nil, fmt.Errorf("erro ao decodificar informações do usuário: %w", err)
 	}
 	return &userInfoData, nil
 }
-func (rc *Service) WaitUntilUserinfoIsReady(timeout time.Duration) error {
+func (s *Service) WaitUntilUserinfoIsReady(timeout time.Duration) error {
 	deadline := time.Now().Add(timeout)
 	interval := 200 * time.Millisecond
 
-	rc.logger.Info("Verificando disponibilidade das informações do usuário", zap.Duration("timeout", timeout))
+	s.logger.Info("Verificando disponibilidade das informações do usuário", zap.Duration("timeout", timeout))
 
 	for time.Now().Before(deadline) {
-		_, err := rc.GetUserinfo()
+		_, err := s.GetUserinfo()
 		if err != nil {
 			time.Sleep(interval)
 			continue
 		}
 
-		rc.logger.Info("Informações do usuário estão prontas")
+		s.logger.Info("Informações do usuário estão prontas")
 		return nil
 	}
 

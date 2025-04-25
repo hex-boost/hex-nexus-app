@@ -4,18 +4,21 @@ import (
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/hex-boost/hex-nexus-app/backend/client"
-	"github.com/hex-boost/hex-nexus-app/backend/config"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"go.uber.org/zap"
 )
 
 type Client struct {
-	api *client.HTTPClient
+	api    *client.HTTPClient
+	logger *logger.Logger
 }
 
-func NewClient(api *client.HTTPClient) *Client {
+func NewClient(logger *logger.Logger, api *client.HTTPClient) *Client {
 	return &Client{
-		api: api,
+		api:    api,
+		logger: logger,
 	}
 }
 
@@ -31,11 +34,11 @@ func (s *Client) Save(summoner types.PartialSummonerRented) (*types.SummonerResp
 	// Make the request manually instead of using s.api.Put
 	resp, err := req.Put("/api/accounts/refresh")
 	if err != nil {
-		s.api.Logger.Error("error saving summoner", zap.Error(err), zap.Int("statusCode", resp.StatusCode()), zap.Any("body", resp.String()))
+		s.logger.Error("error saving summoner", zap.Error(err), zap.Int("statusCode", resp.StatusCode()), zap.Any("body", resp.String()))
 		return nil, err
 	}
 	if resp.IsError() {
-		s.api.Logger.Error("error saving summoner", zap.Int("statusCode", resp.StatusCode()), zap.Any("body", resp.String()))
+		s.logger.Error("error saving summoner", zap.Int("statusCode", resp.StatusCode()), zap.Any("body", resp.String()))
 		return nil, fmt.Errorf("error saving summoner: %d - %s", resp.StatusCode(), resp.String())
 	}
 

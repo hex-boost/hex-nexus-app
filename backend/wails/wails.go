@@ -5,16 +5,19 @@ import (
 	"fmt"
 	"github.com/hex-boost/hex-nexus-app/backend/app"
 	"github.com/hex-boost/hex-nexus-app/backend/client"
-	"github.com/hex-boost/hex-nexus-app/backend/config"
 	"github.com/hex-boost/hex-nexus-app/backend/discord"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
 	"github.com/hex-boost/hex-nexus-app/backend/league"
 	"github.com/hex-boost/hex-nexus-app/backend/league/account"
 	"github.com/hex-boost/hex-nexus-app/backend/league/lcu"
 	"github.com/hex-boost/hex-nexus-app/backend/league/summoner"
-	"github.com/hex-boost/hex-nexus-app/backend/league/websockets"
+	"github.com/hex-boost/hex-nexus-app/backend/league/websocket"
 	gameOverlay "github.com/hex-boost/hex-nexus-app/backend/overlay"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/command"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/process"
 	"github.com/hex-boost/hex-nexus-app/backend/protocol"
 	"github.com/hex-boost/hex-nexus-app/backend/riot"
+	"github.com/hex-boost/hex-nexus-app/backend/riot/captcha"
 	"github.com/hex-boost/hex-nexus-app/backend/stripe"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/hex-boost/hex-nexus-app/backend/watchdog"
@@ -32,7 +35,7 @@ import (
 	"os"
 )
 
-func SetupSystemTray(app *application.App, window *application.WebviewWindow, icon []byte, monitor *league.AccountMonitor, utils *utils.Utils) *application.SystemTray {
+func SetupSystemTray(app *application.App, window *application.WebviewWindow, icon []byte, monitor *account.Monitor, utils *utils.Utils) *application.SystemTray {
 	systray := app.NewSystemTray()
 	menu := application.NewMenu()
 	menu.Add("Nexus").SetBitmap(icon).SetEnabled(false)
@@ -81,7 +84,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 
 	appInstance := app.App(cfg)
 
-	utilsBind := utils.NewUtils()
+	utilsBind := utils.New()
 
 	if len(os.Args) >= 3 && os.Args[1] == "--watchdog" {
 		mainPID, err := strconv.Atoi(os.Args[2])
@@ -168,15 +171,17 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 	accountState := account.NewState()
 	gameOverlayManager := gameOverlay.NewGameOverlayManager(appInstance.Log().League())
 	stripeService := stripe.New(appInstance.Log().Stripe())
-	lcuConn := lcu.NewConnection(appInstance.Log().League())
+	cmd := command.New()
+	procs := process.New(cmd)
+	lcuConn := lcu.NewConnection(appInstance.Log().League(), procs)
 	baseClient := client.NewBaseClient(appInstance.Log().Repo(), cfg)
 	httpClient := client.NewHTTPClient(baseClient)
-	accountClient := account.NewClient(httpClient)
+	accountClient := account.NewClient(appInstance.Log().Web(), httpClient)
 	summonerClient := summoner.NewClient(appInstance.Log().League(), lcuConn)
-	summonerService := league.NewSummonerService(appInstance.Log().League(), summonerClient)
-	captcha := riot.NewCaptcha(appInstance.Log().Riot())
+	summonerService := summoner.NewService(appInstance.Log().League(), summonerClient)
+	captchaService := captcha.New(appInstance.Log().Riot())
 	leagueService := league.NewLeagueService(appInstance.Log().Riot(), accountClient, summonerService, lcuConn)
-	riotService := riot.NewService(appInstance.Log().Riot(), captcha)
+	riotService := riot.NewService(appInstance.Log().Riot(), captchaService, cmd)
 	accountMonitor := account.NewMonitor(
 		appInstance.Log().Riot(),
 		leagueService,
@@ -186,13 +191,13 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		lcuConn,
 		watchdogClient, // Use the watchdog client here instead of creating a full watchdog
 	)
-	websocketHandler := websockets.NewHandler(appInstance.Log().League(), accountState)
-	websocketRouter := websockets.NewRouter(appInstance.Log().League())
-	websocketManager := websockets.NewManager()
-	websocketService := websockets.NewService(appInstance.Log().League(), accountMonitor, leagueService, accountState, accountClient, websocketRouter, websocketHandler, websocketManager)
+	websocketHandler := websocket.NewHandler(appInstance.Log().League(), accountState)
+	websocketRouter := websocket.NewRouter(appInstance.Log().League())
+	websocketManager := websocket.NewManager()
+	websocketService := websocket.NewService(appInstance.Log().League(), accountMonitor, leagueService, accountState, accountClient, websocketRouter, websocketHandler, websocketManager)
 	discordService := discord.New(cfg, appInstance.Log().Discord(), utilsBind)
 	debugMode := cfg.Debug
-	clientMonitor := league.NewClientMonitor(appInstance.Log().League(), accountMonitor, leagueService, riotService, captcha)
+	clientMonitor := league.NewMonitor(appInstance.Log().League(), accountMonitor, leagueService, riotService, captchaService)
 	app := application.New(application.Options{
 		Name:        "Nexus",
 		Description: "Nexus",
@@ -240,7 +245,9 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		},
 
 		Services: []application.Service{
-			application.NewService(riotService),
+			application.NewService(riotService, application.ServiceOptions{
+				Name: "RiotService",
+			}),
 			application.NewService(discordService),
 			application.NewService(summonerService),
 			application.NewService(leagueService),
@@ -322,15 +329,17 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		websocketService.Stop()
 		gameOverlayManager.Stop() // Stop the overlay manager
 		lockFilePath := filepath.Join(os.TempDir(), "Nexus.lock")
-		os.Remove(lockFilePath)
+		err := os.Remove(lockFilePath)
+		if err != nil {
+			return
+		}
 
 	})
-	utilsBind.SetApp(app)
 	SetupSystemTray(app, mainWindow, icon16, accountMonitor, utilsBind)
 	accountMonitor.SetWindow(mainWindow)
-	clientMonitor.SetWindow(app)
 	appProtocol.SetWindow(mainWindow)
-	captcha.SetWindow(captchaWindow)
+	captchaService.SetWindow(captchaWindow)
+	clientMonitor.SetWindow(app)
 	websocketService.SetWindow(app)
 	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(ctx *application.WindowEvent) {
 		websocketService.Start()

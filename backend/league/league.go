@@ -3,7 +3,8 @@ package league
 import (
 	"github.com/hex-boost/hex-nexus-app/backend/league/account"
 	"github.com/hex-boost/hex-nexus-app/backend/league/lcu"
-	"github.com/hex-boost/hex-nexus-app/backend/utils"
+	"github.com/hex-boost/hex-nexus-app/backend/league/summoner"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/mitchellh/go-ps"
 	"go.uber.org/zap"
 	"time"
@@ -12,11 +13,11 @@ import (
 type Service struct {
 	LCUconnection   *lcu.Connection
 	Api             *account.Client // Changed from api to Api for public access
-	summonerService *SummonerService
-	logger          *utils.Logger
+	summonerService *summoner.Service
+	logger          *logger.Logger
 }
 
-func NewLeagueService(logger *utils.Logger, api *account.Client, summonerService *SummonerService, lcuConnection *lcu.Connection) *Service {
+func NewLeagueService(logger *logger.Logger, api *account.Client, summonerService *summoner.Service, lcuConnection *lcu.Connection) *Service {
 	return &Service{
 		LCUconnection:   lcuConnection,
 		Api:             api, // Updated field name
@@ -73,15 +74,15 @@ func (lc *Service) IsRunning() bool {
 func (lc *Service) Logout() {
 	lc.logger.Info("Attempting to logout from League client")
 
-	if lc.LCUconnection.client == nil {
-		err := lc.LCUconnection.InitializeConnection()
+	if !lc.LCUconnection.IsClientInitialized() {
+		err := lc.LCUconnection.Initialize()
 		if err != nil {
 			lc.logger.Error("Failed to initialize LCU connection", zap.Error(err))
 			return
 		}
 	}
 
-	resp, err := lc.LCUconnection.client.R().Delete("/lol-login/v1/session")
+	resp, err := lc.LCUconnection.Client.R().Delete("/lol-login/v1/session")
 	if err != nil {
 		lc.logger.Error("Failed to send logout request", zap.Error(err))
 		return
@@ -116,8 +117,8 @@ func (lc *Service) WaitInventoryIsReady() {
 
 func (lc *Service) IsInventoryReady() bool {
 
-	if lc.LCUconnection.client == nil {
-		err := lc.LCUconnection.InitializeConnection()
+	if lc.LCUconnection.Client == nil {
+		err := lc.LCUconnection.Initialize()
 		if err != nil {
 			lc.logger.Debug("LCU client not initialized")
 			return false
@@ -125,7 +126,7 @@ func (lc *Service) IsInventoryReady() bool {
 	}
 
 	var result bool
-	resp, err := lc.LCUconnection.client.R().SetResult(&result).Get("/lol-inventory/v1/initial-configuration-complete")
+	resp, err := lc.LCUconnection.Client.R().SetResult(&result).Get("/lol-inventory/v1/initial-configuration-complete")
 
 	if err != nil {
 		lc.logger.Debug("LCU client connection test failed", zap.Error(err))

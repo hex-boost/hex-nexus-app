@@ -1,12 +1,12 @@
-package manager
+package updater_test
 
 import (
 	"fmt"
+	updater "github.com/hex-boost/hex-nexus-app/backend/cmd/updater/manager"
 	updaterUtils "github.com/hex-boost/hex-nexus-app/backend/cmd/updater/utils"
-	"github.com/hex-boost/hex-nexus-app/backend/config"
-	"github.com/hex-boost/hex-nexus-app/backend/testutils"
-	"github.com/hex-boost/hex-nexus-app/backend/utils"
-	loggerUtils "github.com/hex-boost/hex-nexus-app/backend/utils"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
+	"github.com/hex-boost/hex-nexus-app/backend/test"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -94,7 +94,7 @@ func TestUpdateProcess(t *testing.T) {
 	}))
 	defer mockServer.Close()
 
-	testutils.WithEnvironment(map[string]string{
+	test.WithEnvironment(map[string]string{
 		"VERSION": "1.0.24",
 		"API_URL": mockServer.URL,
 	}, func() {
@@ -104,10 +104,9 @@ func TestUpdateProcess(t *testing.T) {
 		}
 
 		// Agora testConfig terá os valores que você definiu
-		logger := loggerUtils.NewLogger("test", testConfig)
-		utils := utils.NewUtils()
-		updaterUtils := updaterUtils.New(logger, utils)
-		updateManager := NewUpdateManager(testConfig, updaterUtils, logger, utils)
+		testLogger := logger.New("test", testConfig)
+		updaterService := updaterUtils.New(testLogger)
+		updateManager := updater.NewUpdateManager(testConfig, updaterService, testLogger)
 		hasUpdate, newVersion := updateManager.CheckForUpdates()
 		if !hasUpdate {
 			t.Error("Falha ao detectar atualização disponível")
@@ -155,7 +154,7 @@ func TestUpdateProcess(t *testing.T) {
 		}
 
 		// 9. Testar getLatestAppDir
-		latestDir, err := updaterUtils.GetLatestAppDir()
+		latestDir, err := updaterService.GetLatestAppDir()
 		if err != nil {
 			t.Errorf("Erro obtendo diretório mais recente: %v", err)
 		}

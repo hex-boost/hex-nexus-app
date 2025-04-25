@@ -1,7 +1,7 @@
 package account
 
 import (
-	"github.com/hex-boost/hex-nexus-app/backend/events"
+	"github.com/hex-boost/hex-nexus-app/backend/league/account/events"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"go.uber.org/zap"
 )

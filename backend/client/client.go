@@ -2,18 +2,18 @@ package client
 
 import (
 	"github.com/go-resty/resty/v2"
-	"github.com/hex-boost/hex-nexus-app/backend/config"
-	"github.com/hex-boost/hex-nexus-app/backend/utils"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 )
 
 type BaseClient struct {
 	Client *resty.Client
-	Logger *utils.Logger
+	Logger *logger.Logger
 	JWT    string
 }
 
 // NewBaseClient creates a new base HTTP client
-func NewBaseClient(logger *utils.Logger, config *config.Config) *BaseClient {
+func NewBaseClient(logger *logger.Logger, config *config.Config) *BaseClient {
 	client := resty.New()
 	client.SetBaseURL(config.BackendURL)
 	client.SetHeader("Content-Type", "application/json")

@@ -1,8 +1,8 @@
-package utils
+package logger
 
 import (
 	"fmt"
-	"github.com/hex-boost/hex-nexus-app/backend/config"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"os"
@@ -14,7 +14,7 @@ type Logger struct {
 	*zap.Logger
 }
 
-func NewLogger(prefix string, config *config.Config) *Logger {
+func New(prefix string, config *config.Config) *Logger {
 	// Try to create logs directory
 	logFilePath := filepath.Join(config.LogsDirectory, "app.log")
 	err := os.MkdirAll(config.LogsDirectory, os.ModePerm)

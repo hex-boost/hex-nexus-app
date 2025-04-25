@@ -2,11 +2,11 @@ package updaterUtils
 
 import (
 	"fmt"
-	"github.com/hex-boost/hex-nexus-app/backend/utils"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/command"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"go.uber.org/zap"
 	"golang.org/x/sys/windows/registry"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -15,18 +15,18 @@ import (
 )
 
 type UpdaterUtils struct {
-	logger *utils.Logger
-	utils  *utils.Utils
+	logger *logger.Logger
+	cmd    *command.Command
 }
 
 var ExecutableFn = func() (string, error) {
 	return os.Executable()
 }
 
-func New(logger *utils.Logger, utils *utils.Utils) *UpdaterUtils {
+func New(logger *logger.Logger) *UpdaterUtils {
 	return &UpdaterUtils{
 		logger: logger,
-		utils:  utils,
+		cmd:    command.New(),
 	}
 }
 func (u *UpdaterUtils) GetLatestAppDir() (string, error) {
@@ -141,9 +141,7 @@ func (u *UpdaterUtils) InstallWebView2() error {
 	u.logger.Info("Installing WebView2 Runtime...", zap.String("path", webviewPath))
 
 	// Run the installer
-	cmd := exec.Command(webviewPath)
-	cmd = u.utils.HideConsoleWindow(cmd)
-	err = cmd.Start()
+	cmd, err := u.cmd.Start(webviewPath)
 	if err != nil {
 		u.logger.Error("Failed to start WebView2 installer", zap.Error(err))
 		return err

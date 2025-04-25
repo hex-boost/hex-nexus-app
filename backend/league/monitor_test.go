@@ -2,8 +2,7 @@ package league
 
 import (
 	"errors"
-	"github.com/hex-boost/hex-nexus-app/backend/config"
-	"github.com/hex-boost/hex-nexus-app/backend/league/websockets"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -71,7 +70,7 @@ func TestCheckAndUpdateAccount(t *testing.T) {
 
 		mockLeagueService.On("IsLCUConnectionReady").Return(false)
 
-		cm := &ClientMonitor{
+		cm := &Monitor{
 			leagueService:  mockLeagueService,
 			accountMonitor: mockAccountMonitor,
 			app:            mockApp,
@@ -93,7 +92,7 @@ func TestCheckAndUpdateAccount(t *testing.T) {
 		mockLeagueService.On("IsLCUConnectionReady").Return(true)
 		mockAccountMonitor.On("IsNexusAccount").Return(false)
 
-		cm := &ClientMonitor{
+		cm := &Monitor{
 			leagueService:  mockLeagueService,
 			accountMonitor: mockAccountMonitor,
 			app:            mockApp,
@@ -116,7 +115,7 @@ func TestCheckAndUpdateAccount(t *testing.T) {
 		mockAccountMonitor.On("IsNexusAccount").Return(true)
 		mockAccountMonitor.On("GetLoggedInUsername").Return("")
 
-		cm := &ClientMonitor{
+		cm := &Monitor{
 			leagueService:  mockLeagueService,
 			accountMonitor: mockAccountMonitor,
 			app:            mockApp,
@@ -138,7 +137,7 @@ func TestCheckAndUpdateAccount(t *testing.T) {
 		mockAccountMonitor.On("IsNexusAccount").Return(true)
 		mockAccountMonitor.On("GetLoggedInUsername").Return("testuser")
 
-		cm := &ClientMonitor{
+		cm := &Monitor{
 			leagueService:  mockLeagueService,
 			accountMonitor: mockAccountMonitor,
 			app:            mockApp,
@@ -163,9 +162,9 @@ func TestCheckAndUpdateAccount(t *testing.T) {
 		mockAccountMonitor.On("IsNexusAccount").Return(true)
 		mockAccountMonitor.On("GetLoggedInUsername").Return("testuser")
 		mockLeagueService.On("UpdateFromLCU", "testuser").Return(nil)
-		mockApp.On("EmitEvent", websockets.LeagueWebsocketStartHandlers).Return()
+		mockApp.On("EmitEvent", websocket.LeagueWebsocketStartHandlers).Return()
 
-		cm := &ClientMonitor{
+		cm := &Monitor{
 			leagueService:  mockLeagueService,
 			accountMonitor: mockAccountMonitor,
 			app:            mockApp,
@@ -180,7 +179,7 @@ func TestCheckAndUpdateAccount(t *testing.T) {
 		cm.checkAndUpdateAccount()
 
 		mockLeagueService.AssertCalled(t, "UpdateFromLCU", "testuser")
-		mockApp.AssertCalled(t, "EmitEvent", websockets.LeagueWebsocketStartHandlers)
+		mockApp.AssertCalled(t, "EmitEvent", websocket.LeagueWebsocketStartHandlers)
 
 		assert.Equal(t, "testuser", cm.accountUpdateStatus.Username)
 		assert.True(t, cm.accountUpdateStatus.IsUpdated)
@@ -201,7 +200,7 @@ func TestCheckAndUpdateAccount(t *testing.T) {
 			IsUpdated: false,
 		}
 
-		cm := &ClientMonitor{
+		cm := &Monitor{
 			leagueService:       mockLeagueService,
 			accountMonitor:      mockAccountMonitor,
 			app:                 mockApp,
@@ -213,7 +212,7 @@ func TestCheckAndUpdateAccount(t *testing.T) {
 		cm.checkAndUpdateAccount()
 
 		mockLeagueService.AssertCalled(t, "UpdateFromLCU", "testuser")
-		mockApp.AssertNotCalled(t, "EmitEvent", websockets.LeagueWebsocketStartHandlers)
+		mockApp.AssertNotCalled(t, "EmitEvent", websocket.LeagueWebsocketStartHandlers)
 
 		assert.Equal(t, initialStatus.Username, cm.accountUpdateStatus.Username)
 		assert.Equal(t, initialStatus.IsUpdated, cm.accountUpdateStatus.IsUpdated)

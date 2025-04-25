@@ -1,4 +1,4 @@
-package events
+package event
 
 const (
 	LeagueWebsocketStart = "league:websocket:start"

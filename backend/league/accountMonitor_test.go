@@ -2,7 +2,7 @@ package league
 
 import (
 	"errors"
-	"github.com/hex-boost/hex-nexus-app/backend/config"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/stretchr/testify/assert"
@@ -26,7 +26,7 @@ func (m *MockRiotClient) IsClientInitialized() bool {
 	return args.Bool(0)
 }
 
-func (m *MockRiotClient) InitializeRestyClient() error {
+func (m *MockRiotClient) InitializeClient() error {
 	args := m.Called()
 	return args.Error(0)
 }

@@ -1,4 +1,4 @@
-package websockets
+package websocket
 
 import (
 	"github.com/hex-boost/hex-nexus-app/backend/utils"

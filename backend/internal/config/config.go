@@ -11,18 +11,20 @@ import (
 )
 
 var (
-	Version       = "dev"
-	LogLevel      = "info"
-	BackendURL    = "http://127.0.0.1:1337"
-	RefreshApiKey = ""
-	Debug         = ""
+	Version        = "dev"
+	LogLevel       = "info"
+	BackendURL     = "http://127.0.0.1:1337"
+	RefreshApiKey  = ""
+	LeagueAuthType = "local"
+	Debug          = ""
 )
 
 type Config struct {
-	Version       string `json:"version"`
-	RefreshApiKey string `json:"refresh_api_key"`
-	BackendURL    string `json:"backendUrl"`
-	Debug         bool   `json:"debug"`
+	Version        string `json:"version"`
+	RefreshApiKey  string `json:"refresh_api_key"`
+	LeagueAuthType string `json:"auth_type"`
+	BackendURL     string `json:"backendUrl"`
+	Debug          bool   `json:"debug"`
 
 	LogsDirectory string `json:"logsDirectory"`
 
@@ -43,12 +45,13 @@ func LoadConfig() (*Config, error) {
 	}
 
 	config := &Config{
-		Version:       getEnv("VERSION", Version),
-		RefreshApiKey: getEnv("REFRESH_API_KEY", RefreshApiKey),
-		BackendURL:    getEnv("API_URL", BackendURL),
-		Debug:         getBoolEnv("DEBUG", isDebug),
-		LogsDirectory: getEnv("LOGS_DIR", "./logs"),
-		LogLevel:      getEnv("LOG_LEVEL", LogLevel),
+		Version:        getEnv("VERSION", Version),
+		RefreshApiKey:  getEnv("REFRESH_API_KEY", RefreshApiKey),
+		BackendURL:     getEnv("API_URL", BackendURL),
+		Debug:          getBoolEnv("DEBUG", isDebug),
+		LogsDirectory:  getEnv("LOGS_DIR", "./logs"),
+		LeagueAuthType: getEnv("LOGS_DIR", LeagueAuthType),
+		LogLevel:       getEnv("LOG_LEVEL", LogLevel),
 	}
 
 	// Try to load from config file if specified

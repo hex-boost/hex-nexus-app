@@ -1,7 +1,7 @@
-package websockets
+package websocket
 
-// EventHandlerInterface defines a handler for LCU WebSocket events
-type EventHandlerInterface interface {
+// EventHandler defines a handler for LCU WebSocket events
+type EventHandler interface {
 	GetPath() string
 	Handle(LCUWebSocketEvent)
 }
@@ -14,26 +14,26 @@ func NewManager() *Manager {
 	return &Manager{}
 }
 
-// EventHandler implements the EventHandlerInterface
-type EventHandler struct {
+// WebSocketEventHandler implements the EventHandler interface
+type WebSocketEventHandler struct {
 	path    string
 	handler func(LCUWebSocketEvent)
 }
 
 // NewEventHandler creates a new event handler with path and handler function
-func (m *Manager) NewEventHandler(path string, handler func(LCUWebSocketEvent)) EventHandlerInterface {
-	return &EventHandler{
+func (m *Manager) NewEventHandler(path string, handler func(LCUWebSocketEvent)) EventHandler {
+	return &WebSocketEventHandler{
 		path:    path,
 		handler: handler,
 	}
 }
 
 // GetPath returns the path for this handler
-func (h *EventHandler) GetPath() string {
+func (h *WebSocketEventHandler) GetPath() string {
 	return h.path
 }
 
 // Handle processes an event with this handler
-func (h *EventHandler) Handle(event LCUWebSocketEvent) {
+func (h *WebSocketEventHandler) Handle(event LCUWebSocketEvent) {
 	h.handler(event)
 }

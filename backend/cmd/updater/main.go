@@ -3,10 +3,10 @@ package main
 import (
 	"embed"
 	"flag"
+
 	"fmt"
-	"github.com/hex-boost/hex-nexus-app/backend/cmd/updater/manager"
 	updaterUtils "github.com/hex-boost/hex-nexus-app/backend/cmd/updater/utils"
-	"github.com/hex-boost/hex-nexus-app/backend/config"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"go.uber.org/zap"
 	"os"
@@ -25,7 +25,7 @@ func main() {
 		os.Exit(1)
 	}
 	logger := utils.NewLogger("updater", cfg)
-	utils := utils.NewUtils()
+	utils := utils.New()
 	updaterUtils := updaterUtils.New(logger, utils)
 	updateManager := manager.NewUpdateManager(cfg, updaterUtils, logger, utils)
 	if *processStart != "" {

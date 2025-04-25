@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-resty/resty/v2"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/process"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"go.uber.org/zap"
 	"regexp"
@@ -14,18 +16,20 @@ import (
 )
 
 type Connection struct {
-	client *resty.Client
-	logger *Utils.Logger
-	ctx    context.Context
-	utils  *Utils.Utils
+	Client  *resty.Client
+	logger  *logger.Logger
+	ctx     context.Context
+	process *process.Process
+	utils   *utils.Utils
 }
 
-func NewConnection(logger *Utils.Logger) *Connection {
+func NewConnection(logger *logger.Logger, process *process.Process) *Connection {
 	return &Connection{
-		utils:  utils.NewUtils(),
-		client: nil,
-		logger: logger,
-		ctx:    context.Background(),
+		utils:   utils.New(),
+		Client:  nil,
+		process: process,
+		logger:  logger,
+		ctx:     context.Background(),
 	}
 }
 
@@ -44,13 +48,13 @@ func (c *Connection) Initialize() error {
 
 	client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 
-	c.client = client
+	c.Client = client
 
 	return nil
 }
 
 func (c *Connection) GetLeagueCredentials() (port, token, pid string, err error) {
-	output, err := c.getProcessCommandLine()
+	output, err := c.process.GetCommandLineByName("LeagueClientUx.exe")
 
 	portRegex := regexp.MustCompile(`--app-port=(\d+)`)
 	tokenRegex := regexp.MustCompile(`--remoting-auth-token=([\w-]+)`)
@@ -109,7 +113,7 @@ func (c *Connection) WaitUntilReady() error {
 	}
 }
 func (c *Connection) IsClientInitialized() bool {
-	if c.client == nil {
+	if c.Client == nil {
 		return false
 	}
 
@@ -118,7 +122,7 @@ func (c *Connection) IsClientInitialized() bool {
 	defer cancel()
 
 	// Test the connection with a lightweight endpoint
-	resp, err := c.client.R().
+	resp, err := c.Client.R().
 		SetContext(ctx).
 		Get("/lol-summoner/v1/current-summoner")
 

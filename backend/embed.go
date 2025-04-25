@@ -2,5 +2,5 @@ package backend
 
 import "embed"
 
-//go:embed templates
+//go:embed web/templates
 var TemplatesFS embed.FS

@@ -2,8 +2,8 @@ package overlay
 
 import (
 	"encoding/json"
-	"github.com/hex-boost/hex-nexus-app/backend/process"
-	"github.com/hex-boost/hex-nexus-app/backend/utils"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/process"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"go.uber.org/zap"
 	"golang.org/x/sys/windows"
@@ -18,7 +18,7 @@ import (
 
 type Overlay struct {
 	overlay       *application.WebviewWindow
-	logger        *utils.Logger
+	logger        *logger.Logger
 	isGameRunning bool
 	gameHwnd      windows.HWND
 	mutex         sync.Mutex
@@ -127,7 +127,7 @@ func (m *Overlay) maintainZOrder() {
 func (m *Overlay) SetWindow(window *application.WebviewWindow) {
 	m.overlay = window
 }
-func NewGameOverlayManager(logger *utils.Logger) *Overlay {
+func NewGameOverlayManager(logger *logger.Logger) *Overlay {
 	configDir, err := os.UserConfigDir()
 	if err != nil {
 		configDir = "."

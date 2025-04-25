@@ -1,4 +1,4 @@
-package websockets
+package websocket
 
 import (
 	"crypto/tls"
@@ -6,11 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
-	"github.com/hex-boost/hex-nexus-app/backend/events"
 	"github.com/hex-boost/hex-nexus-app/backend/league"
 	"github.com/hex-boost/hex-nexus-app/backend/league/account"
+	"github.com/hex-boost/hex-nexus-app/backend/league/account/events"
+	websocketEvent "github.com/hex-boost/hex-nexus-app/backend/league/websocket/event"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
-	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"go.uber.org/zap"
 	"net/http"
@@ -42,7 +43,7 @@ type Service struct {
 	conn               *websocket.Conn
 	leagueService      *league.Service
 	accountMonitor     *account.Monitor
-	logger             *utils.Logger
+	logger             *logger.Logger
 	mutex              sync.Mutex
 	isRunning          bool
 	stopChan           chan struct{}
@@ -56,7 +57,7 @@ type Service struct {
 
 // NewWebSocketService creates a new WebSocket service
 func NewService(
-	logger *utils.Logger,
+	logger *logger.Logger,
 	accountMonitor *account.Monitor,
 	leagueService *league.Service,
 	accountState *account.State,
@@ -388,7 +389,7 @@ func (ws *Service) RefreshAccountState(summonerState types.PartialSummonerRented
 }
 
 func (ws *Service) SubscribeToLeagueEvents() {
-	ws.app.OnEvent(events.LeagueWebsocketStart, func(event *application.CustomEvent) {
+	ws.app.OnEvent(websocketEvent.LeagueWebsocketStart, func(event *application.CustomEvent) {
 		ws.logger.Debug("Starting WebSocket service handlers")
 		if event.Cancelled {
 			ws.logger.Info("WebSocket service already started")
@@ -414,7 +415,7 @@ func (ws *Service) SubscribeToLeagueEvents() {
 		}
 	})
 
-	ws.app.OnEvent(events.LeagueWebsocketStop, func(event *application.CustomEvent) {
+	ws.app.OnEvent(websocketEvent.LeagueWebsocketStop, func(event *application.CustomEvent) {
 		if event.Cancelled {
 			ws.logger.Info("WebSocket service already stopped")
 			return

@@ -3,10 +3,8 @@ package account
 import (
 	"errors"
 	"fmt"
-	"github.com/hex-boost/hex-nexus-app/backend/repository"
-	"github.com/hex-boost/hex-nexus-app/backend/riot"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
-	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/hex-boost/hex-nexus-app/backend/watchdog"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"go.uber.org/zap"
@@ -15,10 +13,10 @@ import (
 	"time"
 )
 
-type RiotClientInterface interface {
+type RiotAuthenticator interface {
 	IsRunning() bool
 	IsClientInitialized() bool
-	InitializeRestyClient() error
+	InitializeClient() error
 	GetAuthenticationState() (*types.RiotIdentityResponse, error)
 	GetUserinfo() (*types.UserInfo, error)
 }
@@ -45,14 +43,20 @@ type AccountsRepositoryInterface interface {
 	GetAllRented() ([]types.SummonerRented, error)
 }
 
-// WindowInterface defines methods needed from window
-type WindowInterface interface {
+// WindowEmitter defines methods needed from window
+type WindowEmitter interface {
 	EmitEvent(eventName string, data ...interface{})
 }
+type LeagueServicer interface {
+	IsRunning() bool
+	IsPlaying() bool
+}
+type AccountServicer interface {
+}
 type Monitor struct {
-	riotClient          RiotClientInterface
+	riotAuth            RiotAuthenticator
 	accountRepo         AccountsRepositoryInterface
-	logger              *utils.Logger
+	logger              *logger.Logger
 	lastCheckedUsername string
 	running             bool
 	isNexusAccount      bool
@@ -60,21 +64,22 @@ type Monitor struct {
 	cachedAccounts      []types.SummonerRented
 	lastAccountsFetch   time.Time
 	accountCacheTTL     time.Duration
-	window              WindowInterface
+	window              WindowEmitter
 	stopChan            chan struct{}
 	leagueService       LeagueServicer
 	mutex               sync.Mutex
 	watchdogState       watchdog.WatchdogUpdater // Add this field to access watchdog
+	accountService      AccountServicer
 
 	summoner      SummonerClientInterface
 	LCUConnection LCUConnectionInterface
 }
 
 func NewMonitor(
-	logger *utils.Logger,
-	leagueService *LeagueService,
-	riotClient *riot.Service,
-	accountRepo *repository.AccountsRepository,
+	logger *logger.Logger,
+	leagueService LeagueServicer,
+	riotAuth RiotAuthenticator,
+	accountService AccountServicer,
 	summoner SummonerClientInterface,
 	LCUConnection LCUConnectionInterface,
 	watchdog watchdog.WatchdogUpdater,
@@ -84,9 +89,9 @@ func NewMonitor(
 		watchdogState:   watchdog,
 		leagueService:   leagueService,
 		LCUConnection:   LCUConnection,
-		riotClient:      riotClient,
+		riotAuth:        riotAuth,
 		summoner:        summoner,
-		accountRepo:     accountRepo,
+		accountService:  accountService,
 		logger:          logger,
 		isNexusAccount:  false,
 		window:          nil,
@@ -187,15 +192,15 @@ func (am *Monitor) monitorLoop() {
 	}
 }
 func (am *Monitor) getSummonerNameByRiotClient() string {
-	if !am.riotClient.IsClientInitialized() {
-		if err := am.riotClient.InitializeRestyClient(); err != nil {
+	if !am.riotAuth.IsClientInitialized() {
+		if err := am.riotAuth.InitializeClient(); err != nil {
 			am.logger.Error("Failed to initialize Riot client",
 				zap.Error(err),
 				zap.String("errorType", fmt.Sprintf("%T", err)))
 			return ""
 		}
 	}
-	authState, err := am.riotClient.GetAuthenticationState()
+	authState, err := am.riotAuth.GetAuthenticationState()
 	if err != nil {
 		am.logger.Error("Failed to retrieve authentication state",
 			zap.Error(err),
@@ -208,7 +213,7 @@ func (am *Monitor) getSummonerNameByRiotClient() string {
 	}
 
 	// Get user info
-	userInfo, err := am.riotClient.GetUserinfo()
+	userInfo, err := am.riotAuth.GetUserinfo()
 	if err != nil {
 		am.logger.Error("Failed to get user info",
 			zap.Error(err),
@@ -222,7 +227,7 @@ func (am *Monitor) getSummonerNameByRiotClient() string {
 func (am *Monitor) getUsernameByLeagueClient() (string, error) {
 
 	if !am.LCUConnection.IsClientInitialized() {
-		err := am.LCUConnection.InitializeConnection()
+		err := am.LCUConnection.Initialize()
 		if err != nil || !am.LCUConnection.IsClientInitialized() {
 			return "", errors.New(fmt.Sprintf("failed to initialize League client connection %v", err))
 		}
@@ -241,7 +246,7 @@ func (am *Monitor) getUsernameByLeagueClient() (string, error) {
 
 func (am *Monitor) GetLoggedInUsername() string {
 	var currentUsername string
-	if am.riotClient.IsRunning() {
+	if am.riotAuth.IsRunning() {
 		currentUsername = am.getSummonerNameByRiotClient()
 	} else if am.leagueService.IsRunning() {
 		leagueCurrentUsername, err := am.getUsernameByLeagueClient()
@@ -256,7 +261,7 @@ func (am *Monitor) GetLoggedInUsername() string {
 }
 
 func (am *Monitor) checkCurrentAccount() {
-	if !am.riotClient.IsRunning() && !am.leagueService.IsRunning() && !am.leagueService.IsPlaying() {
+	if !am.riotAuth.IsRunning() && !am.leagueService.IsRunning() && !am.leagueService.IsPlaying() {
 		am.cachedAccounts = []types.SummonerRented{}
 		am.lastAccountsFetch = time.Now() // Reset the timer
 		am.SetNexusAccount(false)

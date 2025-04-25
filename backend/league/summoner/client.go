@@ -275,7 +275,7 @@ func (s *Client) GetLolChat() (*types.FriendPresence, error) {
 		return nil, err
 	}
 
-	s.logger.Debug("Summoner region retrieved", zap.String("region", friendPresence.PlatformId))
+	s.logger.Debug("Service region retrieved", zap.String("region", friendPresence.PlatformId))
 	return &friendPresence, nil
 }
 

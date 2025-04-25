@@ -1,4 +1,4 @@
-package riot
+package captcha
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-resty/resty/v2"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"go.uber.org/zap"
@@ -17,7 +18,7 @@ import (
 // Captcha handles all captcha-related functionality
 type Captcha struct {
 	client            *resty.Client
-	logger            *utils.Logger
+	logger            *logger.Logger
 	window            *application.WebviewWindow
 	response          chan string
 	captchaServer     *http.Server
@@ -27,7 +28,7 @@ type Captcha struct {
 	captchaInProgress bool
 }
 
-func NewCaptcha(logger *utils.Logger) *Captcha {
+func New(logger *utils.Logger) *Captcha {
 
 	return &Captcha{
 		logger:            logger,
@@ -37,11 +38,11 @@ func NewCaptcha(logger *utils.Logger) *Captcha {
 		captchaInProgress: false,
 	}
 }
-func (c *Captcha) setRqData(rqdata string) {
+func (c *Captcha) SetRQData(rqdata string) {
 	c.rqdata = rqdata
 }
 
-func (c *Captcha) startServer() error {
+func (c *Captcha) StartServer() error {
 	c.serverMutex.Lock()
 	defer c.serverMutex.Unlock()
 

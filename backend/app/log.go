@@ -1,8 +1,8 @@
 package app
 
 import (
-	"github.com/hex-boost/hex-nexus-app/backend/config"
-	"github.com/hex-boost/hex-nexus-app/backend/utils"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 )
 
 const (
@@ -18,60 +18,60 @@ const (
 )
 
 type log struct {
-	league   *utils.Logger
-	discord  *utils.Logger
-	riot     *utils.Logger
-	wails    *utils.Logger
-	web      *utils.Logger
-	repo     *utils.Logger
-	services *utils.Logger
-	stripe   *utils.Logger
-	protocol *utils.Logger
+	league   *logger.Logger
+	discord  *logger.Logger
+	riot     *logger.Logger
+	wails    *logger.Logger
+	web      *logger.Logger
+	repo     *logger.Logger
+	services *logger.Logger
+	stripe   *logger.Logger
+	protocol *logger.Logger
 }
 
 func NewLogger(cfg *config.Config) *log {
 	return &log{
-		discord:  utils.NewLogger(LogPrefixDiscord, cfg),
-		repo:     utils.NewLogger(LogPrefixRepo, cfg),
-		league:   utils.NewLogger(LogPrefixLeague, cfg),
-		riot:     utils.NewLogger(LogPrefixRiot, cfg),
-		wails:    utils.NewLogger(LogPrefixWails, cfg),
-		stripe:   utils.NewLogger(LogPrefixStripe, cfg),
-		web:      utils.NewLogger(LogPrefixWeb, cfg),
-		services: utils.NewLogger(LogPrefixServices, cfg),
-		protocol: utils.NewLogger(LogPrefixProtocol, cfg),
+		discord:  logger.New(LogPrefixDiscord, cfg),
+		repo:     logger.New(LogPrefixRepo, cfg),
+		league:   logger.New(LogPrefixLeague, cfg),
+		riot:     logger.New(LogPrefixRiot, cfg),
+		wails:    logger.New(LogPrefixWails, cfg),
+		stripe:   logger.New(LogPrefixStripe, cfg),
+		web:      logger.New(LogPrefixWeb, cfg),
+		services: logger.New(LogPrefixServices, cfg),
+		protocol: logger.New(LogPrefixProtocol, cfg),
 	}
 }
 
-func (l *log) Discord() *utils.Logger {
+func (l *log) Discord() *logger.Logger {
 	return l.discord
 }
-func (l *log) League() *utils.Logger {
+func (l *log) League() *logger.Logger {
 	return l.league
 }
 
-func (l *log) Stripe() *utils.Logger {
+func (l *log) Stripe() *logger.Logger {
 	return l.stripe
 }
-func (l *log) Repo() *utils.Logger {
+func (l *log) Repo() *logger.Logger {
 	return l.repo
 }
 
-func (l *log) Riot() *utils.Logger {
+func (l *log) Riot() *logger.Logger {
 	return l.riot
 }
 
-func (l *log) Wails() *utils.Logger {
+func (l *log) Wails() *logger.Logger {
 	return l.wails
 }
 
-func (l *log) Protocol() *utils.Logger {
+func (l *log) Protocol() *logger.Logger {
 	return l.protocol
 }
-func (l *log) Web() *utils.Logger {
+func (l *log) Web() *logger.Logger {
 	return l.web
 }
 
-func (l *log) Services() *utils.Logger {
+func (l *log) Services() *logger.Logger {
 	return l.services
 }

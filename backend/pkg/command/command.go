@@ -12,8 +12,13 @@ func New() *Command {
 	return &Command{}
 }
 
-func (c *Command) Execute(command string) ([]byte, error) {
-	cmd := exec.Command(command)
+func (c *Command) Start(command string, arg ...string) (*exec.Cmd, error) {
+	cmd := exec.Command(command, arg...)
+	cmd = c.hideConsole(cmd)
+	return cmd, cmd.Start()
+}
+func (c *Command) Execute(command string, arg ...string) ([]byte, error) {
+	cmd := exec.Command(command, arg...)
 	cmd = c.hideConsole(cmd)
 	output, err := cmd.Output()
 	if err != nil {
@@ -22,7 +27,7 @@ func (c *Command) Execute(command string) ([]byte, error) {
 	return output, nil
 }
 
-func (u *Command) hideConsole(cmd *exec.Cmd) *exec.Cmd {
+func (c *Command) hideConsole(cmd *exec.Cmd) *exec.Cmd {
 	if cmd.SysProcAttr == nil {
 		cmd.SysProcAttr = &syscall.SysProcAttr{}
 	}

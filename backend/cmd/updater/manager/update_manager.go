@@ -1,17 +1,17 @@
-package manager
+package updater
 
 import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	updaterUtils "github.com/hex-boost/hex-nexus-app/backend/cmd/updater/utils"
-	"github.com/hex-boost/hex-nexus-app/backend/config"
-	"github.com/hex-boost/hex-nexus-app/backend/utils"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/command"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"go.uber.org/zap"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 )
@@ -25,17 +25,16 @@ type BackendUpdateStatus struct {
 type UpdateManager struct {
 	client       *resty.Client
 	currentVer   string
+	command      *command.Command
 	updaterUtils *updaterUtils.UpdaterUtils
 	config       *config.Config
-	logger       *utils.Logger
+	logger       *logger.Logger
 	app          *application.App // Added for emitting events
-	utils        *utils.Utils
 }
 
-func NewUpdateManager(config *config.Config, updaterUtils *updaterUtils.UpdaterUtils, logger *utils.Logger, utils *utils.Utils) *UpdateManager {
+func NewUpdateManager(config *config.Config, updaterUtils *updaterUtils.UpdaterUtils, logger *logger.Logger) *UpdateManager {
 	return &UpdateManager{
 		config:       config,
-		utils:        utils,
 		updaterUtils: updaterUtils,
 		logger:       logger,
 		client:       resty.New(),
@@ -271,14 +270,10 @@ func (u *UpdateManager) StartMainApplication(exeName string) error {
 	}
 
 	appPath := filepath.Join(appDir, exeName)
-	cmd := exec.Command(appPath)
-	cmd = u.utils.HideConsoleWindow(cmd)
 
-	//cmd.Stdin = os.Stdin
-	//cmd.Stdout = os.Stdout
-	//cmd.Stderr = os.Stderr
+	_, err = u.command.Start(appPath)
 
-	if err := cmd.Start(); err != nil {
+	if err != nil {
 		u.logger.Error("Failed to start application", zap.Error(err))
 		return err
 	}
@@ -307,4 +302,42 @@ func (u *UpdateManager) IsAnotherInstanceRunning() bool {
 	}
 
 	return false
+}
+func (u *UpdateManager) StartUpdate() error {
+	execPath, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("failed to get executable path: %w", err)
+	}
+
+	// Ensure we have the absolute path
+	execPath, err = filepath.Abs(execPath)
+	if err != nil {
+		return fmt.Errorf("failed to get absolute executable path: %w", err)
+	}
+
+	parentPath := filepath.Dir(execPath)
+	// Instead of calculating grandparent path, use a hardcoded relative path or check both locations
+	updatePath := filepath.Join(filepath.Dir(parentPath), "updater.exe")
+
+	// Check if updater exists at calculated path
+	if _, err := os.Stat(updatePath); os.IsNotExist(err) {
+		// Try alternate location - same directory as the app
+		alternativePath := filepath.Join(filepath.Dir(parentPath), "updater.exe")
+		if _, err := os.Stat(alternativePath); err == nil {
+			updatePath = alternativePath
+		} else {
+			return fmt.Errorf("updater.exe not found at either %s or %s", updatePath, alternativePath)
+		}
+	}
+	_, err = u.command.Start(updatePath, execPath)
+
+	if err != nil {
+		return fmt.Errorf("failed to start update process: %w", err)
+	}
+
+	lockFilePath := filepath.Join(os.TempDir(), "Nexus.lock")
+	os.Remove(lockFilePath)
+
+	os.Exit(0)
+	return nil
 }
