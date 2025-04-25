@@ -505,9 +505,6 @@ func (cm *Monitor) handleCaptchaCancellation() {
 		ClientState: ClientStateLoginReady,
 	})
 }
-func (cm *Monitor) SetWindow(app *application.App) {
-	cm.app = app
-}
 
 func (cm *Monitor) HandleLogin(username string, password string, captchaToken string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

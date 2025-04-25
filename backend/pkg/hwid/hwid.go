@@ -16,7 +16,7 @@ func New() *HWID {
 	}
 }
 
-func (u *HWID) GetHWID() (string, error) {
+func (u *HWID) Get() (string, error) {
 	// Execute the command using command.Command
 	output, err := u.command.Execute("cmd.exe /c wmic csproduct get uuid")
 	if err != nil {

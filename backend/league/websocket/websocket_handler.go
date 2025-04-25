@@ -3,19 +3,19 @@ package websocket
 import (
 	"encoding/json"
 	"github.com/hex-boost/hex-nexus-app/backend/league/account"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
-	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"go.uber.org/zap"
 )
 
 // Handler implements WebSocketEventHandler with standard event handling logic
 type Handler struct {
-	logger       *utils.Logger
+	logger       *logger.Logger
 	accountState *account.State
 }
 
 // NewWebSocketHandler creates a new WebSocket event handler
-func NewHandler(logger *utils.Logger, accountState *account.State) *Handler {
+func NewHandler(logger *logger.Logger, accountState *account.State) *Handler {
 	return &Handler{
 		accountState: accountState,
 		logger:       logger,
@@ -56,7 +56,6 @@ func (h *Handler) WalletEvent(event LCUWebSocketEvent) {
 		}
 		h.accountState.Update(&summonerRented)
 
-		h.RefreshAccountState(summonerRented)
 	} else {
 		h.logger.Debug("Blue essence unchanged, skipping refresh",
 			zap.Int("value", blueEssence))

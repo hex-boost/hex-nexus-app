@@ -3,10 +3,11 @@ package summoner
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/hex-boost/hex-nexus-app/backend/league/lcu"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
-	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"go.uber.org/zap"
 	"net/http"
 	"strconv"
@@ -15,11 +16,11 @@ import (
 type Client struct {
 	conn   *lcu.Connection
 	lcuJwt *lcu.JWT
-	logger *utils.Logger
+	logger *logger.Logger
 	ctx    context.Context
 }
 
-func NewClient(logger *utils.Logger, conn *lcu.Connection) *Client {
+func NewClient(logger *logger.Logger, conn *lcu.Connection) *Client {
 	return &Client{
 		conn:   conn,
 		logger: logger,
@@ -30,7 +31,7 @@ func NewClient(logger *utils.Logger, conn *lcu.Connection) *Client {
 func (s *Client) GetLoginSession() (*types.LoginSession, error) {
 
 	var result types.LoginSession
-	resp, err := s.conn.client.R().SetResult(&result).
+	resp, err := s.conn.Client.R().SetResult(&result).
 		Get("/lol-login/v1/session")
 
 	if err != nil {
@@ -49,7 +50,7 @@ func (s *Client) GetLoginSession() (*types.LoginSession, error) {
 func (s *Client) GetCurrentSummoner() (*types.CurrentSummoner, error) {
 	s.logger.Debug("Fetching summoner data")
 	var result types.CurrentSummoner
-	resp, err := s.lcu.client.R().SetResult(&result).
+	resp, err := s.conn.Client.R().SetResult(&result).
 		Get("/lol-summoner/v1/current-summoner")
 
 	if err != nil {
@@ -128,7 +129,7 @@ type T struct {
 func (s *Client) GetChampions() ([]int, error) {
 	s.logger.Debug("Fetching owned champions")
 	var encodedData string
-	resp, err := s.lcu.client.R().SetResult(&encodedData).
+	resp, err := s.conn.Client.R().SetResult(&encodedData).
 		Get("/lol-inventory/v1/signedInventory/simple?inventoryTypes=%5B%22CHAMPION%22%5D")
 
 	if err != nil {
@@ -143,7 +144,7 @@ func (s *Client) GetChampions() ([]int, error) {
 	}
 
 	var payload types.ChampionJWT
-	err = s.lcuUtils.DecodeRiotJWT(encodedData, &payload)
+	err = s.lcuJwt.Decode(encodedData, &payload)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +157,7 @@ func (s *Client) GetChampions() ([]int, error) {
 func (s *Client) GetSkins() ([]int, error) {
 	s.logger.Debug("Fetching owned skins")
 	var encodedData string
-	resp, err := s.lcu.client.R().SetResult(&encodedData).
+	resp, err := s.conn.Client.R().SetResult(&encodedData).
 		Get("/lol-inventory/v1/signedInventory/simple?inventoryTypes=%5B%22CHAMPION_SKIN%22%5D")
 
 	if err != nil {
@@ -171,7 +172,7 @@ func (s *Client) GetSkins() ([]int, error) {
 	}
 
 	var payload types.SkinJWT
-	err = s.lcuUtils.DecodeRiotJWT(encodedData, &payload)
+	err = s.lcuJwt.Decode(encodedData, &payload)
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +186,7 @@ func (s *Client) GetSkins() ([]int, error) {
 func (s *Client) GetCurrency() (map[string]interface{}, error) {
 	s.logger.Debug("Fetching account currency information")
 
-	resp, err := s.lcu.client.R().
+	resp, err := s.conn.Client.R().
 		Get("/lol-inventory/v1/wallet?currencyTypes=%5B%22EA%22%5D")
 
 	if err != nil {
@@ -214,7 +215,7 @@ func (s *Client) GetCurrency() (map[string]interface{}, error) {
 func (s *Client) GetRanking() (*types.RankedStats, error) {
 	s.logger.Info("Fetching ranking data")
 
-	resp, err := s.lcu.client.R().
+	resp, err := s.conn.Client.R().
 		Get("/lol-ranked/v1/current-ranked-stats")
 
 	if err != nil {
@@ -257,7 +258,7 @@ func (s *Client) GetRanking() (*types.RankedStats, error) {
 func (s *Client) GetLolChat() (*types.FriendPresence, error) {
 	s.logger.Debug("Fetching account region")
 	var friendPresence types.FriendPresence
-	resp, err := s.lcu.client.R().SetResult(friendPresence).Get("/lol-chat/v1/me")
+	resp, err := s.conn.Client.R().SetResult(friendPresence).Get("/lol-chat/v1/me")
 
 	if err != nil {
 		s.logger.Error("Error fetching region data", zap.Error(err))
@@ -282,7 +283,7 @@ func (s *Client) GetLolChat() (*types.FriendPresence, error) {
 func (s *Client) GetUserInfo() (*types.UserInfo, error) {
 	s.logger.Debug("Fetching account userinfo")
 	var encodedUserinfoJWT types.UserinfoJWT
-	resp, err := s.lcu.client.R().SetResult(&encodedUserinfoJWT).Get("/lol-rso-auth/v1/authorization/userinfo")
+	resp, err := s.conn.Client.R().SetResult(&encodedUserinfoJWT).Get("/lol-rso-auth/v1/authorization/userinfo")
 
 	if err != nil {
 		s.logger.Error("Error fetching userinfo data", zap.Error(err))
@@ -296,7 +297,7 @@ func (s *Client) GetUserInfo() (*types.UserInfo, error) {
 	}
 
 	var decodedUserinfo types.UserInfo
-	err = s.lcuUtils.DecodeRiotJWT(encodedUserinfoJWT.UserInfo, &decodedUserinfo)
+	err = s.lcuJwt.Decode(encodedUserinfoJWT.UserInfo, &decodedUserinfo)
 	if err != nil {
 		s.logger.Error("Error decoding userinfo data", zap.Error(err))
 		return nil, err

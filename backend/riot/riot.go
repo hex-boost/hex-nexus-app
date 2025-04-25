@@ -12,7 +12,6 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/hex-boost/hex-nexus-app/backend/riot/captcha"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
-	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/mitchellh/go-ps"
 	"go.uber.org/zap"
 	"os"
@@ -26,15 +25,13 @@ type Service struct {
 	logger  *logger.Logger
 	captcha *captcha.Captcha
 	ctx     context.Context
-	utils   *utils.Utils
 	cmd     *command.Command
 }
 
-func NewService(logger *logger.Logger, captcha *captcha.Captcha, cmd *command.Command) *Service {
+func NewService(logger *logger.Logger, captcha *captcha.Captcha) *Service {
 	return &Service{
-		utils:   utils.New(),
 		client:  nil,
-		cmd:     cmd,
+		cmd:     command.New(),
 		logger:  logger,
 		captcha: captcha,
 		ctx:     context.Background(),
@@ -189,7 +186,7 @@ func (s *Service) Launch() error {
 		zap.Strings("args", args))
 
 	s.logger.Info("Starting Riot client process")
-	err = s.cmd.Start(clientInstalls.RcDefault, args...)
+	_, err = s.cmd.Start(clientInstalls.RcDefault, args...)
 	if err != nil {
 		s.logger.Error("Failed to start Riot client", zap.Error(err))
 		return fmt.Errorf("failed to start Riot client: %w", err)

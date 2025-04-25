@@ -9,7 +9,6 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/process"
-	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"go.uber.org/zap"
 	"regexp"
 	"time"
@@ -20,12 +19,10 @@ type Connection struct {
 	logger  *logger.Logger
 	ctx     context.Context
 	process *process.Process
-	utils   *utils.Utils
 }
 
 func NewConnection(logger *logger.Logger, process *process.Process) *Connection {
 	return &Connection{
-		utils:   utils.New(),
 		Client:  nil,
 		process: process,
 		logger:  logger,

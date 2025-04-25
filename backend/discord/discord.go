@@ -3,6 +3,8 @@ package discord
 import (
 	"bytes"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/hwid"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"net"
 	"sync"
 
@@ -14,7 +16,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/hex-boost/hex-nexus-app/backend"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
-	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/pkg/browser"
 	"go.uber.org/zap"
 	"html/template"
@@ -45,18 +46,18 @@ var (
 type Discord struct {
 	config        *config.Config
 	backendClient *resty.Client
-	logger        *utils.Logger
-	utils         *utils.Utils
+	logger        *logger.Logger
+	hwid          *hwid.HWID
 }
 
-func New(config *config.Config, logger *utils.Logger, utils *utils.Utils) *Discord {
+func New(logger *logger.Logger, config *config.Config) *Discord {
 	client := resty.New()
 	client.SetBaseURL(config.BackendURL)
 	return &Discord{
 		backendClient: client,
 		config:        config,
+		hwid:          hwid.New(),
 		logger:        logger,
-		utils:         utils,
 	}
 }
 
@@ -256,12 +257,12 @@ func (d *Discord) authenticateWithStrapiAndProcessAvatar(code string) (*types.Us
 	authURL := fmt.Sprintf("/api/auth/discord/callback?access_token=%s", url.QueryEscape(code))
 
 	request := d.backendClient.R()
-
-	if d.utils != nil {
-		request.SetHeader("hwid", d.utils.GetHWID())
-	} else {
-		d.logger.Warn("Utils is nil, cannot get HWID")
+	pcHwid, err := d.hwid.Get()
+	if err != nil {
+		d.logger.Error("Error getting HWID", zap.Error(err))
+		return nil, fmt.Errorf("error getting HWID: %v", err)
 	}
+	request.SetHeader("hwid", pcHwid)
 
 	resp, err := request.Get(authURL)
 	if err != nil {

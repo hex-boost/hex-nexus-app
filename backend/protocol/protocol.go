@@ -2,7 +2,7 @@ package protocol
 
 import (
 	"fmt"
-	"github.com/hex-boost/hex-nexus-app/backend/utils"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"go.uber.org/zap"
 	"golang.org/x/sys/windows"
@@ -18,11 +18,11 @@ const (
 
 type Protocol struct {
 	window *application.WebviewWindow
-	logger *utils.Logger
+	logger *logger.Logger
 }
 
 // Modify New function to accept window param
-func New(logger *utils.Logger) *Protocol {
+func New(logger *logger.Logger) *Protocol {
 	return &Protocol{
 		window: nil,
 		logger: logger,

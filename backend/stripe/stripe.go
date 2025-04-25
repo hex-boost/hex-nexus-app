@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/hex-boost/hex-nexus-app/backend"
-	"github.com/hex-boost/hex-nexus-app/backend/utils"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"go.uber.org/zap"
 	"html/template"
 	"net"
@@ -38,7 +38,7 @@ type SubscriptionRequest struct {
 
 // Stripe handles payment processing and callbacks
 type Stripe struct {
-	logger     *utils.Logger
+	logger     *logger.Logger
 	server     *http.Server
 	port       int
 	callbackCh chan PaymentResult
@@ -49,7 +49,7 @@ type Stripe struct {
 }
 
 // New creates a new Stripe handler
-func New(logger *utils.Logger) *Stripe {
+func New(logger *logger.Logger) *Stripe {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Stripe{
 		logger:     logger,

@@ -34,3 +34,8 @@ func (c *Command) hideConsole(cmd *exec.Cmd) *exec.Cmd {
 	cmd.SysProcAttr.CreationFlags = 0x08000000
 	return cmd
 }
+func (c *Command) Run(command string, arg ...string) error {
+	cmd := exec.Command(command, arg...)
+	cmd = c.hideConsole(cmd)
+	return cmd.Run()
+}

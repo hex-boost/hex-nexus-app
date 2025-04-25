@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
-	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"go.uber.org/zap"
 	"net/http"
@@ -28,7 +27,7 @@ type Captcha struct {
 	captchaInProgress bool
 }
 
-func New(logger *utils.Logger) *Captcha {
+func New(logger *logger.Logger) *Captcha {
 
 	return &Captcha{
 		logger:            logger,

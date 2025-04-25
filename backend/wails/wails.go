@@ -7,9 +7,11 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/client"
 	"github.com/hex-boost/hex-nexus-app/backend/discord"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/systemtray"
 	"github.com/hex-boost/hex-nexus-app/backend/league"
 	"github.com/hex-boost/hex-nexus-app/backend/league/account"
 	"github.com/hex-boost/hex-nexus-app/backend/league/lcu"
+	"github.com/hex-boost/hex-nexus-app/backend/league/manager"
 	"github.com/hex-boost/hex-nexus-app/backend/league/summoner"
 	"github.com/hex-boost/hex-nexus-app/backend/league/websocket"
 	gameOverlay "github.com/hex-boost/hex-nexus-app/backend/overlay"
@@ -19,7 +21,6 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/riot"
 	"github.com/hex-boost/hex-nexus-app/backend/riot/captcha"
 	"github.com/hex-boost/hex-nexus-app/backend/stripe"
-	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/hex-boost/hex-nexus-app/backend/watchdog"
 	"os/signal"
 	"path/filepath"
@@ -34,36 +35,6 @@ import (
 	"log"
 	"os"
 )
-
-func SetupSystemTray(app *application.App, window *application.WebviewWindow, icon []byte, monitor *account.Monitor, utils *utils.Utils) *application.SystemTray {
-	systray := app.NewSystemTray()
-	menu := application.NewMenu()
-	menu.Add("Nexus").SetBitmap(icon).SetEnabled(false)
-	menu.AddSeparator()
-	sairItem := menu.Add("Exit Nexus")
-	sairItem.OnClick(func(ctx *application.Context) {
-		if monitor.IsNexusAccount() {
-			window.Show()
-			window.Focus()
-			window.EmitEvent("nexus:confirm-close")
-		} else {
-			utils.SetForceClose(true)
-			app.Quit()
-		}
-
-	})
-	systray.SetLabel("Nexus")
-	systray.SetIcon(icon)
-	systray.OnClick(func() {
-		if !window.IsVisible() {
-			window.Show()
-			window.Focus()
-		}
-	})
-	systray.SetDarkModeIcon(icon)
-	systray.SetMenu(menu)
-	return systray
-}
 
 func StartWatchdog() (*os.Process, error) {
 	execPath, err := os.Executable()
@@ -83,8 +54,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 	cfg, _ := config.LoadConfig()
 
 	appInstance := app.App(cfg)
-
-	utilsBind := utils.New()
+	leagueManager := manager.New()
 
 	if len(os.Args) >= 3 && os.Args[1] == "--watchdog" {
 		mainPID, err := strconv.Atoi(os.Args[2])
@@ -92,14 +62,14 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 			log.Fatalf("Invalid PID: %v", err)
 		}
 
-		watchdog := watchdog.NewWatchdog(mainPID, os.Args[0])
+		newWatchdog := watchdog.New(mainPID, os.Args[0])
 
 		// Add cleanup functions
-		watchdog.AddCleanupFunction(func() {
+		newWatchdog.AddCleanupFunction(func() {
 			// Load state to check if account was active
-			state, err := watchdog.LoadState()
+			state, err := newWatchdog.LoadState()
 			if err == nil && state.AccountActive {
-				err := utilsBind.ForceCloseAllClients()
+				err := leagueManager.ForceCloseAllClients()
 				if err != nil {
 					fmt.Println(fmt.Errorf("error closing clients: %v", err))
 					return
@@ -109,7 +79,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		})
 
 		// Start watchdog
-		if err := watchdog.Start(); err != nil {
+		if err := newWatchdog.Start(); err != nil {
 			log.Fatalf("Failed to start watchdog: %v", err)
 		}
 
@@ -126,7 +96,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 			select {
 			case <-sigChan:
 				log.Println("Watchdog received termination signal")
-				watchdog.Stop() // Gracefully stop the watchdog
+				newWatchdog.Stop() // Gracefully stop the watchdog
 			}
 		}()
 
@@ -137,7 +107,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 
 			for {
 				<-ticker.C
-				if !watchdog.IsRunning() {
+				if !newWatchdog.IsRunning() {
 					log.Println("Main process exited, watchdog shutting down")
 					os.Exit(0)
 				}
@@ -181,7 +151,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 	summonerService := summoner.NewService(appInstance.Log().League(), summonerClient)
 	captchaService := captcha.New(appInstance.Log().Riot())
 	leagueService := league.NewLeagueService(appInstance.Log().Riot(), accountClient, summonerService, lcuConn)
-	riotService := riot.NewService(appInstance.Log().Riot(), captchaService, cmd)
+	riotService := riot.NewService(appInstance.Log().Riot(), captchaService)
 	accountMonitor := account.NewMonitor(
 		appInstance.Log().Riot(),
 		leagueService,
@@ -195,10 +165,10 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 	websocketRouter := websocket.NewRouter(appInstance.Log().League())
 	websocketManager := websocket.NewManager()
 	websocketService := websocket.NewService(appInstance.Log().League(), accountMonitor, leagueService, accountState, accountClient, websocketRouter, websocketHandler, websocketManager)
-	discordService := discord.New(cfg, appInstance.Log().Discord(), utilsBind)
+	discordService := discord.New(appInstance.Log().Discord(), cfg)
 	debugMode := cfg.Debug
 	clientMonitor := league.NewMonitor(appInstance.Log().League(), accountMonitor, leagueService, riotService, captchaService)
-	app := application.New(application.Options{
+	mainApp := application.New(application.Options{
 		Name:        "Nexus",
 		Description: "Nexus",
 
@@ -265,7 +235,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		},
 	})
 
-	captchaWindow := app.NewWebviewWindowWithOptions(
+	captchaWindow := mainApp.NewWebviewWindowWithOptions(
 		application.WebviewWindowOptions{
 			Hidden:        true,
 			URL:           "http://127.0.0.1:6969/index.html",
@@ -274,7 +244,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 			Title:         "Nexus Captcha",
 		},
 	)
-	mainWindow = app.NewWebviewWindowWithOptions(
+	mainWindow = mainApp.NewWebviewWindowWithOptions(
 		application.WebviewWindowOptions{
 
 			Name:                       "Main",
@@ -314,16 +284,16 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 	overlayWindow := gameOverlay.CreateGameOverlay(app)
 	gameOverlayManager.SetWindow(overlayWindow)
 	mainWindow.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
-		app.Logger.Info("Window closing event triggered")
+		mainApp.Logger.Info("Window closing event triggered")
 
 		// Check if force close is enabled
-		if !utilsBind.ShouldForceClose() && accountMonitor.IsNexusAccount() {
+		if !leagueManager.ShouldForceClose() && accountMonitor.IsNexusAccount() {
 			e.Cancel()
 			mainWindow.EmitEvent("nexus:confirm-close")
 			return
 		}
 
-		app.Logger.Info("Forced close requested, shutting down")
+		mainApp.Logger.Info("Forced close requested, shutting down")
 		accountMonitor.Stop()
 		clientMonitor.Stop()
 		websocketService.Stop()
@@ -335,11 +305,12 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		}
 
 	})
-	SetupSystemTray(app, mainWindow, icon16, accountMonitor, utilsBind)
+
+	systemTray := systemtray.New(mainWindow, icon16, accountMonitor, leagueManager)
+	systemTray.Setup()
 	accountMonitor.SetWindow(mainWindow)
 	appProtocol.SetWindow(mainWindow)
 	captchaService.SetWindow(captchaWindow)
-	clientMonitor.SetWindow(app)
 	websocketService.SetWindow(app)
 	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(ctx *application.WindowEvent) {
 		websocketService.Start()
