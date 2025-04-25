@@ -225,7 +225,10 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 			application.NewService(lcuConn),
 			application.NewService(baseClient),
 			application.NewService(accountClient),
-			application.NewService(accountMonitor),
+			application.NewService(accountMonitor,
+				application.ServiceOptions{
+					Name: "AccountMonitor",
+				}),
 			application.NewService(stripeService),
 			application.NewService(gameOverlayManager),
 		},
