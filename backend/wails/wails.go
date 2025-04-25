@@ -224,7 +224,6 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 			application.NewService(clientMonitor),
 			application.NewService(lcuConn),
 			application.NewService(baseClient),
-			application.NewService(utilsBind),
 			application.NewService(accountClient),
 			application.NewService(accountMonitor),
 			application.NewService(stripeService),
@@ -281,7 +280,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		},
 	)
 
-	overlayWindow := gameOverlay.CreateGameOverlay(app)
+	overlayWindow := gameOverlay.CreateGameOverlay(mainApp)
 	gameOverlayManager.SetWindow(overlayWindow)
 	mainWindow.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
 		mainApp.Logger.Info("Window closing event triggered")
@@ -311,7 +310,6 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 	accountMonitor.SetWindow(mainWindow)
 	appProtocol.SetWindow(mainWindow)
 	captchaService.SetWindow(captchaWindow)
-	websocketService.SetWindow(app)
 	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(ctx *application.WindowEvent) {
 		websocketService.Start()
 
@@ -322,7 +320,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 
 	})
 
-	err = app.Run()
+	err = mainApp.Run()
 	if err != nil {
 		log.Fatal(err)
 		return

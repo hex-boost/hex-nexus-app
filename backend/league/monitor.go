@@ -89,7 +89,7 @@ func NewMonitor(logger *logger.Logger, accountMonitor *account.Monitor, leagueSe
 			Username:  "",
 			IsUpdated: false,
 		},
-		app:            nil,
+		app:            application.Get(),
 		done:           make(chan struct{}),
 		accountMonitor: accountMonitor,
 		captcha:        captcha,

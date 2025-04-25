@@ -77,14 +77,12 @@ func NewService(
 		stopChan:           make(chan struct{}),
 		router:             router,
 		handler:            handler,
+		app:                application.Get(),
 		subscriptions:      make(map[string]bool),
 	}
 }
 
 // SetWindow associates the WebSocket service with a Wails window
-func (ws *Service) SetWindow(app *application.App) {
-	ws.app = app
-}
 
 // Start begins the WebSocket service
 func (ws *Service) Start() {
@@ -397,11 +395,9 @@ func (ws *Service) SubscribeToLeagueEvents() {
 		}
 
 		// Define handlers with their paths
-		handlers := []Manager{
-			NewEventHandler("lol-inventory_v1_wallet", ws.handler.WalletEvent),
-			// Add more handlers here
+		handlers := []EventHandler{
+			ws.manager.NewEventHandler("lol-inventory_v1_wallet", ws.handler.WalletEvent),
 		}
-
 		// Register each handler
 		for _, handler := range handlers {
 			path := handler.GetPath()
