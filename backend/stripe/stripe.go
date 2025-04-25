@@ -48,8 +48,8 @@ type Stripe struct {
 	serverUsed bool // Tracks if the current server has received a callback
 }
 
-// NewStripe creates a new Stripe handler
-func NewStripe(logger *utils.Logger) *Stripe {
+// New creates a new Stripe handler
+func New(logger *utils.Logger) *Stripe {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Stripe{
 		logger:     logger,

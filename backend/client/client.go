@@ -1,4 +1,4 @@
-package repository
+package client
 
 import (
 	"github.com/go-resty/resty/v2"
@@ -6,20 +6,19 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 )
 
-// BaseRepository provides a common client for all repositories
-type BaseRepository struct {
+type BaseClient struct {
 	Client *resty.Client
 	Logger *utils.Logger
 	JWT    string
 }
 
-// NewBaseRepository creates a new base repository with shared client
-func NewBaseRepository(config *config.Config, logger *utils.Logger) *BaseRepository {
+// NewBaseClient creates a new base HTTP client
+func NewBaseClient(logger *utils.Logger, config *config.Config) *BaseClient {
 	client := resty.New()
 	client.SetBaseURL(config.BackendURL)
 	client.SetHeader("Content-Type", "application/json")
 	client.SetHeader("Accept", "application/json")
-	return &BaseRepository{
+	return &BaseClient{
 		Client: client,
 		Logger: logger,
 		JWT:    "",
@@ -27,12 +26,12 @@ func NewBaseRepository(config *config.Config, logger *utils.Logger) *BaseReposit
 }
 
 // SetJWT updates the JWT token for authentication
-func (b *BaseRepository) SetJWT(jwt string) {
+func (b *BaseClient) SetJWT(jwt string) {
 	b.JWT = jwt
 	b.Client.SetHeader("Authorization", "Bearer "+jwt)
 }
 
-func (b *BaseRepository) ClearJWT() {
+func (b *BaseClient) ClearJWT() {
 	b.JWT = ""
-	b.Client.Header.Del("Authorization") // Remove the Authorization header completely
+	b.Client.Header.Del("Authorization")
 }

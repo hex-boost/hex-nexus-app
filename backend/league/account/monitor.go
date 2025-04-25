@@ -1,4 +1,4 @@
-package league
+package account
 
 import (
 	"errors"
@@ -36,7 +36,7 @@ type SummonerClientInterface interface {
 
 // LCUConnectionInterface defines methods needed from LCUConnection
 type LCUConnectionInterface interface {
-	InitializeConnection() error
+	Initialize() error
 	IsClientInitialized() bool
 }
 
@@ -49,7 +49,7 @@ type AccountsRepositoryInterface interface {
 type WindowInterface interface {
 	EmitEvent(eventName string, data ...interface{})
 }
-type AccountMonitor struct {
+type Monitor struct {
 	riotClient          RiotClientInterface
 	accountRepo         AccountsRepositoryInterface
 	logger              *utils.Logger
@@ -70,17 +70,17 @@ type AccountMonitor struct {
 	LCUConnection LCUConnectionInterface
 }
 
-func NewAccountMonitor(
+func NewMonitor(
 	logger *utils.Logger,
 	leagueService *LeagueService,
-	riotClient *riot.RiotClient,
+	riotClient *riot.Service,
 	accountRepo *repository.AccountsRepository,
 	summoner SummonerClientInterface,
 	LCUConnection LCUConnectionInterface,
 	watchdog watchdog.WatchdogUpdater,
 
-) *AccountMonitor {
-	return &AccountMonitor{
+) *Monitor {
+	return &Monitor{
 		watchdogState:   watchdog,
 		leagueService:   leagueService,
 		LCUConnection:   LCUConnection,
@@ -96,10 +96,10 @@ func NewAccountMonitor(
 		stopChan:      make(chan struct{}),
 	}
 }
-func (am *AccountMonitor) SetWindow(window *application.WebviewWindow) {
+func (am *Monitor) SetWindow(window *application.WebviewWindow) {
 	am.window = window
 }
-func (am *AccountMonitor) refreshAccountCache() error {
+func (am *Monitor) refreshAccountCache() error {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
@@ -116,7 +116,7 @@ func (am *AccountMonitor) refreshAccountCache() error {
 
 	return nil
 }
-func (am *AccountMonitor) getAccountsWithCache() ([]types.SummonerRented, error) {
+func (am *Monitor) getAccountsWithCache() ([]types.SummonerRented, error) {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
@@ -141,7 +141,7 @@ func (am *AccountMonitor) getAccountsWithCache() ([]types.SummonerRented, error)
 
 	return am.cachedAccounts, nil
 }
-func (am *AccountMonitor) Start() {
+func (am *Monitor) Start() {
 	fmt.Println("Starting account monitor")
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
@@ -154,10 +154,10 @@ func (am *AccountMonitor) Start() {
 	am.stopChan = make(chan struct{})
 
 	go am.monitorLoop()
-	am.logger.Info("Account monitor started")
+	am.logger.Info("State monitor started")
 }
 
-func (am *AccountMonitor) Stop() {
+func (am *Monitor) Stop() {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
@@ -167,26 +167,26 @@ func (am *AccountMonitor) Stop() {
 
 	close(am.stopChan)
 	am.running = false
-	am.logger.Info("Account monitor stopped")
+	am.logger.Info("State monitor stopped")
 }
 
-func (am *AccountMonitor) monitorLoop() {
+func (am *Monitor) monitorLoop() {
 	ticker := time.NewTicker(am.checkInterval)
 	defer ticker.Stop()
 
-	am.logger.Info("Account monitor loop started", zap.Duration("checkInterval", am.checkInterval))
+	am.logger.Info("State monitor loop started", zap.Duration("checkInterval", am.checkInterval))
 
 	for {
 		select {
 		case <-ticker.C:
 			am.checkCurrentAccount()
 		case <-am.stopChan:
-			am.logger.Info("Account monitor loop terminated via stop channel")
+			am.logger.Info("State monitor loop terminated via stop channel")
 			return
 		}
 	}
 }
-func (am *AccountMonitor) getSummonerNameByRiotClient() string {
+func (am *Monitor) getSummonerNameByRiotClient() string {
 	if !am.riotClient.IsClientInitialized() {
 		if err := am.riotClient.InitializeRestyClient(); err != nil {
 			am.logger.Error("Failed to initialize Riot client",
@@ -219,7 +219,7 @@ func (am *AccountMonitor) getSummonerNameByRiotClient() string {
 	// Check if it's a system account
 }
 
-func (am *AccountMonitor) getUsernameByLeagueClient() (string, error) {
+func (am *Monitor) getUsernameByLeagueClient() (string, error) {
 
 	if !am.LCUConnection.IsClientInitialized() {
 		err := am.LCUConnection.InitializeConnection()
@@ -239,7 +239,7 @@ func (am *AccountMonitor) getUsernameByLeagueClient() (string, error) {
 
 }
 
-func (am *AccountMonitor) GetLoggedInUsername() string {
+func (am *Monitor) GetLoggedInUsername() string {
 	var currentUsername string
 	if am.riotClient.IsRunning() {
 		currentUsername = am.getSummonerNameByRiotClient()
@@ -255,7 +255,7 @@ func (am *AccountMonitor) GetLoggedInUsername() string {
 	return strings.ToLower(currentUsername)
 }
 
-func (am *AccountMonitor) checkCurrentAccount() {
+func (am *Monitor) checkCurrentAccount() {
 	if !am.riotClient.IsRunning() && !am.leagueService.IsRunning() && !am.leagueService.IsPlaying() {
 		am.cachedAccounts = []types.SummonerRented{}
 		am.lastAccountsFetch = time.Now() // Reset the timer
@@ -285,7 +285,7 @@ func (am *AccountMonitor) checkCurrentAccount() {
 
 	// Only attempt a refresh if we didn't find a match and the cache might be stale
 	if !isNexusAccount && time.Since(am.lastAccountsFetch) > am.accountCacheTTL/2 {
-		am.logger.Debug("Account not found in cache, refreshing account data")
+		am.logger.Debug("State not found in cache, refreshing account data")
 		if err := am.refreshAccountCache(); err != nil {
 			am.logger.Error("Failed to refresh account cache", zap.Error(err))
 		} else {
@@ -302,12 +302,12 @@ func (am *AccountMonitor) checkCurrentAccount() {
 	}
 	am.SetNexusAccount(isNexusAccount)
 }
-func (am *AccountMonitor) IsNexusAccount() bool {
+func (am *Monitor) IsNexusAccount() bool {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 	return am.isNexusAccount
 }
-func (am *AccountMonitor) SetNexusAccount(isNexusAccount bool) {
+func (am *Monitor) SetNexusAccount(isNexusAccount bool) {
 	previousState := am.IsNexusAccount()
 	am.mutex.Lock()
 	am.isNexusAccount = isNexusAccount

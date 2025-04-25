@@ -1,34 +1,30 @@
-package league
+package websockets
 
 import (
 	"crypto/tls"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
-	"github.com/hex-boost/hex-nexus-app/backend/repository"
+	"github.com/hex-boost/hex-nexus-app/backend/events"
+	"github.com/hex-boost/hex-nexus-app/backend/league"
+	"github.com/hex-boost/hex-nexus-app/backend/league/account"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"go.uber.org/zap"
 	"net/http"
 	"net/url"
-	"strings"
 	"sync"
 	"time"
 )
 
+type HandlerInterface interface {
+	WalletEvent(event LCUWebSocketEvent)
+}
+
 // Define events
-const (
-	EventAccountStateChanged     = "account:state:changed"
-	LeagueWebsocketStartHandlers = "league:websocket:start"
-	LeagueWebsocketStopHandlers  = "league:websocket:stop"
-)
 const JsonApiPrefix = "OnJsonApiEvent_"
-const (
-	Create = iota
-	Update
-	Delete
-)
 
 type LCUWebSocketEvent struct {
 	Data       json.RawMessage `json:"data"`
@@ -40,54 +36,57 @@ type LCUWebSocketEvent struct {
 // EventType represents possible event types
 type EventType int
 
-// LCUWebSocketEvent represents the structure of LCU WebSocket events
-
-// WebSocketService handles the LCU websocket connection and events
-type WebSocketService struct {
+type Service struct {
 	app                *application.App
-	accountsRepository *repository.AccountsRepository
+	accountsRepository *account.Client
 	conn               *websocket.Conn
-	leagueService      *LeagueService
-	accountMonitor     *AccountMonitor
+	leagueService      *league.Service
+	accountMonitor     *account.Monitor
 	logger             *utils.Logger
 	mutex              sync.Mutex
 	isRunning          bool
 	stopChan           chan struct{}
-	accountState       *AccountState
-	reconnectBackoff   time.Duration
-	lastUsername       string
+	accountState       *account.State
 	subscriptions      map[string]bool
-	eventHandlers      map[string][]func(LCUWebSocketEvent)
+	router             *Router
+	manager            *Manager
+
+	handler HandlerInterface
 }
 
 // NewWebSocketService creates a new WebSocket service
-func NewWebSocketService(
+func NewService(
 	logger *utils.Logger,
-	accountMonitor *AccountMonitor,
-	leagueService *LeagueService,
-	accountState *AccountState,
-	accountsRepository *repository.AccountsRepository,
-) *WebSocketService {
-	return &WebSocketService{
+	accountMonitor *account.Monitor,
+	leagueService *league.Service,
+	accountState *account.State,
+	accountsRepository *account.Client,
+	router *Router,
+	handler HandlerInterface,
+	manager *Manager,
+
+) *Service {
+	return &Service{
 		accountsRepository: accountsRepository,
 		logger:             logger,
 		accountMonitor:     accountMonitor,
+		manager:            manager,
 		leagueService:      leagueService,
 		accountState:       accountState,
 		stopChan:           make(chan struct{}),
-		reconnectBackoff:   2 * time.Second,
+		router:             router,
+		handler:            handler,
 		subscriptions:      make(map[string]bool),
-		eventHandlers:      make(map[string][]func(LCUWebSocketEvent)),
 	}
 }
 
 // SetWindow associates the WebSocket service with a Wails window
-func (ws *WebSocketService) SetWindow(app *application.App) {
+func (ws *Service) SetWindow(app *application.App) {
 	ws.app = app
 }
 
 // Start begins the WebSocket service
-func (ws *WebSocketService) Start() {
+func (ws *Service) Start() {
 	ws.mutex.Lock()
 	if ws.isRunning {
 		ws.mutex.Unlock()
@@ -101,7 +100,7 @@ func (ws *WebSocketService) Start() {
 }
 
 // Stop terminates the WebSocket service
-func (ws *WebSocketService) Stop() {
+func (ws *Service) Stop() {
 	ws.mutex.Lock()
 	defer ws.mutex.Unlock()
 
@@ -118,14 +117,14 @@ func (ws *WebSocketService) Stop() {
 }
 
 // connectToLCUWebSocket establishes a WebSocket connection to the LCU
-func (ws *WebSocketService) connectToLCUWebSocket() error {
+func (ws *Service) connectToLCUWebSocket() error {
 	// Get LCU credentials
 	defer func() {
 		if r := recover(); r != nil {
 
 		}
 	}()
-	port, _, _, err := ws.leagueService.LCUconnection.getLeagueCredentials()
+	port, token, _, err := ws.leagueService.LCUconnection.GetLeagueCredentials()
 	if err != nil {
 		return err
 	}
@@ -142,7 +141,8 @@ func (ws *WebSocketService) connectToLCUWebSocket() error {
 	}
 	headers := http.Header{}
 
-	headers.Add("Authorization", ws.leagueService.LCUconnection.client.Header.Get("Authorization"))
+	authHeader := base64.StdEncoding.EncodeToString([]byte("riot:" + token))
+	headers.Add("Authorization", authHeader)
 
 	// Connect to WebSocket
 	ws.logger.Info("Connecting to LCU WebSocket", zap.String("url", u.String()))
@@ -158,19 +158,10 @@ func (ws *WebSocketService) connectToLCUWebSocket() error {
 }
 
 // Subscribe subscribes to a specific LCU event path
-func (ws *WebSocketService) Subscribe(eventPath string, handler func(LCUWebSocketEvent)) error {
+func (ws *Service) Subscribe(eventPath string) error {
 	ws.mutex.Lock()
 	defer ws.mutex.Unlock()
 
-	// Add to subscriptions map
-	ws.subscriptions[eventPath] = true
-
-	// Register handler
-	if handler != nil {
-		ws.eventHandlers[eventPath] = append(ws.eventHandlers[eventPath], handler)
-	}
-
-	// If already connected, send subscription
 	if ws.conn != nil && ws.isConnected() {
 		return ws.sendSubscription(eventPath)
 	}
@@ -179,17 +170,15 @@ func (ws *WebSocketService) Subscribe(eventPath string, handler func(LCUWebSocke
 }
 
 // Unsubscribe removes subscription to a specific event path
-func (ws *WebSocketService) Unsubscribe(eventPath string) error {
+func (ws *Service) Unsubscribe(eventPath string) error {
 	ws.mutex.Lock()
 	defer ws.mutex.Unlock()
 
 	// Remove from subscriptions
 	delete(ws.subscriptions, eventPath)
 
-	// Remove handlers
-	delete(ws.eventHandlers, eventPath)
+	ws.router.DeleteHandler(eventPath)
 
-	// If connected, send unsubscription
 	if ws.conn != nil && ws.isConnected() {
 		return ws.sendUnsubscription(eventPath)
 	}
@@ -198,7 +187,7 @@ func (ws *WebSocketService) Unsubscribe(eventPath string) error {
 }
 
 // sendSubscription sends a subscription message to LCU websocket
-func (ws *WebSocketService) sendSubscription(eventPath string) error {
+func (ws *Service) sendSubscription(eventPath string) error {
 	// Format according to WAMP 1.0 protocol (opcode 5 for subscribe)
 	subscribeMsg := []byte(fmt.Sprintf(`[5, "%s%s"]`, JsonApiPrefix, eventPath))
 
@@ -213,7 +202,7 @@ func (ws *WebSocketService) sendSubscription(eventPath string) error {
 }
 
 // sendUnsubscription sends an unsubscription message
-func (ws *WebSocketService) sendUnsubscription(eventPath string) error {
+func (ws *Service) sendUnsubscription(eventPath string) error {
 	// Format according to WAMP 1.0 protocol (opcode 6 for unsubscribe)
 	message := []interface{}{6, eventPath}
 	err := ws.conn.WriteJSON(message)
@@ -227,7 +216,7 @@ func (ws *WebSocketService) sendUnsubscription(eventPath string) error {
 }
 
 // resubscribeToEvents resubscribes to all registered events after reconnection
-func (ws *WebSocketService) resubscribeToEvents() error {
+func (ws *Service) resubscribeToEvents() error {
 	ws.mutex.Lock()
 	defer ws.mutex.Unlock()
 
@@ -242,7 +231,7 @@ func (ws *WebSocketService) resubscribeToEvents() error {
 }
 
 // handleWebSocketEvent processes incoming WebSocket events
-func (ws *WebSocketService) handleWebSocketEvent(message []byte) {
+func (ws *Service) handleWebSocketEvent(message []byte) {
 	// Parse da mensagem WebSocket
 	var event []interface{}
 	if err := json.Unmarshal(message, &event); err != nil {
@@ -310,71 +299,11 @@ func (ws *WebSocketService) handleWebSocketEvent(message []byte) {
 		}
 	}
 
-	go ws.handleLCUEvent(lcuEvent)
-}
-
-// triggerEventHandlers calls all registered handlers for an event
-
-// handleSummonerChange processes summoner change events
-func (ws *WebSocketService) handleSummonerChange(event LCUWebSocketEvent) {
-	// Extract summoner data
-	var summonerData map[string]interface{}
-	if err := json.Unmarshal(event.Data, &summonerData); err != nil {
-		ws.logger.Error("Failed to parse summoner data", zap.Error(err))
-		return
-	}
-
-	username, ok := summonerData["displayName"].(string)
-	if !ok || username == "" {
-		return
-	}
-
-	// Skip if username is same as last processed
-	if username == ws.lastUsername {
-		return
-	}
-
-	ws.lastUsername = username
-	ws.logger.Info("Detected account change", zap.String("username", username))
-
-	// Ensure LCU connection is ready before updating
-	if ws.leagueService.IsLCUConnectionReady() {
-		err := ws.leagueService.UpdateFromLCU(username)
-		if err != nil {
-			ws.logger.Error("Failed to update account from LCU", zap.Error(err))
-			return
-		}
-
-		// Emit event to frontend
-		if ws.app != nil {
-			ws.app.EmitEvent(EventAccountStateChanged, map[string]string{
-				"username": username,
-				"status":   "updated",
-			})
-		}
-
-		ws.logger.Info("Account data updated successfully",
-			zap.String("username", username))
-	}
-}
-
-// handleChampionsUpdate processes champion inventory updates
-func (ws *WebSocketService) handleChampionsUpdate(event LCUWebSocketEvent) {
-	var champData map[string]interface{}
-	if err := json.Unmarshal(event.Data, &champData); err != nil {
-		ws.logger.Error("Failed to parse champion data", zap.Error(err))
-		return
-	}
-
-	ws.logger.Info("Champions data updated",
-		zap.Any("owned", champData["championsOwned"]),
-		zap.Any("freeToPlay", champData["championsFreeToPlay"]))
-
-	ws.RefreshAccountState(types.PartialSummonerRented{})
+	ws.router.Dispatch(lcuEvent)
 }
 
 // runWebSocketLoop manages the WebSocket connection and events
-func (ws *WebSocketService) runWebSocketLoop() {
+func (ws *Service) runWebSocketLoop() {
 	reconnectTicker := time.NewTicker(5 * time.Second)
 	defer reconnectTicker.Stop()
 
@@ -403,7 +332,7 @@ func (ws *WebSocketService) runWebSocketLoop() {
 }
 
 // isConnected checks if the WebSocket connection is still valid
-func (ws *WebSocketService) isConnected() bool {
+func (ws *Service) isConnected() bool {
 	if ws.conn == nil {
 		return false
 	}
@@ -414,7 +343,7 @@ func (ws *WebSocketService) isConnected() bool {
 }
 
 // readMessages handles incoming WebSocket messages
-func (ws *WebSocketService) readMessages() {
+func (ws *Service) readMessages() {
 	if ws.conn == nil {
 		return
 	}
@@ -438,7 +367,7 @@ func (ws *WebSocketService) readMessages() {
 	}
 }
 
-func (ws *WebSocketService) RefreshAccountState(summonerState types.PartialSummonerRented) {
+func (ws *Service) RefreshAccountState(summonerState types.PartialSummonerRented) {
 	username := ws.accountMonitor.GetLoggedInUsername()
 	if username == "" {
 		return
@@ -454,27 +383,29 @@ func (ws *WebSocketService) RefreshAccountState(summonerState types.PartialSummo
 
 	// Emit event to frontend
 	if ws.app != nil {
-		ws.app.EmitEvent(EventAccountStateChanged, summonerResponse)
+		ws.app.EmitEvent(events.AccountStateChanged, summonerResponse)
 	}
 }
 
-func (ws *WebSocketService) SubscribeToLeagueEvents() {
-	ws.app.OnEvent(LeagueWebsocketStartHandlers, func(event *application.CustomEvent) {
+func (ws *Service) SubscribeToLeagueEvents() {
+	ws.app.OnEvent(events.LeagueWebsocketStart, func(event *application.CustomEvent) {
 		ws.logger.Debug("Starting WebSocket service handlers")
 		if event.Cancelled {
 			ws.logger.Info("WebSocket service already started")
 			return
 		}
 
-		ws.mutex.Lock()
-		ws.eventHandlers = make(map[string][]func(LCUWebSocketEvent))
-		ws.mutex.Unlock()
-		paths := []string{
-			"lol-inventory_v1_wallet",
+		// Define handlers with their paths
+		handlers := []Manager{
+			NewEventHandler("lol-inventory_v1_wallet", ws.handler.WalletEvent),
+			// Add more handlers here
 		}
 
-		for _, path := range paths {
-			err := ws.Subscribe(path, ws.handleLCUEvent)
+		// Register each handler
+		for _, handler := range handlers {
+			path := handler.GetPath()
+			ws.router.RegisterHandler(path, handler.Handle)
+			err := ws.Subscribe(path)
 			if err != nil {
 				ws.logger.Error("Failed to subscribe to endpoint", zap.String("path", path), zap.Error(err))
 			} else {
@@ -483,7 +414,7 @@ func (ws *WebSocketService) SubscribeToLeagueEvents() {
 		}
 	})
 
-	ws.app.OnEvent(LeagueWebsocketStopHandlers, func(event *application.CustomEvent) {
+	ws.app.OnEvent(events.LeagueWebsocketStop, func(event *application.CustomEvent) {
 		if event.Cancelled {
 			ws.logger.Info("WebSocket service already stopped")
 			return
@@ -506,92 +437,4 @@ func (ws *WebSocketService) SubscribeToLeagueEvents() {
 			}
 		}
 	})
-}
-
-// handleLCUEvent is a generic handler for LCU events
-func (ws *WebSocketService) handleLCUEvent(event LCUWebSocketEvent) {
-	// Log all events at debug level
-	ws.logger.Info("Received LCU event",
-		zap.String("uri", event.URI),
-		zap.Int("eventType", event.EventType))
-
-	// Process specific event types based on URI path
-	if strings.Contains(event.URI, "/lol-inventory/v1/wallet/lol_blue_essence") {
-		ws.handleWalletEvent(event)
-	} else if strings.Contains(event.URI, "/lol-champions/v1/inventories") {
-		ws.handleChampionsUpdate(event)
-	} else if event.URI == "/lol-summoner/v1/current-summoner" {
-		ws.handleSummonerChange(event)
-	} else if event.URI == "/lol-champ-select/v1/session" {
-		ws.handleChampSelectSession(event)
-	} else if event.URI == "/lol-gameflow/v1/gameflow-phase" {
-		ws.handleGameflowPhase(event)
-	}
-
-	if ws.app != nil {
-		ws.app.EmitEvent("lcu:event:"+strings.Replace(event.URI, "/", ":", -1), map[string]interface{}{
-			"uri":       event.URI,
-			"eventType": event.EventType,
-			"data":      event.Data,
-		})
-	}
-}
-
-// handleWalletEvent handles wallet-related events (RP, Blue Essence, etc.)
-func (ws *WebSocketService) handleWalletEvent(event LCUWebSocketEvent) {
-	ws.logger.Info("Received wallet event", zap.String("uri", event.URI))
-
-	var walletData types.Wallet
-	if err := json.Unmarshal(event.Data, &walletData); err != nil {
-		ws.logger.Error("Failed to parse wallet data", zap.Error(err))
-		return
-	}
-
-	// Log wallet information
-	ws.logger.Info("Wallet update", zap.Any("data", walletData))
-
-	// Extract blue essence value
-	blueEssence := walletData.LolBlueEssence
-	currentAccount := ws.accountState.GetCurrentAccount()
-	if currentAccount == nil {
-		return
-	}
-
-	needsUpdate := true
-	if currentAccount.Currencies != nil &&
-		currentAccount.Currencies.LolBlueEssence != nil &&
-		*currentAccount.Currencies.LolBlueEssence == blueEssence {
-		needsUpdate = false
-	}
-
-	if needsUpdate {
-		ws.accountState.UpdateWalletData(blueEssence)
-
-		summonerRented := types.PartialSummonerRented{
-			Currencies: &types.CurrenciesPointer{LolBlueEssence: &blueEssence},
-		}
-		ws.RefreshAccountState(summonerRented)
-	} else {
-		ws.logger.Debug("Blue essence unchanged, skipping refresh",
-			zap.Int("value", blueEssence))
-	}
-}
-
-// handleChampSelectSession handles champion select events
-func (ws *WebSocketService) handleChampSelectSession(event LCUWebSocketEvent) {
-	ws.logger.Debug("Received champ select session event")
-
-	// Process champ select session data if needed
-	// This could include tracking champion picks, bans, etc.
-}
-
-// handleGameflowPhase handles game flow phase changes
-func (ws *WebSocketService) handleGameflowPhase(event LCUWebSocketEvent) {
-	var phase string
-	if err := json.Unmarshal(event.Data, &phase); err != nil {
-		ws.logger.Error("Failed to parse gameflow phase", zap.Error(err))
-		return
-	}
-
-	ws.logger.Info("Game flow phase changed", zap.String("phase", phase))
 }

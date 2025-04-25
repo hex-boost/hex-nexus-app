@@ -31,7 +31,7 @@ func findWindow(className, windowName string) uintptr {
 	)
 	return ret
 }
-func (rc *RiotClient) IsRunning() bool {
+func (rc *Service) IsRunning() bool {
 	hwnd := findWindow("", "Riot Client")
 	if hwnd != 0 {
 		return true
@@ -40,7 +40,7 @@ func (rc *RiotClient) IsRunning() bool {
 	return false
 }
 
-func (rc *RiotClient) WaitUntilIsRunning(timeout time.Duration) error {
+func (rc *Service) WaitUntilIsRunning(timeout time.Duration) error {
 	deadline := time.Now().Add(timeout)
 	checkInterval := 500 * time.Millisecond
 
@@ -58,7 +58,7 @@ func (rc *RiotClient) WaitUntilIsRunning(timeout time.Duration) error {
 
 	return fmt.Errorf("timeout ao aguardar o cliente Riot iniciar")
 }
-func (rc *RiotClient) IsAuthenticationReady() bool {
+func (rc *Service) IsAuthenticationReady() bool {
 
 	pid, err := rc.getProcess()
 	if err != nil {
@@ -69,10 +69,10 @@ func (rc *RiotClient) IsAuthenticationReady() bool {
 	return err == nil
 }
 
-func (rc *RiotClient) IsClientInitialized() bool {
+func (rc *Service) IsClientInitialized() bool {
 	return rc.client != nil
 }
-func (rc *RiotClient) GetUserinfo() (*types.UserInfo, error) {
+func (rc *Service) GetUserinfo() (*types.UserInfo, error) {
 	var rawResponse types.RCUUserinfo
 	resp, err := rc.client.R().SetResult(&rawResponse).Get("/rso-auth/v1/authorization/userinfo")
 	if err != nil {
@@ -88,7 +88,7 @@ func (rc *RiotClient) GetUserinfo() (*types.UserInfo, error) {
 	}
 	return &userInfoData, nil
 }
-func (rc *RiotClient) WaitUntilUserinfoIsReady(timeout time.Duration) error {
+func (rc *Service) WaitUntilUserinfoIsReady(timeout time.Duration) error {
 	deadline := time.Now().Add(timeout)
 	interval := 200 * time.Millisecond
 

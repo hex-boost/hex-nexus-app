@@ -16,7 +16,7 @@ import (
 	"unsafe"
 )
 
-type GameOverlayManager struct {
+type Overlay struct {
 	overlay       *application.WebviewWindow
 	logger        *utils.Logger
 	isGameRunning bool
@@ -36,7 +36,7 @@ var (
 	procGetForegroundWindow = user32.NewProc("GetForegroundWindow")
 )
 
-func (m *GameOverlayManager) hasGameFocus() bool {
+func (m *Overlay) hasGameFocus() bool {
 	if m.gameHwnd == 0 {
 		return false
 	}
@@ -103,7 +103,7 @@ func CreateGameOverlay(app *application.App) *application.WebviewWindow {
 	return overlay
 }
 
-func (m *GameOverlayManager) maintainZOrder() {
+func (m *Overlay) maintainZOrder() {
 	if !m.isGameRunning || !m.isWindowValid(m.gameHwnd) {
 		return
 	}
@@ -124,10 +124,10 @@ func (m *GameOverlayManager) maintainZOrder() {
 		0x0001|0x0002|0x0010, // SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE
 	)
 }
-func (m *GameOverlayManager) SetWindow(window *application.WebviewWindow) {
+func (m *Overlay) SetWindow(window *application.WebviewWindow) {
 	m.overlay = window
 }
-func NewGameOverlayManager(logger *utils.Logger) *GameOverlayManager {
+func NewGameOverlayManager(logger *utils.Logger) *Overlay {
 	configDir, err := os.UserConfigDir()
 	if err != nil {
 		configDir = "."
@@ -141,7 +141,7 @@ func NewGameOverlayManager(logger *utils.Logger) *GameOverlayManager {
 		return nil
 	}
 
-	manager := &GameOverlayManager{
+	manager := &Overlay{
 		overlay:    nil,
 		logger:     logger,
 		stopChan:   make(chan struct{}),
@@ -155,7 +155,7 @@ func NewGameOverlayManager(logger *utils.Logger) *GameOverlayManager {
 	return manager
 }
 
-func (m *GameOverlayManager) loadPosition() {
+func (m *Overlay) loadPosition() {
 	data, err := os.ReadFile(m.configPath)
 	if err != nil {
 		m.logger.Info("No saved position found, using defaults")
@@ -167,7 +167,7 @@ func (m *GameOverlayManager) loadPosition() {
 	}
 }
 
-func (m *GameOverlayManager) savePosition(x, y int) error {
+func (m *Overlay) savePosition(x, y int) error {
 	m.position["x"] = x
 	m.position["y"] = y
 
@@ -179,7 +179,7 @@ func (m *GameOverlayManager) savePosition(x, y int) error {
 	return os.WriteFile(m.configPath, data, 0644)
 }
 
-func (m *GameOverlayManager) Start() {
+func (m *Overlay) Start() {
 	m.overlay.IsIgnoreMouseEvents()
 
 	go m.monitorGame()
@@ -187,13 +187,13 @@ func (m *GameOverlayManager) Start() {
 	go m.registerGlobalHotkey()
 }
 
-func (m *GameOverlayManager) Stop() {
+func (m *Overlay) Stop() {
 	close(m.stopChan)
 
 	// Unregister hotkeys when stopping
 }
 
-func (m *GameOverlayManager) monitorGame() {
+func (m *Overlay) monitorGame() {
 	processChan, stopMonitor := process.MonitorProcesses(false, 1*time.Second)
 	defer stopMonitor()
 
@@ -275,7 +275,7 @@ func (m *GameOverlayManager) monitorGame() {
 		}
 	}
 }
-func (m *GameOverlayManager) registerGlobalHotkey() {
+func (m *Overlay) registerGlobalHotkey() {
 	//// Use correct package name (gohook instead of hook)
 	//hook.Register(hook.KeyDown, []string{"ctrl", "shift", "b"}, func(e hook.Event) {
 	//	m.toggleOverlay()
@@ -292,7 +292,7 @@ func (m *GameOverlayManager) registerGlobalHotkey() {
 	//}()
 }
 
-func (m *GameOverlayManager) toggleMouseEvents() {
+func (m *Overlay) toggleMouseEvents() {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -309,11 +309,11 @@ func (m *GameOverlayManager) toggleMouseEvents() {
 		m.logger.Info("Overlay now captures mouse events")
 	}
 }
-func (m *GameOverlayManager) Hide() {
+func (m *Overlay) Hide() {
 	m.logger.Info("Hiding overlay")
 	m.overlay.Hide()
 }
-func (m *GameOverlayManager) toggleOverlay() {
+func (m *Overlay) toggleOverlay() {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -354,7 +354,7 @@ func (m *GameOverlayManager) toggleOverlay() {
 	}
 }
 
-func (m *GameOverlayManager) findAndTrackGameWindow() {
+func (m *Overlay) findAndTrackGameWindow() {
 	// League in-game window title can be either of these
 	possibleTitles := []string{
 		"League of Legends (TM) Client",
@@ -378,7 +378,7 @@ func (m *GameOverlayManager) findAndTrackGameWindow() {
 		}
 	}
 }
-func (m *GameOverlayManager) updateOverlayPosition() {
+func (m *Overlay) updateOverlayPosition() {
 	if m.gameHwnd == 0 {
 		return
 	}
@@ -413,7 +413,7 @@ func (m *GameOverlayManager) updateOverlayPosition() {
 	m.overlay.SetPosition(x, y)
 }
 
-func (m *GameOverlayManager) isWindowValid(hwnd windows.HWND) bool {
+func (m *Overlay) isWindowValid(hwnd windows.HWND) bool {
 	if hwnd == 0 {
 		return false
 	}

@@ -2,7 +2,7 @@ package league
 
 import (
 	"context"
-	"github.com/hex-boost/hex-nexus-app/backend/repository"
+	"github.com/hex-boost/hex-nexus-app/backend/league/summoner"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"golang.org/x/sync/errgroup"
@@ -10,16 +10,14 @@ import (
 )
 
 type SummonerService struct {
-	summonerClient *SummonerClient
-	repoClient     *repository.AccountsRepository
+	summonerClient *summoner.Client
 
 	logger *utils.Logger
 }
 
-func NewSummonerService(summonerClient *SummonerClient, repoClient *repository.AccountsRepository, logger *utils.Logger) *SummonerService {
+func NewSummonerService(logger *utils.Logger, summonerClient *summoner.Client) *SummonerService {
 	return &SummonerService{
 		summonerClient: summonerClient,
-		repoClient:     repoClient,
 		logger:         logger,
 	}
 }

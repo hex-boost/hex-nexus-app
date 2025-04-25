@@ -59,7 +59,7 @@ type AppEmitter interface {
 type ClientMonitor struct {
 	accountUpdateStatus   AccountUpdateStatus
 	app                   AppEmitter
-	riotClient            *riot.RiotClient
+	riotClient            *riot.Service
 	isRunning             bool
 	done                  chan struct{}
 	pollingTicker         *time.Ticker
@@ -73,7 +73,7 @@ type ClientMonitor struct {
 	isCheckingState       atomic.Bool
 }
 
-func NewClientMonitor(logger *utils.Logger, accountMonitor *AccountMonitor, leagueService LeagueServicer, riotClient *riot.RiotClient, captcha *riot.Captcha) *ClientMonitor {
+func NewClientMonitor(logger *utils.Logger, accountMonitor *AccountMonitor, leagueService LeagueServicer, riotClient *riot.Service, captcha *riot.Captcha) *ClientMonitor {
 	logger.Info("Creating new client monitor")
 	initialState := &LeagueClientState{
 		ClientState: ClientStateNone,
@@ -311,7 +311,7 @@ func (cm *ClientMonitor) checkAndUpdateAccount() {
 	cm.stateMutex.Lock()
 	cm.accountUpdateStatus.IsUpdated = true
 	cm.accountUpdateStatus.Username = strings.ToLower(loggedInUsername)
-	cm.app.EmitEvent(LeagueWebsocketStartHandlers)
+	cm.app.EmitEvent(websockets.LeagueWebsocketStartHandlers)
 	cm.stateMutex.Unlock()
 
 	cm.logger.Info("Account successfully updated", zap.String("username", loggedInUsername))
@@ -325,7 +325,7 @@ func (cm *ClientMonitor) resetAccountUpdateStatus() {
 	cm.stateMutex.Lock()
 	cm.accountUpdateStatus.IsUpdated = false
 	cm.accountUpdateStatus.Username = ""
-	cm.app.EmitEvent(LeagueWebsocketStopHandlers)
+	cm.app.EmitEvent(websockets.LeagueWebsocketStopHandlers)
 	cm.stateMutex.Unlock()
 }
 func (cm *ClientMonitor) Start() {
@@ -333,7 +333,7 @@ func (cm *ClientMonitor) Start() {
 		return
 	}
 
-	cm.logger.Info("Starting LeagueService client monitor")
+	cm.logger.Info("Starting Service client monitor")
 
 	// Use a done channel for signaling shutdown
 	done := make(chan struct{})
@@ -365,7 +365,7 @@ func (cm *ClientMonitor) Stop() {
 		return
 	}
 
-	cm.logger.Info("Stopping LeagueService client monitor")
+	cm.logger.Info("Stopping Service client monitor")
 	close(cm.done)
 	cm.pollingTicker.Stop()
 	cm.isRunning = false
@@ -532,19 +532,8 @@ func (cm *ClientMonitor) HandleLogin(username string, password string, captchaTo
 
 	return nil
 }
-func (cm *ClientMonitor) LaunchClient() error {
 
-	// Existing launch logic...
-	err := cm.riotClient.Launch()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// IsLCUConnectionReady checks if the League Client connection is fully established and ready
-func (lc *LeagueService) IsLCUConnectionReady() bool {
+func (lc *Service) IsLCUConnectionReady() bool {
 	// Ensure client is initialized
 	if lc.LCUconnection.client == nil {
 		err := lc.LCUconnection.InitializeConnection()

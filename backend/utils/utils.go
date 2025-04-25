@@ -13,7 +13,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sync"
-	"syscall"
 )
 
 type Utils struct {
@@ -110,13 +109,6 @@ func (u *Utils) ForceCloseAllClients() error {
 }
 func (u *Utils) SetClipboard(text string) {
 	u.app.Clipboard().SetText(text)
-}
-func (u *Utils) HideConsoleWindow(cmd *exec.Cmd) *exec.Cmd {
-	if cmd.SysProcAttr == nil {
-		cmd.SysProcAttr = &syscall.SysProcAttr{}
-	}
-	cmd.SysProcAttr.CreationFlags = 0x08000000
-	return cmd
 }
 
 func (u *Utils) StartUpdate() error {

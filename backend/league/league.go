@@ -1,29 +1,30 @@
 package league
 
 import (
-	"github.com/hex-boost/hex-nexus-app/backend/repository"
+	"github.com/hex-boost/hex-nexus-app/backend/league/account"
+	"github.com/hex-boost/hex-nexus-app/backend/league/lcu"
 	"github.com/hex-boost/hex-nexus-app/backend/utils"
 	"github.com/mitchellh/go-ps"
 	"go.uber.org/zap"
 	"time"
 )
 
-type LeagueService struct {
-	LCUconnection   *LCUConnection
-	Api             *repository.AccountsRepository // Changed from api to Api for public access
+type Service struct {
+	LCUconnection   *lcu.Connection
+	Api             *account.Client // Changed from api to Api for public access
 	summonerService *SummonerService
 	logger          *utils.Logger
 }
 
-func NewLeagueService(logger *utils.Logger, api *repository.AccountsRepository, summonerService *SummonerService, lcuConnection *LCUConnection) *LeagueService {
-	return &LeagueService{
+func NewLeagueService(logger *utils.Logger, api *account.Client, summonerService *SummonerService, lcuConnection *lcu.Connection) *Service {
+	return &Service{
 		LCUconnection:   lcuConnection,
 		Api:             api, // Updated field name
 		logger:          logger,
 		summonerService: summonerService,
 	}
 }
-func (lc *LeagueService) IsPlaying() bool {
+func (lc *Service) IsPlaying() bool {
 	processes, err := ps.Processes()
 	if err != nil {
 		lc.logger.Error("Failed to list processes", zap.Error(err))
@@ -46,7 +47,7 @@ func (lc *LeagueService) IsPlaying() bool {
 	return false
 
 }
-func (lc *LeagueService) IsRunning() bool {
+func (lc *Service) IsRunning() bool {
 	processes, err := ps.Processes()
 	if err != nil {
 		lc.logger.Error("Failed to list processes", zap.Error(err))
@@ -69,7 +70,7 @@ func (lc *LeagueService) IsRunning() bool {
 
 	return false
 }
-func (lc *LeagueService) Logout() {
+func (lc *Service) Logout() {
 	lc.logger.Info("Attempting to logout from League client")
 
 	if lc.LCUconnection.client == nil {
@@ -94,7 +95,7 @@ func (lc *LeagueService) Logout() {
 			zap.String("body", string(resp.Body())))
 	}
 }
-func (lc *LeagueService) WaitInventoryIsReady() {
+func (lc *Service) WaitInventoryIsReady() {
 	lc.logger.Info("Waiting for inventory system to be ready")
 
 	attempts := 0
@@ -113,7 +114,7 @@ func (lc *LeagueService) WaitInventoryIsReady() {
 	}
 }
 
-func (lc *LeagueService) IsInventoryReady() bool {
+func (lc *Service) IsInventoryReady() bool {
 
 	if lc.LCUconnection.client == nil {
 		err := lc.LCUconnection.InitializeConnection()
@@ -139,7 +140,7 @@ func (lc *LeagueService) IsInventoryReady() bool {
 	return result
 }
 
-func (lc *LeagueService) UpdateFromLCU(username string) error {
+func (lc *Service) UpdateFromLCU(username string) error {
 	lc.logger.Debug("Updating account from LCU", zap.String("username", username))
 	summonerRented, err := lc.summonerService.UpdateFromLCU(username)
 	if err != nil {

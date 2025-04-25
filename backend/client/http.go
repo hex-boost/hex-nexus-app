@@ -1,4 +1,4 @@
-package repository
+package client
 
 import (
 	"fmt"
@@ -6,17 +6,19 @@ import (
 	"go.uber.org/zap"
 )
 
-type APIRepository struct {
-	*BaseRepository
+type HTTPClient struct {
+	*BaseClient
 }
 
-func NewAPIRepository(base *BaseRepository) *APIRepository {
-	return &APIRepository{
-		BaseRepository: base,
+// NewHTTPClient creates a standard HTTP client
+func NewHTTPClient(base *BaseClient) *HTTPClient {
+	return &HTTPClient{
+		BaseClient: base,
 	}
 }
 
-func (a *APIRepository) Get(endpoint string, result interface{}) (*resty.Response, error) {
+// Get performs a GET request with typed result
+func (a *HTTPClient) Get(endpoint string, result interface{}) (*resty.Response, error) {
 	resp, err := a.Client.R().SetResult(result).Get(endpoint)
 	if err != nil {
 		a.Logger.Error("API request failed", zap.String("endpoint", endpoint), zap.Error(err))
@@ -34,8 +36,8 @@ func (a *APIRepository) Get(endpoint string, result interface{}) (*resty.Respons
 	return resp, nil
 }
 
-// Post performs a POST request with typed result and error
-func (a *APIRepository) Post(endpoint string, body interface{}, result interface{}) (*resty.Response, error) {
+// Post performs a POST request with typed result
+func (a *HTTPClient) Post(endpoint string, body interface{}, result interface{}) (*resty.Response, error) {
 	resp, err := a.Client.R().SetBody(body).SetResult(result).Post(endpoint)
 	if err != nil {
 		a.Logger.Error("API request failed", zap.String("endpoint", endpoint), zap.Error(err))
@@ -53,8 +55,8 @@ func (a *APIRepository) Post(endpoint string, body interface{}, result interface
 	return resp, nil
 }
 
-// Put performs a PUT request with typed result and error
-func (a *APIRepository) Put(endpoint string, body interface{}, result interface{}) (*resty.Response, error) {
+// Put performs a PUT request with typed result
+func (a *HTTPClient) Put(endpoint string, body interface{}, result interface{}) (*resty.Response, error) {
 	resp, err := a.Client.R().SetBody(body).SetResult(result).Put(endpoint)
 	if err != nil {
 		a.Logger.Error("API request failed", zap.String("endpoint", endpoint), zap.Error(err))
@@ -72,8 +74,8 @@ func (a *APIRepository) Put(endpoint string, body interface{}, result interface{
 	return resp, nil
 }
 
-// Delete performs a DELETE request with typed result and error
-func (a *APIRepository) Delete(endpoint string, result interface{}) (*resty.Response, error) {
+// Delete performs a DELETE request with typed result
+func (a *HTTPClient) Delete(endpoint string, result interface{}) (*resty.Response, error) {
 	resp, err := a.Client.R().SetResult(result).Delete(endpoint)
 	if err != nil {
 		a.Logger.Error("API request failed", zap.String("endpoint", endpoint), zap.Error(err))
