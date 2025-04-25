@@ -9,12 +9,12 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator.tsx';
 import { WindowControls } from '@/components/WindowControls.tsx';
 import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
-import { useGoState } from '@/hooks/useGoBindings';
 import { useProfileAvatar } from '@/hooks/useProfileAvatar.ts';
 import { userAuth } from '@/lib/strapi';
 import { cn } from '@/lib/utils';
 import { useUserStore } from '@/stores/useUserStore';
 import { Discord } from '@discord';
+import { HWID } from '@hwid';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@radix-ui/react-tabs';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
@@ -26,7 +26,6 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<'div'>) {
-  const { Utils } = useGoState();
   const { refetchUser } = useCommonFetch();
   const router = useRouter();
   const { getDefaultBase64Avatar, uploadImageFromBase64 } = useProfileAvatar();
@@ -49,7 +48,7 @@ export function LoginForm({
       },
       onSuccess: async (data) => {
         if (import.meta.env.MODE !== 'development') {
-          const currentHwid = await Utils.GetHWID();
+          const currentHwid = await HWID;
           if (data.user.hwid && data.user.hwid !== currentHwid) {
             setAuthToken(''); // Clear token
             toast.error('Login failed: Hardware ID mismatch');
@@ -78,7 +77,7 @@ export function LoginForm({
             email: formData.email,
             password: formData.password,
             avatar: uploadedAvatar.data[0].id,
-            hwid: await Utils.GetHWID(),
+            hwid: await HWID.Get(),
           } as any;
           return await userAuth.register(registerPayload);
         },

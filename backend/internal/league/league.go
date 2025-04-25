@@ -17,7 +17,7 @@ type Service struct {
 	logger          *logger.Logger
 }
 
-func NewLeagueService(logger *logger.Logger, api *account.Client, summonerService *summoner.Service, lcuConnection *lcu.Connection) *Service {
+func NewService(logger *logger.Logger, api *account.Client, summonerService *summoner.Service, lcuConnection *lcu.Connection) *Service {
 	return &Service{
 		LCUconnection:   lcuConnection,
 		Api:             api, // Updated field name

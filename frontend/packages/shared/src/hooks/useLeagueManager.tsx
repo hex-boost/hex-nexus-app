@@ -1,10 +1,10 @@
 import type { AccountType } from '@/types/types';
-import { useGoState } from '@/hooks/useGoBindings.ts';
 import { useLeagueState } from '@/hooks/useLeagueState.tsx';
 import { logger } from '@/lib/logger';
 import { useAccountStore } from '@/stores/useAccountStore.ts';
-import { ClientMonitor } from '@league';
-import { RiotClient } from '@riot';
+import { Monitor as LeagueMonitor } from '@league';
+import { Manager } from '@leagueManager';
+import { Service as RiotService } from '@riot';
 import { useMutation } from '@tanstack/react-query';
 import { Duration } from '@time';
 import { Call } from '@wailsio/runtime';
@@ -15,7 +15,6 @@ export function useLeagueManager({
 }: {
   account: AccountType;
 }) {
-  const { Utils } = useGoState();
   const { setIsNexusAccount } = useAccountStore();
   const { state, isLoading } = useLeagueState();
   const logContext = `useLeagueManager:${account.id}`;
@@ -34,14 +33,14 @@ export function useLeagueManager({
       logger.info(logContext, 'Opening captcha web view and waiting for token');
 
       try {
-        const captchaToken = await ClientMonitor.OpenWebviewAndGetToken();
+        const captchaToken = await LeagueMonitor.OpenWebviewAndGetToken();
 
         logger.info(logContext, 'Captcha token received, proceeding with login');
 
-        await ClientMonitor.HandleLogin(account.username, account.password, captchaToken);
+        await LeagueMonitor.HandleLogin(account.username, account.password, captchaToken);
 
         logger.info(logContext, 'Waiting for user info (timeout: 10s)');
-        await RiotClient.WaitUntilUserinfoIsReady(Duration.Second * 10);
+        await RiotService.WaitUntilUserinfoIsReady(Duration.Second * 10);
         logger.info(logContext, 'User info ready, login process completed');
       } catch (error) {
         logger.error(logContext, 'Error during captcha flow', { error });
@@ -138,10 +137,10 @@ export function useLeagueManager({
       logger.info(logContext, 'Launching Riot Client', { accountId: account.id });
 
       // Backend now controls state
-      await ClientMonitor.LaunchClient();
+      await RiotService.Launch();
 
       logger.info(logContext, 'Waiting for authentication to be ready (timeout: 20s)');
-      await ClientMonitor.WaitUntilAuthenticationIsReady(Duration.Second * 15);
+      await LeagueMonitor.WaitUntilAuthenticationIsReady(Duration.Second * 15);
 
       logger.info(logContext, 'Riot Client successfully launched and ready');
     },
@@ -159,7 +158,7 @@ export function useLeagueManager({
             onClick: async () => {
               try {
                 logger.info(logContext, 'User requested to force close all Riot clients');
-                await Utils.ForceCloseAllClients();
+                await Manager.ForceCloseAllClients();
                 logger.info(logContext, 'Successfully closed all Riot clients');
 
                 toast.info('All clients closed succesfully');

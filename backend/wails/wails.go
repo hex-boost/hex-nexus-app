@@ -7,16 +7,17 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/client"
 	"github.com/hex-boost/hex-nexus-app/backend/discord"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
-	league2 "github.com/hex-boost/hex-nexus-app/backend/internal/league"
-	account2 "github.com/hex-boost/hex-nexus-app/backend/internal/league/account"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/league"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/lcu"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/manager"
-	summoner2 "github.com/hex-boost/hex-nexus-app/backend/internal/league/summoner"
-	websocket2 "github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/league/summoner"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket/handler"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/systemtray"
 	gameOverlay "github.com/hex-boost/hex-nexus-app/backend/overlay"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/command"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/hwid"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/process"
 	"github.com/hex-boost/hex-nexus-app/backend/protocol"
 	"github.com/hex-boost/hex-nexus-app/backend/riot"
@@ -139,7 +140,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		mainLogger.Info("Not running as admin")
 	}
 	var mainWindow *application.WebviewWindow
-	accountState := account2.NewState()
+	accountState := account.NewState()
 	gameOverlayManager := gameOverlay.NewGameOverlayManager(appInstance.Log().League())
 	stripeService := stripe.New(appInstance.Log().Stripe())
 	cmd := command.New()
@@ -147,13 +148,13 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 	lcuConn := lcu.NewConnection(appInstance.Log().League(), procs)
 	baseClient := client.NewBaseClient(appInstance.Log().Repo(), cfg)
 	httpClient := client.NewHTTPClient(baseClient)
-	accountClient := account2.NewClient(appInstance.Log().Web(), httpClient)
-	summonerClient := summoner2.NewClient(appInstance.Log().League(), lcuConn)
-	summonerService := summoner2.NewService(appInstance.Log().League(), summonerClient)
+	accountClient := account.NewClient(appInstance.Log().Web(), httpClient)
+	summonerClient := summoner.NewClient(appInstance.Log().League(), lcuConn)
+	summonerService := summoner.NewService(appInstance.Log().League(), summonerClient)
 	captchaService := captcha.New(appInstance.Log().Riot())
-	leagueService := league2.NewLeagueService(appInstance.Log().Riot(), accountClient, summonerService, lcuConn)
+	leagueService := league.NewService(appInstance.Log().Riot(), accountClient, summonerService, lcuConn)
 	riotService := riot.NewService(appInstance.Log().Riot(), captchaService)
-	accountMonitor := account2.NewMonitor(
+	accountMonitor := account.NewMonitor(
 		appInstance.Log().Riot(),
 		leagueService,
 		riotService,
@@ -163,12 +164,12 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		watchdogClient, // Use the watchdog client here instead of creating a full watchdog
 	)
 	websocketHandler := handler.New(appInstance.Log().League(), accountState)
-	websocketRouter := websocket2.NewRouter(appInstance.Log().League())
-	websocketManager := websocket2.NewManager()
-	websocketService := websocket2.NewService(appInstance.Log().League(), accountMonitor, leagueService, accountState, accountClient, websocketRouter, websocketHandler, websocketManager)
+	websocketRouter := websocket.NewRouter(appInstance.Log().League())
+	websocketManager := websocket.NewManager()
+	websocketService := websocket.NewService(appInstance.Log().League(), accountMonitor, leagueService, lcuConn, accountState, accountClient, websocketRouter, websocketHandler, websocketManager)
 	discordService := discord.New(appInstance.Log().Discord(), cfg)
 	debugMode := cfg.Debug
-	clientMonitor := league2.NewMonitor(appInstance.Log().League(), accountMonitor, leagueService, riotService, captchaService)
+	clientMonitor := league.NewMonitor(appInstance.Log().League(), accountMonitor, leagueService, riotService, captchaService)
 	mainApp := application.New(application.Options{
 		Name:        "Nexus",
 		Description: "Nexus",
@@ -220,16 +221,15 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 				Name: "RiotService",
 			}),
 			application.NewService(discordService),
+			application.NewService(hwid.New()),
 			application.NewService(summonerService),
 			application.NewService(leagueService),
 			application.NewService(clientMonitor),
 			application.NewService(lcuConn),
 			application.NewService(baseClient),
 			application.NewService(accountClient),
-			application.NewService(accountMonitor,
-				application.ServiceOptions{
-					Name: "AccountMonitor",
-				}),
+			application.NewService(accountMonitor),
+			application.NewService(leagueManager),
 			application.NewService(stripeService),
 			application.NewService(gameOverlayManager),
 		},

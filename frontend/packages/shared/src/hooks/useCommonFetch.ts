@@ -1,16 +1,13 @@
 import type { UserType } from '@/types/types.ts';
 import type { StrapiError } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
-import { useGoState } from '@/hooks/useGoBindings.ts';
 import { strapiClient } from '@/lib/strapi.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
+import { HWID } from '@hwid';
 import { useQuery } from '@tanstack/react-query';
-
 import { useRouter } from '@tanstack/react-router';
 import { toast } from 'sonner';
 
 export function useCommonFetch() {
-  const { Utils } = useGoState();
-
   const router = useRouter();
   const { isAuthenticated, setUser, logout, user: storeUser } = useUserStore();
   const {
@@ -22,7 +19,7 @@ export function useCommonFetch() {
     queryFn: async () => {
       const user = await strapiClient.request<UserType>('get', 'users/me');
       if (import.meta.env.VITE_NODE_ENV !== 'development') {
-        if (user.hwid !== await Utils.GetHWID()) {
+        if (user.hwid !== await HWID.Get()) {
           logout();
           toast.error('You have been logged out due to HWID mismatch');
           router.navigate({ to: '/login' });

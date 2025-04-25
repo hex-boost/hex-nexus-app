@@ -1,7 +1,6 @@
 import type { AccountType } from '@/types/types.ts';
 import { useAccountStore } from '@/stores/useAccountStore.ts';
 import { useQueryClient } from '@tanstack/react-query';
-import { Utils } from '@utils';
 import { Events } from '@wailsio/runtime';
 import { useEffect, useRef } from 'react';
 
@@ -83,8 +82,4 @@ export function useGoState() {
       processingAccounts.clear();
     };
   }, [queryClient, setIsNexusAccount]);
-
-  return {
-    Utils,
-  };
 }

@@ -2,21 +2,26 @@ package handler
 
 import (
 	"encoding/json"
-	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"go.uber.org/zap"
 )
 
+// AccountState defines the contract for account state management
+type AccountState interface {
+	Get() *types.PartialSummonerRented
+	Update(summonerRented *types.PartialSummonerRented)
+}
+
 // Handler implements WebSocketEventHandler with standard event handling logic
 type Handler struct {
 	logger       *logger.Logger
-	accountState *account.State
+	accountState AccountState
 }
 
-// NewWebSocketHandler creates a new WebSocket event handler
-func New(logger *logger.Logger, accountState *account.State) *Handler {
+// New creates a new WebSocket event handler
+func New(logger *logger.Logger, accountState AccountState) *Handler {
 	return &Handler{
 		accountState: accountState,
 		logger:       logger,
@@ -51,12 +56,10 @@ func (h *Handler) WalletEvent(event websocket.LCUWebSocketEvent) {
 	}
 
 	if needsUpdate {
-
 		summonerRented := types.PartialSummonerRented{
 			Currencies: &types.CurrenciesPointer{LolBlueEssence: &blueEssence},
 		}
 		h.accountState.Update(&summonerRented)
-
 	} else {
 		h.logger.Debug("Blue essence unchanged, skipping refresh",
 			zap.Int("value", blueEssence))

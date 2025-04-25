@@ -6,8 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
-	"github.com/hex-boost/hex-nexus-app/backend/internal/league"
-	account2 "github.com/hex-boost/hex-nexus-app/backend/internal/league/account"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account/events"
 	websocketEvent "github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket/event"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
@@ -20,8 +19,56 @@ import (
 	"time"
 )
 
-type HandlerInterface interface {
+// Logger interface for both real and mock loggers
+
+// WebSocketConnection defines the interface for websocket connections
+type WebSocketConnection interface {
+	ReadMessage() (messageType int, p []byte, err error)
+	WriteMessage(messageType int, data []byte) error
+	WriteJSON(v interface{}) error
+	WriteControl(messageType int, data []byte, deadline time.Time) error
+	Close() error
+}
+
+// LeagueService interface
+type LeagueService interface {
+	IsRunning() bool
+}
+
+// LCUConnection defines the contract for the league client connection
+type LCUConnection interface {
+	GetLeagueCredentials() (string, string, string, error)
+}
+
+// AccountMonitor defines the contract for account monitoring
+type AccountMonitor interface {
+	GetLoggedInUsername() string
+}
+
+// AccountsRepository defines the contract for account data operations
+type AccountsRepository interface {
+	Save(summoner types.PartialSummonerRented) (*types.SummonerResponse, error)
+}
+
+// AppInterface defines the contract for application interactions
+type App interface {
+	EmitEvent(name string, data ...any)
+	OnEvent(name string, callback func(event *application.CustomEvent)) func()
+}
+type Handler interface {
 	WalletEvent(event LCUWebSocketEvent)
+}
+
+// RouterInterface defines the contract for the event router
+type RouterService interface {
+	RegisterHandler(path string, handler func(LCUWebSocketEvent))
+	DeleteHandler(path string)
+	Dispatch(event LCUWebSocketEvent)
+}
+
+// ManagerInterface defines the contract for the event handler manager
+type ManagerService interface {
+	NewEventHandler(path string, handler func(LCUWebSocketEvent)) EventHandler
 }
 
 const JsonApiPrefix = "OnJsonApiEvent_"
@@ -37,47 +84,58 @@ type LCUWebSocketEvent struct {
 type EventType int
 
 type Service struct {
-	app                *application.App
-	accountsRepository *account2.Client
-	conn               *websocket.Conn
-	leagueService      *league.Service
-	accountMonitor     *account2.Monitor
-	logger             *logger.Logger
-	mutex              sync.Mutex
-	isRunning          bool
-	stopChan           chan struct{}
-	accountState       *account2.State
-	subscriptions      map[string]bool
-	router             *Router
-	manager            *Manager
+	app            App
+	accountClient  AccountsRepository
+	conn           WebSocketConnection
+	leagueService  LeagueService
+	lcuConnection  LCUConnection
+	accountMonitor AccountMonitor
+	logger         *logger.Logger
+	mutex          sync.Mutex
+	isRunning      bool
+	stopChan       chan struct{}
+	accountState   *account.State
+	subscriptions  map[string]bool
+	router         RouterService
+	manager        ManagerService
+	handler        Handler
 
-	handler HandlerInterface
+	// Function fields for easier testing
+	sendSubscriptionFunc   func(eventPath string) error
+	sendUnsubscriptionFunc func(eventPath string) error
 }
 
 func NewService(
 	logger *logger.Logger,
-	accountMonitor *account2.Monitor,
-	leagueService *league.Service,
-	accountState *account2.State,
-	accountsRepository *account2.Client,
-	router *Router,
-	handler HandlerInterface,
-	manager *Manager,
-
+	accountMonitor AccountMonitor,
+	leagueService LeagueService,
+	lcuConnection LCUConnection,
+	accountState *account.State,
+	accountClient AccountsRepository,
+	router RouterService,
+	handler Handler,
+	manager ManagerService,
 ) *Service {
-	return &Service{
-		accountsRepository: accountsRepository,
-		logger:             logger,
-		accountMonitor:     accountMonitor,
-		manager:            manager,
-		leagueService:      leagueService,
-		accountState:       accountState,
-		stopChan:           make(chan struct{}),
-		router:             router,
-		handler:            handler,
-		app:                application.Get(),
-		subscriptions:      make(map[string]bool),
+	service := &Service{
+		accountClient:  accountClient,
+		logger:         logger,
+		accountMonitor: accountMonitor,
+		manager:        manager,
+		leagueService:  leagueService,
+		lcuConnection:  lcuConnection,
+		accountState:   accountState,
+		stopChan:       make(chan struct{}),
+		router:         router,
+		handler:        handler,
+		app:            application.Get(),
+		subscriptions:  make(map[string]bool),
 	}
+
+	// Initialize function fields with their implementations
+	service.sendSubscriptionFunc = service.sendSubscriptionImpl
+	service.sendUnsubscriptionFunc = service.sendUnsubscriptionImpl
+
+	return service
 }
 
 // SetWindow associates the WebSocket service with a Wails window
@@ -121,7 +179,7 @@ func (ws *Service) connectToLCUWebSocket() error {
 
 		}
 	}()
-	port, token, _, err := ws.leagueService.LCUconnection.GetLeagueCredentials()
+	port, token, _, err := ws.lcuConnection.GetLeagueCredentials()
 	if err != nil {
 		return err
 	}
@@ -160,7 +218,7 @@ func (ws *Service) Subscribe(eventPath string) error {
 	defer ws.mutex.Unlock()
 
 	if ws.conn != nil && ws.isConnected() {
-		return ws.sendSubscription(eventPath)
+		return ws.sendSubscriptionFunc(eventPath)
 	}
 
 	return nil
@@ -177,14 +235,14 @@ func (ws *Service) Unsubscribe(eventPath string) error {
 	ws.router.DeleteHandler(eventPath)
 
 	if ws.conn != nil && ws.isConnected() {
-		return ws.sendUnsubscription(eventPath)
+		return ws.sendUnsubscriptionFunc(eventPath)
 	}
 
 	return nil
 }
 
-// sendSubscription sends a subscription message to LCU websocket
-func (ws *Service) sendSubscription(eventPath string) error {
+// sendSubscriptionImpl implements sending a subscription message to LCU websocket
+func (ws *Service) sendSubscriptionImpl(eventPath string) error {
 	// Format according to WAMP 1.0 protocol (opcode 5 for subscribe)
 	subscribeMsg := []byte(fmt.Sprintf(`[5, "%s%s"]`, JsonApiPrefix, eventPath))
 
@@ -198,8 +256,8 @@ func (ws *Service) sendSubscription(eventPath string) error {
 	return nil
 }
 
-// sendUnsubscription sends an unsubscription message
-func (ws *Service) sendUnsubscription(eventPath string) error {
+// sendUnsubscriptionImpl implements sending an unsubscription message
+func (ws *Service) sendUnsubscriptionImpl(eventPath string) error {
 	// Format according to WAMP 1.0 protocol (opcode 6 for unsubscribe)
 	message := []interface{}{6, eventPath}
 	err := ws.conn.WriteJSON(message)
@@ -219,7 +277,7 @@ func (ws *Service) resubscribeToEvents() error {
 
 	// Then subscribe to each specific path
 	for eventPath := range ws.subscriptions {
-		if err := ws.sendSubscription(eventPath); err != nil {
+		if err := ws.sendSubscriptionFunc(eventPath); err != nil {
 			return err
 		}
 	}
@@ -369,7 +427,7 @@ func (ws *Service) RefreshAccountState(summonerState types.PartialSummonerRented
 	summonerState.Username = username
 
 	ws.logger.Info("Manually refreshing account state", zap.String("username", username))
-	summonerResponse, err := ws.accountsRepository.Save(summonerState)
+	summonerResponse, err := ws.accountClient.Save(summonerState)
 	if err != nil {
 		ws.logger.Error("Failed to manually update account from LCU", zap.Error(err))
 		return

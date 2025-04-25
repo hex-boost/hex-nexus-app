@@ -1,8 +1,8 @@
 import type { AccountType, UserType } from '@/types/types';
 import type { StrapiError } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
-import { useGoState } from '@/hooks/useGoBindings.ts';
 import { strapiClient } from '@/lib/strapi';
 import { useAccountStore } from '@/stores/useAccountStore.ts';
+import { Manager } from '@leagueManager';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -16,7 +16,6 @@ export function useAccountActions({
   user: UserType | null;
   onAccountChange: () => Promise<void>;
 }) {
-  const { Utils } = useGoState();
   const queryClient = useQueryClient();
   const { isNexusAccount } = useAccountStore();
   const [selectedRentalOptionIndex, setSelectedRentalOptionIndex] = useState<number>(1);
@@ -57,7 +56,7 @@ export function useAccountActions({
     },
     onSuccess: (data) => {
       invalidateRelatedQueries();
-      Utils.ForceCloseAllClients();
+      Manager.ForceCloseAllClients();
       toast.success(data.message);
     },
     onError: (error) => {

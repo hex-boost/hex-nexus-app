@@ -1,5 +1,4 @@
 import type { UserType } from '@/types/types';
-import { BaseRepository } from '@repository';
 import { create } from 'zustand';
 
 type AuthState = {

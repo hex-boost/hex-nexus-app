@@ -18,7 +18,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { useOverlayAccount } from '@/hooks/useOverlayAccount.ts';
 import { cn } from '@/lib/utils';
 import { useUserStore } from '@/stores/useUserStore.ts';
-import { AccountMonitor } from '@league';
+import { Monitor as AccountMonitor } from '@account';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Clock, XIcon } from 'lucide-react';

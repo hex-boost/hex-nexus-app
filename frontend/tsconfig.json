@@ -47,10 +47,14 @@
         "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/discord"
       ],
       "@league": [
-        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/league"
+        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/internal/league/index"
       ],
       "@repository": [
         "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/repository"
+      ],
+
+      "@manager": [
+        "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/internal/league/manager"
       ],
       "@updater": [
         "packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/updater"

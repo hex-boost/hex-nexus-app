@@ -1,9 +1,9 @@
 import { GameOverlay } from '@/components/GameOverlay.tsx';
-import { GameOverlayManager } from '@overlay';
+import { Overlay } from '@overlay';
 
 export function GameOverlayPage() {
   function setShowOverlay() {
-    GameOverlayManager.Hide();
+    Overlay.Hide();
   }
   return (
     <GameOverlay setShowOverlay={setShowOverlay} />

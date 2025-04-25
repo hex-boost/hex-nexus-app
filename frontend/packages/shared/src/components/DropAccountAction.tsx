@@ -10,10 +10,10 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog.tsx';
 import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
-import { useGoState } from '@/hooks/useGoBindings.ts';
 import { strapiClient } from '@/lib/strapi';
 import { useAccountStore } from '@/stores/useAccountStore.ts';
-import { Monitor as AccountMonitor } from '@league';
+import { Monitor as AccountMonitor } from '@account';
+import { Manager } from '@leagueManager';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { ArrowDownToLine } from 'lucide-react';
 import { useState } from 'react';
@@ -37,7 +37,6 @@ export function DropAccountAction({
   buttonVariant = 'outline',
 }: DropAccountActionProps) {
   const { refetchUser } = useCommonFetch();
-  const { Utils } = useGoState();
   const [isOpen, setIsOpen] = useState(false);
   const { isNexusAccount } = useAccountStore();
 
@@ -68,7 +67,7 @@ export function DropAccountAction({
     },
     onSuccess: async (data) => {
       if (isNexusAccount || await AccountMonitor.IsNexusAccount()) {
-        await Utils.ForceCloseAllClients();
+        await Manager.ForceCloseAllClients();
       }
       toast.success(data.message || 'Account dropped successfully');
     },
