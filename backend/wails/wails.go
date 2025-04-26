@@ -165,7 +165,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		summonerClient,
 		lcuConn,
 		watchdogClient,
-		//accountClient,
+		accountClient,
 	)
 	websocketHandler := handler.New(appInstance.Log().League(), accountState)
 	websocketRouter := websocket.NewRouter(appInstance.Log().League())

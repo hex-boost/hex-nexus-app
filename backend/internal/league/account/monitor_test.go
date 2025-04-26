@@ -30,13 +30,11 @@ func (m *MockLeagueService) IsPlaying() bool {
 	return args.Bool(0)
 }
 
-// Fix MockLCUConnection to match LCUConnectionInterface
 func (m *MockLCUConnection) Initialize() error {
 	args := m.Called()
 	return args.Error(0)
 }
 
-// Mock AccountService implementation
 type MockAccountService struct {
 	mock.Mock
 }
@@ -123,38 +121,40 @@ type MockWindow struct {
 func (m *MockWindow) EmitEvent(eventName string, data ...interface{}) {
 	m.Called(eventName, data[0])
 }
+
 func TestAccountMonitor_CheckCurrentAccount(t *testing.T) {
 	// Setup environment and logger
 	cfg := &config.Config{LogLevel: "debug"}
 	newLogger := logger.New("TestAccountMonitor", cfg)
 
-	// Store original watchdog function to restore later
-	mockWatchdog := new(MockWatchdogUpdater)
-
 	t.Run("No clients running - should skip check", func(t *testing.T) {
-		mockRiot := new(MockRiotClient)
+		// Setup
+		mockRepo := new(MockAccountsRepository)
 		mockLeague := new(MockLeagueService)
+		mockRiot := new(MockRiotClient)
 		mockSummoner := new(MockSummonerClient)
 		mockLCU := new(MockLCUConnection)
-		mockRepo := new(MockAccountsRepository)
+		mockWatchdog := new(MockWatchdogUpdater)
 		mockWindow := new(MockWindow)
+
+		am := NewMonitor(
+			newLogger,
+			mockLeague,
+			mockRiot,
+			mockSummoner,
+			mockLCU,
+			mockWatchdog,
+			mockRepo,
+		)
+
+		// Setup window
+		am.window = mockWindow
+		am.mutex = sync.Mutex{}
 
 		// Setup expected behavior
 		mockRiot.On("IsRunning").Return(false)
 		mockLeague.On("IsRunning").Return(false)
 		mockLeague.On("IsPlaying").Return(false)
-
-		am := &Monitor{
-			watchdogState:  mockWatchdog,
-			riotAuth:       mockRiot,
-			leagueService:  mockLeague,
-			summonerClient: mockSummoner,
-			LCUConnection:  mockLCU,
-			accountClient:  mockRepo,
-			logger:         newLogger,
-			window:         mockWindow,
-			mutex:          sync.Mutex{},
-		}
 
 		// Execute function under test
 		am.checkCurrentAccount()
@@ -168,29 +168,33 @@ func TestAccountMonitor_CheckCurrentAccount(t *testing.T) {
 	})
 
 	t.Run("No username found - should skip check", func(t *testing.T) {
-		mockRiot := new(MockRiotClient)
+		// Setup
+		mockRepo := new(MockAccountsRepository)
 		mockLeague := new(MockLeagueService)
+		mockRiot := new(MockRiotClient)
 		mockSummoner := new(MockSummonerClient)
 		mockLCU := new(MockLCUConnection)
-		mockRepo := new(MockAccountsRepository)
+		mockWatchdog := new(MockWatchdogUpdater)
 		mockWindow := new(MockWindow)
+
+		am := NewMonitor(
+			newLogger,
+			mockLeague,
+			mockRiot,
+			mockSummoner,
+			mockLCU,
+			mockWatchdog,
+			mockRepo,
+		)
+
+		// Setup window
+		am.window = mockWindow
+		am.mutex = sync.Mutex{}
 
 		// Setup expected behavior
 		mockRiot.On("IsRunning").Return(true)
 		mockRiot.On("IsClientInitialized").Return(true)
 		mockRiot.On("GetAuthenticationState").Return(&types.RiotIdentityResponse{Type: "error"}, nil)
-
-		am := &Monitor{
-			watchdogState:  mockWatchdog,
-			riotAuth:       mockRiot,
-			leagueService:  mockLeague,
-			summonerClient: mockSummoner,
-			LCUConnection:  mockLCU,
-			accountClient:  mockRepo,
-			logger:         newLogger,
-			window:         mockWindow,
-			mutex:          sync.Mutex{},
-		}
 
 		// Execute function under test
 		am.checkCurrentAccount()
@@ -201,12 +205,30 @@ func TestAccountMonitor_CheckCurrentAccount(t *testing.T) {
 	})
 
 	t.Run("Error getting accounts from repository", func(t *testing.T) {
-		mockRiot := new(MockRiotClient)
+		// Setup
+		mockRepo := new(MockAccountsRepository)
 		mockLeague := new(MockLeagueService)
+		mockRiot := new(MockRiotClient)
 		mockSummoner := new(MockSummonerClient)
 		mockLCU := new(MockLCUConnection)
-		mockRepo := new(MockAccountsRepository)
+		mockWatchdog := new(MockWatchdogUpdater)
 		mockWindow := new(MockWindow)
+
+		am := NewMonitor(
+			newLogger,
+			mockLeague,
+			mockRiot,
+			mockSummoner,
+			mockLCU,
+			mockWatchdog,
+			mockRepo,
+		)
+
+		// Setup window and additional fields
+		am.window = mockWindow
+		am.mutex = sync.Mutex{}
+		am.lastAccountsFetch = time.Time{} // Empty time to force cache refresh
+		am.accountCacheTTL = 5 * time.Minute
 
 		// Setup expected behavior
 		mockRiot.On("IsRunning").Return(true)
@@ -214,19 +236,6 @@ func TestAccountMonitor_CheckCurrentAccount(t *testing.T) {
 		mockRiot.On("GetAuthenticationState").Return(&types.RiotIdentityResponse{Type: "success"}, nil)
 		mockRiot.On("GetUserinfo").Return(&types.UserInfo{Username: "testuser"}, nil)
 		mockRepo.On("GetAllRented").Return([]types.SummonerRented{}, errors.New("database error"))
-
-		am := &Monitor{
-			riotAuth:          mockRiot,
-			leagueService:     mockLeague,
-			summonerClient:    mockSummoner,
-			LCUConnection:     mockLCU,
-			accountClient:     mockRepo,
-			logger:            newLogger,
-			window:            mockWindow,
-			mutex:             sync.Mutex{},
-			lastAccountsFetch: time.Time{}, // Empty time to force cache refresh
-			accountCacheTTL:   5 * time.Minute,
-		}
 
 		// Execute function under test
 		am.checkCurrentAccount()
@@ -238,12 +247,30 @@ func TestAccountMonitor_CheckCurrentAccount(t *testing.T) {
 	})
 
 	t.Run("Account is not a Nexus account", func(t *testing.T) {
-		mockRiot := new(MockRiotClient)
+		// Setup
+		mockRepo := new(MockAccountsRepository)
 		mockLeague := new(MockLeagueService)
+		mockRiot := new(MockRiotClient)
 		mockSummoner := new(MockSummonerClient)
 		mockLCU := new(MockLCUConnection)
-		mockRepo := new(MockAccountsRepository)
+		mockWatchdog := new(MockWatchdogUpdater)
 		mockWindow := new(MockWindow)
+
+		am := NewMonitor(
+			newLogger,
+			mockLeague,
+			mockRiot,
+			mockSummoner,
+			mockLCU,
+			mockWatchdog,
+			mockRepo,
+		)
+
+		// Setup window and additional fields
+		am.window = mockWindow
+		am.mutex = sync.Mutex{}
+		am.lastAccountsFetch = time.Time{} // Empty time to force cache refresh
+		am.accountCacheTTL = 5 * time.Minute
 
 		// Setup expected behavior
 		mockRiot.On("IsRunning").Return(true)
@@ -255,20 +282,6 @@ func TestAccountMonitor_CheckCurrentAccount(t *testing.T) {
 			{Username: "anotheruser"},
 		}, nil)
 
-		am := &Monitor{
-			watchdogState:     mockWatchdog,
-			riotAuth:          mockRiot,
-			leagueService:     mockLeague,
-			summonerClient:    mockSummoner,
-			LCUConnection:     mockLCU,
-			accountClient:     mockRepo,
-			logger:            newLogger,
-			window:            mockWindow,
-			mutex:             sync.Mutex{},
-			lastAccountsFetch: time.Time{}, // Empty time to force cache refresh
-			accountCacheTTL:   5 * time.Minute,
-		}
-
 		// Execute function under test
 		am.checkCurrentAccount()
 
@@ -279,13 +292,31 @@ func TestAccountMonitor_CheckCurrentAccount(t *testing.T) {
 	})
 
 	t.Run("Account is a Nexus account - state change triggers event", func(t *testing.T) {
-		mockRiot := new(MockRiotClient)
+		// Setup
+		mockRepo := new(MockAccountsRepository)
 		mockLeague := new(MockLeagueService)
+		mockRiot := new(MockRiotClient)
 		mockSummoner := new(MockSummonerClient)
 		mockLCU := new(MockLCUConnection)
-		mockRepo := new(MockAccountsRepository)
+		mockWatchdog := new(MockWatchdogUpdater)
 		mockWindow := new(MockWindow)
-		mockWatchdog := new(MockWatchdogUpdater) // Create a new mock for this test case
+
+		am := NewMonitor(
+			newLogger,
+			mockLeague,
+			mockRiot,
+			mockSummoner,
+			mockLCU,
+			mockWatchdog,
+			mockRepo,
+		)
+
+		// Setup window and additional fields
+		am.window = mockWindow
+		am.mutex = sync.Mutex{}
+		am.isNexusAccount = false          // Starting with false to trigger state change
+		am.lastAccountsFetch = time.Time{} // Empty time to force cache refresh
+		am.accountCacheTTL = 5 * time.Minute
 
 		// Setup expected behavior
 		mockRiot.On("IsRunning").Return(true)
@@ -298,23 +329,7 @@ func TestAccountMonitor_CheckCurrentAccount(t *testing.T) {
 			{Username: "anotheruser"},
 		}, nil)
 		mockWindow.On("EmitEvent", "nexusAccount:state", true).Return()
-		// Add the missing expectation:
 		mockWatchdog.On("Update", true).Return(nil)
-
-		am := &Monitor{
-			watchdogState:     mockWatchdog, // Use the local mock instance
-			riotAuth:          mockRiot,
-			leagueService:     mockLeague,
-			summonerClient:    mockSummoner,
-			LCUConnection:     mockLCU,
-			accountClient:     mockRepo,
-			logger:            newLogger,
-			window:            mockWindow,
-			mutex:             sync.Mutex{},
-			isNexusAccount:    false,       // Starting with false to trigger state change
-			lastAccountsFetch: time.Time{}, // Empty time to force cache refresh
-			accountCacheTTL:   5 * time.Minute,
-		}
 
 		// Execute function under test
 		am.checkCurrentAccount()
@@ -328,12 +343,36 @@ func TestAccountMonitor_CheckCurrentAccount(t *testing.T) {
 	})
 
 	t.Run("Use cached accounts when cache is fresh", func(t *testing.T) {
-		mockRiot := new(MockRiotClient)
+		// Setup
+		mockRepo := new(MockAccountsRepository)
 		mockLeague := new(MockLeagueService)
+		mockRiot := new(MockRiotClient)
 		mockSummoner := new(MockSummonerClient)
 		mockLCU := new(MockLCUConnection)
-		mockRepo := new(MockAccountsRepository)
+		mockWatchdog := new(MockWatchdogUpdater)
 		mockWindow := new(MockWindow)
+
+		cachedAccounts := []types.SummonerRented{
+			{Username: "testuser"}, // Match in cache
+		}
+
+		am := NewMonitor(
+			newLogger,
+			mockLeague,
+			mockRiot,
+			mockSummoner,
+			mockLCU,
+			mockWatchdog,
+			mockRepo,
+		)
+
+		// Setup window and additional fields
+		am.window = mockWindow
+		am.mutex = sync.Mutex{}
+		am.isNexusAccount = true // Already true, no state change
+		am.cachedAccounts = cachedAccounts
+		am.lastAccountsFetch = time.Now() // Fresh cache
+		am.accountCacheTTL = 5 * time.Minute
 
 		// Setup expected behavior
 		mockRiot.On("IsRunning").Return(true)
@@ -341,26 +380,6 @@ func TestAccountMonitor_CheckCurrentAccount(t *testing.T) {
 		mockRiot.On("GetAuthenticationState").Return(&types.RiotIdentityResponse{Type: "success"}, nil)
 		mockRiot.On("GetUserinfo").Return(&types.UserInfo{Username: "testuser"}, nil)
 		// Repository should NOT be called because we use cache
-
-		cachedAccounts := []types.SummonerRented{
-			{Username: "testuser"}, // Match in cache
-		}
-
-		am := &Monitor{
-			watchdogState:     mockWatchdog,
-			riotAuth:          mockRiot,
-			leagueService:     mockLeague,
-			summonerClient:    mockSummoner,
-			LCUConnection:     mockLCU,
-			accountClient:     mockRepo,
-			logger:            newLogger,
-			window:            mockWindow,
-			mutex:             sync.Mutex{},
-			isNexusAccount:    true, // Already true, no state change
-			cachedAccounts:    cachedAccounts,
-			lastAccountsFetch: time.Now(), // Fresh cache
-			accountCacheTTL:   5 * time.Minute,
-		}
 
 		// Execute function under test
 		am.checkCurrentAccount()
@@ -373,17 +392,14 @@ func TestAccountMonitor_CheckCurrentAccount(t *testing.T) {
 	})
 
 	t.Run("Reset cache when user is disconnected", func(t *testing.T) {
-		mockRiot := new(MockRiotClient)
+		// Setup
+		mockRepo := new(MockAccountsRepository)
 		mockLeague := new(MockLeagueService)
+		mockRiot := new(MockRiotClient)
 		mockSummoner := new(MockSummonerClient)
 		mockLCU := new(MockLCUConnection)
-		mockRepo := new(MockAccountsRepository)
+		mockWatchdog := new(MockWatchdogUpdater)
 		mockWindow := new(MockWindow)
-
-		// Setup expected behavior - all clients are not running
-		mockRiot.On("IsRunning").Return(false)
-		mockLeague.On("IsRunning").Return(false)
-		mockLeague.On("IsPlaying").Return(false)
 
 		// Create some initial cached accounts
 		initialCache := []types.SummonerRented{
@@ -394,19 +410,27 @@ func TestAccountMonitor_CheckCurrentAccount(t *testing.T) {
 		// Set a past time for lastAccountsFetch
 		pastTime := time.Now().Add(-1 * time.Hour)
 
-		am := &Monitor{
-			riotAuth:          mockRiot,
-			leagueService:     mockLeague,
-			summonerClient:    mockSummoner,
-			LCUConnection:     mockLCU,
-			accountClient:     mockRepo,
-			logger:            newLogger,
-			window:            mockWindow,
-			mutex:             sync.Mutex{},
-			cachedAccounts:    initialCache, // Set initial cache
-			lastAccountsFetch: pastTime,     // Set initial fetch time
-			accountCacheTTL:   5 * time.Minute,
-		}
+		am := NewMonitor(
+			newLogger,
+			mockLeague,
+			mockRiot,
+			mockSummoner,
+			mockLCU,
+			mockWatchdog,
+			mockRepo,
+		)
+
+		// Setup window and additional fields
+		am.window = mockWindow
+		am.mutex = sync.Mutex{}
+		am.cachedAccounts = initialCache // Set initial cache
+		am.lastAccountsFetch = pastTime  // Set initial fetch time
+		am.accountCacheTTL = 5 * time.Minute
+
+		// Setup expected behavior - all clients are not running
+		mockRiot.On("IsRunning").Return(false)
+		mockLeague.On("IsRunning").Return(false)
+		mockLeague.On("IsPlaying").Return(false)
 
 		// Execute function under test
 		am.checkCurrentAccount()
@@ -420,6 +444,7 @@ func TestAccountMonitor_CheckCurrentAccount(t *testing.T) {
 		assert.NotEqual(t, pastTime, am.lastAccountsFetch, "Last fetch time should be updated when user disconnects")
 	})
 }
+
 func TestMonitor_GetAccountsWithCache(t *testing.T) {
 	cfg := &config.Config{LogLevel: "debug"}
 	newLogger := logger.New("TestGetAccountsWithCache", cfg)
@@ -427,16 +452,28 @@ func TestMonitor_GetAccountsWithCache(t *testing.T) {
 	t.Run("Empty cache should fetch from repository", func(t *testing.T) {
 		// Setup
 		mockRepo := new(MockAccountsRepository)
+		mockLeague := new(MockLeagueService)
+		mockRiot := new(MockRiotClient)
+		mockSummoner := new(MockSummonerClient)
+		mockLCU := new(MockLCUConnection)
+		mockWatchdog := new(MockWatchdogUpdater)
+
 		mockRepo.On("GetAllRented").Return([]types.SummonerRented{{Username: "user1"}}, nil)
 
-		am := &Monitor{
-			accountClient:     mockRepo,
-			logger:            newLogger,
-			cachedAccounts:    []types.SummonerRented{}, // Empty cache
-			lastAccountsFetch: time.Time{},              // Zero time
-			accountCacheTTL:   5 * time.Minute,
-			mutex:             sync.Mutex{},
-		}
+		am := NewMonitor(
+			newLogger,
+			mockLeague,
+			mockRiot,
+			mockSummoner,
+			mockLCU,
+			mockWatchdog,
+			mockRepo,
+		)
+
+		am.cachedAccounts = []types.SummonerRented{} // Empty cache
+		am.lastAccountsFetch = time.Time{}           // Zero time
+		am.accountCacheTTL = 5 * time.Minute
+		am.mutex = sync.Mutex{}
 
 		// Execute
 		accounts, err := am.getAccountsWithCache()
@@ -453,11 +490,13 @@ func TestMonitor_GetAccountsWithCache(t *testing.T) {
 		// Setup
 		mockRepo := new(MockAccountsRepository)
 		mockLeague := new(MockLeagueService)
-		//accountClient := new(AccountServicer)
 		mockRiot := new(MockRiotClient)
 		mockSummoner := new(MockSummonerClient)
 		mockLCU := new(MockLCUConnection)
 		mockWatchdog := new(MockWatchdogUpdater)
+
+		mockRepo.On("GetAllRented").Return([]types.SummonerRented{{Username: "user2"}}, nil)
+
 		am := NewMonitor(
 			newLogger,
 			mockLeague,
@@ -467,12 +506,11 @@ func TestMonitor_GetAccountsWithCache(t *testing.T) {
 			mockWatchdog,
 			mockRepo,
 		)
-		mockRepo.On("GetAllRented").Return([]types.SummonerRented{{Username: "user2"}}, nil)
 
 		am.lastAccountsFetch = time.Now().Add(-10 * time.Minute)
 		am.accountCacheTTL = 5 * time.Minute
 		am.mutex = sync.Mutex{}
-		// Execute
+
 		// Execute
 		accounts, err := am.getAccountsWithCache()
 
@@ -487,12 +525,13 @@ func TestMonitor_GetAccountsWithCache(t *testing.T) {
 		// Setup
 		mockRepo := new(MockAccountsRepository)
 		mockLeague := new(MockLeagueService)
-		//accountClient := new(AccountServicer)
 		mockRiot := new(MockRiotClient)
 		mockSummoner := new(MockSummonerClient)
 		mockLCU := new(MockLCUConnection)
 		mockWatchdog := new(MockWatchdogUpdater)
+
 		cachedData := []types.SummonerRented{{Username: "cached-user"}}
+
 		am := NewMonitor(
 			newLogger,
 			mockLeague,
@@ -507,6 +546,7 @@ func TestMonitor_GetAccountsWithCache(t *testing.T) {
 		am.lastAccountsFetch = time.Now().Add(-1 * time.Minute)
 		am.accountCacheTTL = 5 * time.Minute
 		am.mutex = sync.Mutex{}
+
 		// Execute
 		accounts, err := am.getAccountsWithCache()
 
@@ -521,16 +561,28 @@ func TestMonitor_GetAccountsWithCache(t *testing.T) {
 	t.Run("Repository error should be propagated", func(t *testing.T) {
 		// Setup
 		mockRepo := new(MockAccountsRepository)
+		mockLeague := new(MockLeagueService)
+		mockRiot := new(MockRiotClient)
+		mockSummoner := new(MockSummonerClient)
+		mockLCU := new(MockLCUConnection)
+		mockWatchdog := new(MockWatchdogUpdater)
+
 		mockRepo.On("GetAllRented").Return([]types.SummonerRented{}, errors.New("repo error"))
 
-		am := &Monitor{
-			accountClient:     mockRepo,
-			logger:            newLogger,
-			cachedAccounts:    []types.SummonerRented{}, // Empty cache
-			lastAccountsFetch: time.Time{},              // Zero time
-			accountCacheTTL:   5 * time.Minute,
-			mutex:             sync.Mutex{},
-		}
+		am := NewMonitor(
+			newLogger,
+			mockLeague,
+			mockRiot,
+			mockSummoner,
+			mockLCU,
+			mockWatchdog,
+			mockRepo,
+		)
+
+		am.cachedAccounts = []types.SummonerRented{} // Empty cache
+		am.lastAccountsFetch = time.Time{}           // Zero time
+		am.accountCacheTTL = 5 * time.Minute
+		am.mutex = sync.Mutex{}
 
 		// Execute
 		accounts, err := am.getAccountsWithCache()
@@ -549,18 +601,32 @@ func TestMonitor_RefreshAccountCache(t *testing.T) {
 	newLogger := logger.New("TestRefreshAccountCache", cfg)
 
 	t.Run("Successful refresh", func(t *testing.T) {
+		// Setup
 		accounts := []types.SummonerRented{{Username: "fresh-user"}}
 		mockRepo := new(MockAccountsRepository)
+		mockLeague := new(MockLeagueService)
+		mockRiot := new(MockRiotClient)
+		mockSummoner := new(MockSummonerClient)
+		mockLCU := new(MockLCUConnection)
+		mockWatchdog := new(MockWatchdogUpdater)
+
 		mockRepo.On("GetAllRented").Return(accounts, nil)
 
 		oldTime := time.Now().Add(-1 * time.Hour)
-		am := &Monitor{
-			accountClient:     mockRepo,
-			logger:            newLogger,
-			cachedAccounts:    []types.SummonerRented{{Username: "old-user"}},
-			lastAccountsFetch: oldTime,
-			mutex:             sync.Mutex{},
-		}
+
+		am := NewMonitor(
+			newLogger,
+			mockLeague,
+			mockRiot,
+			mockSummoner,
+			mockLCU,
+			mockWatchdog,
+			mockRepo,
+		)
+
+		am.cachedAccounts = []types.SummonerRented{{Username: "old-user"}}
+		am.lastAccountsFetch = oldTime
+		am.mutex = sync.Mutex{}
 
 		err := am.refreshAccountCache()
 
@@ -571,19 +637,32 @@ func TestMonitor_RefreshAccountCache(t *testing.T) {
 	})
 
 	t.Run("Repository error", func(t *testing.T) {
+		// Setup
 		mockRepo := new(MockAccountsRepository)
+		mockLeague := new(MockLeagueService)
+		mockRiot := new(MockRiotClient)
+		mockSummoner := new(MockSummonerClient)
+		mockLCU := new(MockLCUConnection)
+		mockWatchdog := new(MockWatchdogUpdater)
+
 		mockRepo.On("GetAllRented").Return([]types.SummonerRented{}, errors.New("repo error"))
 
 		oldAccounts := []types.SummonerRented{{Username: "old-user"}}
 		oldTime := time.Now().Add(-1 * time.Hour)
 
-		am := &Monitor{
-			accountClient:     mockRepo,
-			logger:            newLogger,
-			cachedAccounts:    oldAccounts,
-			lastAccountsFetch: oldTime,
-			mutex:             sync.Mutex{},
-		}
+		am := NewMonitor(
+			newLogger,
+			mockLeague,
+			mockRiot,
+			mockSummoner,
+			mockLCU,
+			mockWatchdog,
+			mockRepo,
+		)
+
+		am.cachedAccounts = oldAccounts
+		am.lastAccountsFetch = oldTime
+		am.mutex = sync.Mutex{}
 
 		err := am.refreshAccountCache()
 
@@ -600,15 +679,26 @@ func TestMonitor_GetSummonerNameByRiotClient(t *testing.T) {
 	newLogger := logger.New("TestGetSummonerName", cfg)
 
 	t.Run("Client not initialized - initialization fails", func(t *testing.T) {
+		// Setup
+		mockRepo := new(MockAccountsRepository)
+		mockLeague := new(MockLeagueService)
 		mockRiot := new(MockRiotClient)
+		mockSummoner := new(MockSummonerClient)
+		mockLCU := new(MockLCUConnection)
+		mockWatchdog := new(MockWatchdogUpdater)
 
 		mockRiot.On("IsClientInitialized").Return(false)
 		mockRiot.On("InitializeClient").Return(errors.New("initialization error"))
 
-		am := &Monitor{
-			riotAuth: mockRiot,
-			logger:   newLogger,
-		}
+		am := NewMonitor(
+			newLogger,
+			mockLeague,
+			mockRiot,
+			mockSummoner,
+			mockLCU,
+			mockWatchdog,
+			mockRepo,
+		)
 
 		username := am.getSummonerNameByRiotClient()
 		assert.Equal(t, "", username)
@@ -616,17 +706,28 @@ func TestMonitor_GetSummonerNameByRiotClient(t *testing.T) {
 	})
 
 	t.Run("Client not initialized - initialization succeeds", func(t *testing.T) {
+		// Setup
+		mockRepo := new(MockAccountsRepository)
+		mockLeague := new(MockLeagueService)
 		mockRiot := new(MockRiotClient)
+		mockSummoner := new(MockSummonerClient)
+		mockLCU := new(MockLCUConnection)
+		mockWatchdog := new(MockWatchdogUpdater)
 
 		mockRiot.On("IsClientInitialized").Return(false)
 		mockRiot.On("InitializeClient").Return(nil)
 		mockRiot.On("GetAuthenticationState").Return(&types.RiotIdentityResponse{Type: "success"}, nil)
 		mockRiot.On("GetUserinfo").Return(&types.UserInfo{Username: "testuser"}, nil)
 
-		am := &Monitor{
-			riotAuth: mockRiot,
-			logger:   newLogger,
-		}
+		am := NewMonitor(
+			newLogger,
+			mockLeague,
+			mockRiot,
+			mockSummoner,
+			mockLCU,
+			mockWatchdog,
+			mockRepo,
+		)
 
 		username := am.getSummonerNameByRiotClient()
 		assert.Equal(t, "testuser", username)
@@ -634,15 +735,26 @@ func TestMonitor_GetSummonerNameByRiotClient(t *testing.T) {
 	})
 
 	t.Run("GetAuthenticationState returns error", func(t *testing.T) {
+		// Setup
+		mockRepo := new(MockAccountsRepository)
+		mockLeague := new(MockLeagueService)
 		mockRiot := new(MockRiotClient)
+		mockSummoner := new(MockSummonerClient)
+		mockLCU := new(MockLCUConnection)
+		mockWatchdog := new(MockWatchdogUpdater)
 
 		mockRiot.On("IsClientInitialized").Return(true)
 		mockRiot.On("GetAuthenticationState").Return(nil, errors.New("auth error"))
 
-		am := &Monitor{
-			riotAuth: mockRiot,
-			logger:   newLogger,
-		}
+		am := NewMonitor(
+			newLogger,
+			mockLeague,
+			mockRiot,
+			mockSummoner,
+			mockLCU,
+			mockWatchdog,
+			mockRepo,
+		)
 
 		username := am.getSummonerNameByRiotClient()
 		assert.Equal(t, "", username)
@@ -650,15 +762,26 @@ func TestMonitor_GetSummonerNameByRiotClient(t *testing.T) {
 	})
 
 	t.Run("Authentication not successful", func(t *testing.T) {
+		// Setup
+		mockRepo := new(MockAccountsRepository)
+		mockLeague := new(MockLeagueService)
 		mockRiot := new(MockRiotClient)
+		mockSummoner := new(MockSummonerClient)
+		mockLCU := new(MockLCUConnection)
+		mockWatchdog := new(MockWatchdogUpdater)
 
 		mockRiot.On("IsClientInitialized").Return(true)
 		mockRiot.On("GetAuthenticationState").Return(&types.RiotIdentityResponse{Type: "error"}, nil)
 
-		am := &Monitor{
-			riotAuth: mockRiot,
-			logger:   newLogger,
-		}
+		am := NewMonitor(
+			newLogger,
+			mockLeague,
+			mockRiot,
+			mockSummoner,
+			mockLCU,
+			mockWatchdog,
+			mockRepo,
+		)
 
 		username := am.getSummonerNameByRiotClient()
 		assert.Equal(t, "", username)
@@ -666,16 +789,27 @@ func TestMonitor_GetSummonerNameByRiotClient(t *testing.T) {
 	})
 
 	t.Run("GetUserinfo returns error", func(t *testing.T) {
+		// Setup
+		mockRepo := new(MockAccountsRepository)
+		mockLeague := new(MockLeagueService)
 		mockRiot := new(MockRiotClient)
+		mockSummoner := new(MockSummonerClient)
+		mockLCU := new(MockLCUConnection)
+		mockWatchdog := new(MockWatchdogUpdater)
 
 		mockRiot.On("IsClientInitialized").Return(true)
 		mockRiot.On("GetAuthenticationState").Return(&types.RiotIdentityResponse{Type: "success"}, nil)
 		mockRiot.On("GetUserinfo").Return(nil, errors.New("userinfo error"))
 
-		am := &Monitor{
-			riotAuth: mockRiot,
-			logger:   newLogger,
-		}
+		am := NewMonitor(
+			newLogger,
+			mockLeague,
+			mockRiot,
+			mockSummoner,
+			mockLCU,
+			mockWatchdog,
+			mockRepo,
+		)
 
 		username := am.getSummonerNameByRiotClient()
 		assert.Equal(t, "", username)
@@ -683,16 +817,27 @@ func TestMonitor_GetSummonerNameByRiotClient(t *testing.T) {
 	})
 
 	t.Run("Success case", func(t *testing.T) {
+		// Setup
+		mockRepo := new(MockAccountsRepository)
+		mockLeague := new(MockLeagueService)
 		mockRiot := new(MockRiotClient)
+		mockSummoner := new(MockSummonerClient)
+		mockLCU := new(MockLCUConnection)
+		mockWatchdog := new(MockWatchdogUpdater)
 
 		mockRiot.On("IsClientInitialized").Return(true)
 		mockRiot.On("GetAuthenticationState").Return(&types.RiotIdentityResponse{Type: "success"}, nil)
 		mockRiot.On("GetUserinfo").Return(&types.UserInfo{Username: "testuser"}, nil)
 
-		am := &Monitor{
-			riotAuth: mockRiot,
-			logger:   newLogger,
-		}
+		am := NewMonitor(
+			newLogger,
+			mockLeague,
+			mockRiot,
+			mockSummoner,
+			mockLCU,
+			mockWatchdog,
+			mockRepo,
+		)
 
 		username := am.getSummonerNameByRiotClient()
 		assert.Equal(t, "testuser", username)
@@ -705,14 +850,26 @@ func TestMonitor_GetUsernameByLeagueClient(t *testing.T) {
 	newLogger := logger.New("TestGetUsernameByLeagueClient", cfg)
 
 	t.Run("Client not initialized - initialization fails", func(t *testing.T) {
+		// Setup
+		mockRepo := new(MockAccountsRepository)
+		mockLeague := new(MockLeagueService)
+		mockRiot := new(MockRiotClient)
+		mockSummoner := new(MockSummonerClient)
 		mockLCU := new(MockLCUConnection)
+		mockWatchdog := new(MockWatchdogUpdater)
+
 		mockLCU.On("IsClientInitialized").Return(false)
 		mockLCU.On("Initialize").Return(errors.New("initialization error"))
 
-		am := &Monitor{
-			LCUConnection: mockLCU,
-			logger:        newLogger,
-		}
+		am := NewMonitor(
+			newLogger,
+			mockLeague,
+			mockRiot,
+			mockSummoner,
+			mockLCU,
+			mockWatchdog,
+			mockRepo,
+		)
 
 		username, err := am.getUsernameByLeagueClient()
 		assert.Equal(t, "", username)
@@ -721,8 +878,13 @@ func TestMonitor_GetUsernameByLeagueClient(t *testing.T) {
 	})
 
 	t.Run("Client not initialized - initialization succeeds", func(t *testing.T) {
-		mockLCU := new(MockLCUConnection)
+		// Setup
+		mockRepo := new(MockAccountsRepository)
+		mockLeague := new(MockLeagueService)
+		mockRiot := new(MockRiotClient)
 		mockSummoner := new(MockSummonerClient)
+		mockLCU := new(MockLCUConnection)
+		mockWatchdog := new(MockWatchdogUpdater)
 
 		// Use .Once() to specify that this expectation should only match once
 		mockLCU.On("IsClientInitialized").Return(false).Once()
@@ -731,11 +893,15 @@ func TestMonitor_GetUsernameByLeagueClient(t *testing.T) {
 		mockLCU.On("IsClientInitialized").Return(true).Once()
 		mockSummoner.On("GetLoginSession").Return(&types.LoginSession{Username: "testuser"}, nil)
 
-		am := &Monitor{
-			LCUConnection:  mockLCU,
-			summonerClient: mockSummoner,
-			logger:         newLogger,
-		}
+		am := NewMonitor(
+			newLogger,
+			mockLeague,
+			mockRiot,
+			mockSummoner,
+			mockLCU,
+			mockWatchdog,
+			mockRepo,
+		)
 
 		username, err := am.getUsernameByLeagueClient()
 		assert.Equal(t, "testuser", username)
@@ -744,17 +910,26 @@ func TestMonitor_GetUsernameByLeagueClient(t *testing.T) {
 		mockSummoner.AssertExpectations(t)
 	})
 	t.Run("GetLoginSession returns error", func(t *testing.T) {
-		mockLCU := new(MockLCUConnection)
+		// Setup
+		mockRepo := new(MockAccountsRepository)
+		mockLeague := new(MockLeagueService)
+		mockRiot := new(MockRiotClient)
 		mockSummoner := new(MockSummonerClient)
+		mockLCU := new(MockLCUConnection)
+		mockWatchdog := new(MockWatchdogUpdater)
 
 		mockLCU.On("IsClientInitialized").Return(true)
 		mockSummoner.On("GetLoginSession").Return(nil, errors.New("login error"))
 
-		am := &Monitor{
-			LCUConnection:  mockLCU,
-			summonerClient: mockSummoner,
-			logger:         newLogger,
-		}
+		am := NewMonitor(
+			newLogger,
+			mockLeague,
+			mockRiot,
+			mockSummoner,
+			mockLCU,
+			mockWatchdog,
+			mockRepo,
+		)
 
 		username, err := am.getUsernameByLeagueClient()
 		assert.Equal(t, "", username)
@@ -769,19 +944,28 @@ func TestMonitor_GetLoggedInUsername(t *testing.T) {
 	newLogger := logger.New("TestGetLoggedInUsername", cfg)
 
 	t.Run("Riot client is running", func(t *testing.T) {
-		mockRiot := new(MockRiotClient)
+		// Setup
+		mockRepo := new(MockAccountsRepository)
 		mockLeague := new(MockLeagueService)
+		mockRiot := new(MockRiotClient)
+		mockSummoner := new(MockSummonerClient)
+		mockLCU := new(MockLCUConnection)
+		mockWatchdog := new(MockWatchdogUpdater)
 
 		mockRiot.On("IsRunning").Return(true)
 		mockRiot.On("IsClientInitialized").Return(true)
 		mockRiot.On("GetAuthenticationState").Return(&types.RiotIdentityResponse{Type: "success"}, nil)
 		mockRiot.On("GetUserinfo").Return(&types.UserInfo{Username: "RiotUser"}, nil)
 
-		am := &Monitor{
-			riotAuth:      mockRiot,
-			leagueService: mockLeague,
-			logger:        newLogger,
-		}
+		am := NewMonitor(
+			newLogger,
+			mockLeague,
+			mockRiot,
+			mockSummoner,
+			mockLCU,
+			mockWatchdog,
+			mockRepo,
+		)
 
 		username := am.GetLoggedInUsername()
 		assert.Equal(t, "riotuser", username) // Should be lowercase
@@ -789,23 +973,28 @@ func TestMonitor_GetLoggedInUsername(t *testing.T) {
 	})
 
 	t.Run("League client is running", func(t *testing.T) {
-		mockRiot := new(MockRiotClient)
+		// Setup
+		mockRepo := new(MockAccountsRepository)
 		mockLeague := new(MockLeagueService)
-		mockLCU := new(MockLCUConnection)
+		mockRiot := new(MockRiotClient)
 		mockSummoner := new(MockSummonerClient)
+		mockLCU := new(MockLCUConnection)
+		mockWatchdog := new(MockWatchdogUpdater)
 
 		mockRiot.On("IsRunning").Return(false)
 		mockLeague.On("IsRunning").Return(true)
 		mockLCU.On("IsClientInitialized").Return(true)
 		mockSummoner.On("GetLoginSession").Return(&types.LoginSession{Username: "LeagueUser"}, nil)
 
-		am := &Monitor{
-			riotAuth:       mockRiot,
-			leagueService:  mockLeague,
-			LCUConnection:  mockLCU,
-			summonerClient: mockSummoner,
-			logger:         newLogger,
-		}
+		am := NewMonitor(
+			newLogger,
+			mockLeague,
+			mockRiot,
+			mockSummoner,
+			mockLCU,
+			mockWatchdog,
+			mockRepo,
+		)
 
 		username := am.GetLoggedInUsername()
 		assert.Equal(t, "leagueuser", username) // Should be lowercase
@@ -814,19 +1003,29 @@ func TestMonitor_GetLoggedInUsername(t *testing.T) {
 	})
 
 	t.Run("User is playing", func(t *testing.T) {
-		mockRiot := new(MockRiotClient)
+		// Setup
+		mockRepo := new(MockAccountsRepository)
 		mockLeague := new(MockLeagueService)
+		mockRiot := new(MockRiotClient)
+		mockSummoner := new(MockSummonerClient)
+		mockLCU := new(MockLCUConnection)
+		mockWatchdog := new(MockWatchdogUpdater)
 
 		mockRiot.On("IsRunning").Return(false)
 		mockLeague.On("IsRunning").Return(false)
 		mockLeague.On("IsPlaying").Return(true)
 
-		am := &Monitor{
-			riotAuth:            mockRiot,
-			leagueService:       mockLeague,
-			logger:              newLogger,
-			lastCheckedUsername: "LastUser",
-		}
+		am := NewMonitor(
+			newLogger,
+			mockLeague,
+			mockRiot,
+			mockSummoner,
+			mockLCU,
+			mockWatchdog,
+			mockRepo,
+		)
+
+		am.lastCheckedUsername = "LastUser"
 
 		username := am.GetLoggedInUsername()
 		assert.Equal(t, "lastuser", username) // Should be lowercase
@@ -835,18 +1034,27 @@ func TestMonitor_GetLoggedInUsername(t *testing.T) {
 	})
 
 	t.Run("No client is running", func(t *testing.T) {
-		mockRiot := new(MockRiotClient)
+		// Setup
+		mockRepo := new(MockAccountsRepository)
 		mockLeague := new(MockLeagueService)
+		mockRiot := new(MockRiotClient)
+		mockSummoner := new(MockSummonerClient)
+		mockLCU := new(MockLCUConnection)
+		mockWatchdog := new(MockWatchdogUpdater)
 
 		mockRiot.On("IsRunning").Return(false)
 		mockLeague.On("IsRunning").Return(false)
 		mockLeague.On("IsPlaying").Return(false)
 
-		am := &Monitor{
-			riotAuth:      mockRiot,
-			leagueService: mockLeague,
-			logger:        newLogger,
-		}
+		am := NewMonitor(
+			newLogger,
+			mockLeague,
+			mockRiot,
+			mockSummoner,
+			mockLCU,
+			mockWatchdog,
+			mockRepo,
+		)
 
 		username := am.GetLoggedInUsername()
 		assert.Equal(t, "", username)
@@ -860,18 +1068,30 @@ func TestMonitor_SetNexusAccount(t *testing.T) {
 	newLogger := logger.New("TestSetNexusAccount", cfg)
 
 	t.Run("State change from false to true", func(t *testing.T) {
-		mockWindow := new(MockWindow)
+		// Setup
+		mockRepo := new(MockAccountsRepository)
+		mockLeague := new(MockLeagueService)
+		mockRiot := new(MockRiotClient)
+		mockSummoner := new(MockSummonerClient)
+		mockLCU := new(MockLCUConnection)
 		mockWatchdog := new(MockWatchdogUpdater)
+		mockWindow := new(MockWindow)
 
 		mockWindow.On("EmitEvent", "nexusAccount:state", true).Return()
 		mockWatchdog.On("Update", true).Return(nil)
 
-		am := &Monitor{
-			window:        mockWindow,
-			watchdogState: mockWatchdog,
-			logger:        newLogger,
-			mutex:         sync.Mutex{},
-		}
+		am := NewMonitor(
+			newLogger,
+			mockLeague,
+			mockRiot,
+			mockSummoner,
+			mockLCU,
+			mockWatchdog,
+			mockRepo,
+		)
+
+		am.window = mockWindow
+		am.mutex = sync.Mutex{}
 
 		am.SetNexusAccount(true)
 
@@ -881,16 +1101,28 @@ func TestMonitor_SetNexusAccount(t *testing.T) {
 	})
 
 	t.Run("No state change", func(t *testing.T) {
-		mockWindow := new(MockWindow)
+		// Setup
+		mockRepo := new(MockAccountsRepository)
+		mockLeague := new(MockLeagueService)
+		mockRiot := new(MockRiotClient)
+		mockSummoner := new(MockSummonerClient)
+		mockLCU := new(MockLCUConnection)
 		mockWatchdog := new(MockWatchdogUpdater)
+		mockWindow := new(MockWindow)
 
-		am := &Monitor{
-			window:         mockWindow,
-			watchdogState:  mockWatchdog,
-			logger:         newLogger,
-			mutex:          sync.Mutex{},
-			isNexusAccount: true,
-		}
+		am := NewMonitor(
+			newLogger,
+			mockLeague,
+			mockRiot,
+			mockSummoner,
+			mockLCU,
+			mockWatchdog,
+			mockRepo,
+		)
+
+		am.window = mockWindow
+		am.mutex = sync.Mutex{}
+		am.isNexusAccount = true
 
 		am.SetNexusAccount(true)
 
@@ -900,18 +1132,30 @@ func TestMonitor_SetNexusAccount(t *testing.T) {
 	})
 
 	t.Run("Watchdog update fails", func(t *testing.T) {
-		mockWindow := new(MockWindow)
+		// Setup
+		mockRepo := new(MockAccountsRepository)
+		mockLeague := new(MockLeagueService)
+		mockRiot := new(MockRiotClient)
+		mockSummoner := new(MockSummonerClient)
+		mockLCU := new(MockLCUConnection)
 		mockWatchdog := new(MockWatchdogUpdater)
+		mockWindow := new(MockWindow)
 
 		mockWindow.On("EmitEvent", "nexusAccount:state", true).Return()
 		mockWatchdog.On("Update", true).Return(errors.New("watchdog error"))
 
-		am := &Monitor{
-			window:        mockWindow,
-			watchdogState: mockWatchdog,
-			logger:        newLogger,
-			mutex:         sync.Mutex{},
-		}
+		am := NewMonitor(
+			newLogger,
+			mockLeague,
+			mockRiot,
+			mockSummoner,
+			mockLCU,
+			mockWatchdog,
+			mockRepo,
+		)
+
+		am.window = mockWindow
+		am.mutex = sync.Mutex{}
 
 		am.SetNexusAccount(true)
 
@@ -921,56 +1165,33 @@ func TestMonitor_SetNexusAccount(t *testing.T) {
 	})
 }
 
-func TestNewMonitor(t *testing.T) {
-	cfg := &config.Config{LogLevel: "debug"}
-	newLogger := logger.New("TestNewMonitor", cfg)
-
-	mockRepo := new(MockAccountsRepository)
-	mockLeague := new(MockLeagueService)
-	//accountClient := new(AccountServicer)
-	mockRiot := new(MockRiotClient)
-	mockSummoner := new(MockSummonerClient)
-	mockLCU := new(MockLCUConnection)
-
-	mockWatchdog := new(MockWatchdogUpdater)
-	monitor := NewMonitor(
-		newLogger,
-		mockLeague,
-		mockRiot,
-		mockSummoner,
-		mockLCU,
-		mockWatchdog,
-		mockRepo,
-	)
-
-	assert.NotNil(t, monitor)
-	assert.Equal(t, mockLeague, monitor.leagueService)
-	assert.Equal(t, mockRiot, monitor.riotAuth)
-	assert.Equal(t, mockSummoner, monitor.summonerClient)
-	assert.Equal(t, mockLCU, monitor.LCUConnection)
-	assert.Equal(t, mockWatchdog, monitor.watchdogState)
-	assert.Equal(t, newLogger, monitor.logger)
-	assert.Equal(t, 1*time.Second, monitor.checkInterval)
-	assert.NotNil(t, monitor.stopChan)
-	assert.False(t, monitor.isNexusAccount)
-}
-
-// Note: Testing monitorLoop and Start/Stop would require more complex test setup
-// because they involve goroutines and channels. Here's a basic approach:
-
 func TestMonitor_StartStop(t *testing.T) {
 	cfg := &config.Config{LogLevel: "debug"}
 	newLogger := logger.New("TestStartStop", cfg)
 
 	t.Run("Start sets running state", func(t *testing.T) {
+		// Setup
+		mockRepo := new(MockAccountsRepository)
+		mockLeague := new(MockLeagueService)
+		mockRiot := new(MockRiotClient)
+		mockSummoner := new(MockSummonerClient)
+		mockLCU := new(MockLCUConnection)
+		mockWatchdog := new(MockWatchdogUpdater)
 		mockWindow := &application.WebviewWindow{}
 
-		am := &Monitor{
-			logger:        newLogger,
-			running:       false,
-			mutex:         sync.Mutex{},
-			checkInterval: 1 * time.Second,
-		}
+		am := NewMonitor(
+			newLogger,
+			mockLeague,
+			mockRiot,
+			mockSummoner,
+			mockLCU,
+			mockWatchdog,
+			mockRepo,
+		)
+
+		am.running = false
+		am.mutex = sync.Mutex{}
+		am.checkInterval = 1 * time.Second
 
 		am.Start(mockWindow)
 
@@ -984,12 +1205,26 @@ func TestMonitor_StartStop(t *testing.T) {
 	})
 
 	t.Run("Stop clears running state", func(t *testing.T) {
+		// Setup
+		mockRepo := new(MockAccountsRepository)
+		mockLeague := new(MockLeagueService)
+		mockRiot := new(MockRiotClient)
+		mockSummoner := new(MockSummonerClient)
+		mockLCU := new(MockLCUConnection)
+		mockWatchdog := new(MockWatchdogUpdater)
 		mockWindow := &application.WebviewWindow{}
 
-		am := &Monitor{
-			logger: newLogger,
-			mutex:  sync.Mutex{},
-		}
+		am := NewMonitor(
+			newLogger,
+			mockLeague,
+			mockRiot,
+			mockSummoner,
+			mockLCU,
+			mockWatchdog,
+			mockRepo,
+		)
+
+		am.mutex = sync.Mutex{}
 
 		// Start first
 		am.Start(mockWindow)

@@ -253,7 +253,6 @@ func (cm *Monitor) calculateClientState(
 
 	}
 	if currentState.ClientState == ClientStateWaitingCaptcha {
-		cm.logger.Info("Waiting for captcha response")
 		return ClientStateWaitingCaptcha
 	}
 	if isLoggedIn || isPlayingLeague || isLeagueClientRunning {

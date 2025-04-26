@@ -205,7 +205,7 @@ func (s *Service) InitializeClient() error {
 		s.logger.Error("Failed to get client credentials", zap.Error(err))
 		return err
 	}
-	s.logger.Info("Credentials obtained", zap.String("port", port), zap.Any("authToken", authToken))
+	s.logger.Debug("Credentials obtained", zap.String("port", port), zap.Any("authToken", authToken))
 	client := resty.New().
 		SetBaseURL("https://127.0.0.1:"+port).
 		SetHeader("Authorization", "Basic "+authToken)

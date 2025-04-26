@@ -32,10 +32,17 @@ func (r *Router) DeleteHandler(pattern string) {
 
 // Dispatch sends an event to the appropriate handler
 func (r *Router) Dispatch(event LCUWebSocketEvent) {
+	// Normalize the URI by replacing slashes with underscores and removing the leading slash
+	normalizedURI := strings.ReplaceAll(strings.TrimPrefix(event.URI, "/"), "/", "_")
+
 	for pattern, handler := range r.routes {
-		if strings.Contains(event.URI, pattern) {
-			r.logger.Debug("Dispatching event", zap.String("uri", event.URI), zap.String("pattern", pattern))
+		if strings.Contains(normalizedURI, pattern) {
+			r.logger.Debug("Dispatching event",
+				zap.String("uri", event.URI),
+				zap.String("normalizedURI", normalizedURI),
+				zap.String("pattern", pattern))
 			handler(event)
+			return
 		}
 	}
 }

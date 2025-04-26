@@ -37,6 +37,8 @@ type LeagueService interface {
 
 // LCUConnection defines the contract for the league client connection
 type LCUConnection interface {
+	IsClientInitialized() bool
+	Initialize() error
 	GetLeagueCredentials() (string, string, string, error)
 }
 
@@ -178,29 +180,31 @@ func (s *Service) connectToLCUWebSocket() error {
 
 		}
 	}()
-	port, token, _, err := s.lcuConnection.GetLeagueCredentials()
-	if err != nil {
-		return err
+	if !s.lcuConnection.IsClientInitialized() {
+		err := s.lcuConnection.Initialize()
+		if err != nil {
+			return err
+		}
 	}
 
 	// Create WebSocket URL
-	u := url.URL{
-		Scheme: "wss",
-		Host:   "127.0.0.1:" + port,
-	}
 
 	dialer := websocket.DefaultDialer
 	dialer.TLSClientConfig = &tls.Config{
 		InsecureSkipVerify: true, // This is equivalent to NODE_TLS_REJECT_UNAUTHORIZED=0
 	}
 	headers := http.Header{}
-
+	port, token, _, err := s.lcuConnection.GetLeagueCredentials()
 	authHeader := base64.StdEncoding.EncodeToString([]byte("riot:" + token))
-	headers.Add("Authorization", authHeader)
+	headers.Add("Authorization", fmt.Sprintf("Basic %s", authHeader))
 
+	u := url.URL{
+		Scheme: "wss",
+
+		Host: "127.0.0.1:" + port,
+	}
 	// Connect to WebSocket
-	s.logger.Info("Connecting to LCU WebSocket", zap.String("url", u.String()))
-	conn, _, err := (*dialer).Dial(u.String(), headers)
+	conn, _, err := dialer.Dial(u.String(), headers)
 	if err != nil {
 		return err
 	}
