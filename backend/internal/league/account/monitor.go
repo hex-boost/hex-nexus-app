@@ -11,7 +11,6 @@ import (
 
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
-	"github.com/hex-boost/hex-nexus-app/backend/watchdog"
 )
 
 type AccountState interface {
@@ -75,10 +74,14 @@ type Monitor struct {
 	stopChan            chan struct{}
 	leagueService       LeagueServicer
 	mutex               sync.Mutex
-	watchdogState       watchdog.WatchdogUpdater
+	watchdogState       WatchdogUpdater
 
 	summonerClient SummonerClient
 	LCUConnection  LCUConnection
+}
+
+type WatchdogUpdater interface {
+	Update(active bool) error
 }
 
 func NewMonitor(
@@ -87,7 +90,7 @@ func NewMonitor(
 	riotAuth RiotAuthenticator,
 	summonerClient SummonerClient,
 	LCUConnection LCUConnection,
-	watchdog watchdog.WatchdogUpdater,
+	watchdog WatchdogUpdater,
 	accountClient AccountClient,
 	accountState AccountState,
 ) *Monitor {
@@ -282,6 +285,8 @@ func (am *Monitor) checkCurrentAccount() {
 		am.logger.Error("Failed to retrieve Nexus-managed accounts",
 			zap.Error(err),
 			zap.String("errorType", fmt.Sprintf("%T", err)))
+		am.SetNexusAccount(false)
+
 		return
 	}
 

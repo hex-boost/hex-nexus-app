@@ -2,12 +2,12 @@ package handler
 
 import (
 	"encoding/json"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket/handler/mocks"
 	"testing"
 
 	"go.uber.org/zap/zaptest"
 
 	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
-	"github.com/hex-boost/hex-nexus-app/backend/test/mocks"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -100,7 +100,7 @@ func TestWalletEventWithValidData(t *testing.T) {
 	}
 
 	// Execute
-	handler.WalletEvent(event)
+	handler.Wallet(event)
 
 	// Verify
 	mockState.AssertExpectations(t)
@@ -137,7 +137,7 @@ func TestWalletEventWithUnchangedBlueEssence(t *testing.T) {
 	}
 
 	// Execute
-	handler.WalletEvent(event)
+	handler.Wallet(event)
 
 	// Verify
 	mockState.AssertExpectations(t)
@@ -181,7 +181,7 @@ func TestWalletEventWithNilAccount(t *testing.T) {
 	}
 
 	// Execute
-	handler.WalletEvent(event)
+	handler.Wallet(event)
 
 	// Verify
 	mockState.AssertExpectations(t)
@@ -207,7 +207,7 @@ func TestWalletEventWithInvalidData(t *testing.T) {
 	}
 
 	// Execute
-	handler.WalletEvent(event)
+	handler.Wallet(event)
 
 	// No specific assertions needed as we're just checking it doesn't panic
 }
@@ -252,7 +252,7 @@ func TestWalletEventWithNilCurrencies(t *testing.T) {
 	}
 
 	// Execute
-	handler.WalletEvent(event)
+	handler.Wallet(event)
 
 	// Verify
 	mockState.AssertExpectations(t)

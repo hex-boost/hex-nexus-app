@@ -57,7 +57,8 @@ type App interface {
 	OnEvent(name string, callback func(event *application.CustomEvent)) func()
 }
 type Handler interface {
-	WalletEvent(event LCUWebSocketEvent)
+	Wallet(event LCUWebSocketEvent)
+	ChampionsMinimal(event LCUWebSocketEvent)
 }
 
 // RouterInterface defines the contract for the event router
@@ -447,7 +448,8 @@ func (s *Service) SubscribeToLeagueEvents() {
 
 		// Define handlers with their paths
 		handlers := []EventHandler{
-			s.manager.NewEventHandler("lol-inventory_v1_wallet", s.handler.WalletEvent),
+			s.manager.NewEventHandler("lol-inventory_v1_wallet", s.handler.Wallet),
+			s.manager.NewEventHandler("lol-inventory_v1_inventory", s.handler.ChampionsMinimal),
 		}
 		// Register each handler
 		for _, handler := range handlers {

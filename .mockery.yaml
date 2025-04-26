@@ -1,10 +1,18 @@
-with-expecter: true
-inpackage: true
-outpkg: "mocks"
-mockname: "{{.InterfaceName}}"
+
 packages:
   github.com/hex-boost/hex-nexus-app:
-        config:
-          all: true
-          dir: "./backend/test/mocks"
-          recursive: true
+    config:
+      with-expecter: true
+      dir: "{{.InterfaceDir}}/mocks"
+      outpkg: mocks
+      filename: "{{ .InterfaceName | snakecase }}.go"
+      fail-on-missing: true
+      mockname: "{{.InterfaceName}}"
+      all: true
+      recursive: true
+#      all: true
+#      recursive: true
+#      with-expecter: true
+#      outpkg: "mocks"
+#      mockname: "{{.Mock}}{{title .PackageName}}{{.InterfaceName}}"
+#      dir: "./backend/test/mocks"

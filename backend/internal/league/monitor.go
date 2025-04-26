@@ -103,6 +103,8 @@ func NewMonitor(logger *logger.Logger, accountMonitor *account.Monitor, leagueSe
 		stateMutex:     sync.RWMutex{},
 	}
 	monitor.isCheckingState.Store(false)
+
+	logger.Info("Creating new client monitor")
 	return monitor
 }
 

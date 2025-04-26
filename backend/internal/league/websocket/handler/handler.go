@@ -44,7 +44,7 @@ func New(logger logger.Loggerer, app App, accountState AccountState, accountClie
 }
 
 // WalletEvent handles wallet update events from the LCU
-func (h *Handler) WalletEvent(event websocket.LCUWebSocketEvent) {
+func (h *Handler) Wallet(event websocket.LCUWebSocketEvent) {
 	var walletData types.Wallet
 	if err := json.Unmarshal(event.Data, &walletData); err != nil {
 		h.logger.Error("Failed to parse wallet data", zap.Error(err))
@@ -86,4 +86,13 @@ func (h *Handler) WalletEvent(event websocket.LCUWebSocketEvent) {
 		h.logger.Debug("Blue essence unchanged, skipping refresh",
 			zap.Int("value", blueEssence))
 	}
+}
+func (h *Handler) ChampionsMinimal(event websocket.LCUWebSocketEvent) {
+	var championsData types.ChampionsMinimal
+	if err := json.Unmarshal(event.Data, &championsData); err != nil {
+		h.logger.Error("Failed to parse wallet data", zap.Error(err))
+		return
+	}
+	h.logger.Info("Champions minimal update", zap.Any("data", championsData))
+
 }
