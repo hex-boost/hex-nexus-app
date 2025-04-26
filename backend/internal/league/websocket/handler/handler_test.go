@@ -44,18 +44,33 @@ func (m *MockState) Get() *types.PartialSummonerRented {
 	return args.Get(0).(*types.PartialSummonerRented)
 }
 
-func (m *MockState) Update(summonerRented *types.PartialSummonerRented) {
+func (m *MockState) Update(summonerRented *types.PartialSummonerRented) (*types.PartialSummonerRented, error) {
 	m.Called(summonerRented)
 }
 
+type MockAccountsRepository struct {
+	mock.Mock
+}
+
+func (m *MockAccountsRepository) GetAllRented() ([]types.SummonerRented, error) {
+	args := m.Called()
+	return args.Get(0).([]types.SummonerRented), args.Error(1)
+}
+
+type MockApp struct {
+	mock.Mock
+}
+
+func (m *MockApp) EmitEvent(eventName string, data ...interface{}) {
+	m.Called(eventName)
+}
 func TestWalletEventWithValidData(t *testing.T) {
 	mockState := new(MockState)
+	mockApp := new(MockApp)
+	mockAccountClient := new(account.MockClient)
 	testLogger := logger.New("test", &config.Config{})
 
-	handler := &Handler{
-		logger:       testLogger,
-		accountState: mockState,
-	}
+	handler := New(testLogger, mockApp, mockState, nil)
 
 	blueEssence := 1000
 	currentAccount := &types.PartialSummonerRented{

@@ -2,7 +2,6 @@ package websocket
 
 import (
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
-	"go.uber.org/zap"
 	"strings"
 )
 
@@ -37,10 +36,7 @@ func (r *Router) Dispatch(event LCUWebSocketEvent) {
 
 	for pattern, handler := range r.routes {
 		if strings.Contains(normalizedURI, pattern) {
-			r.logger.Debug("Dispatching event",
-				zap.String("uri", event.URI),
-				zap.String("normalizedURI", normalizedURI),
-				zap.String("pattern", pattern))
+
 			handler(event)
 			return
 		}

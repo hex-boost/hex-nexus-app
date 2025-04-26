@@ -1,13 +1,15 @@
 package account
 
 import (
+	"errors"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"sync"
 )
 
 type State struct {
-	mutex   sync.RWMutex
-	account *types.PartialSummonerRented
+	mutex          sync.RWMutex
+	account        *types.PartialSummonerRented
+	isNexusAccount bool
 }
 
 func NewState() *State {
@@ -16,6 +18,24 @@ func NewState() *State {
 	}
 }
 
+// IsNexusAccount checks if the current account is a Nexus-managed account
+func (s *State) IsNexusAccount() bool {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
+	return s.isNexusAccount
+}
+
+// SetNexusAccount updates the Nexus account status and returns if state changed
+func (s *State) SetNexusAccount(isNexusAccount bool) bool {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	previousState := s.isNexusAccount
+	s.isNexusAccount = isNexusAccount
+
+	return previousState != s.isNexusAccount
+}
 func (s *State) Get() *types.PartialSummonerRented {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
@@ -25,9 +45,9 @@ func (s *State) Get() *types.PartialSummonerRented {
 	return &accountCopy
 }
 
-func (s *State) Update(update *types.PartialSummonerRented) {
+func (s *State) Update(update *types.PartialSummonerRented) (*types.PartialSummonerRented, error) {
 	if update == nil {
-		return
+		return nil, errors.New("update cannot be nil")
 	}
 
 	s.mutex.Lock()
@@ -94,5 +114,6 @@ func (s *State) Update(update *types.PartialSummonerRented) {
 			s.account.Currencies.RP = update.Currencies.RP
 		}
 	}
+	return s.Get(), nil
 
 }

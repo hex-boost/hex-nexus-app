@@ -6,12 +6,18 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"github.com/hex-boost/hex-nexus-app/backend/watchdog"
-	"github.com/wailsapp/wails/v3/pkg/application"
 	"go.uber.org/zap"
 	"strings"
 	"sync"
 	"time"
 )
+
+type AccountState interface {
+	Get() *types.PartialSummonerRented
+	Update(summonerRented *types.PartialSummonerRented) (*types.PartialSummonerRented, error)
+	IsNexusAccount() bool
+	SetNexusAccount(bool) bool
+}
 
 type RiotAuthenticator interface {
 	IsRunning() bool
@@ -59,7 +65,7 @@ type Monitor struct {
 	logger              *logger.Logger
 	lastCheckedUsername string
 	running             bool
-	isNexusAccount      bool
+	accountState        AccountState
 	checkInterval       time.Duration
 	cachedAccounts      []types.SummonerRented
 	lastAccountsFetch   time.Time
@@ -68,7 +74,7 @@ type Monitor struct {
 	stopChan            chan struct{}
 	leagueService       LeagueServicer
 	mutex               sync.Mutex
-	watchdogState       watchdog.WatchdogUpdater // Add this field to access watchdog
+	watchdogState       watchdog.WatchdogUpdater
 
 	summonerClient SummonerClientInterface
 	LCUConnection  LCUConnectionInterface
@@ -82,6 +88,7 @@ func NewMonitor(
 	LCUConnection LCUConnectionInterface,
 	watchdog watchdog.WatchdogUpdater,
 	accountClient AccountsRepositoryInterface,
+	accountState AccountState,
 
 ) *Monitor {
 	return &Monitor{
@@ -91,15 +98,15 @@ func NewMonitor(
 		riotAuth:        riotAuth,
 		summonerClient:  summonerClient,
 		logger:          logger,
-		isNexusAccount:  false,
 		window:          nil,
 		accountClient:   accountClient,
-		accountCacheTTL: 5 * time.Minute, // Adjust the cache duration as needed
-
-		checkInterval: 1 * time.Second, // Check every 30 seconds
-		stopChan:      make(chan struct{}),
+		accountCacheTTL: 5 * time.Minute,
+		accountState:    accountState,
+		checkInterval:   1 * time.Second,
+		stopChan:        make(chan struct{}),
 	}
 }
+
 func (am *Monitor) refreshAccountCache() error {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
@@ -142,7 +149,7 @@ func (am *Monitor) getAccountsWithCache() ([]types.SummonerRented, error) {
 
 	return am.cachedAccounts, nil
 }
-func (am *Monitor) Start(window *application.WebviewWindow) {
+func (am *Monitor) Start(window WindowEmitter) {
 	am.window = window
 	fmt.Println("Starting account monitor")
 	am.mutex.Lock()
@@ -304,30 +311,32 @@ func (am *Monitor) checkCurrentAccount() {
 	}
 	am.SetNexusAccount(isNexusAccount)
 }
+
 func (am *Monitor) IsNexusAccount() bool {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
-	return am.isNexusAccount
+	return am.accountState.IsNexusAccount()
 }
-func (am *Monitor) SetNexusAccount(isNexusAccount bool) {
-	previousState := am.IsNexusAccount()
-	am.mutex.Lock()
-	am.isNexusAccount = isNexusAccount
-	am.mutex.Unlock()
-	// Update watchdog if state changed
-	if previousState != isNexusAccount {
-		// Your existing watchdog update code
-		am.logger.Info("Nexus account status changed",
-			zap.Bool("previousStatus", previousState),
-			zap.Bool("currentStatus", isNexusAccount))
 
-		err := am.watchdogState.Update(isNexusAccount)
-		am.window.EmitEvent("nexusAccount:state", isNexusAccount)
+func (am *Monitor) SetNexusAccount(isNexusAccount bool) {
+	am.mutex.Lock()
+	stateChanged := am.accountState.SetNexusAccount(isNexusAccount)
+	currentStatus := am.accountState.IsNexusAccount()
+	am.mutex.Unlock()
+
+	// Update watchdog if state changed
+	if stateChanged {
+		am.logger.Info("Nexus account status changed",
+			zap.Bool("previousStatus", !currentStatus),
+			zap.Bool("currentStatus", currentStatus))
+
+		err := am.watchdogState.Update(currentStatus)
+		am.window.EmitEvent("nexusAccount:state", currentStatus)
 		if err != nil {
 			am.logger.Error("Failed to update watchdog status via named pipe", zap.Error(err))
 		} else {
 			am.logger.Debug("Updated watchdog state with new account status via named pipe",
-				zap.Bool("isNexusAccount", isNexusAccount))
+				zap.Bool("isNexusAccount", currentStatus))
 		}
 	}
 }

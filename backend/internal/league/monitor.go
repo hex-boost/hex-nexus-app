@@ -534,14 +534,14 @@ func (cm *Monitor) HandleLogin(username string, password string, captchaToken st
 	return nil
 }
 
-func (lc *Service) IsLCUConnectionReady() bool {
+func (s *Service) IsLCUConnectionReady() bool {
 	// Ensure client is initialized
-	if !lc.LCUconnection.IsClientInitialized() {
-		err := lc.LCUconnection.Initialize()
+	if !s.LCUconnection.IsClientInitialized() {
+		err := s.LCUconnection.Initialize()
 		if err != nil {
 			return false
 		}
 	}
 
-	return lc.LCUconnection.IsClientInitialized()
+	return s.LCUconnection.IsClientInitialized()
 }

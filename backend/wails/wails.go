@@ -166,11 +166,8 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		lcuConn,
 		watchdogClient,
 		accountClient,
+		accountState,
 	)
-	websocketHandler := handler.New(appInstance.Log().League(), accountState)
-	websocketRouter := websocket.NewRouter(appInstance.Log().League())
-	websocketManager := websocket.NewManager()
-	websocketService := websocket.NewService(appInstance.Log().League(), accountMonitor, leagueService, lcuConn, accountState, accountClient, websocketRouter, websocketHandler, websocketManager)
 	discordService := discord.New(appInstance.Log().Discord(), cfg)
 	debugMode := cfg.Debug
 	clientMonitor := league.NewMonitor(appInstance.Log().League(), accountMonitor, leagueService, riotService, captchaService)
@@ -289,6 +286,10 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		},
 	)
 
+	websocketHandler := handler.New(appInstance.Log().League(), mainApp, accountState, accountClient)
+	websocketRouter := websocket.NewRouter(appInstance.Log().League())
+	websocketManager := websocket.NewManager()
+	websocketService := websocket.NewService(appInstance.Log().League(), accountMonitor, leagueService, lcuConn, accountState, accountClient, websocketRouter, websocketHandler, websocketManager)
 	overlayWindow := gameOverlay.CreateGameOverlay(mainApp)
 	gameOverlayManager.SetWindow(overlayWindow)
 	mainWindow.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {

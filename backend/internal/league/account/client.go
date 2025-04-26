@@ -23,6 +23,9 @@ func NewClient(logger *logger.Logger, api *client.HTTPClient) *Client {
 }
 
 func (s *Client) Save(summoner types.PartialSummonerRented) (*types.SummonerResponse, error) {
+	if summoner.Username == "" {
+		return nil, fmt.Errorf("username is required")
+	}
 	client := resty.New()
 	client.SetBaseURL(config.BackendURL)
 	client.SetHeader("Content-Type", "application/json")
@@ -30,7 +33,6 @@ func (s *Client) Save(summoner types.PartialSummonerRented) (*types.SummonerResp
 	client.SetAuthToken(config.RefreshApiKey)
 	var refreshResponseData types.RefreshResponseData
 	req := client.R().SetBody(summoner).SetResult(&refreshResponseData)
-
 	// Make the request manually instead of using s.api.Put
 	resp, err := req.Put("/api/accounts/refresh")
 	if err != nil {

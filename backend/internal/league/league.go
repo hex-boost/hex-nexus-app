@@ -25,10 +25,10 @@ func NewService(logger *logger.Logger, api *account.Client, summonerService *sum
 		summonerService: summonerService,
 	}
 }
-func (lc *Service) IsPlaying() bool {
+func (s *Service) IsPlaying() bool {
 	processes, err := ps.Processes()
 	if err != nil {
-		lc.logger.Error("Failed to list processes", zap.Error(err))
+		s.logger.Error("Failed to list processes", zap.Error(err))
 		return false
 	}
 
@@ -48,10 +48,10 @@ func (lc *Service) IsPlaying() bool {
 	return false
 
 }
-func (lc *Service) IsRunning() bool {
+func (s *Service) IsRunning() bool {
 	processes, err := ps.Processes()
 	if err != nil {
-		lc.logger.Error("Failed to list processes", zap.Error(err))
+		s.logger.Error("Failed to list processes", zap.Error(err))
 		return false
 	}
 
@@ -71,87 +71,87 @@ func (lc *Service) IsRunning() bool {
 
 	return false
 }
-func (lc *Service) Logout() {
-	lc.logger.Info("Attempting to logout from League client")
+func (s *Service) Logout() {
+	s.logger.Info("Attempting to logout from League client")
 
-	if !lc.LCUconnection.IsClientInitialized() {
-		err := lc.LCUconnection.Initialize()
+	if !s.LCUconnection.IsClientInitialized() {
+		err := s.LCUconnection.Initialize()
 		if err != nil {
-			lc.logger.Error("Failed to initialize LCU connection", zap.Error(err))
+			s.logger.Error("Failed to initialize LCU connection", zap.Error(err))
 			return
 		}
 	}
 
-	resp, err := lc.LCUconnection.Client.R().Delete("/lol-login/v1/session")
+	resp, err := s.LCUconnection.Client.R().Delete("/lol-login/v1/session")
 	if err != nil {
-		lc.logger.Error("Failed to send logout request", zap.Error(err))
+		s.logger.Error("Failed to send logout request", zap.Error(err))
 		return
 	}
 
 	if resp.StatusCode() == 204 {
-		lc.logger.Info("Successfully logged out from League client")
+		s.logger.Info("Successfully logged out from League client")
 	} else {
-		lc.logger.Error("Unexpected response from logout request",
+		s.logger.Error("Unexpected response from logout request",
 			zap.Int("statusCode", resp.StatusCode()),
 			zap.String("body", string(resp.Body())))
 	}
 }
-func (lc *Service) WaitInventoryIsReady() {
-	lc.logger.Info("Waiting for inventory system to be ready")
+func (s *Service) WaitInventoryIsReady() {
+	s.logger.Info("Waiting for inventory system to be ready")
 
 	attempts := 0
 	for {
-		if lc.IsInventoryReady() {
-			lc.logger.Info("Inventory system is ready", zap.Int("attempts", attempts))
+		if s.IsInventoryReady() {
+			s.logger.Info("Inventory system is ready", zap.Int("attempts", attempts))
 			return
 		}
 
 		attempts++
 		if attempts%10 == 0 {
-			lc.logger.Debug("Still waiting for inventory system to be ready", zap.Int("attempts", attempts))
+			s.logger.Debug("Still waiting for inventory system to be ready", zap.Int("attempts", attempts))
 		}
 
 		time.Sleep(1 * time.Second)
 	}
 }
 
-func (lc *Service) IsInventoryReady() bool {
+func (s *Service) IsInventoryReady() bool {
 
-	if lc.LCUconnection.Client == nil {
-		err := lc.LCUconnection.Initialize()
+	if s.LCUconnection.Client == nil {
+		err := s.LCUconnection.Initialize()
 		if err != nil {
-			lc.logger.Debug("LCU client not initialized")
+			s.logger.Debug("LCU client not initialized")
 			return false
 		}
 	}
 
 	var result bool
-	resp, err := lc.LCUconnection.Client.R().SetResult(&result).Get("/lol-inventory/v1/initial-configuration-complete")
+	resp, err := s.LCUconnection.Client.R().SetResult(&result).Get("/lol-inventory/v1/initial-configuration-complete")
 
 	if err != nil {
-		lc.logger.Debug("LCU client connection test failed", zap.Error(err))
+		s.logger.Debug("LCU client connection test failed", zap.Error(err))
 		return false
 	}
 
 	if resp.IsError() {
-		lc.logger.Debug("LCU client ready and accepting API requests")
+		s.logger.Debug("LCU client ready and accepting API requests")
 		return false
 	}
-	lc.logger.Debug("LCU client not ready", zap.Int("statusCode", resp.StatusCode()))
+	s.logger.Debug("LCU client not ready", zap.Int("statusCode", resp.StatusCode()))
 	return result
 }
 
-func (lc *Service) UpdateFromLCU(username string) error {
-	lc.logger.Debug("Updating account from LCU", zap.String("username", username))
-	summonerRented, err := lc.summonerService.UpdateFromLCU(username)
+func (s *Service) UpdateFromLCU(username string) error {
+	s.logger.Debug("Updating account from LCU", zap.String("username", username))
+	summonerRented, err := s.summonerService.UpdateFromLCU(username)
 	if err != nil {
-		lc.logger.Error("Failed to update account from LCU", zap.Error(err))
+		s.logger.Error("Failed to update account from LCU", zap.Error(err))
 		return err
 	}
 
-	_, err = lc.Api.Save(*summonerRented) // You may need to update the repository to accept the new format
+	_, err = s.Api.Save(*summonerRented) // You may need to update the repository to accept the new format
 	if err != nil {
-		lc.logger.Error("failed to save account to database", zap.Error(err))
+		s.logger.Error("failed to save account to database", zap.Error(err))
 		return err
 	}
 	return nil
