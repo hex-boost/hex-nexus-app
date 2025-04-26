@@ -69,7 +69,6 @@ type Monitor struct {
 	leagueService       LeagueServicer
 	mutex               sync.Mutex
 	watchdogState       watchdog.WatchdogUpdater // Add this field to access watchdog
-	accountService      AccountServicer
 
 	summonerClient SummonerClientInterface
 	LCUConnection  LCUConnectionInterface
@@ -79,24 +78,22 @@ func NewMonitor(
 	logger *logger.Logger,
 	leagueService LeagueServicer,
 	riotAuth RiotAuthenticator,
-	accountService AccountServicer,
 	summonerClient SummonerClientInterface,
 	LCUConnection LCUConnectionInterface,
 	watchdog watchdog.WatchdogUpdater,
-	//accountClient AccountsRepositoryInterface,
+	accountClient AccountsRepositoryInterface,
 
 ) *Monitor {
 	return &Monitor{
-		watchdogState: watchdog,
-		leagueService: leagueService,
-		LCUConnection: LCUConnection,
-		riotAuth:      riotAuth,
-		//accountClient:   accountClient,
+		watchdogState:   watchdog,
+		leagueService:   leagueService,
+		LCUConnection:   LCUConnection,
+		riotAuth:        riotAuth,
 		summonerClient:  summonerClient,
-		accountService:  accountService,
 		logger:          logger,
 		isNexusAccount:  false,
 		window:          nil,
+		accountClient:   accountClient,
 		accountCacheTTL: 5 * time.Minute, // Adjust the cache duration as needed
 
 		checkInterval: 1 * time.Second, // Check every 30 seconds

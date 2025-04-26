@@ -162,7 +162,6 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		appInstance.Log().Riot(),
 		leagueService,
 		riotService,
-		accountClient,
 		summonerClient,
 		lcuConn,
 		watchdogClient,
