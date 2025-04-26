@@ -3,11 +3,12 @@ package handler
 import (
 	"encoding/json"
 
+	"go.uber.org/zap"
+
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account/events"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
-	"go.uber.org/zap"
 )
 
 // AccountState defines the contract for account state management
@@ -26,14 +27,14 @@ type App interface {
 
 // Handler implements WebSocketEventHandler with standard event handling logic
 type Handler struct {
-	logger        *logger.Logger
+	logger        logger.Loggerer
 	accountClient AccountClient
 	accountState  AccountState
 	app           App
 }
 
 // New creates a new WebSocket event handler
-func New(logger *logger.Logger, app App, accountState AccountState, accountClient AccountClient) *Handler {
+func New(logger logger.Loggerer, app App, accountState AccountState, accountClient AccountClient) *Handler {
 	return &Handler{
 		accountState:  accountState,
 		logger:        logger,
@@ -58,7 +59,7 @@ func (h *Handler) WalletEvent(event websocket.LCUWebSocketEvent) {
 	currentAccount := h.accountState.Get()
 
 	needsUpdate := true
-	if currentAccount.Currencies != nil &&
+	if currentAccount != nil && currentAccount.Currencies != nil &&
 		currentAccount.Currencies.LolBlueEssence != nil &&
 		*currentAccount.Currencies.LolBlueEssence == blueEssence {
 		needsUpdate = false

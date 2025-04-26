@@ -11,16 +11,14 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account"
+	"github.com/wailsapp/wails/v3/pkg/application"
+	"go.uber.org/zap"
+
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account/events"
 	websocketEvent "github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket/event"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
-	"github.com/wailsapp/wails/v3/pkg/application"
-	"go.uber.org/zap"
 )
-
-// Logger interface for both real and mock loggers
 
 // WebSocketConnection defines the interface for websocket connections
 type WebSocketConnection interface {
@@ -97,7 +95,6 @@ type Service struct {
 	mutex          sync.Mutex
 	isRunning      bool
 	stopChan       chan struct{}
-	accountState   *account.State
 	subscriptions  map[string]bool
 	router         RouterService
 	manager        ManagerService
@@ -113,7 +110,6 @@ func NewService(
 	accountMonitor AccountMonitor,
 	leagueService LeagueService,
 	lcuConnection LCUConnection,
-	accountState *account.State,
 	accountClient AccountsRepository,
 	router RouterService,
 	handler Handler,
@@ -126,7 +122,6 @@ func NewService(
 		manager:        manager,
 		leagueService:  leagueService,
 		lcuConnection:  lcuConnection,
-		accountState:   accountState,
 		stopChan:       make(chan struct{}),
 		router:         router,
 		handler:        handler,

@@ -30,24 +30,24 @@ type RiotAuthenticator interface {
 }
 
 // LeagueServiceInterface defines methods needed from LeagueService
-type LeagueServiceInterface interface {
+type LeagueService interface {
 	IsRunning() bool
 	IsPlaying() bool
 }
 
 // SummonerClientInterface defines methods needed from SummonerClient
-type SummonerClientInterface interface {
+type SummonerClient interface {
 	GetLoginSession() (*types.LoginSession, error)
 }
 
 // LCUConnectionInterface defines methods needed from LCUConnection
-type LCUConnectionInterface interface {
+type LCUConnection interface {
 	Initialize() error
 	IsClientInitialized() bool
 }
 
 // AccountsRepositoryInterface defines methods needed from AccountsRepository
-type AccountsRepositoryInterface interface {
+type AccountClient interface {
 	GetAllRented() ([]types.SummonerRented, error)
 }
 
@@ -62,7 +62,7 @@ type LeagueServicer interface {
 type AccountServicer interface{}
 type Monitor struct {
 	riotAuth            RiotAuthenticator
-	accountClient       AccountsRepositoryInterface
+	accountClient       AccountClient
 	logger              *logger.Logger
 	lastCheckedUsername string
 	running             bool
@@ -77,18 +77,18 @@ type Monitor struct {
 	mutex               sync.Mutex
 	watchdogState       watchdog.WatchdogUpdater
 
-	summonerClient SummonerClientInterface
-	LCUConnection  LCUConnectionInterface
+	summonerClient SummonerClient
+	LCUConnection  LCUConnection
 }
 
 func NewMonitor(
 	logger *logger.Logger,
 	leagueService LeagueServicer,
 	riotAuth RiotAuthenticator,
-	summonerClient SummonerClientInterface,
-	LCUConnection LCUConnectionInterface,
+	summonerClient SummonerClient,
+	LCUConnection LCUConnection,
 	watchdog watchdog.WatchdogUpdater,
-	accountClient AccountsRepositoryInterface,
+	accountClient AccountClient,
 	accountState AccountState,
 ) *Monitor {
 	return &Monitor{

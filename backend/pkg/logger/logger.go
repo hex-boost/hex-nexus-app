@@ -6,13 +6,19 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
 )
 
 type Logger struct {
 	*zap.Logger
+}
+type Loggerer interface {
+	Info(msg string, fields ...zap.Field)
+	Debug(msg string, fields ...zap.Field)
+	Error(msg string, fields ...zap.Field)
 }
 
 func New(prefix string, config *config.Config) *Logger {

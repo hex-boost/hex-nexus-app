@@ -287,7 +287,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 	websocketHandler := handler.New(appInstance.Log().League(), mainApp, accountState, accountClient)
 	websocketRouter := websocket.NewRouter(appInstance.Log().League())
 	websocketManager := websocket.NewManager()
-	websocketService := websocket.NewService(appInstance.Log().League(), accountMonitor, leagueService, lcuConn, accountState, accountClient, websocketRouter, websocketHandler, websocketManager)
+	websocketService := websocket.NewService(appInstance.Log().League(), accountMonitor, leagueService, lcuConn, accountClient, websocketRouter, websocketHandler, websocketManager)
 	overlayWindow := gameOverlay.CreateGameOverlay(mainApp)
 	gameOverlayManager.SetWindow(overlayWindow)
 	mainWindow.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {

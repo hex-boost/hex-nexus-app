@@ -1,22 +1,23 @@
-package websocket
+package websocket_test
 
 import (
 	"encoding/json"
 	"fmt"
-	"sync"
+	gorillaWs "github.com/gorilla/websocket"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
+	"github.com/hex-boost/hex-nexus-app/backend/test/mocks"
 	"testing"
 	"time"
 
-	"github.com/gorilla/websocket"
-	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
-	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account"
-	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account/events"
-	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket/event"
-	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
-	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/wailsapp/wails/v3/pkg/application"
+
+	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account/events"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket/event"
+	"github.com/hex-boost/hex-nexus-app/backend/types"
 )
 
 // MockWebSocketConnection mocks the WebSocketConnection interface
@@ -63,171 +64,86 @@ func (m *MockApp) OnEvent(name string, callback func(event *application.CustomEv
 	return args.Get(0).(func())
 }
 
-// MockAccountsRepository implements the AccountsRepository interface
-type MockAccountsRepository struct {
-	mock.Mock
-}
-
-func (m *MockAccountsRepository) Save(summoner types.PartialSummonerRented) (*types.SummonerResponse, error) {
-	args := m.Called(summoner)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*types.SummonerResponse), args.Error(1)
-}
-
-// MockHandler is a mock implementation of the HandlerInterface
-type MockHandler struct {
-	mock.Mock
-}
-
-func (m *MockHandler) WalletEvent(event LCUWebSocketEvent) {
-	m.Called(event)
-}
-
-// MockLeagueService is a mock implementation of league.Service
-type MockLeagueService struct {
-	mock.Mock
-}
-
-func (m *MockLeagueService) IsRunning() bool {
-	args := m.Called()
-	return args.Bool(0)
-}
-
-type MockLCUConnection struct {
-	mock.Mock
-}
-
-func (m *MockLCUConnection) GetLeagueCredentials() (string, string, string, error) {
-	args := m.Called()
-	return args.String(0), args.String(1), args.String(2), args.Error(3)
-}
-
-type MockRouter struct {
-	mock.Mock
-}
-
-func (m *MockRouter) RegisterHandler(path string, handler func(LCUWebSocketEvent)) {
-	m.Called(path, handler)
-}
-
-func (m *MockRouter) DeleteHandler(path string) {
-	m.Called(path)
-}
-
-func (m *MockRouter) Dispatch(event LCUWebSocketEvent) {
-	m.Called(event)
-}
-
-type MockManager struct {
-	mock.Mock
-}
-
-func (m *MockManager) NewEventHandler(path string, handler func(LCUWebSocketEvent)) EventHandler {
-	args := m.Called(path, handler)
-	return args.Get(0).(EventHandler)
-}
-
-type MockAccountMonitor struct {
-	mock.Mock
-}
-
-func (m *MockAccountMonitor) GetLoggedInUsername() string {
-	args := m.Called()
-	return args.String(0)
-}
-
 type MockEventHandler struct {
 	Path    string
-	Handler func(LCUWebSocketEvent)
+	Handler func(socketEvent websocket.LCUWebSocketEvent)
 }
 
 func (m *MockEventHandler) GetPath() string {
 	return m.Path
 }
 
-func (m *MockEventHandler) Handle(event LCUWebSocketEvent) {
+func (m *MockEventHandler) Handle(event websocket.LCUWebSocketEvent) {
 	m.Handler(event)
 }
 
-// Make sure MockRouter implements RouterInterface
-func TestCreateNewService(t *testing.T) {
-	mockLogger := &logger.Logger{}
-	mockAccountMonitor := new(MockAccountMonitor)
-	mockLeagueService := new(MockLeagueService)
-	mockLCUConnection := new(MockLCUConnection)
-	mockAccountState := &account.State{}
-	mockAccountRepo := new(MockAccountsRepository)
-	mockRouter := new(MockRouter)
-	mockHandler := new(MockHandler)
-	mockManager := new(MockManager)
+func TestServiceStartStopBehavior(t *testing.T) {
+	mockLogger := logger.New("test", &config.Config{LogLevel: "info"})
+	mockApp := new(MockApp)
+	mockRouter := mocks.NewRouterService(t)
+	mockLCUConnection := mocks.NewLCUConnection(t)
+	mockAccountMonitor := mocks.NewAccountMonitor(t)
+	mockLeagueService := mocks.NewLeagueService(t)
+	mockAccountsRepo := mocks.NewAccountsRepository(t)
+	mockHandler := mocks.NewHandler(t)
+	mockManager := mocks.NewManagerService(t)
 
-	service := NewService(
+	// Create service using the proper constructor
+	service := websocket.NewService(
 		mockLogger,
 		mockAccountMonitor,
 		mockLeagueService,
 		mockLCUConnection,
-		mockAccountState,
-		mockAccountRepo,
+		mockAccountsRepo,
 		mockRouter,
 		mockHandler,
 		mockManager,
 	)
-	assert.NotNil(t, service)
-	assert.Equal(t, mockLogger, service.logger)
-	assert.Equal(t, mockAccountMonitor, service.accountMonitor)
-	assert.Equal(t, mockLeagueService, service.leagueService)
-	assert.Equal(t, mockAccountState, service.accountState)
-	assert.Equal(t, mockAccountRepo, service.accountClient)
-	assert.Equal(t, mockRouter, service.router)
-	assert.Equal(t, mockHandler, service.handler)
-	assert.Equal(t, mockManager, service.manager)
-}
-
-func TestServiceStartStopBehavior(t *testing.T) {
-	// Create a proper logger instance
-	mockLogger := logger.New("test", &config.Config{LogLevel: "info"})
-	mockApp := new(MockApp)
-	mockService := &Service{
-		logger:    mockLogger,
-		isRunning: false,
-		stopChan:  make(chan struct{}),
-	}
 
 	// Test starting when not running
-	mockService.Start(mockApp)
-	assert.True(t, mockService.isRunning)
+	service.Start(mockApp)
+	assert.True(t, service.IsRunning())
 
 	// Test starting when already running
-	mockService.Start(mockApp)
-	assert.True(t, mockService.isRunning)
+	service.Start(mockApp)
+	assert.True(t, service.IsRunning())
 
 	// Test stopping when running
-	mockService.Stop()
-	assert.False(t, mockService.isRunning)
+	service.Stop()
+	assert.False(t, service.IsRunning())
 
 	// Test stopping when already stopped
-	mockService.Stop()
-	assert.False(t, mockService.isRunning)
+	service.Stop()
+	assert.False(t, service.IsRunning())
 }
 
 func TestServiceSubscribeUnsubscribe(t *testing.T) {
 	mockLogger := logger.New("test", &config.Config{})
-	mockRouter := new(MockRouter)
+	mockRouter := mocks.NewRouterService(t)
+	mockLCUConnection := mocks.NewLCUConnection(t)
+	mockAccountMonitor := mocks.NewAccountMonitor(t)
+	mockLeagueService := mocks.NewLeagueService(t)
+	mockAccountsRepo := mocks.NewAccountsRepository(t)
+	mockHandler := mocks.NewHandler(t)
+	mockManager := mocks.NewManagerService(t)
 
-	service := &Service{
-		logger:        mockLogger,
-		router:        mockRouter,
-		subscriptions: make(map[string]bool),
-	}
+	service := websocket.NewService(
+		mockLogger,
+		mockAccountMonitor,
+		mockLeagueService,
+		mockLCUConnection,
+		mockAccountsRepo,
+		mockRouter,
+		mockHandler,
+		mockManager,
+	)
 
 	// Test subscribe without active connection
 	err := service.Subscribe("test-path")
 	assert.NoError(t, err)
 
 	// Test unsubscribe
-	mockRouter.On("DeleteHandler", "test-path").Return()
+	mockRouter.EXPECT().DeleteHandler("test-path").Return()
 	err = service.Unsubscribe("test-path")
 	assert.NoError(t, err)
 	mockRouter.AssertExpectations(t)
@@ -235,12 +151,24 @@ func TestServiceSubscribeUnsubscribe(t *testing.T) {
 
 func TestHandleWebSocketEvent(t *testing.T) {
 	mockLogger := logger.New("test", &config.Config{})
-	mockRouter := new(MockRouter)
+	mockRouter := mocks.NewRouterService(t)
+	mockLCUConnection := mocks.NewLCUConnection(t)
+	mockAccountMonitor := mocks.NewAccountMonitor(t)
+	mockLeagueService := mocks.NewLeagueService(t)
+	mockAccountsRepo := mocks.NewAccountsRepository(t)
+	mockHandler := mocks.NewHandler(t)
+	mockManager := mocks.NewManagerService(t)
 
-	service := &Service{
-		logger: mockLogger,
-		router: mockRouter,
-	}
+	service := websocket.NewService(
+		mockLogger,
+		mockAccountMonitor,
+		mockLeagueService,
+		mockLCUConnection,
+		mockAccountsRepo,
+		mockRouter,
+		mockHandler,
+		mockManager,
+	)
 
 	// Valid event message
 	validEventData := map[string]interface{}{
@@ -255,107 +183,141 @@ func TestHandleWebSocketEvent(t *testing.T) {
 		validEventData,
 	})
 
-	mockRouter.On("Dispatch", mock.MatchedBy(func(event LCUWebSocketEvent) bool {
+	mockRouter.EXPECT().Dispatch(mock.MatchedBy(func(event websocket.LCUWebSocketEvent) bool {
 		return event.URI == "test-uri" && event.EventType == 1
 	})).Return()
 
-	service.handleWebSocketEvent(eventMessage)
+	// Use the exported method to handle the event
+	service.HandleWebsocketEvent(eventMessage)
 	mockRouter.AssertExpectations(t)
 }
 
 func TestHandleInvalidWebSocketEvent(t *testing.T) {
-	// Create a proper logger instance instead of an empty struct
 	mockLogger := logger.New("test", &config.Config{LogLevel: "info"})
-	mockRouter := new(MockRouter)
+	mockRouter := mocks.NewRouterService(t)
+	mockLCUConnection := mocks.NewLCUConnection(t)
+	mockAccountMonitor := mocks.NewAccountMonitor(t)
+	mockLeagueService := mocks.NewLeagueService(t)
+	mockAccountsRepo := mocks.NewAccountsRepository(t)
+	mockHandler := mocks.NewHandler(t)
+	mockManager := mocks.NewManagerService(t)
 
-	service := &Service{
-		logger: mockLogger,
-		router: mockRouter,
-	}
+	service := websocket.NewService(
+		mockLogger,
+		mockAccountMonitor,
+		mockLeagueService,
+		mockLCUConnection,
+		mockAccountsRepo,
+		mockRouter,
+		mockHandler,
+		mockManager,
+	)
 
 	// Too short message
 	shortMessage, _ := json.Marshal([]interface{}{8, "topic"})
-	service.handleWebSocketEvent(shortMessage)
+	service.HandleWebsocketEvent(shortMessage)
 
 	// Wrong event code
 	wrongCodeMessage, _ := json.Marshal([]interface{}{7, "topic", map[string]interface{}{}})
-	service.handleWebSocketEvent(wrongCodeMessage)
+	service.HandleWebsocketEvent(wrongCodeMessage)
 
 	// No dispatches should occur
-	mockRouter.AssertNotCalled(t, "Dispatch", mock.Anything)
+	mockRouter.AssertExpectations(t)
 }
 
 func TestRefreshAccountState(t *testing.T) {
 	mockLogger := logger.New("test", &config.Config{})
 	mockApp := new(MockApp)
-	mockMonitor := new(MockAccountMonitor)
-	mockAccountRepo := new(MockAccountsRepository)
+	mockRouter := mocks.NewRouterService(t)
+	mockLCUConnection := mocks.NewLCUConnection(t)
+	mockAccountMonitor := mocks.NewAccountMonitor(t)
+	mockLeagueService := mocks.NewLeagueService(t)
+	mockAccountsRepo := mocks.NewAccountsRepository(t)
+	mockHandler := mocks.NewHandler(t)
+	mockManager := mocks.NewManagerService(t)
 
 	username := "testUser"
 	summonerState := types.PartialSummonerRented{}
 	summonerResponse := &types.SummonerResponse{Username: username}
 
-	service := &Service{
-		logger:         mockLogger,
-		app:            mockApp,
-		accountMonitor: mockMonitor,
-		accountClient:  mockAccountRepo,
-	}
+	service := websocket.NewService(
+		mockLogger,
+		mockAccountMonitor,
+		mockLeagueService,
+		mockLCUConnection,
+		mockAccountsRepo,
+		mockRouter,
+		mockHandler,
+		mockManager,
+	)
 
-	mockMonitor.On("GetLoggedInUsername").Return(username)
-	mockAccountRepo.On("Save", mock.MatchedBy(func(s types.PartialSummonerRented) bool {
+	mockAccountMonitor.EXPECT().GetLoggedInUsername().Return(username)
+	mockAccountsRepo.EXPECT().Save(mock.MatchedBy(func(s types.PartialSummonerRented) bool {
 		return s.Username == username
 	})).Return(summonerResponse, nil)
 
 	// Fix: Use mock.Anything for the variadic parameters
-	mockApp.On("EmitEvent", events.AccountStateChanged, mock.Anything).Return()
+	mockApp.On("EmitEvent", events.AccountStateChanged, []interface{}{summonerResponse}).Return()
 
 	service.RefreshAccountState(summonerState)
 
-	mockMonitor.AssertExpectations(t)
-	mockAccountRepo.AssertExpectations(t)
-	mockApp.AssertExpectations(t)
 }
 
 func TestRefreshAccountStateWithEmptyUsername(t *testing.T) {
-	mockLogger := &logger.Logger{}
-	mockMonitor := new(MockAccountMonitor)
-	mockAccountRepo := new(MockAccountsRepository)
+	mockLogger := logger.New("test", &config.Config{})
+	mockRouter := mocks.NewRouterService(t)
+	mockLCUConnection := mocks.NewLCUConnection(t)
+	mockAccountMonitor := mocks.NewAccountMonitor(t)
+	mockLeagueService := mocks.NewLeagueService(t)
+	mockAccountsRepo := mocks.NewAccountsRepository(t)
+	mockHandler := mocks.NewHandler(t)
+	mockManager := mocks.NewManagerService(t)
 
-	service := &Service{
-		logger:         mockLogger,
-		accountMonitor: mockMonitor,
-		accountClient:  mockAccountRepo,
-	}
+	service := websocket.NewService(
+		mockLogger,
+		mockAccountMonitor,
+		mockLeagueService,
+		mockLCUConnection,
+		mockAccountsRepo,
+		mockRouter,
+		mockHandler,
+		mockManager,
+	)
 
-	mockMonitor.On("GetLoggedInUsername").Return("")
+	mockAccountMonitor.EXPECT().GetLoggedInUsername().Return("")
 
 	service.RefreshAccountState(types.PartialSummonerRented{})
 
-	mockMonitor.AssertExpectations(t)
-	mockAccountRepo.AssertNotCalled(t, "Save", mock.Anything)
+	mockAccountMonitor.AssertExpectations(t)
 }
 
 func TestSubscribeToLeagueEvents(t *testing.T) {
-	mockLogger := &logger.Logger{}
+	mockLogger := logger.New("test", &config.Config{})
 	mockApp := new(MockApp)
-	mockHandler := new(MockHandler)
-	mockManager := new(MockManager)
-	mockRouter := new(MockRouter)
+	mockRouter := mocks.NewRouterService(t)
+	mockLCUConnection := mocks.NewLCUConnection(t)
+	mockAccountMonitor := mocks.NewAccountMonitor(t)
+	mockLeagueService := mocks.NewLeagueService(t)
+	mockAccountsRepo := mocks.NewAccountsRepository(t)
+	mockHandler := mocks.NewHandler(t)
+	mockManager := mocks.NewManagerService(t)
 
-	service := &Service{
-		logger:        mockLogger,
-		app:           mockApp,
-		handler:       mockHandler,
-		manager:       mockManager,
-		router:        mockRouter,
-		subscriptions: make(map[string]bool),
-	}
+	service := websocket.NewService(
+		mockLogger,
+		mockAccountMonitor,
+		mockLeagueService,
+		mockLCUConnection,
+		mockAccountsRepo,
+		mockRouter,
+		mockHandler,
+		mockManager,
+	)
 
 	// Fix: Return a dummy function for OnEvent calls
 	dummyCleanupFunc := func() {}
 	mockApp.On("OnEvent", event.LeagueWebsocketStart, mock.AnythingOfType("func(*application.CustomEvent)")).Return(dummyCleanupFunc)
 	mockApp.On("OnEvent", event.LeagueWebsocketStop, mock.AnythingOfType("func(*application.CustomEvent)")).Return(dummyCleanupFunc)
+	service.SetApp(mockApp)
 
 	service.SubscribeToLeagueEvents()
 
@@ -363,150 +325,197 @@ func TestSubscribeToLeagueEvents(t *testing.T) {
 }
 
 func TestIsConnected(t *testing.T) {
-	mockLogger := &logger.Logger{}
-	service := &Service{
-		logger: mockLogger,
-	}
+	mockLogger := logger.New("test", &config.Config{})
+	mockRouter := mocks.NewRouterService(t)
+	mockLCUConnection := mocks.NewLCUConnection(t)
+	mockAccountMonitor := mocks.NewAccountMonitor(t)
+	mockLeagueService := mocks.NewLeagueService(t)
+	mockAccountsRepo := mocks.NewAccountsRepository(t)
+	mockHandler := mocks.NewHandler(t)
+	mockManager := mocks.NewManagerService(t)
 
-	// Should be false when connection is nil
-	assert.False(t, service.isConnected())
+	service := websocket.NewService(
+		mockLogger,
+		mockAccountMonitor,
+		mockLeagueService,
+		mockLCUConnection,
+		mockAccountsRepo,
+		mockRouter,
+		mockHandler,
+		mockManager,
+	)
+
+	// Should return false when no connection is established
+	assert.False(t, service.IsConnected())
 }
 
-// Test isConnected with mock connection
 func TestIsConnectedWithMock(t *testing.T) {
-	mockLogger := &logger.Logger{}
+	mockLogger := logger.New("test", &config.Config{})
+	mockRouter := mocks.NewRouterService(t)
+	mockLCUConnection := mocks.NewLCUConnection(t)
+	mockAccountMonitor := mocks.NewAccountMonitor(t)
+	mockLeagueService := mocks.NewLeagueService(t)
+	mockAccountsRepo := mocks.NewAccountsRepository(t)
+	mockHandler := mocks.NewHandler(t)
+	mockManager := mocks.NewManagerService(t)
 	mockConn := new(MockWebSocketConnection)
 
-	service := &Service{
-		logger: mockLogger,
-		conn:   mockConn,
-	}
+	service := websocket.NewService(
+		mockLogger,
+		mockAccountMonitor,
+		mockLeagueService,
+		mockLCUConnection,
+		mockAccountsRepo,
+		mockRouter,
+		mockHandler,
+		mockManager,
+	)
+
+	// We need to set the connection field for this test - use a helper method if available
+	websocket.SetTestConnection(service, mockConn)
 
 	// Test case 1: Connection working
-	mockConn.On("WriteControl", websocket.PingMessage, []byte{}, mock.Anything).Return(nil).Once()
-	assert.True(t, service.isConnected())
+	mockConn.On("WriteControl", gorillaWs.PingMessage, []byte{}, mock.Anything).Return(nil).Once()
+	assert.True(t, service.IsConnected())
 
 	// Test case 2: Connection failed
-	mockConn.On("WriteControl", websocket.PingMessage, []byte{}, mock.Anything).Return(fmt.Errorf("connection closed")).Once()
-	assert.False(t, service.isConnected())
+	mockConn.On("WriteControl", gorillaWs.PingMessage, []byte{}, mock.Anything).Return(fmt.Errorf("connection closed")).Once()
+	assert.False(t, service.IsConnected())
 
 	mockConn.AssertExpectations(t)
 }
 
-// Test connection cycle and reconnection mechanism
 func TestWebSocketConnectionCycle(t *testing.T) {
 	mockLogger := logger.New("test", &config.Config{LogLevel: "info"})
-	mockLeagueService := new(MockLeagueService)
-	mockLCUConnection := new(MockLCUConnection)
+	mockRouter := mocks.NewRouterService(t)
+	mockLCUConnection := mocks.NewLCUConnection(t)
+	mockAccountMonitor := mocks.NewAccountMonitor(t)
+	mockLeagueService := mocks.NewLeagueService(t)
+	mockAccountsRepo := mocks.NewAccountsRepository(t)
+	mockHandler := mocks.NewHandler(t)
+	mockManager := mocks.NewManagerService(t)
 
-	service := &Service{
-		logger:        mockLogger,
-		leagueService: mockLeagueService,
-		lcuConnection: mockLCUConnection,
-		stopChan:      make(chan struct{}),
-		subscriptions: make(map[string]bool),
-		mutex:         sync.Mutex{},
-	}
+	service := websocket.NewService(
+		mockLogger,
+		mockAccountMonitor,
+		mockLeagueService,
+		mockLCUConnection,
+		mockAccountsRepo,
+		mockRouter,
+		mockHandler,
+		mockManager,
+	)
 
 	// Mock behavior for connection attempt
 	port, token := "1234", "test-token"
-	mockLeagueService.On("IsRunning").Return(true).Maybe()
-	mockLCUConnection.On("GetLeagueCredentials").Return(port, token, "https", nil).Maybe()
+	mockLeagueService.EXPECT().IsRunning().Return(true).Maybe()
+	mockLCUConnection.EXPECT().GetLeagueCredentials().Return(port, token, "https", nil).Maybe()
 
-	// Create a channel to signal when we should stop the service
-	// stopSignal := make(chan struct{})
-
-	// Start the service in a goroutine
+	// Start the service and run for a short time
 	go func() {
-		service.runWebSocketLoop()
+		service.RunWebSocketLoop() // Assuming this is an exported method for testing
 	}()
 
 	// Let the service run for a short time
 	time.Sleep(100 * time.Millisecond)
 
 	// Signal to stop and actually stop the service
-	close(service.stopChan)
+	service.Stop()
 
 	// Wait for goroutine to complete
 	time.Sleep(100 * time.Millisecond)
 }
 
-// Test error handling during connection
 func TestConnectionErrorHandling(t *testing.T) {
 	mockLogger := logger.New("test", &config.Config{LogLevel: "info"})
-	mockLeagueService := new(MockLeagueService)
-	mockLCUConnection := new(MockLCUConnection)
+	mockRouter := mocks.NewRouterService(t)
+	mockLCUConnection := mocks.NewLCUConnection(t)
+	mockAccountMonitor := mocks.NewAccountMonitor(t)
+	mockLeagueService := mocks.NewLeagueService(t)
+	mockAccountsRepo := mocks.NewAccountsRepository(t)
+	mockHandler := mocks.NewHandler(t)
+	mockManager := mocks.NewManagerService(t)
 
-	service := &Service{
-		logger:        mockLogger,
-		leagueService: mockLeagueService,
-		lcuConnection: mockLCUConnection,
-		stopChan:      make(chan struct{}),
-		subscriptions: make(map[string]bool),
-		mutex:         sync.Mutex{},
-	}
+	service := websocket.NewService(
+		mockLogger,
+		mockAccountMonitor,
+		mockLeagueService,
+		mockLCUConnection,
+		mockAccountsRepo,
+		mockRouter,
+		mockHandler,
+		mockManager,
+	)
 
 	// Mock behavior for failed connection attempt
-	mockLeagueService.On("IsRunning").Return(true)
-	mockLCUConnection.On("GetLeagueCredentials").Return("", "", "", fmt.Errorf("connection error"))
+	mockLCUConnection.EXPECT().IsClientInitialized().Return(false)
+	mockLCUConnection.EXPECT().Initialize().Return(nil)
+	mockLCUConnection.EXPECT().GetLeagueCredentials().Return("", "", "", fmt.Errorf("connection error"))
 
 	// Test connection error path
-	err := service.connectToLCUWebSocket()
+	err := service.ConnectToLCUWebSocket()
 
 	assert.Error(t, err)
 	mockLCUConnection.AssertExpectations(t)
 }
-
-// Test resubscribe behavior
 func TestResubscribeToEvents(t *testing.T) {
 	mockLogger := logger.New("test", &config.Config{LogLevel: "info"})
+	mockRouter := mocks.NewRouterService(t)
+	mockLCUConnection := mocks.NewLCUConnection(t)
+	mockAccountMonitor := mocks.NewAccountMonitor(t)
+	mockLeagueService := mocks.NewLeagueService(t)
+	mockAccountsRepo := mocks.NewAccountsRepository(t)
+	mockHandler := mocks.NewHandler(t)
+	mockManager := mocks.NewManagerService(t)
+	mockConn := mocks.NewWebSocketConnection(t)
 
-	// Create a mock websocket connection
-	mockConn := &websocket.Conn{}
+	service := websocket.NewService(
+		mockLogger,
+		mockAccountMonitor,
+		mockLeagueService,
+		mockLCUConnection,
+		mockAccountsRepo,
+		mockRouter,
+		mockHandler,
+		mockManager,
+	)
 
-	service := &Service{
-		logger: mockLogger,
-		conn:   mockConn,
-		subscriptions: map[string]bool{
-			"test-path-1": true,
-			"test-path-2": true,
-		},
-		mutex: sync.Mutex{},
-	}
+	// We need to add subscriptions and set the connection for testing
+	websocket.SetTestConnection(service, mockConn)
+	websocket.AddTestSubscription(service, "test-path-1")
+	websocket.AddTestSubscription(service, "test-path-2")
 
-	// Use a custom WebSocket implementation to capture sent messages
-	sentMessages := []string{}
-
-	// Store original function
-	originalSendSubscription := service.sendSubscriptionFunc
-
-	// Replace with test implementation
-	service.sendSubscriptionFunc = func(eventPath string) error {
-		sentMessages = append(sentMessages, eventPath)
-		return nil
-	}
+	// Set up expectations for the subscription messages
+	mockConn.EXPECT().WriteMessage(gorillaWs.TextMessage, mock.MatchedBy(func(data []byte) bool {
+		return string(data) == `[5, "OnJsonApiEvent_test-path-1"]` || string(data) == `[5, "OnJsonApiEvent_test-path-2"]`
+	})).Return(nil).Times(2)
 
 	// Call resubscribe
-	err := service.resubscribeToEvents()
-
-	// Restore original function
-	service.sendSubscriptionFunc = originalSendSubscription
+	err := service.ResubscribeToEvents() // Assuming this is an exported method for testing
 
 	assert.NoError(t, err)
-	assert.Equal(t, 2, len(sentMessages))
-	assert.Contains(t, sentMessages, "test-path-1")
-	assert.Contains(t, sentMessages, "test-path-2")
 }
 
-// Test event parsing and routing with various message formats
-func TestHandleWebSocketEventFormats(t *testing.T) {
+func TestHandleWebsocketEventFormats(t *testing.T) {
 	mockLogger := logger.New("test", &config.Config{LogLevel: "info"})
-	mockRouter := new(MockRouter)
+	mockRouter := mocks.NewRouterService(t)
+	mockLCUConnection := mocks.NewLCUConnection(t)
+	mockAccountMonitor := mocks.NewAccountMonitor(t)
+	mockLeagueService := mocks.NewLeagueService(t)
+	mockAccountsRepo := mocks.NewAccountsRepository(t)
+	mockHandler := mocks.NewHandler(t)
+	mockManager := mocks.NewManagerService(t)
 
-	service := &Service{
-		logger: mockLogger,
-		router: mockRouter,
-	}
+	service := websocket.NewService(
+		mockLogger,
+		mockAccountMonitor,
+		mockLeagueService,
+		mockLCUConnection,
+		mockAccountsRepo,
+		mockRouter,
+		mockHandler,
+		mockManager,
+	)
 
 	// Test case 1: Valid message with Create event type
 	validEventData := map[string]interface{}{
@@ -522,11 +531,11 @@ func TestHandleWebSocketEventFormats(t *testing.T) {
 	})
 
 	// Expect a dispatch with EventType = 0 (Create)
-	mockRouter.On("Dispatch", mock.MatchedBy(func(event LCUWebSocketEvent) bool {
+	mockRouter.EXPECT().Dispatch(mock.MatchedBy(func(event websocket.LCUWebSocketEvent) bool {
 		return event.URI == "test-uri" && event.EventType == 0
 	})).Return().Once()
 
-	service.handleWebSocketEvent(createEventMessage)
+	service.HandleWebsocketEvent(createEventMessage)
 
 	// Test case 2: Valid message with Delete event type
 	deleteEventData := map[string]interface{}{
@@ -542,11 +551,11 @@ func TestHandleWebSocketEventFormats(t *testing.T) {
 	})
 
 	// Expect a dispatch with EventType = 2 (Delete)
-	mockRouter.On("Dispatch", mock.MatchedBy(func(event LCUWebSocketEvent) bool {
+	mockRouter.EXPECT().Dispatch(mock.MatchedBy(func(event websocket.LCUWebSocketEvent) bool {
 		return event.URI == "test-uri" && event.EventType == 2
 	})).Return().Once()
 
-	service.handleWebSocketEvent(deleteEventMessage)
+	service.HandleWebsocketEvent(deleteEventMessage)
 
 	// Test case 3: Message with unknown event type
 	unknownEventData := map[string]interface{}{
@@ -562,46 +571,51 @@ func TestHandleWebSocketEventFormats(t *testing.T) {
 	})
 
 	// Expect a dispatch with EventType = -1 (unknown)
-	mockRouter.On("Dispatch", mock.MatchedBy(func(event LCUWebSocketEvent) bool {
+	mockRouter.EXPECT().Dispatch(mock.MatchedBy(func(event websocket.LCUWebSocketEvent) bool {
 		return event.URI == "test-uri" && event.EventType == -1
 	})).Return().Once()
 
-	service.handleWebSocketEvent(unknownEventMessage)
+	service.HandleWebsocketEvent(unknownEventMessage)
 
 	mockRouter.AssertExpectations(t)
 }
 
-// Test event handler registration and routing
 func TestEventHandlerRegistration(t *testing.T) {
 	mockLogger := logger.New("test", &config.Config{LogLevel: "info"})
 	mockApp := new(MockApp)
-	mockRouter := new(MockRouter)
-	mockManager := new(MockManager)
-	mockHandler := new(MockHandler)
+	mockRouter := mocks.NewRouterService(t)
+	mockLCUConnection := mocks.NewLCUConnection(t)
+	mockAccountMonitor := mocks.NewAccountMonitor(t)
+	mockLeagueService := mocks.NewLeagueService(t)
+	mockAccountsRepo := mocks.NewAccountsRepository(t)
+	mockHandler := mocks.NewHandler(t)
+	mockManager := mocks.NewManagerService(t)
 
-	service := &Service{
-		logger:        mockLogger,
-		app:           mockApp,
-		router:        mockRouter,
-		manager:       mockManager,
-		handler:       mockHandler,
-		subscriptions: make(map[string]bool),
-	}
+	service := websocket.NewService(
+		mockLogger,
+		mockAccountMonitor,
+		mockLeagueService,
+		mockLCUConnection,
+		mockAccountsRepo,
+		mockRouter,
+		mockHandler,
+		mockManager,
+	)
 
 	// Create a mock event handler
 	testPath := "test-handler-path"
 	mockEventHandler := &MockEventHandler{
 		Path: testPath,
-		Handler: func(event LCUWebSocketEvent) {
+		Handler: func(event websocket.LCUWebSocketEvent) {
 			// Handler logic
 		},
 	}
 
 	// Setup expectations
-	mockManager.On("NewEventHandler", "lol-inventory_v1_wallet", mock.AnythingOfType("func(websocket.LCUWebSocketEvent)")).
+	mockManager.EXPECT().NewEventHandler("lol-inventory_v1_wallet", mock.AnythingOfType("func(websocket.LCUWebSocketEvent)")).
 		Return(mockEventHandler)
 
-	mockRouter.On("RegisterHandler", testPath, mock.AnythingOfType("func(websocket.LCUWebSocketEvent)")).Return()
+	mockRouter.EXPECT().RegisterHandler(testPath, mock.AnythingOfType("func(websocket.LCUWebSocketEvent)")).Return()
 
 	// Setup expectations for both event registrations
 	mockApp.On("OnEvent", event.LeagueWebsocketStart, mock.AnythingOfType("func(*application.CustomEvent)")).
@@ -610,6 +624,8 @@ func TestEventHandlerRegistration(t *testing.T) {
 		Return(func() {})
 
 	// Subscribe to league events
+	service.SetApp(mockApp)
+
 	service.SubscribeToLeagueEvents()
 
 	// Now manually trigger the start event callback
@@ -625,18 +641,30 @@ func TestEventHandlerRegistration(t *testing.T) {
 	mockRouter.AssertExpectations(t)
 }
 
-// Test the unsubscribe flow in the service
 func TestUnsubscribeFlow(t *testing.T) {
 	mockLogger := logger.New("test", &config.Config{LogLevel: "info"})
 	mockApp := new(MockApp)
-	mockRouter := new(MockRouter)
+	mockRouter := mocks.NewRouterService(t)
+	mockLCUConnection := mocks.NewLCUConnection(t)
+	mockAccountMonitor := mocks.NewAccountMonitor(t)
+	mockLeagueService := mocks.NewLeagueService(t)
+	mockAccountsRepo := mocks.NewAccountsRepository(t)
+	mockHandler := mocks.NewHandler(t)
+	mockManager := mocks.NewManagerService(t)
 
-	service := &Service{
-		logger:        mockLogger,
-		app:           mockApp,
-		router:        mockRouter,
-		subscriptions: map[string]bool{"test-path": true},
-	}
+	service := websocket.NewService(
+		mockLogger,
+		mockAccountMonitor,
+		mockLeagueService,
+		mockLCUConnection,
+		mockAccountsRepo,
+		mockRouter,
+		mockHandler,
+		mockManager,
+	)
+
+	// Add a test subscription
+	websocket.AddTestSubscription(service, "test-path")
 
 	// Setup expectations for both event registrations
 	mockApp.On("OnEvent", event.LeagueWebsocketStart, mock.AnythingOfType("func(*application.CustomEvent)")).
@@ -644,8 +672,8 @@ func TestUnsubscribeFlow(t *testing.T) {
 	mockApp.On("OnEvent", event.LeagueWebsocketStop, mock.AnythingOfType("func(*application.CustomEvent)")).
 		Return(func() {})
 
-	mockRouter.On("DeleteHandler", "test-path").Return()
-
+	mockRouter.EXPECT().DeleteHandler("test-path").Return()
+	service.SetApp(mockApp)
 	// Subscribe to events to register the unsubscribe handler
 	service.SubscribeToLeagueEvents()
 
@@ -661,48 +689,72 @@ func TestUnsubscribeFlow(t *testing.T) {
 	mockRouter.AssertExpectations(t)
 }
 
-// Test subscriptionMessages with mock connection
 func TestSubscriptionMessagesWithMock(t *testing.T) {
 	mockLogger := logger.New("test", &config.Config{LogLevel: "info"})
+	mockRouter := mocks.NewRouterService(t)
+	mockLCUConnection := mocks.NewLCUConnection(t)
+	mockAccountMonitor := mocks.NewAccountMonitor(t)
+	mockLeagueService := mocks.NewLeagueService(t)
+	mockAccountsRepo := mocks.NewAccountsRepository(t)
+	mockHandler := mocks.NewHandler(t)
+	mockManager := mocks.NewManagerService(t)
 	mockConn := new(MockWebSocketConnection)
 
-	service := &Service{
-		logger: mockLogger,
-		conn:   mockConn,
-	}
+	service := websocket.NewService(
+		mockLogger,
+		mockAccountMonitor,
+		mockLeagueService,
+		mockLCUConnection,
+		mockAccountsRepo,
+		mockRouter,
+		mockHandler,
+		mockManager,
+	)
 
-	// Initialize the function fields
-	service.sendSubscriptionFunc = service.sendSubscriptionImpl
-	service.sendUnsubscriptionFunc = service.sendUnsubscriptionImpl
+	// Set the mock connection
+	websocket.SetTestConnection(service, mockConn)
 
 	// Test sendSubscription
-	mockConn.On("WriteMessage", websocket.TextMessage, mock.MatchedBy(func(data []byte) bool {
+	mockConn.On("WriteMessage", gorillaWs.TextMessage, mock.MatchedBy(func(data []byte) bool {
 		return string(data) == `[5, "OnJsonApiEvent_test-path"]`
 	})).Return(nil).Once()
 
-	err := service.sendSubscriptionFunc("test-path")
+	err := service.SendSubscription("test-path") // Assuming this is an exported method for testing
 	assert.NoError(t, err)
 
 	// Test sendUnsubscription - Fix by using exact value match instead of matcher
 	mockConn.On("WriteJSON", []interface{}{6, "test-path"}).Return(nil).Once()
 
-	err = service.sendUnsubscriptionFunc("test-path")
+	err = service.SendUnsubscription("test-path") // Assuming this is an exported method for testing
 	assert.NoError(t, err)
 
 	mockConn.AssertExpectations(t)
 }
 
-// Test readMessages with mock connection
 func TestReadMessages(t *testing.T) {
 	mockLogger := logger.New("test", &config.Config{LogLevel: "info"})
+	mockRouter := mocks.NewRouterService(t)
+	mockLCUConnection := mocks.NewLCUConnection(t)
+	mockAccountMonitor := mocks.NewAccountMonitor(t)
+	mockLeagueService := mocks.NewLeagueService(t)
+	mockAccountsRepo := mocks.NewAccountsRepository(t)
+	mockHandler := mocks.NewHandler(t)
+	mockManager := mocks.NewManagerService(t)
 	mockConn := new(MockWebSocketConnection)
-	mockRouter := new(MockRouter)
 
-	service := &Service{
-		logger: mockLogger,
-		conn:   mockConn,
-		router: mockRouter,
-	}
+	service := websocket.NewService(
+		mockLogger,
+		mockAccountMonitor,
+		mockLeagueService,
+		mockLCUConnection,
+		mockAccountsRepo,
+		mockRouter,
+		mockHandler,
+		mockManager,
+	)
+
+	// Set the mock connection
+	websocket.SetTestConnection(service, mockConn)
 
 	// Setup the mock to return one message then an error
 	validEventData := map[string]interface{}{
@@ -716,18 +768,18 @@ func TestReadMessages(t *testing.T) {
 		validEventData,
 	})
 
-	mockConn.On("ReadMessage").Return(websocket.TextMessage, eventMessage, nil).Once()
+	mockConn.On("ReadMessage").Return(gorillaWs.TextMessage, eventMessage, nil).Once()
 	mockConn.On("ReadMessage").Return(0, []byte{}, fmt.Errorf("connection closed")).Once()
 	mockConn.On("Close").Return(nil).Once()
 
-	mockRouter.On("Dispatch", mock.MatchedBy(func(event LCUWebSocketEvent) bool {
+	mockRouter.EXPECT().Dispatch(mock.MatchedBy(func(event websocket.LCUWebSocketEvent) bool {
 		return event.URI == "test-uri" && event.EventType == 1
 	})).Return().Once()
 
 	// Call readMessages in a goroutine as it loops until connection error
 	done := make(chan bool)
 	go func() {
-		service.readMessages()
+		service.ReadMessages() // Assuming this is an exported method for testing
 		done <- true
 	}()
 

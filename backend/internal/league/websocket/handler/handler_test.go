@@ -4,15 +4,19 @@ import (
 	"encoding/json"
 	"testing"
 
+	"go.uber.org/zap/zaptest"
+
 	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
+	"github.com/hex-boost/hex-nexus-app/backend/test/mocks"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"go.uber.org/zap"
 
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"go.uber.org/zap"
 )
 
 // MockLogger is a mock implementation of the logger
@@ -33,21 +37,6 @@ func (m *MockLogger) Debug(msg string, fields ...zap.Field) {
 }
 
 // MockState is a mock implementation of the account state
-type MockState struct {
-	mock.Mock
-}
-
-func (m *MockState) Get() *types.PartialSummonerRented {
-	args := m.Called()
-	if args.Get(0) == nil {
-		return nil
-	}
-	return args.Get(0).(*types.PartialSummonerRented)
-}
-
-func (m *MockState) Update(summonerRented *types.PartialSummonerRented) (*types.PartialSummonerRented, error) {
-	m.Called(summonerRented)
-}
 
 type MockAccountsRepository struct {
 	mock.Mock
@@ -67,12 +56,12 @@ func (m *MockApp) EmitEvent(eventName string, data ...interface{}) {
 }
 
 func TestWalletEventWithValidData(t *testing.T) {
-	mockState := new(MockState)
-	mockApp := new(MockApp)
-	mockAccountClient := new(account.MockClient)
+	mockState := mocks.NewAccountState(t)
+	mockApp := mocks.NewApp(t)
+	mockAccountClient := mocks.NewAccountClient(t)
 	testLogger := logger.New("test", &config.Config{})
 
-	handler := New(testLogger, mockApp, mockState, nil)
+	handler := New(testLogger, mockApp, mockState, mockAccountClient)
 
 	blueEssence := 1000
 	currentAccount := &types.PartialSummonerRented{
@@ -82,10 +71,23 @@ func TestWalletEventWithValidData(t *testing.T) {
 	}
 	*currentAccount.Currencies.LolBlueEssence = 500 // Different value to trigger update
 
+	updatedAccount := &types.PartialSummonerRented{
+		Currencies: &types.CurrenciesPointer{
+			LolBlueEssence: &blueEssence,
+		},
+	}
+
 	mockState.On("Get").Return(currentAccount)
 	mockState.On("Update", mock.MatchedBy(func(s *types.PartialSummonerRented) bool {
 		return s.Currencies != nil && *s.Currencies.LolBlueEssence == blueEssence
-	})).Return()
+	})).Return(updatedAccount, nil)
+
+	// Mock the accountClient.Save call
+	savedResponse := &types.SummonerResponse{}
+	mockAccountClient.On("Save", mock.Anything).Return(savedResponse, nil)
+
+	// Mock the app.EmitEvent call
+	mockApp.On("EmitEvent", mock.Anything, mock.Anything).Return()
 
 	// Create wallet data
 	wallet := types.Wallet{LolBlueEssence: blueEssence}
@@ -102,10 +104,11 @@ func TestWalletEventWithValidData(t *testing.T) {
 
 	// Verify
 	mockState.AssertExpectations(t)
+	mockAccountClient.AssertExpectations(t)
+	mockApp.AssertExpectations(t)
 }
-
 func TestWalletEventWithUnchangedBlueEssence(t *testing.T) {
-	mockState := new(MockState)
+	mockState := new(mocks.AccountState)
 	testLogger := logger.New("test", &config.Config{})
 
 	handler := &Handler{
@@ -141,18 +144,34 @@ func TestWalletEventWithUnchangedBlueEssence(t *testing.T) {
 }
 
 func TestWalletEventWithNilAccount(t *testing.T) {
-	mockState := new(MockState)
+	mockState := mocks.NewAccountState(t)
+	mockApp := mocks.NewApp(t)
+	mockAccountClient := mocks.NewAccountClient(t)
 	testLogger := logger.New("test", &config.Config{})
 
-	handler := &Handler{
-		logger:       testLogger,
-		accountState: mockState,
+	handler := New(testLogger, mockApp, mockState, mockAccountClient)
+
+	blueEssence := 1000
+	updatedAccount := &types.PartialSummonerRented{
+		Currencies: &types.CurrenciesPointer{
+			LolBlueEssence: &blueEssence,
+		},
 	}
 
 	mockState.On("Get").Return(nil)
+	mockState.On("Update", mock.MatchedBy(func(s *types.PartialSummonerRented) bool {
+		return s.Currencies != nil && *s.Currencies.LolBlueEssence == blueEssence
+	})).Return(updatedAccount, nil)
+
+	// Mock the accountClient.Save call
+	savedResponse := &types.SummonerResponse{}
+	mockAccountClient.On("Save", mock.Anything).Return(savedResponse, nil)
+
+	// Mock the app.EmitEvent call
+	mockApp.On("EmitEvent", mock.Anything, mock.Anything).Return()
 
 	// Create wallet data
-	wallet := types.Wallet{LolBlueEssence: 1000}
+	wallet := types.Wallet{LolBlueEssence: blueEssence}
 	walletData, _ := json.Marshal(wallet)
 
 	// Create event
@@ -166,10 +185,11 @@ func TestWalletEventWithNilAccount(t *testing.T) {
 
 	// Verify
 	mockState.AssertExpectations(t)
+	mockAccountClient.AssertExpectations(t)
+	mockApp.AssertExpectations(t)
 }
-
 func TestWalletEventWithInvalidData(t *testing.T) {
-	mockState := new(MockState)
+	mockState := new(mocks.AccountState)
 	testLogger := logger.New("test", &config.Config{})
 
 	handler := &Handler{
@@ -193,23 +213,33 @@ func TestWalletEventWithInvalidData(t *testing.T) {
 }
 
 func TestWalletEventWithNilCurrencies(t *testing.T) {
-	mockState := new(MockState)
-	testLogger := logger.New("test", &config.Config{})
-
-	handler := &Handler{
-		logger:       testLogger,
-		accountState: mockState,
-	}
+	mockState := mocks.NewAccountState(t)
+	mockLogger := zaptest.NewLogger(t)
+	mockApp := mocks.NewApp(t)
+	mockAccountClient := mocks.NewAccountClient(t)
+	handler := New(mockLogger, mockApp, mockState, mockAccountClient)
 
 	blueEssence := 1000
 	currentAccount := &types.PartialSummonerRented{
 		Currencies: nil, // No currencies
 	}
 
+	updatedAccount := &types.PartialSummonerRented{
+		Currencies: &types.CurrenciesPointer{
+			LolBlueEssence: &blueEssence,
+		},
+	}
+
 	mockState.On("Get").Return(currentAccount)
 	mockState.On("Update", mock.MatchedBy(func(s *types.PartialSummonerRented) bool {
 		return s.Currencies != nil && *s.Currencies.LolBlueEssence == blueEssence
-	})).Return()
+	})).Return(updatedAccount, nil)
+
+	// Mock the accountClient.Save call
+	mockAccountClient.On("Save", mock.Anything).Return(&types.SummonerResponse{}, nil)
+
+	// Mock the app.EmitEvent call
+	mockApp.On("EmitEvent", mock.Anything, mock.Anything).Return()
 
 	// Create wallet data
 	wallet := types.Wallet{LolBlueEssence: blueEssence}
@@ -226,13 +256,14 @@ func TestWalletEventWithNilCurrencies(t *testing.T) {
 
 	// Verify
 	mockState.AssertExpectations(t)
+	mockAccountClient.AssertExpectations(t)
+	mockApp.AssertExpectations(t)
 }
-
 func TestNewHandlerCreation(t *testing.T) {
 	testLogger := logger.New("test", &config.Config{})
 	mockState := &account.State{}
 
-	handler := New(testLogger, mockState)
+	handler := New(testLogger, mocks.NewApp(t), mockState, mocks.NewAccountClient(t))
 
 	assert.NotNil(t, handler)
 	assert.Equal(t, testLogger, handler.logger)

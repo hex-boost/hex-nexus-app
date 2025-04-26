@@ -1,0 +1,10 @@
+with-expecter: true
+inpackage: true
+outpkg: "mocks"
+mockname: "{{.InterfaceName}}"
+packages:
+  github.com/hex-boost/hex-nexus-app:
+        config:
+          all: true
+          dir: "./backend/test/mocks"
+          recursive: true
