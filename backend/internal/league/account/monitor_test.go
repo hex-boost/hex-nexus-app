@@ -921,39 +921,39 @@ func TestMonitor_SetNexusAccount(t *testing.T) {
 	})
 }
 
-//func TestNewMonitor(t *testing.T) {
-//	cfg := &config.Config{LogLevel: "debug"}
-//	newLogger := logger.New("TestNewMonitor", cfg)
-//
-//	mockLeague := new(MockLeagueService)
-//	mockRiot := new(MockRiotClient)
-//	mockSummoner := new(MockSummonerClient)
-//	mockLCU := new(MockLCUConnection)
-//	mockWatchdog := new(MockWatchdogUpdater)
-//	mockAccountService := new(MockAccountService)
-//
-//	monitor := NewMonitor(
-//		newLogger,
-//		mockLeague,
-//		mockRiot,
-//		mockAccountService,
-//		mockSummoner,
-//		mockLCU,
-//		mockWatchdog,
-//	)
-//
-//	assert.NotNil(t, monitor)
-//	assert.Equal(t, mockLeague, monitor.leagueService)
-//	assert.Equal(t, mockRiot, monitor.riotAuth)
-//	assert.Equal(t, mockSummoner, monitor.summonerClient)
-//	assert.Equal(t, mockLCU, monitor.LCUConnection)
-//	assert.Equal(t, mockWatchdog, monitor.watchdogState)
-//	assert.Equal(t, mockAccountService, monitor.accountService)
-//	assert.Equal(t, newLogger, monitor.logger)
-//	assert.Equal(t, 1*time.Second, monitor.checkInterval)
-//	assert.NotNil(t, monitor.stopChan)
-//	assert.False(t, monitor.isNexusAccount)
-//}
+func TestNewMonitor(t *testing.T) {
+	cfg := &config.Config{LogLevel: "debug"}
+	newLogger := logger.New("TestNewMonitor", cfg)
+
+	mockRepo := new(MockAccountsRepository)
+	mockLeague := new(MockLeagueService)
+	//accountClient := new(AccountServicer)
+	mockRiot := new(MockRiotClient)
+	mockSummoner := new(MockSummonerClient)
+	mockLCU := new(MockLCUConnection)
+
+	mockWatchdog := new(MockWatchdogUpdater)
+	monitor := NewMonitor(
+		newLogger,
+		mockLeague,
+		mockRiot,
+		mockSummoner,
+		mockLCU,
+		mockWatchdog,
+		mockRepo,
+	)
+
+	assert.NotNil(t, monitor)
+	assert.Equal(t, mockLeague, monitor.leagueService)
+	assert.Equal(t, mockRiot, monitor.riotAuth)
+	assert.Equal(t, mockSummoner, monitor.summonerClient)
+	assert.Equal(t, mockLCU, monitor.LCUConnection)
+	assert.Equal(t, mockWatchdog, monitor.watchdogState)
+	assert.Equal(t, newLogger, monitor.logger)
+	assert.Equal(t, 1*time.Second, monitor.checkInterval)
+	assert.NotNil(t, monitor.stopChan)
+	assert.False(t, monitor.isNexusAccount)
+}
 
 // Note: Testing monitorLoop and Start/Stop would require more complex test setup
 // because they involve goroutines and channels. Here's a basic approach:
