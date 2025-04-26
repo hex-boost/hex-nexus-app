@@ -48,6 +48,8 @@ jobs:
 
       - name: Run tests
         run: |
+          go install github.com/vektra/mockery/v2@v3.2.4
+          mockery
           gotestsum --format short --hide-summary skipped --format-hide-empty-pkg
 
       - name: Run frontend tests
