@@ -1,3 +1,6 @@
+//go:build windows
+// +build windows
+
 package overlay
 
 import (
@@ -9,11 +12,12 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
-	"github.com/hex-boost/hex-nexus-app/backend/pkg/process"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"go.uber.org/zap"
 	"golang.org/x/sys/windows"
+
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/process"
 )
 
 type Overlay struct {

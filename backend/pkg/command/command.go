@@ -2,7 +2,6 @@ package command
 
 import (
 	"os/exec"
-	"syscall"
 )
 
 type Command struct{}
@@ -25,14 +24,6 @@ func (c *Command) Execute(command string, arg ...string) ([]byte, error) {
 		return nil, err
 	}
 	return output, nil
-}
-
-func (c *Command) hideConsole(cmd *exec.Cmd) *exec.Cmd {
-	if cmd.SysProcAttr == nil {
-		cmd.SysProcAttr = &syscall.SysProcAttr{}
-	}
-	cmd.SysProcAttr.CreationFlags = 0x08000000
-	return cmd
 }
 
 func (c *Command) Run(command string, arg ...string) error {

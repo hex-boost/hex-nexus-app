@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/command"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
-	"go.uber.org/zap"
-	"golang.org/x/sys/windows/registry"
 )
 
 type UpdaterUtils struct {
@@ -103,24 +103,6 @@ func (u *UpdaterUtils) GetLatestAppDir() (string, error) {
 
 	// Retorna o caminho da versão mais alta
 	return versions[0].path, nil
-}
-
-func (u *UpdaterUtils) CheckWebView2Installation() bool {
-	// Check 64-bit registry first
-	key, err := registry.OpenKey(registry.LOCAL_MACHINE, `SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}`, registry.QUERY_VALUE)
-	if err == nil {
-		key.Close()
-		return true
-	}
-
-	// Check 32-bit registry if 64-bit check failed
-	key, err = registry.OpenKey(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}`, registry.QUERY_VALUE)
-	if err == nil {
-		key.Close()
-		return true
-	}
-
-	return false
 }
 
 // InstallWebView2 installs WebView2 Runtime
