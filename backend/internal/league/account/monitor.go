@@ -55,7 +55,7 @@ type AccountServicer interface {
 }
 type Monitor struct {
 	riotAuth            RiotAuthenticator
-	accountRepo         AccountsRepositoryInterface
+	accountClient       AccountsRepositoryInterface
 	logger              *logger.Logger
 	lastCheckedUsername string
 	running             bool
@@ -71,8 +71,8 @@ type Monitor struct {
 	watchdogState       watchdog.WatchdogUpdater // Add this field to access watchdog
 	accountService      AccountServicer
 
-	summoner      SummonerClientInterface
-	LCUConnection LCUConnectionInterface
+	summonerClient SummonerClientInterface
+	LCUConnection  LCUConnectionInterface
 }
 
 func NewMonitor(
@@ -80,17 +80,19 @@ func NewMonitor(
 	leagueService LeagueServicer,
 	riotAuth RiotAuthenticator,
 	accountService AccountServicer,
-	summoner SummonerClientInterface,
+	summonerClient SummonerClientInterface,
 	LCUConnection LCUConnectionInterface,
 	watchdog watchdog.WatchdogUpdater,
+	//accountClient AccountsRepositoryInterface,
 
 ) *Monitor {
 	return &Monitor{
-		watchdogState:   watchdog,
-		leagueService:   leagueService,
-		LCUConnection:   LCUConnection,
-		riotAuth:        riotAuth,
-		summoner:        summoner,
+		watchdogState: watchdog,
+		leagueService: leagueService,
+		LCUConnection: LCUConnection,
+		riotAuth:      riotAuth,
+		//accountClient:   accountClient,
+		summonerClient:  summonerClient,
 		accountService:  accountService,
 		logger:          logger,
 		isNexusAccount:  false,
@@ -101,14 +103,11 @@ func NewMonitor(
 		stopChan:      make(chan struct{}),
 	}
 }
-func (am *Monitor) SetWindow(window *application.WebviewWindow) {
-	am.window = window
-}
 func (am *Monitor) refreshAccountCache() error {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
-	accounts, err := am.accountRepo.GetAllRented()
+	accounts, err := am.accountClient.GetAllRented()
 	if err != nil {
 		return err
 	}
@@ -132,7 +131,7 @@ func (am *Monitor) getAccountsWithCache() ([]types.SummonerRented, error) {
 	// If cache is empty or expired, fetch fresh data
 	if needsRefresh {
 		am.logger.Debug("Fetching fresh account data from repository")
-		accounts, err := am.accountRepo.GetAllRented()
+		accounts, err := am.accountClient.GetAllRented()
 		if err != nil {
 			return nil, err
 		}
@@ -146,7 +145,8 @@ func (am *Monitor) getAccountsWithCache() ([]types.SummonerRented, error) {
 
 	return am.cachedAccounts, nil
 }
-func (am *Monitor) Start() {
+func (am *Monitor) Start(window *application.WebviewWindow) {
+	am.window = window
 	fmt.Println("Starting account monitor")
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
@@ -233,7 +233,7 @@ func (am *Monitor) getUsernameByLeagueClient() (string, error) {
 		}
 	}
 
-	currentSummoner, err := am.summoner.GetLoginSession()
+	currentSummoner, err := am.summonerClient.GetLoginSession()
 	if err != nil {
 		am.logger.Debug("Failed to get current summoner",
 			zap.Error(err),

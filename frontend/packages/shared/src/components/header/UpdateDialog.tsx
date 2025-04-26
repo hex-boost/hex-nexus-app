@@ -25,7 +25,7 @@ export function UpdateDialog() {
               onClick={() => isAvailable ? setUpdateDialogOpen(true) : refetchVersion()}
               className={cls('relative p-2 rounded-full hover:bg-shade7 transition-colors duration-200 group', isAvailable && 'text-blue-400')}
             >
-              <Download className="h-5 w-5" />
+              <Download className="h-5 w-5 text-muted-foreground" />
               {
                 isAvailable
                 && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-500 rounded-full"></span>

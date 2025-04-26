@@ -165,7 +165,8 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		accountClient,
 		summonerClient,
 		lcuConn,
-		watchdogClient, // Use the watchdog client here instead of creating a full watchdog
+		watchdogClient,
+		//accountClient,
 	)
 	websocketHandler := handler.New(appInstance.Log().League(), accountState)
 	websocketRouter := websocket.NewRouter(appInstance.Log().League())
@@ -316,15 +317,14 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 
 	systemTray := systemtray.New(mainWindow, icon16, accountMonitor, leagueManager)
 	systemTray.Setup()
-	accountMonitor.SetWindow(mainWindow)
 	appProtocol.SetWindow(mainWindow)
 	captchaService.SetWindow(captchaWindow)
 	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(ctx *application.WindowEvent) {
-		websocketService.Start()
+		websocketService.Start(mainApp)
 
 		websocketService.SubscribeToLeagueEvents()
-		accountMonitor.Start()
-		clientMonitor.Start()
+		accountMonitor.Start(mainWindow)
+		clientMonitor.Start(mainApp)
 		gameOverlayManager.Start()
 
 	})

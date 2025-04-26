@@ -89,7 +89,6 @@ func NewMonitor(logger *logger.Logger, accountMonitor *account.Monitor, leagueSe
 			Username:  "",
 			IsUpdated: false,
 		},
-		app:            application.Get(),
 		done:           make(chan struct{}),
 		accountMonitor: accountMonitor,
 		captcha:        captcha,
@@ -333,10 +332,11 @@ func (cm *Monitor) resetAccountUpdateStatus() {
 	cm.app.EmitEvent(websocketEvents.LeagueWebsocketStop)
 	cm.stateMutex.Unlock()
 }
-func (cm *Monitor) Start() {
+func (cm *Monitor) Start(app AppEmitter) {
 	if cm.isRunning {
 		return
 	}
+	cm.app = app
 
 	cm.logger.Info("Starting Service client monitor")
 

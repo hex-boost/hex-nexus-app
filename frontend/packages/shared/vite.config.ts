@@ -19,6 +19,7 @@ export default defineConfig({
       '@shared': path.resolve(__dirname, '../shared'),
       '@': path.resolve(__dirname, '../shared/src'),
 
+      '@client': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/client'),
       '@app': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/app'),
       '@discord': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/discord'),
       '@league': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/league'),

@@ -1,8 +1,74 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "allowImportingTsExtensions": true,
-    "outDir": "lib"
+    "outDir": "ts-lib",
+    "baseUrl": "..",
+    "paths": {
+      "@/*": [
+        "shared/src/*"
+      ],
+
+      "@client": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/client"
+      ],
+      "@hwid": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/pkg/hwid"
+      ],
+      "@shared": [
+        "shared/"
+      ],
+      "@leagueManager": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/internal/league/manager"
+      ],
+
+
+      "@account": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/internal/league/account"
+      ],
+
+      "@manager": [
+        "updater/bindings/github.com/hex-boost/hex-nexus-app/backend/cmd/updater/manager"
+      ],
+
+      "@time": [
+        "main/bindings/time"
+      ],
+
+      "@app": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/app"
+      ],
+
+      "@riot": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/riot"
+      ],
+      "@discord": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/discord"
+      ],
+      "@league": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/internal/league"
+      ],
+      "@repository": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/repository"
+      ],
+      "@updater": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/internal/updater"
+      ],
+
+      "@events": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/events"
+      ],
+      "@utils": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/utils"
+      ],
+
+      "@stripe": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/stripe"
+      ],
+      "@overlay": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/overlay"
+      ]
+
+    }
   },
   "include": ["src"],
 }

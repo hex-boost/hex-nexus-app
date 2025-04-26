@@ -48,7 +48,7 @@ export function LoginForm({
       },
       onSuccess: async (data) => {
         if (import.meta.env.MODE !== 'development') {
-          const currentHwid = await HWID;
+          const currentHwid = await HWID.Get();
           if (data.user.hwid && data.user.hwid !== currentHwid) {
             setAuthToken(''); // Clear token
             toast.error('Login failed: Hardware ID mismatch');

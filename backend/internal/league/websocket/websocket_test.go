@@ -187,7 +187,7 @@ func TestCreateNewService(t *testing.T) {
 func TestServiceStartStopBehavior(t *testing.T) {
 	// Create a proper logger instance
 	mockLogger := logger.New("test", &config.Config{LogLevel: "info"})
-
+	mockApp := new(MockApp)
 	mockService := &Service{
 		logger:    mockLogger,
 		isRunning: false,
@@ -195,11 +195,11 @@ func TestServiceStartStopBehavior(t *testing.T) {
 	}
 
 	// Test starting when not running
-	mockService.Start()
+	mockService.Start(mockApp)
 	assert.True(t, mockService.isRunning)
 
 	// Test starting when already running
-	mockService.Start()
+	mockService.Start(mockApp)
 	assert.True(t, mockService.isRunning)
 
 	// Test stopping when running

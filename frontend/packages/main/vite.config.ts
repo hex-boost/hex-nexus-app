@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { defineConfig, mergeConfig } from 'vite';
-import baseConfig from '../../vite.config.ts';
+import baseConfig from '../../vite.config';
 
 export default defineConfig(
   mergeConfig(baseConfig, {
