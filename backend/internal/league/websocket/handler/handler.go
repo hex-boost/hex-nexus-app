@@ -87,6 +87,7 @@ func (h *Handler) Wallet(event websocket.LCUWebSocketEvent) {
 			zap.Int("value", blueEssence))
 	}
 }
+
 func (h *Handler) ChampionsMinimal(event websocket.LCUWebSocketEvent) {
 	var championsData types.ChampionsMinimal
 	if err := json.Unmarshal(event.Data, &championsData); err != nil {
@@ -94,5 +95,4 @@ func (h *Handler) ChampionsMinimal(event websocket.LCUWebSocketEvent) {
 		return
 	}
 	h.logger.Info("Champions minimal update", zap.Any("data", championsData))
-
 }

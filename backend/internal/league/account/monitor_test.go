@@ -2,10 +2,11 @@ package account
 
 import (
 	"errors"
-	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account/mocks"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account/mocks"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/wailsapp/wails/v3/pkg/application"

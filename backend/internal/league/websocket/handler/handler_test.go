@@ -2,8 +2,9 @@ package handler
 
 import (
 	"encoding/json"
-	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket/handler/mocks"
 	"testing"
+
+	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket/handler/mocks"
 
 	"go.uber.org/zap/zaptest"
 
@@ -107,6 +108,7 @@ func TestWalletEventWithValidData(t *testing.T) {
 	mockAccountClient.AssertExpectations(t)
 	mockApp.AssertExpectations(t)
 }
+
 func TestWalletEventWithUnchangedBlueEssence(t *testing.T) {
 	mockState := new(mocks.AccountState)
 	testLogger := logger.New("test", &config.Config{})
@@ -188,6 +190,7 @@ func TestWalletEventWithNilAccount(t *testing.T) {
 	mockAccountClient.AssertExpectations(t)
 	mockApp.AssertExpectations(t)
 }
+
 func TestWalletEventWithInvalidData(t *testing.T) {
 	mockState := new(mocks.AccountState)
 	testLogger := logger.New("test", &config.Config{})
@@ -259,6 +262,7 @@ func TestWalletEventWithNilCurrencies(t *testing.T) {
 	mockAccountClient.AssertExpectations(t)
 	mockApp.AssertExpectations(t)
 }
+
 func TestNewHandlerCreation(t *testing.T) {
 	testLogger := logger.New("test", &config.Config{})
 	mockState := &account.State{}

@@ -3,12 +3,13 @@ package websocket_test
 import (
 	"encoding/json"
 	"fmt"
+	"testing"
+	"time"
+
 	gorillaWs "github.com/gorilla/websocket"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket/mocks"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
-	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -260,7 +261,6 @@ func TestRefreshAccountState(t *testing.T) {
 	mockApp.On("EmitEvent", events.AccountStateChanged, []interface{}{summonerResponse}).Return()
 
 	service.RefreshAccountState(summonerState)
-
 }
 
 func TestRefreshAccountStateWithEmptyUsername(t *testing.T) {
@@ -458,6 +458,7 @@ func TestConnectionErrorHandling(t *testing.T) {
 	assert.Error(t, err)
 	mockLCUConnection.AssertExpectations(t)
 }
+
 func TestResubscribeToEvents(t *testing.T) {
 	mockLogger := logger.New("test", &config.Config{LogLevel: "info"})
 	mockRouter := mocks.NewRouterService(t)

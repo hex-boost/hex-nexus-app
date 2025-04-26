@@ -36,6 +36,7 @@ func (s *Service) SendSubscription(path string) error {
 func (s *Service) SendUnsubscription(path string) error {
 	return s.sendUnsubscriptionFunc(path)
 }
+
 func (s *Service) IsRunning() bool {
 	return s.isRunning
 }
@@ -44,12 +45,15 @@ func (s *Service) IsRunning() bool {
 func (s *Service) ReadMessages() {
 	s.readMessages()
 }
+
 func (s *Service) IsConnected() bool {
 	return s.isConnected()
 }
+
 func (s *Service) HandleWebsocketEvent(event []byte) {
 	s.handleWebSocketEvent(event)
 }
+
 func (s *Service) SetApp(app App) {
 	s.app = app
 }

@@ -58,27 +58,29 @@ type LeagueServicer interface {
 	IsRunning() bool
 	IsPlaying() bool
 }
-type AccountServicer interface{}
-type Monitor struct {
-	riotAuth            RiotAuthenticator
-	accountClient       AccountClient
-	logger              *logger.Logger
-	lastCheckedUsername string
-	running             bool
-	accountState        AccountState
-	checkInterval       time.Duration
-	cachedAccounts      []types.SummonerRented
-	lastAccountsFetch   time.Time
-	accountCacheTTL     time.Duration
-	window              WindowEmitter
-	stopChan            chan struct{}
-	leagueService       LeagueServicer
-	mutex               sync.Mutex
-	watchdogState       WatchdogUpdater
+type (
+	AccountServicer interface{}
+	Monitor         struct {
+		riotAuth            RiotAuthenticator
+		accountClient       AccountClient
+		logger              *logger.Logger
+		lastCheckedUsername string
+		running             bool
+		accountState        AccountState
+		checkInterval       time.Duration
+		cachedAccounts      []types.SummonerRented
+		lastAccountsFetch   time.Time
+		accountCacheTTL     time.Duration
+		window              WindowEmitter
+		stopChan            chan struct{}
+		leagueService       LeagueServicer
+		mutex               sync.Mutex
+		watchdogState       WatchdogUpdater
 
-	summonerClient SummonerClient
-	LCUConnection  LCUConnection
-}
+		summonerClient SummonerClient
+		LCUConnection  LCUConnection
+	}
+)
 
 type WatchdogUpdater interface {
 	Update(active bool) error
