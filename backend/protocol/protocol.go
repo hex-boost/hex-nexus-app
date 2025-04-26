@@ -2,14 +2,15 @@ package protocol
 
 import (
 	"fmt"
+	"net/url"
+	"os"
+	"strings"
+
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"go.uber.org/zap"
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
-	"net/url"
-	"os"
-	"strings"
 )
 
 const (
@@ -28,9 +29,11 @@ func New(logger *logger.Logger) *Protocol {
 		logger: logger,
 	}
 }
+
 func (p *Protocol) SetWindow(window *application.WebviewWindow) {
 	p.window = window
 }
+
 func IsRunningAsAdmin() (bool, error) {
 	var sid *windows.SID
 	err := windows.AllocateAndInitializeSid(

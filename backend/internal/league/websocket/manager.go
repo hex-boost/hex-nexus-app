@@ -7,8 +7,7 @@ type EventHandler interface {
 }
 
 // Manager struct for creating event handlers
-type Manager struct {
-}
+type Manager struct{}
 
 func NewManager() *Manager {
 	return &Manager{}

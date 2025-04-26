@@ -5,12 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"strconv"
+
 	lcu2 "github.com/hex-boost/hex-nexus-app/backend/internal/league/lcu"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"go.uber.org/zap"
-	"net/http"
-	"strconv"
 )
 
 type Client struct {
@@ -29,11 +30,9 @@ func NewClient(logger *logger.Logger, conn *lcu2.Connection) *Client {
 }
 
 func (s *Client) GetLoginSession() (*types.LoginSession, error) {
-
 	var result types.LoginSession
 	resp, err := s.conn.Client.R().SetResult(&result).
 		Get("/lol-login/v1/session")
-
 	if err != nil {
 		s.logger.Debug("Error fetching login session data", zap.Error(err))
 		return nil, err
@@ -52,7 +51,6 @@ func (s *Client) GetCurrentSummoner() (*types.CurrentSummoner, error) {
 	var result types.CurrentSummoner
 	resp, err := s.conn.Client.R().SetResult(&result).
 		Get("/lol-summoner/v1/current-summoner")
-
 	if err != nil {
 		s.logger.Error("Error fetching summoner data", zap.Error(err))
 		return nil, err
@@ -70,6 +68,7 @@ func (s *Client) GetCurrentSummoner() (*types.CurrentSummoner, error) {
 
 	return &result, nil
 }
+
 func (s *Client) getAssetsIds(assets []interface{}) ([]int, error) {
 	var result []int
 
@@ -114,13 +113,12 @@ func (s *Client) getAssetsIds(assets []interface{}) ([]int, error) {
 }
 
 type T struct {
-	Sub   string `json:"sub"`
-	Tiers struct {
-	} `json:"tiers"`
-	Containsf2P bool   `json:"containsf2P"`
-	ShardId     string `json:"shardId"`
-	Exp         int    `json:"exp"`
-	Iat         int    `json:"iat"`
+	Sub         string   `json:"sub"`
+	Tiers       struct{} `json:"tiers"`
+	Containsf2P bool     `json:"containsf2P"`
+	ShardId     string   `json:"shardId"`
+	Exp         int      `json:"exp"`
+	Iat         int      `json:"iat"`
 	Items       struct {
 		CHAMPION []int `json:"CHAMPION"`
 	} `json:"items"`
@@ -131,7 +129,6 @@ func (s *Client) GetChampions() ([]int, error) {
 	var encodedData string
 	resp, err := s.conn.Client.R().SetResult(&encodedData).
 		Get("/lol-inventory/v1/signedInventory/simple?inventoryTypes=%5B%22CHAMPION%22%5D")
-
 	if err != nil {
 		s.logger.Error("Error fetching champion data", zap.Error(err))
 		return nil, err
@@ -159,7 +156,6 @@ func (s *Client) GetSkins() ([]int, error) {
 	var encodedData string
 	resp, err := s.conn.Client.R().SetResult(&encodedData).
 		Get("/lol-inventory/v1/signedInventory/simple?inventoryTypes=%5B%22CHAMPION_SKIN%22%5D")
-
 	if err != nil {
 		s.logger.Error("Error fetching skins data", zap.Error(err))
 		return nil, err
@@ -188,7 +184,6 @@ func (s *Client) GetCurrency() (map[string]interface{}, error) {
 
 	resp, err := s.conn.Client.R().
 		Get("/lol-inventory/v1/wallet?currencyTypes=%5B%22EA%22%5D")
-
 	if err != nil {
 		s.logger.Error("Error fetching currency data", zap.Error(err))
 		return nil, err
@@ -217,7 +212,6 @@ func (s *Client) GetRanking() (*types.RankedStats, error) {
 
 	resp, err := s.conn.Client.R().
 		Get("/lol-ranked/v1/current-ranked-stats")
-
 	if err != nil {
 		s.logger.Error("Error fetching ranking data", zap.Error(err))
 		return nil, err
@@ -259,7 +253,6 @@ func (s *Client) GetLolChat() (*types.FriendPresence, error) {
 	s.logger.Debug("Fetching account region")
 	var friendPresence types.FriendPresence
 	resp, err := s.conn.Client.R().SetResult(friendPresence).Get("/lol-chat/v1/me")
-
 	if err != nil {
 		s.logger.Error("Error fetching region data", zap.Error(err))
 		return nil, err
@@ -284,7 +277,6 @@ func (s *Client) GetUserInfo() (*types.UserInfo, error) {
 	s.logger.Debug("Fetching account userinfo")
 	var encodedUserinfoJWT types.UserinfoJWT
 	resp, err := s.conn.Client.R().SetResult(&encodedUserinfoJWT).Get("/lol-rso-auth/v1/authorization/userinfo")
-
 	if err != nil {
 		s.logger.Error("Error fetching userinfo data", zap.Error(err))
 		return nil, err

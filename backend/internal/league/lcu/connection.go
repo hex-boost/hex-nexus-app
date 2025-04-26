@@ -6,12 +6,13 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"regexp"
+	"time"
+
 	"github.com/go-resty/resty/v2"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/process"
 	"go.uber.org/zap"
-	"regexp"
-	"time"
 )
 
 type Connection struct {
@@ -31,7 +32,6 @@ func NewConnection(logger *logger.Logger, process *process.Process) *Connection 
 }
 
 func (c *Connection) Initialize() error {
-
 	port, token, _, err := c.GetLeagueCredentials()
 	if err != nil {
 		return err
@@ -109,6 +109,7 @@ func (c *Connection) WaitUntilReady() error {
 		}
 	}
 }
+
 func (c *Connection) IsClientInitialized() bool {
 	if c.Client == nil {
 		return false
@@ -122,8 +123,7 @@ func (c *Connection) IsClientInitialized() bool {
 	resp, err := c.Client.R().
 		SetContext(ctx).
 		Get("/lol-summoner/v1/current-summoner")
-
-	// If we get any error (including TLS handshake timeout), connection is not valid
+		// If we get any error (including TLS handshake timeout), connection is not valid
 	if err != nil {
 		return false
 	}

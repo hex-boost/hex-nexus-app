@@ -46,6 +46,7 @@ func NewLogger(cfg *config.Config) *log {
 func (l *log) Discord() *logger.Logger {
 	return l.discord
 }
+
 func (l *log) League() *logger.Logger {
 	return l.league
 }
@@ -53,6 +54,7 @@ func (l *log) League() *logger.Logger {
 func (l *log) Stripe() *logger.Logger {
 	return l.stripe
 }
+
 func (l *log) Repo() *logger.Logger {
 	return l.repo
 }
@@ -68,6 +70,7 @@ func (l *log) Wails() *logger.Logger {
 func (l *log) Protocol() *logger.Logger {
 	return l.protocol
 }
+
 func (l *log) Web() *logger.Logger {
 	return l.web
 }

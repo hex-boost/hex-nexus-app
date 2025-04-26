@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account/events"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
@@ -43,7 +44,6 @@ func New(logger *logger.Logger, app App, accountState AccountState, accountClien
 
 // WalletEvent handles wallet update events from the LCU
 func (h *Handler) WalletEvent(event websocket.LCUWebSocketEvent) {
-
 	var walletData types.Wallet
 	if err := json.Unmarshal(event.Data, &walletData); err != nil {
 		h.logger.Error("Failed to parse wallet data", zap.Error(err))

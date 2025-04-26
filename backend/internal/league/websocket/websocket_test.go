@@ -3,6 +3,10 @@ package websocket
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
+	"testing"
+	"time"
+
 	"github.com/gorilla/websocket"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account"
@@ -13,9 +17,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/wailsapp/wails/v3/pkg/application"
-	"sync"
-	"testing"
-	"time"
 )
 
 // MockWebSocketConnection mocks the WebSocketConnection interface
@@ -210,6 +211,7 @@ func TestServiceStartStopBehavior(t *testing.T) {
 	mockService.Stop()
 	assert.False(t, mockService.isRunning)
 }
+
 func TestServiceSubscribeUnsubscribe(t *testing.T) {
 	mockLogger := logger.New("test", &config.Config{})
 	mockRouter := new(MockRouter)
@@ -282,6 +284,7 @@ func TestHandleInvalidWebSocketEvent(t *testing.T) {
 	// No dispatches should occur
 	mockRouter.AssertNotCalled(t, "Dispatch", mock.Anything)
 }
+
 func TestRefreshAccountState(t *testing.T) {
 	mockLogger := logger.New("test", &config.Config{})
 	mockApp := new(MockApp)
@@ -313,6 +316,7 @@ func TestRefreshAccountState(t *testing.T) {
 	mockAccountRepo.AssertExpectations(t)
 	mockApp.AssertExpectations(t)
 }
+
 func TestRefreshAccountStateWithEmptyUsername(t *testing.T) {
 	mockLogger := &logger.Logger{}
 	mockMonitor := new(MockAccountMonitor)
@@ -357,6 +361,7 @@ func TestSubscribeToLeagueEvents(t *testing.T) {
 
 	mockApp.AssertExpectations(t)
 }
+
 func TestIsConnected(t *testing.T) {
 	mockLogger := &logger.Logger{}
 	service := &Service{
@@ -409,7 +414,7 @@ func TestWebSocketConnectionCycle(t *testing.T) {
 	mockLCUConnection.On("GetLeagueCredentials").Return(port, token, "https", nil).Maybe()
 
 	// Create a channel to signal when we should stop the service
-	//stopSignal := make(chan struct{})
+	// stopSignal := make(chan struct{})
 
 	// Start the service in a goroutine
 	go func() {

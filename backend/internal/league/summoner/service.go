@@ -2,10 +2,11 @@ package summoner
 
 import (
 	"context"
+	"sync"
+
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"golang.org/x/sync/errgroup"
-	"sync"
 )
 
 type Service struct {
@@ -33,7 +34,6 @@ func (l *Service) UpdateFromLCU(username string) (*types.PartialSummonerRented, 
 
 	eg, _ := errgroup.WithContext(context.Background())
 	eg.Go(func() error {
-
 		userinfoResponse, err := l.client.GetUserInfo()
 		if err != nil {
 			l.logger.Error("Failed to get current summoner")

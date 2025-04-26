@@ -2,13 +2,14 @@ package process
 
 import (
 	"fmt"
-	"github.com/hex-boost/hex-nexus-app/backend/pkg/command"
-	"github.com/shirou/gopsutil/v3/process"
-	"golang.org/x/sys/windows"
 	"strings"
 	"sync"
 	"time"
 	"unsafe"
+
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/command"
+	"github.com/shirou/gopsutil/v3/process"
+	"golang.org/x/sys/windows"
 )
 
 type Process struct {

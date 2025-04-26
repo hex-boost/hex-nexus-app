@@ -14,6 +14,7 @@ func getAuthorizationRequestPayload() types.AuthorizationRequest {
 		RiotPatchline: nil,
 	}
 }
+
 func getRiotIdentityStartPayload() types.RiotIdentityStartPayload {
 	return types.RiotIdentityStartPayload{
 		Apple:        nil,

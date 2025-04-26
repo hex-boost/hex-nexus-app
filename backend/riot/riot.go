@@ -7,6 +7,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
+
 	"github.com/go-resty/resty/v2"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/command"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
@@ -14,10 +19,6 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"github.com/mitchellh/go-ps"
 	"go.uber.org/zap"
-	"os"
-	"path/filepath"
-	"regexp"
-	"strings"
 )
 
 type Service struct {
@@ -37,6 +38,7 @@ func NewService(logger *logger.Logger, captcha *captcha.Captcha) *Service {
 		ctx:     context.Background(),
 	}
 }
+
 func (s *Service) ResetRestyClient() {
 	s.client = nil
 }
@@ -156,6 +158,7 @@ func (s *Service) LoginWithCaptcha(ctx context.Context, username, password, capt
 	s.logger.Error("Authentication with captcha failed", zap.Any("response", loginResult))
 	return "", errors.New("authentication with captcha failed")
 }
+
 func (s *Service) Launch() error {
 	s.ResetRestyClient()
 	s.logger.Info("Attempting to launch Riot client")
@@ -213,8 +216,8 @@ func (s *Service) InitializeClient() error {
 	s.client = client
 	return nil
 }
-func (s *Service) SetupCaptchaVerification() error {
 
+func (s *Service) SetupCaptchaVerification() error {
 	if err := s.InitializeClient(); err != nil {
 		return err
 	}
@@ -288,15 +291,14 @@ func (s *Service) Logout() error {
 		return err
 	}
 	return err
-
 }
+
 func (s *Service) GetAuthenticationState() (*types.RiotIdentityResponse, error) {
 	if s.client == nil {
 		return nil, errors.New("client is not initialized")
 	}
 	var getCurrentAuthResult types.RiotIdentityResponse
 	result, err := s.client.R().SetResult(&getCurrentAuthResult).Get("/rso-authenticator/v1/authentication")
-
 	if err != nil {
 		s.logger.Error("Authentication failed", zap.Error(err))
 		return nil, err
@@ -324,6 +326,7 @@ func (s *Service) GetAuthenticationState() (*types.RiotIdentityResponse, error) 
 	}
 	return &getCurrentAuthResult, nil
 }
+
 func (s *Service) IsAuthStateValid() error {
 	currentAuth, err := s.GetAuthenticationState()
 	if err != nil {

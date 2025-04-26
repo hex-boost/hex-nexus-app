@@ -8,12 +8,12 @@ import (
 	"strings"
 )
 
-type JWT struct {
-}
+type JWT struct{}
 
 func NewJWT() *JWT {
 	return &JWT{}
 }
+
 func (l *JWT) Decode(token string, result interface{}) error {
 	if token == "" {
 		return errors.New("invalid token format")

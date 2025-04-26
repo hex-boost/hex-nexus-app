@@ -5,8 +5,7 @@ import (
 	"syscall"
 )
 
-type Command struct {
-}
+type Command struct{}
 
 func New() *Command {
 	return &Command{}
@@ -17,6 +16,7 @@ func (c *Command) Start(command string, arg ...string) (*exec.Cmd, error) {
 	cmd = c.hideConsole(cmd)
 	return cmd, cmd.Start()
 }
+
 func (c *Command) Execute(command string, arg ...string) ([]byte, error) {
 	cmd := exec.Command(command, arg...)
 	cmd = c.hideConsole(cmd)
@@ -34,6 +34,7 @@ func (c *Command) hideConsole(cmd *exec.Cmd) *exec.Cmd {
 	cmd.SysProcAttr.CreationFlags = 0x08000000
 	return cmd
 }
+
 func (c *Command) Run(command string, arg ...string) error {
 	cmd := exec.Command(command, arg...)
 	cmd = c.hideConsole(cmd)

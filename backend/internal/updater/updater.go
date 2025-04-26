@@ -3,6 +3,11 @@ package updater
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/go-resty/resty/v2"
 	updaterUtils "github.com/hex-boost/hex-nexus-app/backend/cmd/updater/utils"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
@@ -10,10 +15,6 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"go.uber.org/zap"
-	"io"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 // BackendUpdateStatus contains progress information to send to frontend
@@ -71,7 +72,6 @@ func (u *UpdateManager) CheckForUpdates() (bool, string) {
 	resp, err := u.client.R().
 		SetHeader("x-client-version", u.currentVer).
 		Get(fmt.Sprintf("%s/api/versions/update", u.config.BackendURL))
-
 	if err != nil {
 		u.emitProgress(0, "Error connecting to server")
 		return false, ""
@@ -202,7 +202,7 @@ func (u *UpdateManager) InstallUpdate(downloadPath string, version string) error
 		}
 	}
 
-	if err := os.MkdirAll(newAppDir, 0755); err != nil {
+	if err := os.MkdirAll(newAppDir, 0o755); err != nil {
 		u.emitProgress(0, "Failed to create installation directory")
 		return err
 	}
@@ -232,7 +232,7 @@ func (u *UpdateManager) InstallUpdate(downloadPath string, version string) error
 		return err
 	}
 
-	if err = os.WriteFile(targetPath, source, 0755); err != nil {
+	if err = os.WriteFile(targetPath, source, 0o755); err != nil {
 		u.emitProgress(0, "Failed to write update file")
 		return err
 	}
@@ -272,7 +272,6 @@ func (u *UpdateManager) StartMainApplication(exeName string) error {
 	appPath := filepath.Join(appDir, exeName)
 
 	_, err = u.command.Start(appPath)
-
 	if err != nil {
 		u.logger.Error("Failed to start application", zap.Error(err))
 		return err
@@ -282,12 +281,11 @@ func (u *UpdateManager) StartMainApplication(exeName string) error {
 }
 
 func (u *UpdateManager) IsAnotherInstanceRunning() bool {
-
 	// Option 1: Check for a lock file
 	lockFilePath := filepath.Join(os.TempDir(), "Nexus.lock")
 
 	// Try to create/open the lock file
-	file, err := os.OpenFile(lockFilePath, os.O_CREATE|os.O_EXCL|os.O_RDWR, 0666)
+	file, err := os.OpenFile(lockFilePath, os.O_CREATE|os.O_EXCL|os.O_RDWR, 0o666)
 	if err != nil {
 		// If we can't create the file, another instance is likely running
 		return true
@@ -303,6 +301,7 @@ func (u *UpdateManager) IsAnotherInstanceRunning() bool {
 
 	return false
 }
+
 func (u *UpdateManager) StartUpdate() error {
 	execPath, err := os.Executable()
 	if err != nil {
@@ -330,7 +329,6 @@ func (u *UpdateManager) StartUpdate() error {
 		}
 	}
 	_, err = u.command.Start(updatePath, execPath)
-
 	if err != nil {
 		return fmt.Errorf("failed to start update process: %w", err)
 	}

@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/hex-boost/hex-nexus-app/backend/types"
-	"go.uber.org/zap"
 	"syscall"
 	"time"
 	"unsafe"
+
+	"github.com/hex-boost/hex-nexus-app/backend/types"
+	"go.uber.org/zap"
 )
 
 var (
@@ -31,6 +32,7 @@ func findWindow(className, windowName string) uintptr {
 	)
 	return ret
 }
+
 func (s *Service) IsRunning() bool {
 	hwnd := findWindow("", "Riot Client")
 	if hwnd != 0 {
@@ -58,8 +60,8 @@ func (s *Service) WaitUntilIsRunning(timeout time.Duration) error {
 
 	return fmt.Errorf("timeout ao aguardar o cliente Riot iniciar")
 }
-func (s *Service) IsAuthenticationReady() bool {
 
+func (s *Service) IsAuthenticationReady() bool {
 	pid, err := s.getProcess()
 	if err != nil {
 		return false
@@ -72,6 +74,7 @@ func (s *Service) IsAuthenticationReady() bool {
 func (s *Service) IsClientInitialized() bool {
 	return s.client != nil
 }
+
 func (s *Service) GetUserinfo() (*types.UserInfo, error) {
 	var rawResponse types.RCUUserinfo
 	resp, err := s.client.R().SetResult(&rawResponse).Get("/rso-auth/v1/authorization/userinfo")
@@ -88,6 +91,7 @@ func (s *Service) GetUserinfo() (*types.UserInfo, error) {
 	}
 	return &userInfoData, nil
 }
+
 func (s *Service) WaitUntilUserinfoIsReady(timeout time.Duration) error {
 	deadline := time.Now().Add(timeout)
 	interval := 200 * time.Millisecond

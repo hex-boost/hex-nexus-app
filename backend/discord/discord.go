@@ -2,28 +2,29 @@ package discord
 
 import (
 	"bytes"
-	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
-	"github.com/hex-boost/hex-nexus-app/backend/pkg/hwid"
-	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
-	"net"
-	"sync"
-
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html/template"
+	"mime/multipart"
+	"net"
+	"net/http"
+	"net/url"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/hwid"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
+
 	"github.com/go-resty/resty/v2"
 	"github.com/gorilla/mux"
 	"github.com/hex-boost/hex-nexus-app/backend"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"github.com/pkg/browser"
 	"go.uber.org/zap"
-	"html/template"
-	"mime/multipart"
-	"net/http"
-	"net/url"
-	"strings"
-	"time"
 )
 
 const (
@@ -71,6 +72,7 @@ func (d *Discord) renderTemplate(w http.ResponseWriter, tmplName string) error {
 	}
 	return tmpl.Execute(w, nil)
 }
+
 func (d *Discord) renderErrorTemplate(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusBadRequest)
 	if err := d.renderTemplate(w, "discord_auth_error.html"); err != nil {
@@ -211,6 +213,7 @@ func (d *Discord) handleCallback(w http.ResponseWriter, r *http.Request) {
 		d.logger.Warn("Could not send authentication result - channel may be closed")
 	}
 }
+
 func (d *Discord) isPortAvailable(port int) bool {
 	serverMutex.Lock()
 	defer serverMutex.Unlock()
@@ -292,7 +295,6 @@ func (d *Discord) authenticateWithStrapiAndProcessAvatar(code string) (*types.Us
 	userResp, err := d.backendClient.R().
 		SetHeader("Authorization", "Bearer "+authResult.JWT).
 		Get("/api/users/me")
-
 	if err != nil {
 		d.logger.Error("Error fetching user data", zap.Error(err))
 		return &authResult, nil

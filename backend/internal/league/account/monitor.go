@@ -3,13 +3,15 @@ package account
 import (
 	"errors"
 	"fmt"
-	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
-	"github.com/hex-boost/hex-nexus-app/backend/types"
-	"github.com/hex-boost/hex-nexus-app/backend/watchdog"
-	"go.uber.org/zap"
 	"strings"
 	"sync"
 	"time"
+
+	"go.uber.org/zap"
+
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
+	"github.com/hex-boost/hex-nexus-app/backend/types"
+	"github.com/hex-boost/hex-nexus-app/backend/watchdog"
 )
 
 type AccountState interface {
@@ -57,8 +59,7 @@ type LeagueServicer interface {
 	IsRunning() bool
 	IsPlaying() bool
 }
-type AccountServicer interface {
-}
+type AccountServicer interface{}
 type Monitor struct {
 	riotAuth            RiotAuthenticator
 	accountClient       AccountsRepositoryInterface
@@ -89,7 +90,6 @@ func NewMonitor(
 	watchdog watchdog.WatchdogUpdater,
 	accountClient AccountsRepositoryInterface,
 	accountState AccountState,
-
 ) *Monitor {
 	return &Monitor{
 		watchdogState:   watchdog,
@@ -124,6 +124,7 @@ func (am *Monitor) refreshAccountCache() error {
 
 	return nil
 }
+
 func (am *Monitor) getAccountsWithCache() ([]types.SummonerRented, error) {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
@@ -149,6 +150,7 @@ func (am *Monitor) getAccountsWithCache() ([]types.SummonerRented, error) {
 
 	return am.cachedAccounts, nil
 }
+
 func (am *Monitor) Start(window WindowEmitter) {
 	am.window = window
 	fmt.Println("Starting account monitor")
@@ -195,6 +197,7 @@ func (am *Monitor) monitorLoop() {
 		}
 	}
 }
+
 func (am *Monitor) getSummonerNameByRiotClient() string {
 	if !am.riotAuth.IsClientInitialized() {
 		if err := am.riotAuth.InitializeClient(); err != nil {
@@ -229,7 +232,6 @@ func (am *Monitor) getSummonerNameByRiotClient() string {
 }
 
 func (am *Monitor) getUsernameByLeagueClient() (string, error) {
-
 	if !am.LCUConnection.IsClientInitialized() {
 		err := am.LCUConnection.Initialize()
 		if err != nil || !am.LCUConnection.IsClientInitialized() {
@@ -245,7 +247,6 @@ func (am *Monitor) getUsernameByLeagueClient() (string, error) {
 		return "", errors.New("failed to get current summoner")
 	}
 	return currentSummoner.Username, nil
-
 }
 
 func (am *Monitor) GetLoggedInUsername() string {

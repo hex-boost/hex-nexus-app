@@ -23,6 +23,7 @@ func New(window *application.WebviewWindow, icon []byte, monitor *account.Monito
 		manager: manager,
 	}
 }
+
 func (s *SystemTray) Setup() *application.SystemTray {
 	systray := s.app.NewSystemTray()
 	menu := application.NewMenu()
@@ -38,7 +39,6 @@ func (s *SystemTray) Setup() *application.SystemTray {
 			s.manager.SetForceClose(true)
 			s.app.Quit()
 		}
-
 	})
 	systray.SetLabel("Nexus")
 	systray.SetIcon(s.icon)

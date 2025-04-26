@@ -3,6 +3,15 @@ package wails
 import (
 	"embed"
 	"fmt"
+	"log"
+	"os"
+	"os/signal"
+	"path/filepath"
+	"strconv"
+	"sync"
+	"syscall"
+	"time"
+
 	"github.com/hex-boost/hex-nexus-app/backend/app"
 	"github.com/hex-boost/hex-nexus-app/backend/client"
 	updaterUtils "github.com/hex-boost/hex-nexus-app/backend/cmd/updater/utils"
@@ -26,18 +35,10 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/riot/captcha"
 	"github.com/hex-boost/hex-nexus-app/backend/stripe"
 	"github.com/hex-boost/hex-nexus-app/backend/watchdog"
-	"os/signal"
-	"path/filepath"
-	"strconv"
-	"sync"
-	"syscall"
-	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
 	"go.uber.org/zap"
-	"log"
-	"os"
 )
 
 func StartWatchdog() (*os.Process, error) {
@@ -53,8 +54,8 @@ func StartWatchdog() (*os.Process, error) {
 
 	return watchdogProcess, nil
 }
-func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 
+func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 	cfg, _ := config.LoadConfig()
 
 	appInstance := app.App(cfg)
@@ -130,7 +131,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 	// Create a watchdog client for communication with the watchdog process
 	watchdogClient := watchdog.NewWatchdogClient()
 
-	//updater.NewUpdater(cfg, appInstance.Log().Wails()).Start()
+	// updater.NewUpdater(cfg, appInstance.Log().Wails()).Start()
 	mainLogger := appInstance.Log().Wails()
 	appProtocol := protocol.New(appInstance.Log().Protocol())
 	if err := appProtocol.Register(); err != nil {
@@ -213,10 +214,8 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 						break
 					}
 				}
-
 			},
 		},
-
 		Services: []application.Service{
 			application.NewService(riotService, application.ServiceOptions{
 				Name: "RiotService",
@@ -251,7 +250,6 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 	)
 	mainWindow = mainApp.NewWebviewWindowWithOptions(
 		application.WebviewWindowOptions{
-
 			Name:                       "Main",
 			DefaultContextMenuDisabled: true,
 
@@ -312,7 +310,6 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		if err != nil {
 			return
 		}
-
 	})
 
 	systemTray := systemtray.New(mainWindow, icon16, accountMonitor, leagueManager)
@@ -326,7 +323,6 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 		accountMonitor.Start(mainWindow)
 		clientMonitor.Start(mainApp)
 		gameOverlayManager.Start()
-
 	})
 
 	err = mainApp.Run()

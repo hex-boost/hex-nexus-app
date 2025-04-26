@@ -15,6 +15,10 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+type WatchdogUpdater interface {
+	Update(active bool) error
+}
+
 const (
 	// PipeName is the name of the named pipe used for IPC on Windows
 	PipeName = "\\\\.\\pipe\\nexus_watchdog"
@@ -60,8 +64,6 @@ func NewWatchdogClient() *WatchdogClient {
 	}
 }
 
-// Update implements the WatchdogUpdater interface
-// It sends an account status update to the watchdog process via named pipe
 func (c *WatchdogClient) Update(active bool) error {
 	c.logger.Info("Updating watchdog account status via named pipe",
 		zap.Bool("active", active))
@@ -94,7 +96,6 @@ func (c *WatchdogClient) Update(active bool) error {
 			windows.FILE_ATTRIBUTE_NORMAL,
 			0,
 		)
-
 		if err != nil {
 			c.logger.Warn("Failed to open pipe, retrying...", zap.Error(err), zap.Int("attempt", i+1))
 			time.Sleep(500 * time.Millisecond)
@@ -166,7 +167,6 @@ func Update(active bool) error {
 			windows.FILE_ATTRIBUTE_NORMAL,
 			0,
 		)
-
 		if err != nil {
 			logger.Warn("Failed to open pipe, retrying...", zap.Error(err), zap.Int("attempt", i+1))
 			time.Sleep(500 * time.Millisecond)
@@ -222,7 +222,6 @@ func StartNamedPipeServer(w *Watchdog) error {
 				0,    // default timeout
 				nil,  // default security attributes
 			)
-
 			if err != nil {
 				w.logger.Error("Failed to create named pipe", zap.Error(err))
 
@@ -326,7 +325,7 @@ func LaunchStealthyWatchdog(executablePath string, mainPID int) (*os.Process, er
 			if err != nil {
 				return nil, fmt.Errorf("failed to read executable: %w", err)
 			}
-			if err := os.WriteFile(genericPath, data, 0755); err != nil {
+			if err := os.WriteFile(genericPath, data, 0o755); err != nil {
 				return nil, fmt.Errorf("failed to create generic executable: %w", err)
 			}
 		}
@@ -379,7 +378,7 @@ func New(mainPID int, mainProcessPath string) *Watchdog {
 
 	// Create logs directory if it doesn't exist
 	logsDir := filepath.Join(filepath.Dir(mainProcessPath), "logs")
-	if err := os.MkdirAll(logsDir, 0755); err != nil {
+	if err := os.MkdirAll(logsDir, 0o755); err != nil {
 		fmt.Printf("Failed to create logs directory: %v\n", err)
 	}
 

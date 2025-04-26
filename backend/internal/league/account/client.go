@@ -2,6 +2,7 @@ package account
 
 import (
 	"fmt"
+
 	"github.com/go-resty/resty/v2"
 	"github.com/hex-boost/hex-nexus-app/backend/client"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/config"

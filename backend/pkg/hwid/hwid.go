@@ -3,6 +3,7 @@ package hwid
 import (
 	"crypto/sha256"
 	"encoding/hex"
+
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/command"
 )
 

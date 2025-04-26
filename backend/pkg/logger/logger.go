@@ -2,12 +2,13 @@ package logger
 
 import (
 	"fmt"
-	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 type Logger struct {
@@ -41,7 +42,7 @@ func New(prefix string, config *config.Config) *Logger {
 
 	// Try to add file logging if possible
 	if err == nil {
-		logFile, fileErr := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		logFile, fileErr := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 		if fileErr == nil {
 			fileEncoder := zapcore.NewConsoleEncoder(encoderConfig)
 			cores = append(cores, zapcore.NewCore(
@@ -68,6 +69,7 @@ func New(prefix string, config *config.Config) *Logger {
 
 	return &Logger{logger}
 }
+
 func getLogLevel(logLevel string) zapcore.Level {
 	switch strings.ToLower(logLevel) {
 	case "debug":

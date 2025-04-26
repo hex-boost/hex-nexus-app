@@ -2,6 +2,7 @@ package updater
 
 import (
 	"embed"
+
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
@@ -26,9 +27,9 @@ func NewUpdaterWindow(assets embed.FS, updateManager *UpdateManager) *UpdaterWin
 			Title:                      "Nexus Updater",
 			DefaultContextMenuDisabled: true,
 			Width:                      1024,
-			//DevToolsEnabled:            true,
+			// DevToolsEnabled:            true,
 
-			//OpenInspectorOnStartup: true,
+			// OpenInspectorOnStartup: true,
 			Height:        768,
 			AlwaysOnTop:   false,
 			Hidden:        false,

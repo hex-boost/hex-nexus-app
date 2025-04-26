@@ -2,13 +2,14 @@ package league
 
 import (
 	"errors"
+	"sync"
+	"testing"
+
 	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
 	websocketEvent "github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket/event"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"sync"
-	"testing"
 )
 
 // Mocks para os testes

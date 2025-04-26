@@ -2,15 +2,16 @@ package account
 
 import (
 	"errors"
+	"sync"
+	"testing"
+	"time"
+
 	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/wailsapp/wails/v3/pkg/application"
-	"sync"
-	"testing"
-	"time"
 )
 
 type MockRiotClient struct {
@@ -122,6 +123,7 @@ func (m *MockAccountState) Get() *types.PartialSummonerRented {
 	args := m.Called()
 	return args.Get(0).(*types.PartialSummonerRented)
 }
+
 func (m *MockAccountState) Update(summonerRented *types.PartialSummonerRented) (*types.PartialSummonerRented, error) {
 	args := m.Called(summonerRented)
 	if args.Get(0) == nil {
@@ -129,10 +131,12 @@ func (m *MockAccountState) Update(summonerRented *types.PartialSummonerRented) (
 	}
 	return args.Get(0).(*types.PartialSummonerRented), args.Error(1)
 }
+
 func (m *MockAccountState) IsNexusAccount() bool {
 	args := m.Called()
 	return args.Bool(0)
 }
+
 func (m *MockAccountState) SetNexusAccount(isNexusAccount bool) bool {
 	args := m.Called(isNexusAccount)
 	return args.Bool(0)

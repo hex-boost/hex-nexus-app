@@ -3,14 +3,15 @@ package main
 import (
 	"embed"
 	"flag"
+	"fmt"
+	"os"
+
 	"github.com/hex-boost/hex-nexus-app/backend/internal/updater"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 
-	"fmt"
 	updaterUtils "github.com/hex-boost/hex-nexus-app/backend/cmd/updater/utils"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
 	"go.uber.org/zap"
-	"os"
 )
 
 //go:embed all:dist

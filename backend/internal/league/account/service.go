@@ -16,8 +16,8 @@ func NewService(logger *logger.Logger, accountState *State) *Service {
 		accountState: accountState,
 	}
 }
-func (s *Service) Update() {
 
+func (s *Service) Update() {
 	//s.logger.Info("Manually refreshing account state", zap.String("username", username))
 	//summonerResponse, err := s.accountState.Update(s.account)
 	//if err != nil {
@@ -29,5 +29,4 @@ func (s *Service) Update() {
 	//if ws.app != nil {
 	//	ws.app.EmitEvent(events.AccountStateChanged, summonerResponse)
 	//}
-
 }

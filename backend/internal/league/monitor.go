@@ -4,6 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+	"sync"
+	"sync/atomic"
+	"time"
+
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account"
 	websocketEvents "github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket/event"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
@@ -13,17 +18,15 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
 	"go.uber.org/zap"
-	"strings"
-	"sync"
-	"sync/atomic"
-	"time"
 )
 
-type LeagueClientStateType string
-type AccountUpdateStatus struct {
-	Username  string
-	IsUpdated bool
-}
+type (
+	LeagueClientStateType string
+	AccountUpdateStatus   struct {
+		Username  string
+		IsUpdated bool
+	}
+)
 
 // Define client state constants
 const (
@@ -256,7 +259,6 @@ func (cm *Monitor) calculateClientState(
 		return ClientStateWaitingCaptcha
 	}
 	if isLoggedIn || isPlayingLeague || isLeagueClientRunning {
-
 		return ClientStateLoggedIn
 	}
 	if isLoginReady && previousState.ClientState == ClientStateClosed {
@@ -331,6 +333,7 @@ func (cm *Monitor) resetAccountUpdateStatus() {
 	cm.app.EmitEvent(websocketEvents.LeagueWebsocketStop)
 	cm.stateMutex.Unlock()
 }
+
 func (cm *Monitor) Start(app AppEmitter) {
 	if cm.isRunning {
 		return
@@ -513,7 +516,6 @@ func (cm *Monitor) HandleLogin(username string, password string, captchaToken st
 	}
 	cm.updateState(newState)
 	_, err := cm.riotAuth.LoginWithCaptcha(ctx, username, password, captchaToken)
-
 	// Reset authentication state if there's any error (including timeout)
 	if err != nil {
 		cm.logger.Error("Login failed", zap.Error(err))

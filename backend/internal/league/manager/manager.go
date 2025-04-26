@@ -2,11 +2,12 @@ package manager
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/command"
 	"github.com/mitchellh/go-ps"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"go.uber.org/zap"
-	"sync"
 )
 
 // Manager handles process-related operations including force closing

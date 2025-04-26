@@ -5,13 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"sync"
+	"time"
+
 	"github.com/go-resty/resty/v2"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"go.uber.org/zap"
-	"net/http"
-	"sync"
-	"time"
 )
 
 // Captcha handles all captcha-related functionality
@@ -28,7 +29,6 @@ type Captcha struct {
 }
 
 func New(logger *logger.Logger) *Captcha {
-
 	return &Captcha{
 		logger:            logger,
 		response:          make(chan string, 1), // Buffered channel to avoid deadlocks
@@ -37,6 +37,7 @@ func New(logger *logger.Logger) *Captcha {
 		captchaInProgress: false,
 	}
 }
+
 func (c *Captcha) SetRQData(rqdata string) {
 	c.rqdata = rqdata
 }
@@ -71,7 +72,6 @@ func (c *Captcha) StartServer() error {
 	c.captchaServer = captchaServer
 
 	mux.HandleFunc("/index.html", func(w http.ResponseWriter, r *http.Request) {
-
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Cache-Control", "no-cache")
 		w.Header().Set("Content-Type", "text/html")
@@ -217,8 +217,8 @@ func (c *Captcha) SetResponse(response string) {
 
 func (c *Captcha) SetWindow(window *application.WebviewWindow) {
 	c.window = window
-
 }
+
 func (c *Captcha) GetWebView() (*application.WebviewWindow, error) {
 	if c.window == nil {
 		return nil, errors.New("webview_not_initialized")
@@ -236,7 +236,6 @@ func (c *Captcha) Reset() {
 }
 
 func (c *Captcha) WaitAndGetCaptchaResponse(ctx context.Context, timeout time.Duration) (string, error) {
-
 	c.captchaInProgress = true
 	defer func() { c.captchaInProgress = false }()
 

@@ -2,6 +2,7 @@ package client
 
 import (
 	"fmt"
+
 	"github.com/go-resty/resty/v2"
 	"go.uber.org/zap"
 )

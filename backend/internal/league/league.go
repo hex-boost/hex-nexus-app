@@ -1,13 +1,14 @@
 package league
 
 import (
+	"time"
+
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/lcu"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/summoner"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/mitchellh/go-ps"
 	"go.uber.org/zap"
-	"time"
 )
 
 type Service struct {
@@ -25,6 +26,7 @@ func NewService(logger *logger.Logger, api *account.Client, summonerService *sum
 		summonerService: summonerService,
 	}
 }
+
 func (s *Service) IsPlaying() bool {
 	processes, err := ps.Processes()
 	if err != nil {
@@ -46,8 +48,8 @@ func (s *Service) IsPlaying() bool {
 	}
 
 	return false
-
 }
+
 func (s *Service) IsRunning() bool {
 	processes, err := ps.Processes()
 	if err != nil {
@@ -71,6 +73,7 @@ func (s *Service) IsRunning() bool {
 
 	return false
 }
+
 func (s *Service) Logout() {
 	s.logger.Info("Attempting to logout from League client")
 
@@ -96,6 +99,7 @@ func (s *Service) Logout() {
 			zap.String("body", string(resp.Body())))
 	}
 }
+
 func (s *Service) WaitInventoryIsReady() {
 	s.logger.Info("Waiting for inventory system to be ready")
 
@@ -116,7 +120,6 @@ func (s *Service) WaitInventoryIsReady() {
 }
 
 func (s *Service) IsInventoryReady() bool {
-
 	if s.LCUconnection.Client == nil {
 		err := s.LCUconnection.Initialize()
 		if err != nil {
@@ -127,7 +130,6 @@ func (s *Service) IsInventoryReady() bool {
 
 	var result bool
 	resp, err := s.LCUconnection.Client.R().SetResult(&result).Get("/lol-inventory/v1/initial-configuration-complete")
-
 	if err != nil {
 		s.logger.Debug("LCU client connection test failed", zap.Error(err))
 		return false

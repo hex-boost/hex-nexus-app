@@ -5,6 +5,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/url"
+	"sync"
+	"time"
+
 	"github.com/gorilla/websocket"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account/events"
@@ -13,10 +18,6 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"go.uber.org/zap"
-	"net/http"
-	"net/url"
-	"sync"
-	"time"
 )
 
 // Logger interface for both real and mock loggers
@@ -177,7 +178,6 @@ func (s *Service) connectToLCUWebSocket() error {
 	// Get LCU credentials
 	defer func() {
 		if r := recover(); r != nil {
-
 		}
 	}()
 	if !s.lcuConnection.IsClientInitialized() {

@@ -2,8 +2,9 @@ package account
 
 import (
 	"errors"
-	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"sync"
+
+	"github.com/hex-boost/hex-nexus-app/backend/types"
 )
 
 type State struct {
@@ -36,6 +37,7 @@ func (s *State) SetNexusAccount(isNexusAccount bool) bool {
 
 	return previousState != s.isNexusAccount
 }
+
 func (s *State) Get() *types.PartialSummonerRented {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
@@ -115,5 +117,4 @@ func (s *State) Update(update *types.PartialSummonerRented) (*types.PartialSummo
 		}
 	}
 	return s.Get(), nil
-
 }

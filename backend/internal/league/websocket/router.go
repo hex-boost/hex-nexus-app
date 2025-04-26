@@ -1,8 +1,9 @@
 package websocket
 
 import (
-	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"strings"
+
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 )
 
 // Router manages event routing based on URI patterns

@@ -2,18 +2,18 @@ package overlay
 
 import (
 	"encoding/json"
-	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
-	"github.com/hex-boost/hex-nexus-app/backend/pkg/process"
-	"github.com/wailsapp/wails/v3/pkg/application"
-	"go.uber.org/zap"
-	"golang.org/x/sys/windows"
-
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 	"unsafe"
+
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/process"
+	"github.com/wailsapp/wails/v3/pkg/application"
+	"go.uber.org/zap"
+	"golang.org/x/sys/windows"
 )
 
 type Overlay struct {
@@ -47,6 +47,7 @@ func (m *Overlay) hasGameFocus() bool {
 	// Check if the game window is the foreground window
 	return windows.HWND(foregroundHwnd) == m.gameHwnd
 }
+
 func FindWindow(className, windowName *uint16) windows.HWND {
 	ret, _, _ := procFindWindow.Call(
 		uintptr(unsafe.Pointer(className)),
@@ -124,9 +125,11 @@ func (m *Overlay) maintainZOrder() {
 		0x0001|0x0002|0x0010, // SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE
 	)
 }
+
 func (m *Overlay) SetWindow(window *application.WebviewWindow) {
 	m.overlay = window
 }
+
 func NewGameOverlayManager(logger *logger.Logger) *Overlay {
 	configDir, err := os.UserConfigDir()
 	if err != nil {
@@ -136,7 +139,7 @@ func NewGameOverlayManager(logger *logger.Logger) *Overlay {
 	configPath := filepath.Join(configDir, "hex-nexus", "overlay-position.json")
 
 	// Ensure directory exists
-	err = os.MkdirAll(filepath.Dir(configPath), 0755)
+	err = os.MkdirAll(filepath.Dir(configPath), 0o755)
 	if err != nil {
 		return nil
 	}
@@ -176,14 +179,14 @@ func (m *Overlay) savePosition(x, y int) error {
 		return err
 	}
 
-	return os.WriteFile(m.configPath, data, 0644)
+	return os.WriteFile(m.configPath, data, 0o644)
 }
 
 func (m *Overlay) Start() {
 	m.overlay.IsIgnoreMouseEvents()
 
 	go m.monitorGame()
-	//go m.registerLowLevelKeyboardHook()
+	// go m.registerLowLevelKeyboardHook()
 	go m.registerGlobalHotkey()
 }
 
@@ -200,7 +203,7 @@ func (m *Overlay) monitorGame() {
 	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()
 
-	var wasGameFocused = false
+	wasGameFocused := false
 	var overlayHwnd windows.HWND
 	var lastFocusLossTime time.Time
 	const focusLossConfirmDelay = 250 * time.Millisecond
@@ -275,6 +278,7 @@ func (m *Overlay) monitorGame() {
 		}
 	}
 }
+
 func (m *Overlay) registerGlobalHotkey() {
 	//// Use correct package name (gohook instead of hook)
 	//hook.Register(hook.KeyDown, []string{"ctrl", "shift", "b"}, func(e hook.Event) {
@@ -309,10 +313,12 @@ func (m *Overlay) toggleMouseEvents() {
 		m.logger.Info("Overlay now captures mouse events")
 	}
 }
+
 func (m *Overlay) Hide() {
 	m.logger.Info("Hiding overlay")
 	m.overlay.Hide()
 }
+
 func (m *Overlay) toggleOverlay() {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
@@ -378,6 +384,7 @@ func (m *Overlay) findAndTrackGameWindow() {
 		}
 	}
 }
+
 func (m *Overlay) updateOverlayPosition() {
 	if m.gameHwnd == 0 {
 		return

@@ -2,16 +2,17 @@ package updater
 
 import (
 	"fmt"
-	updaterUtils "github.com/hex-boost/hex-nexus-app/backend/cmd/updater/utils"
-	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
-	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
-	"github.com/hex-boost/hex-nexus-app/backend/test"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	updaterUtils "github.com/hex-boost/hex-nexus-app/backend/cmd/updater/utils"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
+	"github.com/hex-boost/hex-nexus-app/backend/test"
 )
 
 var executablePath string
@@ -30,28 +31,28 @@ func TestUpdateProcess(t *testing.T) {
 	// Criar estrutura correta de diretórios
 	// Primeiro, criamos um diretório que simula o diretório de instalação base
 	baseDir := filepath.Join(testDir, "nexus")
-	err := os.MkdirAll(baseDir, 0755)
+	err := os.MkdirAll(baseDir, 0o755)
 	if err != nil {
 		t.Fatalf("Erro criando diretório base: %v", err)
 	}
 
 	// Criar diretório para versão antiga (1.0.24)
 	oldVersionDir := filepath.Join(baseDir, "app-1.0.24")
-	err = os.MkdirAll(oldVersionDir, 0755)
+	err = os.MkdirAll(oldVersionDir, 0o755)
 	if err != nil {
 		t.Fatalf("Erro criando diretório da versão antiga: %v", err)
 	}
 
 	// Criar o executável do updater (simulando onde o updater está sendo executado)
 	updaterPath := filepath.Join(baseDir, "updater.exe")
-	err = os.WriteFile(updaterPath, []byte("updater falso"), 0755)
+	err = os.WriteFile(updaterPath, []byte("updater falso"), 0o755)
 	if err != nil {
 		t.Fatalf("Erro criando executável do updater: %v", err)
 	}
 
 	// Criar um arquivo executável falso para a aplicação
 	oldExePath := filepath.Join(oldVersionDir, "Nexus.exe")
-	err = os.WriteFile(oldExePath, []byte("executável falso 1.0.24"), 0755)
+	err = os.WriteFile(oldExePath, []byte("executável falso 1.0.24"), 0o755)
 	if err != nil {
 		t.Fatalf("Erro criando executável falso: %v", err)
 	}

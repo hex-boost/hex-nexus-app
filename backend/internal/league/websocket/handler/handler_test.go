@@ -2,8 +2,9 @@ package handler
 
 import (
 	"encoding/json"
-	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
 	"testing"
+
+	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
 
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket"
@@ -64,6 +65,7 @@ type MockApp struct {
 func (m *MockApp) EmitEvent(eventName string, data ...interface{}) {
 	m.Called(eventName)
 }
+
 func TestWalletEventWithValidData(t *testing.T) {
 	mockState := new(MockState)
 	mockApp := new(MockApp)

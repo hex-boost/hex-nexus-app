@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+
 	"github.com/hex-boost/hex-nexus-app/backend/wails"
 )
 

@@ -308,25 +308,23 @@ type Account struct {
 	CreatedAt int64  `json:"created_at"`
 }
 type ChampionJWT struct {
-	Sub   string `json:"sub"`
-	Tiers struct {
-	} `json:"tiers"`
-	Containsf2P bool   `json:"containsf2P"`
-	ShardId     string `json:"shardId"`
-	Exp         int    `json:"exp"`
-	Iat         int    `json:"iat"`
+	Sub         string   `json:"sub"`
+	Tiers       struct{} `json:"tiers"`
+	Containsf2P bool     `json:"containsf2P"`
+	ShardId     string   `json:"shardId"`
+	Exp         int      `json:"exp"`
+	Iat         int      `json:"iat"`
 	Items       struct {
 		CHAMPION []int `json:"CHAMPION"`
 	} `json:"items"`
 }
 type SkinJWT struct {
-	Sub   string `json:"sub"`
-	Tiers struct {
-	} `json:"tiers"`
-	Containsf2P bool   `json:"containsf2P"`
-	ShardId     string `json:"shardId"`
-	Exp         int    `json:"exp"`
-	Iat         int    `json:"iat"`
+	Sub         string   `json:"sub"`
+	Tiers       struct{} `json:"tiers"`
+	Containsf2P bool     `json:"containsf2P"`
+	ShardId     string   `json:"shardId"`
+	Exp         int      `json:"exp"`
+	Iat         int      `json:"iat"`
 	Items       struct {
 		SKIN []int `json:"CHAMPION_SKIN"`
 	} `json:"items"`

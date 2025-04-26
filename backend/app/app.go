@@ -3,8 +3,9 @@ package app
 import (
 	"context"
 	"fmt"
-	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
 	"sync"
+
+	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
 )
 
 var _app = &app{}
@@ -38,9 +39,11 @@ func App(cfg *config.Config) *app {
 		})
 	return _app
 }
+
 func (a *app) Config() *config.Config {
 	return a.config
 }
+
 func (a *app) Log() *log {
 	return a.log
 }

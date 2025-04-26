@@ -52,3 +52,15 @@ tasks:
     cmds:
       - wails3 dev -config ./build/config.yml -port {{.VITE_PORT}}
 
+  coverage:
+    deps: [test]
+    desc: run unit tests and create HTML coverage file
+    cmds:
+      - go tool cover -html=coverage.txt
+
+  fmt:
+    desc: auto-format all go files
+    sources:
+      - "**/*.go"
+    cmds:
+      - gofumpt -l -w .

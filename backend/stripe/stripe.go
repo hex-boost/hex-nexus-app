@@ -4,15 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/hex-boost/hex-nexus-app/backend"
-	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
-	"go.uber.org/zap"
 	"html/template"
 	"net"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/gorilla/mux"
+	"github.com/hex-boost/hex-nexus-app/backend"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
+	"go.uber.org/zap"
 )
 
 // PaymentResult contains the result of a payment operation

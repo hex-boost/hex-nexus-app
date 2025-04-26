@@ -2,16 +2,17 @@ package updaterUtils
 
 import (
 	"fmt"
-	"github.com/hex-boost/hex-nexus-app/backend/pkg/command"
-	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
-	"go.uber.org/zap"
-	"golang.org/x/sys/windows/registry"
 	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/command"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
+	"go.uber.org/zap"
+	"golang.org/x/sys/windows/registry"
 )
 
 type UpdaterUtils struct {
@@ -29,6 +30,7 @@ func New(logger *logger.Logger) *UpdaterUtils {
 		cmd:    command.New(),
 	}
 }
+
 func (u *UpdaterUtils) GetLatestAppDir() (string, error) {
 	baseDir, err := ExecutableFn()
 	if err != nil {
@@ -102,6 +104,7 @@ func (u *UpdaterUtils) GetLatestAppDir() (string, error) {
 	// Retorna o caminho da versão mais alta
 	return versions[0].path, nil
 }
+
 func (u *UpdaterUtils) CheckWebView2Installation() bool {
 	// Check 64-bit registry first
 	key, err := registry.OpenKey(registry.LOCAL_MACHINE, `SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}`, registry.QUERY_VALUE)
