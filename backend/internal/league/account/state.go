@@ -116,5 +116,6 @@ func (s *State) Update(update *types.PartialSummonerRented) (*types.PartialSummo
 			s.account.Currencies.RP = update.Currencies.RP
 		}
 	}
-	return s.Get(), nil
+	accountCopy := *s.account
+	return &accountCopy, nil
 }

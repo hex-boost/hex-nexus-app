@@ -4,17 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account"
 	websocketEvents "github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket/event"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/hex-boost/hex-nexus-app/backend/riot"
-	"github.com/hex-boost/hex-nexus-app/backend/riot/auth"
-	"github.com/hex-boost/hex-nexus-app/backend/riot/captcha"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
 	"go.uber.org/zap"
@@ -22,10 +20,6 @@ import (
 
 type (
 	LeagueClientStateType string
-	AccountUpdateStatus   struct {
-		Username  string
-		IsUpdated bool
-	}
 )
 
 // Define client state constants
@@ -39,8 +33,7 @@ const (
 	ClientStateWaitingLogin   LeagueClientStateType = "WAITING_LOGIN"
 )
 
-// Define auth state constants
-
+// WebviewWindower defines the interface for WebviewWindow operations used in the League Monitor
 type LeagueClientState struct {
 	ClientState LeagueClientStateType `json:"clientState"`
 }
@@ -63,37 +56,61 @@ type AccountMonitorer interface {
 type AppEmitter interface {
 	EmitEvent(name string, data ...any)
 }
+
+type AccountState interface {
+	Get() *types.PartialSummonerRented
+	Update(update *types.PartialSummonerRented) (*types.PartialSummonerRented, error)
+}
+
+type Authenticator interface {
+	LoginWithCaptcha(ctx context.Context, username string, password string, captchaToken string) (string, error)
+	GetAuthenticationState() (*types.RiotIdentityResponse, error)
+	IsAuthStateValid() error
+	Logout() error
+
+	SetupCaptchaVerification() error
+
+	IsClientInitialized() bool
+	InitializeClient() error
+}
+
+// Captcha Add this interface to monitor.go
+// Captcha interface in monitor.go
+type Captcha interface {
+	GetWebView() (types.WebviewWindower, error)
+	WaitAndGetCaptchaResponse(ctx context.Context, timeout time.Duration) (string, error)
+	Reset()
+}
 type Monitor struct {
-	accountUpdateStatus   AccountUpdateStatus
+	isFirstUpdated        bool
 	app                   AppEmitter
-	riotAuth              auth.Authenticator
+	riotAuth              Authenticator
 	isRunning             bool
 	done                  chan struct{}
 	pollingTicker         *time.Ticker
 	logger                *logger.Logger
-	captcha               *captcha.Captcha
+	captcha               Captcha
 	accountMonitor        AccountMonitorer
 	leagueService         LeagueServicer
 	stateMutex            sync.RWMutex
+	accountState          AccountState
 	captchaFlowInProgress atomic.Bool
 	currentState          *LeagueClientState
 	isCheckingState       atomic.Bool
 	riotService           *riot.Service
 }
 
-func NewMonitor(logger *logger.Logger, accountMonitor *account.Monitor, leagueService LeagueServicer, riotAuth auth.Authenticator, captcha *captcha.Captcha) *Monitor {
+func NewMonitor(logger *logger.Logger, accountMonitor AccountMonitorer, leagueService LeagueServicer, riotAuth Authenticator, captcha Captcha, accountState AccountState) *Monitor {
 	logger.Info("Creating new client monitor")
 	initialState := &LeagueClientState{
 		ClientState: ClientStateNone,
 	}
 
 	monitor := &Monitor{
-		accountUpdateStatus: AccountUpdateStatus{
-			Username:  "",
-			IsUpdated: false,
-		},
+		isFirstUpdated: false,
 		done:           make(chan struct{}),
 		accountMonitor: accountMonitor,
+		accountState:   accountState,
 		captcha:        captcha,
 		logger:         logger,
 		leagueService:  leagueService,
@@ -178,9 +195,13 @@ func (cm *Monitor) checkClientState() {
 	)
 
 	cm.updateState(newState)
-	if isLeagueClientRunning && !cm.accountUpdateStatus.IsUpdated {
+
+	// Handle account state updates based on client state changes
+	if newState.ClientState == ClientStateLoggedIn && isLeagueClientRunning && !cm.isFirstUpdated {
+		// Only update account once when logged in
 		cm.checkAndUpdateAccount()
-	} else if cm.currentState.ClientState != ClientStateLoggedIn && cm.accountUpdateStatus.IsUpdated {
+	} else if newState.ClientState != ClientStateLoggedIn && cm.isFirstUpdated {
+		// Reset when logged out
 		cm.resetAccountUpdateStatus()
 	}
 }
@@ -288,27 +309,35 @@ func (cm *Monitor) initializeRiotClient() {
 
 // checkAndUpdateAccount checks and updates account information if needed
 func (cm *Monitor) checkAndUpdateAccount() {
-	if !cm.leagueService.IsLCUConnectionReady() || !cm.accountMonitor.IsNexusAccount() {
+
+	// Only proceed if League client connection is ready
+	if !cm.leagueService.IsLCUConnectionReady() {
 		return
 	}
 
 	loggedInUsername := cm.accountMonitor.GetLoggedInUsername()
 	if loggedInUsername == "" {
+		cm.logger.Info("No username detected, skipping account update")
+		return
+	}
+	accountState := cm.accountState.Get()
+	loggedInUsername = strings.ToLower(loggedInUsername)
+
+	cm.logger.Sugar().Infow("Updating account status",
+		"username", loggedInUsername,
+		"previousUsername", accountState.Username)
+
+	// Update username in account state
+	partialUpdate := &types.PartialSummonerRented{
+		Username: loggedInUsername,
+	}
+	_, err := cm.accountState.Update(partialUpdate)
+	if err != nil {
+		cm.logger.Error("Error updating account state with username", zap.Error(err))
 		return
 	}
 
-	// Check if we need to update
-	if cm.accountUpdateStatus.IsUpdated &&
-		strings.ToLower(cm.accountUpdateStatus.Username) == loggedInUsername {
-		return
-	}
-
-	cm.logger.Sugar().Infow("Checking account update status",
-		"currentUsername", loggedInUsername,
-		"lastUpdatedUsername", cm.accountUpdateStatus.Username,
-		"isUpdated", cm.accountUpdateStatus.IsUpdated)
-
-	err := cm.leagueService.UpdateFromLCU(loggedInUsername)
+	err = cm.leagueService.UpdateFromLCU(loggedInUsername)
 	if err != nil {
 		cm.logger.Error("Error updating account from LCU", zap.Error(err))
 		return
@@ -316,8 +345,12 @@ func (cm *Monitor) checkAndUpdateAccount() {
 
 	// Update status
 	cm.stateMutex.Lock()
-	cm.accountUpdateStatus.IsUpdated = true
-	cm.accountUpdateStatus.Username = strings.ToLower(loggedInUsername)
+	cm.isFirstUpdated = true
+	_, err = cm.accountState.Update(&types.PartialSummonerRented{Username: strings.ToLower(loggedInUsername)})
+	if err != nil {
+		cm.logger.Error("Error updating account state with username", zap.Error(err))
+		return
+	}
 	cm.app.EmitEvent(websocketEvents.LeagueWebsocketStart)
 	cm.stateMutex.Unlock()
 
@@ -326,12 +359,14 @@ func (cm *Monitor) checkAndUpdateAccount() {
 
 // resetAccountUpdateStatus resets the account update status
 func (cm *Monitor) resetAccountUpdateStatus() {
-	cm.logger.Info("Resetting account update status",
-		zap.Any("oldUpdateStatus", cm.accountUpdateStatus))
+	cm.logger.Info("Resetting account update status")
 
 	cm.stateMutex.Lock()
-	cm.accountUpdateStatus.IsUpdated = false
-	cm.accountUpdateStatus.Username = ""
+	cm.isFirstUpdated = false
+	_, err := cm.accountState.Update(&types.PartialSummonerRented{Username: ""})
+	if err != nil {
+		cm.logger.Error("Error clearing username in account state", zap.Error(err))
+	}
 	cm.app.EmitEvent(websocketEvents.LeagueWebsocketStop)
 	cm.stateMutex.Unlock()
 }
@@ -405,7 +440,7 @@ func (cm *Monitor) OpenWebviewAndGetToken() (string, error) {
 	}
 
 	// Get or create webview
-	webview, err := cm.prepareWebview()
+	webview, err := cm.PrepareWebview()
 	if err != nil {
 		return "", err
 	}
@@ -439,8 +474,8 @@ func (cm *Monitor) setupCaptcha() error {
 	return nil
 }
 
-// prepareWebview prepares the webview for captcha
-func (cm *Monitor) prepareWebview() (*application.WebviewWindow, error) {
+// PrepareWebview prepares the webview for captcha
+func (cm *Monitor) PrepareWebview() (types.WebviewWindower, error) {
 	webview, err := cm.captcha.GetWebView()
 	if err != nil {
 		cm.logger.Error("Error getting captcha webview", zap.Error(err))
@@ -453,10 +488,9 @@ func (cm *Monitor) prepareWebview() (*application.WebviewWindow, error) {
 }
 
 // executeCaptchaFlow executes the captcha flow and returns the token
-func (cm *Monitor) executeCaptchaFlow(ctx context.Context, webview *application.WebviewWindow) (string, error) {
+func (cm *Monitor) executeCaptchaFlow(ctx context.Context, webview types.WebviewWindower) (string, error) {
 	tokenChan := make(chan string)
 	errChan := make(chan error, 1)
-
 	// Register window closing handler
 	cancel := webview.RegisterHook(events.Windows.WindowClosing, func(eventCtx *application.WindowEvent) {
 		cm.logger.Info("Window closing event triggered")
@@ -486,7 +520,7 @@ func (cm *Monitor) executeCaptchaFlow(ctx context.Context, webview *application.
 }
 
 // handleCaptchaProcess handles the captcha process
-func (cm *Monitor) handleCaptchaProcess(ctx context.Context, webview *application.WebviewWindow, tokenChan chan string, errChan chan error) {
+func (cm *Monitor) handleCaptchaProcess(ctx context.Context, webview types.WebviewWindower, tokenChan chan string, errChan chan error) {
 	captchaResponse, err := cm.captcha.WaitAndGetCaptchaResponse(ctx, 15*time.Second)
 	webview.Hide()
 

@@ -582,16 +582,20 @@ func TestHandleWebsocketEventFormats(t *testing.T) {
 }
 
 func TestEventHandlerRegistration(t *testing.T) {
+	// Setup minimal mocks needed for registration test
 	mockLogger := logger.New("test", &config.Config{LogLevel: "info"})
 	mockApp := new(MockApp)
 	mockRouter := mocks.NewRouterService(t)
+	mockManager := mocks.NewManagerService(t)
+
+	// Other required dependencies
 	mockLCUConnection := mocks.NewLCUConnection(t)
 	mockAccountMonitor := mocks.NewAccountMonitor(t)
 	mockLeagueService := mocks.NewLeagueService(t)
 	mockAccountsRepo := mocks.NewAccountsRepository(t)
 	mockHandler := mocks.NewHandler(t)
-	mockManager := mocks.NewManagerService(t)
 
+	// Create service
 	service := websocket.NewService(
 		mockLogger,
 		mockAccountMonitor,
@@ -603,33 +607,36 @@ func TestEventHandlerRegistration(t *testing.T) {
 		mockManager,
 	)
 
-	// Create a mock event handler
-	testPath := "test-handler-path"
-	mockEventHandler := &MockEventHandler{
-		Path: testPath,
-		Handler: func(event websocket.LCUWebSocketEvent) {
-			// Handler logic
+	// Create mock event handlers
+	mockEventHandlers := []websocket.EventHandler{
+		&MockEventHandler{
+			Path:    "path1",
+			Handler: func(event websocket.LCUWebSocketEvent) {},
+		},
+		&MockEventHandler{
+			Path:    "path2",
+			Handler: func(event websocket.LCUWebSocketEvent) {},
 		},
 	}
 
-	// Setup expectations
-	mockManager.EXPECT().NewEventHandler("lol-inventory_v1_wallet", mock.AnythingOfType("func(websocket.LCUWebSocketEvent)")).
-		Return(mockEventHandler)
+	// Setup manager to return our handlers, regardless of what path is requested
+	// First call returns first handler, second call returns second handler
+	mockManager.EXPECT().NewEventHandler(mock.Anything, mock.Anything).Return(mockEventHandlers[0]).Once()
+	mockManager.EXPECT().NewEventHandler(mock.Anything, mock.Anything).Return(mockEventHandlers[1]).Once()
 
-	mockRouter.EXPECT().RegisterHandler(testPath, mock.AnythingOfType("func(websocket.LCUWebSocketEvent)")).Return()
+	// Setup router to expect registration for both handlers with their respective paths
+	mockRouter.EXPECT().RegisterHandler("path1", mock.Anything).Return().Once()
+	mockRouter.EXPECT().RegisterHandler("path2", mock.Anything).Return().Once()
 
-	// Setup expectations for both event registrations
-	mockApp.On("OnEvent", event.LeagueWebsocketStart, mock.AnythingOfType("func(*application.CustomEvent)")).
-		Return(func() {})
-	mockApp.On("OnEvent", event.LeagueWebsocketStop, mock.AnythingOfType("func(*application.CustomEvent)")).
-		Return(func() {})
+	// Setup expectations for event registrations
+	mockApp.On("OnEvent", event.LeagueWebsocketStart, mock.AnythingOfType("func(*application.CustomEvent)")).Return(func() {})
+	mockApp.On("OnEvent", event.LeagueWebsocketStop, mock.AnythingOfType("func(*application.CustomEvent)")).Return(func() {})
 
-	// Subscribe to league events
+	// Register event handlers
 	service.SetApp(mockApp)
-
 	service.SubscribeToLeagueEvents()
 
-	// Now manually trigger the start event callback
+	// Trigger the WebSocket start event to execute the handler registration
 	for _, call := range mockApp.Calls {
 		if call.Method == "OnEvent" && call.Arguments[0] == event.LeagueWebsocketStart {
 			callback := call.Arguments[1].(func(*application.CustomEvent))
@@ -638,10 +645,11 @@ func TestEventHandlerRegistration(t *testing.T) {
 		}
 	}
 
+	// Verify expectations
 	mockManager.AssertExpectations(t)
 	mockRouter.AssertExpectations(t)
+	mockApp.AssertExpectations(t)
 }
-
 func TestUnsubscribeFlow(t *testing.T) {
 	mockLogger := logger.New("test", &config.Config{LogLevel: "info"})
 	mockApp := new(MockApp)

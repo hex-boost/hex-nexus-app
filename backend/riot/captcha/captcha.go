@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
-	"github.com/wailsapp/wails/v3/pkg/application"
 	"go.uber.org/zap"
 )
 
@@ -19,7 +19,7 @@ import (
 type Captcha struct {
 	client            *resty.Client
 	logger            *logger.Logger
-	window            *application.WebviewWindow
+	window            types.WebviewWindower
 	response          chan string
 	captchaServer     *http.Server
 	rqdata            string
@@ -215,17 +215,16 @@ func (c *Captcha) SetResponse(response string) {
 	}
 }
 
-func (c *Captcha) SetWindow(window *application.WebviewWindow) {
+func (c *Captcha) SetWindow(window types.WebviewWindower) {
 	c.window = window
 }
 
-func (c *Captcha) GetWebView() (*application.WebviewWindow, error) {
+func (c *Captcha) GetWebView() (types.WebviewWindower, error) {
 	if c.window == nil {
 		return nil, errors.New("webview_not_initialized")
 	}
 	return c.window, nil
 }
-
 func (c *Captcha) Reset() {
 	c.serverMutex.Lock()
 	defer c.serverMutex.Unlock()

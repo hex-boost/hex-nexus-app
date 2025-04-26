@@ -171,7 +171,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 	)
 	discordService := discord.New(appInstance.Log().Discord(), cfg)
 	debugMode := cfg.Debug
-	clientMonitor := league.NewMonitor(appInstance.Log().League(), accountMonitor, leagueService, riotService, captchaService)
+	clientMonitor := league.NewMonitor(appInstance.Log().League(), accountMonitor, leagueService, riotService, captchaService, accountState)
 	mainApp := application.New(application.Options{
 		Name:        "Nexus",
 		Description: "Nexus",

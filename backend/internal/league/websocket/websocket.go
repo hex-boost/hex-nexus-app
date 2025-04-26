@@ -58,7 +58,7 @@ type App interface {
 }
 type Handler interface {
 	Wallet(event LCUWebSocketEvent)
-	ChampionsMinimal(event LCUWebSocketEvent)
+	Champion(event LCUWebSocketEvent)
 }
 
 // RouterInterface defines the contract for the event router
@@ -437,7 +437,12 @@ func (s *Service) RefreshAccountState(summonerState types.PartialSummonerRented)
 		s.app.EmitEvent(events.AccountStateChanged, summonerResponse)
 	}
 }
-
+func (s *Service) GetHandlers() []EventHandler {
+	return []EventHandler{
+		s.manager.NewEventHandler("lol-inventory_v1_wallet", s.handler.Wallet),
+		s.manager.NewEventHandler("lol-inventory_v2_inventory", s.handler.Champion),
+	}
+}
 func (s *Service) SubscribeToLeagueEvents() {
 	s.app.OnEvent(websocketEvent.LeagueWebsocketStart, func(event *application.CustomEvent) {
 		s.logger.Debug("Starting WebSocket service handlers")
@@ -447,10 +452,7 @@ func (s *Service) SubscribeToLeagueEvents() {
 		}
 
 		// Define handlers with their paths
-		handlers := []EventHandler{
-			s.manager.NewEventHandler("lol-inventory_v1_wallet", s.handler.Wallet),
-			s.manager.NewEventHandler("lol-inventory_v1_inventory", s.handler.ChampionsMinimal),
-		}
+		handlers := s.GetHandlers()
 		// Register each handler
 		for _, handler := range handlers {
 			path := handler.GetPath()
