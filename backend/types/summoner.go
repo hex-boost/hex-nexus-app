@@ -14,57 +14,57 @@ type CurrenciesPointer struct {
 	LolBlueEssence *int `json:"lol_blue_essence"`
 }
 type PartialSummonerRented struct {
-	Username        string             `json:"username,omitempty"`
-	Password        *string            `json:"password,omitempty"`
-	GameName        *string            `json:"gamename,omitempty"`
-	Type            *string            `json:"type,omitempty"`
-	LeaverBuster    *interface{}       `json:"leaverBuster,omitempty"`
-	Tagline         *string            `json:"tagline,omitempty"`
-	Server          *string            `json:"server,omitempty"`
-	LCUchampions    *[]int             `json:"champions,omitempty"`
-	LCUskins        *[]int             `json:"championSkins,omitempty"`
-	Currencies      *CurrenciesPointer `json:"currencies,omitempty"`
-	Ban             *Ban               `json:"ban,omitempty"`
-	IsPhoneVerified *bool              `json:"isPhoneVerified,omitempty"`
-	IsEmailVerified *bool              `json:"isEmailVerified,omitempty"`
-	Rankings        *RankedStats       `json:"rankedStats,omitempty"`
-	AccountLevel    *int               `json:"accountLevel,omitempty"`
+	Username        string              `json:"username,omitempty"`
+	Password        *string             `json:"password,omitempty"`
+	GameName        *string             `json:"gamename,omitempty"`
+	Type            *string             `json:"type,omitempty"`
+	LeaverBuster    *interface{}        `json:"leaverBuster,omitempty"`
+	Tagline         *string             `json:"tagline,omitempty"`
+	Server          *string             `json:"server,omitempty"`
+	LCUchampions    *[]int              `json:"champions,omitempty"`
+	LCUskins        *[]int              `json:"championSkins,omitempty"`
+	Currencies      *CurrenciesPointer  `json:"currencies,omitempty"`
+	Ban             *Ban                `json:"ban,omitempty"`
+	IsPhoneVerified *bool               `json:"isPhoneVerified,omitempty"`
+	IsEmailVerified *bool               `json:"isEmailVerified,omitempty"`
+	Rankings        *RankedStatsRefresh `json:"rankedStats,omitempty"`
+	AccountLevel    *int                `json:"accountLevel,omitempty"`
 }
 
 type SummonerBase struct {
-	ID              int         `json:"id,omitempty"`
-	DocumentID      string      `json:"documentId,omitempty"`
-	LCUchampions    interface{} `json:"LCUchampions,omitempty"`
-	LCUskins        interface{} `json:"LCUskins,omitempty"`
-	Type            string      `json:"type,omitempty"`
-	LeaverBuster    interface{} `json:"leaverBuster,omitempty"`
-	Tagline         string      `json:"tagline,omitempty"`
-	Server          string      `json:"server,omitempty"`
-	CreatedAt       string      `json:"createdAt,omitempty"`
-	UpdatedAt       string      `json:"updatedAt,omitempty"`
-	PublishedAt     string      `json:"publishedAt,omitempty"`
-	Locale          interface{} `json:"locale,omitempty"`
-	BlueEssence     int         `json:"blueEssence,omitempty"`
-	RiotPoints      int         `json:"riotPoints,omitempty"`
-	Ban             Ban         `json:"ban,omitempty"`
-	IsPhoneVerified bool        `json:"isPhoneVerified,omitempty"`
-	IsEmailVerified bool        `json:"isEmailVerified,omitempty"`
-	Rankings        RankedStats `json:"rankedStats,omitempty"`
-	User            User        `json:"user,omitempty"`
+	ID              int                `json:"id,omitempty"`
+	DocumentID      string             `json:"documentId,omitempty"`
+	LCUchampions    interface{}        `json:"LCUchampions,omitempty"`
+	LCUskins        interface{}        `json:"LCUskins,omitempty"`
+	Type            string             `json:"type,omitempty"`
+	LeaverBuster    interface{}        `json:"leaverBuster,omitempty"`
+	Tagline         string             `json:"tagline,omitempty"`
+	Server          string             `json:"server,omitempty"`
+	CreatedAt       string             `json:"createdAt,omitempty"`
+	UpdatedAt       string             `json:"updatedAt,omitempty"`
+	PublishedAt     string             `json:"publishedAt,omitempty"`
+	Locale          interface{}        `json:"locale,omitempty"`
+	BlueEssence     int                `json:"blueEssence,omitempty"`
+	RiotPoints      int                `json:"riotPoints,omitempty"`
+	Ban             Ban                `json:"ban,omitempty"`
+	IsPhoneVerified bool               `json:"isPhoneVerified,omitempty"`
+	IsEmailVerified bool               `json:"isEmailVerified,omitempty"`
+	Rankings        RankedStatsRefresh `json:"rankedStats,omitempty"`
+	User            User               `json:"user,omitempty"`
 }
 
 func (s *SummonerRented) MarshalJSON() ([]byte, error) {
 	// Create an anonymous struct with only the fields you want
 	return json.Marshal(struct {
-		Username     string      `json:"username"`
-		GameName     string      `json:"gamename"`
-		Tagline      string      `json:"tagline"`
-		LCUchampions interface{} `json:"champions"`
-		LCUskins     interface{} `json:"championSkins"`
-		Currencies   Currencies  `json:"currencies"`
-		Rankings     RankedStats `json:"rankedStats"`
-		Server       string      `json:"server"`
-		Ban          Ban         `json:"ban"`
+		Username     string             `json:"username"`
+		GameName     string             `json:"gamename"`
+		Tagline      string             `json:"tagline"`
+		LCUchampions interface{}        `json:"champions"`
+		LCUskins     interface{}        `json:"championSkins"`
+		Currencies   Currencies         `json:"currencies"`
+		Rankings     RankedStatsRefresh `json:"rankedStats"`
+		Server       string             `json:"server"`
+		Ban          Ban                `json:"ban"`
 	}{
 		Username:     s.Username,
 		GameName:     s.GameName,
@@ -107,9 +107,4 @@ type RentedAccountsResponse struct {
 type Currencies struct {
 	RP             int `json:"RP"`
 	LolBlueEssence int `json:"lol_blue_essence"`
-}
-
-type RankedStats struct {
-	RankedFlexSR  map[string]interface{} `json:"RANKED_FLEX_SR"`
-	RankedSolo5x5 map[string]interface{} `json:"RANKED_SOLO_5x5"`
 }

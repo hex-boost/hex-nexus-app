@@ -46,39 +46,39 @@ type CurrenciesRefresh struct {
 
 // RefreshAccount represents the full account data structure expected by the frontend
 type RefreshAccount struct {
-	IsPhoneVerified bool        `json:"isPhoneVerified"`
-	IsEmailVerified bool        `json:"isEmailVerified"`
-	LeaverBuster    interface{} `json:"leaverBuster"`
-	Username        string      `json:"username"`
-	Password        string      `json:"password"`
-	GameName        string      `json:"gamename"`
-	Error           string      `json:"error,omitempty"` // Can be "wrong_details", "multifactor", "eula", "unknown"
-	Tagline         string      `json:"tagline"`
-	Type            string      `json:"type,omitempty"`
-	Champions       []int       `json:"champions"`
-	ChampionSkins   []int       `json:"championSkins"`
-	Currencies      Currencies  `json:"currencies"`
-	Ban             interface{} `json:"ban"`
-	RankedStats     RankedStats `json:"rankedStats"`
-	Server          string      `json:"server"`
-	AccountLevel    int         `json:"accountLevel"`
+	IsPhoneVerified bool               `json:"isPhoneVerified"`
+	IsEmailVerified bool               `json:"isEmailVerified"`
+	LeaverBuster    interface{}        `json:"leaverBuster"`
+	Username        string             `json:"username"`
+	Password        string             `json:"password"`
+	GameName        string             `json:"gamename"`
+	Error           string             `json:"error,omitempty"` // Can be "wrong_details", "multifactor", "eula", "unknown"
+	Tagline         string             `json:"tagline"`
+	Type            string             `json:"type,omitempty"`
+	Champions       []int              `json:"champions"`
+	ChampionSkins   []int              `json:"championSkins"`
+	Currencies      Currencies         `json:"currencies"`
+	Ban             interface{}        `json:"ban"`
+	RankedStats     RankedStatsRefresh `json:"rankedStats"`
+	Server          string             `json:"server"`
+	AccountLevel    int                `json:"accountLevel"`
 }
 
 // Update SummonerBase to align with RefreshAccount structure
 type SummonerBaseRefresh struct {
-	Tagline         string      `json:"tagline"`
-	LCUchampions    []int       `json:"champions"`        // Renamed to match frontend expectation
-	LCUskins        []int       `json:"championSkins"`    // Renamed to match frontend expectation
-	BlueEssence     int         `json:"lol_blue_essence"` // Will be mapped to currencies
-	RiotPoints      int         `json:"RP"`               // Will be mapped to currencies
-	Rankings        RankedStats `json:"rankedStats"`      // Renamed from Rankings
-	Server          string      `json:"server"`
-	AccountLevel    int         `json:"accountLevel"`
-	IsPhoneVerified bool        `json:"isPhoneVerified"`
-	IsEmailVerified bool        `json:"isEmailVerified"`
-	RefundAmount    int         `json:"refundAmount"`
-	LeaverBuster    interface{} `json:"leaverBuster"`
-	Ban             interface{} `json:"ban"`
+	Tagline         string             `json:"tagline"`
+	LCUchampions    []int              `json:"champions"`        // Renamed to match frontend expectation
+	LCUskins        []int              `json:"championSkins"`    // Renamed to match frontend expectation
+	BlueEssence     int                `json:"lol_blue_essence"` // Will be mapped to currencies
+	RiotPoints      int                `json:"RP"`               // Will be mapped to currencies
+	Rankings        RankedStatsRefresh `json:"rankedStats"`      // Renamed from Rankings
+	Server          string             `json:"server"`
+	AccountLevel    int                `json:"accountLevel"`
+	IsPhoneVerified bool               `json:"isPhoneVerified"`
+	IsEmailVerified bool               `json:"isEmailVerified"`
+	RefundAmount    int                `json:"refundAmount"`
+	LeaverBuster    interface{}        `json:"leaverBuster"`
+	Ban             interface{}        `json:"ban"`
 }
 
 // SummonerRented keeps compatibility with existing code while adapting to new structure

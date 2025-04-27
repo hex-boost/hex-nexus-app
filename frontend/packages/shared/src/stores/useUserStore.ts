@@ -23,16 +23,10 @@ const getUserFromStorage = () => {
     return null;
   }
 };
-const storedJWT = localStorage.getItem('authToken') || null;
 // Set it in BaseRepository immediately
-if (storedJWT) {
-  BaseClient.SetJWT(storedJWT);
-} else {
-  BaseClient.ClearJWT();
-}
 export const useUserStore = create<AuthState>((set, get) => ({
   user: getUserFromStorage(),
-  jwt: storedJWT,
+  jwt: localStorage.getItem('authToken') || null,
   setUser: (user: UserType) => {
     set({ user });
     localStorage.setItem('user', JSON.stringify(user));

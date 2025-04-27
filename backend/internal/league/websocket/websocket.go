@@ -59,6 +59,7 @@ type App interface {
 type Handler interface {
 	Wallet(event LCUWebSocketEvent)
 	Champion(event LCUWebSocketEvent)
+	GameflowPhase(event LCUWebSocketEvent)
 }
 
 // RouterInterface defines the contract for the event router
@@ -440,6 +441,7 @@ func (s *Service) RefreshAccountState(summonerState types.PartialSummonerRented)
 func (s *Service) GetHandlers() []EventHandler {
 	return []EventHandler{
 		s.manager.NewEventHandler("lol-inventory_v1_wallet", s.handler.Wallet),
+		s.manager.NewEventHandler("lol-gameflow_v1_gameflow-phase", s.handler.GameflowPhase),
 		s.manager.NewEventHandler("lol-inventory_v2_inventory", s.handler.Champion),
 	}
 }

@@ -37,7 +37,6 @@ func (r *Router) Dispatch(event LCUWebSocketEvent) {
 
 	for pattern, handler := range r.routes {
 		if strings.Contains(normalizedURI, pattern) {
-
 			handler(event)
 			return
 		}

@@ -19,7 +19,7 @@ func New() *HWID {
 
 func (u *HWID) Get() (string, error) {
 	// Execute the command using command.Command
-	output, err := u.command.Execute("cmd.exe /c wmic csproduct get uuid")
+	output, err := u.command.Execute("cmd.exe", "/c", "wmic csproduct get uuid")
 	if err != nil {
 		// Handle error - return empty string or some default value
 		return "", err

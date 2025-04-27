@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-
 	"go.uber.org/zap"
 
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account/events"
@@ -24,22 +23,27 @@ type AccountClient interface {
 type App interface {
 	EmitEvent(name string, data ...any)
 }
+type SummonerClient interface {
+	GetRanking() (*types.RankedStatsRefresh, error)
+}
 
 // Handler implements WebSocketEventHandler with standard event handling logic
 type Handler struct {
-	logger        logger.Loggerer
-	accountClient AccountClient
-	accountState  AccountState
-	app           App
+	logger         logger.Loggerer
+	accountClient  AccountClient
+	summonerClient SummonerClient
+	accountState   AccountState
+	app            App
 }
 
 // New creates a new WebSocket event handler
-func New(logger logger.Loggerer, app App, accountState AccountState, accountClient AccountClient) *Handler {
+func New(logger logger.Loggerer, app App, accountState AccountState, accountClient AccountClient, summonerClient SummonerClient) *Handler {
 	return &Handler{
-		accountState:  accountState,
-		logger:        logger,
-		accountClient: accountClient,
-		app:           app,
+		accountState:   accountState,
+		summonerClient: summonerClient,
+		logger:         logger,
+		accountClient:  accountClient,
+		app:            app,
 	}
 }
 
@@ -147,4 +151,93 @@ func (h *Handler) Champion(event websocket.LCUWebSocketEvent) {
 		}
 		h.logger.Info("Account champions updated", zap.Int("count", championCount))
 	}
+}
+
+// GameflowPhase handles gameflow phase changes from the LCU
+// GameflowPhase handles gameflow phase changes from the LCU
+func (h *Handler) GameflowPhase(event websocket.LCUWebSocketEvent) {
+	var gameflowPhase string
+	if err := json.Unmarshal(event.Data, &gameflowPhase); err != nil {
+		h.logger.Error("Failed to parse gameflow phase data", zap.Error(err))
+		return
+	}
+
+	h.logger.Info("Gameflow phase changed", zap.String("phase", gameflowPhase))
+
+	// Check if this is an end-game phase
+	if gameflowPhase == "EndOfGame" || gameflowPhase == "PreEndOfGame" || gameflowPhase == "WaitingForStats" {
+		h.logger.Info("Game ended, fetching ranking information")
+
+		// Get the current ranking information
+		ranking, err := h.summonerClient.GetRanking()
+		if err != nil {
+			h.logger.Error("Failed to get ranking information", zap.Error(err))
+			return
+		}
+
+		// Get current account state
+		currentAccount := h.accountState.Get()
+
+		// Check if update is needed
+		needsUpdate := true
+		if currentAccount != nil && currentAccount.Rankings != nil {
+			// Compare the rankings to see if they've changed
+			//currentRank := currentAccount.Rankings
+
+			// Compare solo queue rankings if available
+			//if isRankingSame(currentRank.RankedSolo5x5, ranking.RankedSolo5x5) &&
+			//	isRankingSame(currentRank.RankedFlexSR, ranking.RankedFlexSR) {
+			//	h.logger.Debug("Rankings unchanged, skipping update")
+			//	needsUpdate = false
+			//}
+		}
+
+		if needsUpdate {
+			// Update the account with the new ranking information
+			summonerRented := &types.PartialSummonerRented{
+				Rankings: ranking,
+			}
+
+			err = h.ProcessAccountUpdate(summonerRented)
+			if err != nil {
+				h.logger.Error("Failed to process account update", zap.Error(err))
+				return
+			}
+
+			h.logger.Info("Account ranking updated successfully")
+		}
+	}
+}
+
+// isRankingSame compares two ranking maps to determine if they represent the same rank
+func isRankingSame(r1, r2 map[string]interface{}) bool {
+	if r1 == nil && r2 == nil {
+		return true
+	}
+	if r1 == nil || r2 == nil {
+		return false
+	}
+
+	// Compare tier
+	tier1, _ := r1["tier"].(string)
+	tier2, _ := r2["tier"].(string)
+	if tier1 != tier2 {
+		return false
+	}
+
+	// Compare division
+	div1, _ := r1["division"].(string)
+	div2, _ := r2["division"].(string)
+	if div1 != div2 {
+		return false
+	}
+
+	// Compare LP
+	lp1, _ := r1["leaguePoints"].(float64)
+	lp2, _ := r2["leaguePoints"].(float64)
+	if lp1 != lp2 {
+		return false
+	}
+
+	return true
 }

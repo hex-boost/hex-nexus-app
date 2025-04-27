@@ -27,7 +27,7 @@ func (l *Service) UpdateFromLCU(username string) (*types.PartialSummonerRented, 
 		champions   []int
 		skins       []int
 		currencyMap map[string]interface{}
-		rankingMap  *types.RankedStats
+		rankingMap  *types.RankedStatsRefresh
 		userinfo    types.UserInfo
 		mu          sync.Mutex
 	)

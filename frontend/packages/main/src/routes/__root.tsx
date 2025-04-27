@@ -3,7 +3,9 @@ import { PremiumPaymentModal } from '@/components/PremiumPaymentModal.tsx';
 import { useGoState } from '@/hooks/useGoBindings.ts';
 import { usePremiumPaymentModalStore } from '@/stores/usePremiumPaymentModalStore';
 import { useUserStore } from '@/stores/useUserStore';
+import { BaseClient } from '@client';
 import { createRootRouteWithContext, Outlet, redirect } from '@tanstack/react-router';
+import { useEffect } from 'react';
 import '@wailsio/runtime';
 
 export type RouterContext = {
@@ -40,7 +42,14 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 function RootLayout() {
   const { isOpen, tier, paymentMethod, amount, close } = usePremiumPaymentModalStore();
   useGoState();
-
+  const { jwt } = useUserStore();
+  useEffect(() => {
+    if (jwt) {
+      BaseClient.SetJWT(jwt);
+    } else {
+      BaseClient.ClearJWT();
+    }
+  }, [jwt]);
   return (
     <>
       <PremiumPaymentModal isOpen={isOpen} tier={tier} paymentMethod={paymentMethod} amount={amount} onClose={close} />

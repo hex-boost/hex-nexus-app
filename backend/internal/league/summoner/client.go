@@ -147,7 +147,6 @@ func (s *Client) GetChampions() ([]int, error) {
 	}
 	championsIds := payload.Items.CHAMPION
 
-	s.logger.Info("Successfully retrieved champions", zap.Int("count", len(championsIds)))
 	return championsIds, nil
 }
 
@@ -175,7 +174,6 @@ func (s *Client) GetSkins() ([]int, error) {
 
 	skinsIds := payload.Items.SKIN
 
-	s.logger.Info("Successfully retrieved skins", zap.Int("count", len(skinsIds)))
 	return skinsIds, nil
 }
 
@@ -200,14 +198,12 @@ func (s *Client) GetCurrency() (map[string]interface{}, error) {
 		return nil, err
 	}
 
-	s.logger.Info("Currency data retrieved",
-		zap.Any("RP", result["RP"]),
-		zap.Any("BE", result["lol_blue_essence"]))
+	s.logger.Info("Currency data retrieved")
 
 	return result, nil
 }
 
-func (s *Client) GetRanking() (*types.RankedStats, error) {
+func (s *Client) GetRanking() (*types.RankedStatsRefresh, error) {
 	s.logger.Info("Fetching ranking data")
 
 	resp, err := s.conn.Client.R().
@@ -233,18 +229,39 @@ func (s *Client) GetRanking() (*types.RankedStats, error) {
 		return nil, errors.New("could not parse queue map")
 	}
 
-	var result types.RankedStats
+	var result types.RankedStatsRefresh
 	if flexData, ok := queueMap["RANKED_FLEX_SR"].(map[string]interface{}); ok {
-		result.RankedFlexSR = flexData
+		// Marshal the map to JSON
+		jsonData, err := json.Marshal(flexData)
+		if err == nil {
+			// Unmarshal JSON into RankedDetails structure
+			var rankedDetails types.RankedDetails
+			if err := json.Unmarshal(jsonData, &rankedDetails); err == nil {
+				result.RankedFlexSR = rankedDetails
+			} else {
+				s.logger.Error("Failed to unmarshal flex data", zap.Error(err))
+			}
+		} else {
+			s.logger.Error("Failed to marshal flex data", zap.Error(err))
+		}
 	}
 
 	if soloData, ok := queueMap["RANKED_SOLO_5x5"].(map[string]interface{}); ok {
-		result.RankedSolo5x5 = soloData
+		// Marshal the map to JSON
+		jsonData, err := json.Marshal(soloData)
+		if err == nil {
+			// Unmarshal JSON into RankedDetails structure
+			var rankedDetails types.RankedDetails
+			if err := json.Unmarshal(jsonData, &rankedDetails); err == nil {
+				result.RankedSolo5x5 = rankedDetails
+			} else {
+				s.logger.Error("Failed to unmarshal solo data", zap.Error(err))
+			}
+		} else {
+			s.logger.Error("Failed to marshal solo data", zap.Error(err))
+		}
 	}
 	s.logger.Info("Ranking data retrieved")
-	s.logger.Debug("Ranking details",
-		zap.Any("FLEX", result.RankedFlexSR),
-		zap.Any("SOLO", result.RankedSolo5x5))
 
 	return &result, nil
 }
