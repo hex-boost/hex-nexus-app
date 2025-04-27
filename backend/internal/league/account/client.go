@@ -14,12 +14,14 @@ import (
 type Client struct {
 	api    *client.HTTPClient
 	logger *logger.Logger
+	cfg    *config.Config
 }
 
-func NewClient(logger *logger.Logger, api *client.HTTPClient) *Client {
+func NewClient(logger *logger.Logger, cfg *config.Config, api *client.HTTPClient) *Client {
 	return &Client{
 		api:    api,
 		logger: logger,
+		cfg:    cfg,
 	}
 }
 
@@ -28,10 +30,10 @@ func (s *Client) Save(summoner types.PartialSummonerRented) (*types.SummonerResp
 		return nil, fmt.Errorf("username is required")
 	}
 	client := resty.New()
-	client.SetBaseURL(config.BackendURL)
+	client.SetBaseURL(s.cfg.BackendURL)
 	client.SetHeader("Content-Type", "application/json")
 	client.SetHeader("Accept", "application/json")
-	client.SetAuthToken(config.RefreshApiKey)
+	client.SetHeader("Authorization", "Bearer "+s.cfg.RefreshApiKey)
 	var refreshResponseData types.RefreshResponseData
 	req := client.R().SetBody(summoner).SetResult(&refreshResponseData)
 	// Make the request manually instead of using s.api.Put

@@ -151,7 +151,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 	lcuConn := lcu.NewConnection(appInstance.Log().League(), procs)
 	baseClient := client.NewBaseClient(appInstance.Log().Repo(), cfg)
 	httpClient := client.NewHTTPClient(baseClient)
-	accountClient := account.NewClient(appInstance.Log().Web(), httpClient)
+	accountClient := account.NewClient(appInstance.Log().Web(), cfg, httpClient)
 	summonerClient := summoner.NewClient(appInstance.Log().League(), lcuConn)
 	summonerService := summoner.NewService(appInstance.Log().League(), summonerClient)
 	captchaService := captcha.New(appInstance.Log().Riot())
