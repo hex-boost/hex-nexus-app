@@ -111,6 +111,9 @@ export function RentedAccountButton({ account }: RentedAccountButtonProps) {
 
   return (
     <>
+      {import.meta.env.MODE === 'development' && (
+        {}
+      )}
       {renderButton()}
     </>
   );

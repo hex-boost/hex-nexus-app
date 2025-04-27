@@ -96,6 +96,7 @@ type Monitor struct {
 	accountState          AccountState
 	captchaFlowInProgress atomic.Bool
 	currentState          *LeagueClientState
+	eventMutex            sync.Mutex
 	isCheckingState       atomic.Bool
 	riotService           *riot.Service
 }
@@ -118,6 +119,7 @@ func NewMonitor(logger *logger.Logger, accountMonitor AccountMonitorer, leagueSe
 		isRunning:      false,
 		currentState:   initialState,
 		stateMutex:     sync.RWMutex{},
+		eventMutex:     sync.Mutex{},
 	}
 	monitor.isCheckingState.Store(false)
 
@@ -143,7 +145,6 @@ func (cm *Monitor) updateState(newState *LeagueClientState) {
 	stateChanged := cm.currentState.ClientState != newState.ClientState
 
 	if stateChanged {
-		// Change from Info to Infow for structured logging
 		cm.logger.Sugar().Infow("State changed",
 			"prevClientState", cm.currentState.ClientState,
 			"newClientState", newState.ClientState,
@@ -153,9 +154,10 @@ func (cm *Monitor) updateState(newState *LeagueClientState) {
 
 		// Emit event to frontend
 		if cm.app != nil {
-			cm.app.EmitEvent(EventLeagueStateChanged, newState)
+			cm.emitEvent(EventLeagueStateChanged, newState)
 		}
 	}
+
 }
 
 // checkClientState coordinates the client state checking process
@@ -351,10 +353,20 @@ func (cm *Monitor) checkAndUpdateAccount() {
 		cm.logger.Error("Error updating account state with username", zap.Error(err))
 		return
 	}
-	cm.app.EmitEvent(websocketEvents.LeagueWebsocketStart)
+
+	cm.emitEvent(websocketEvents.LeagueWebsocketStart)
 	cm.stateMutex.Unlock()
 
 	cm.logger.Info("Account successfully updated", zap.String("username", loggedInUsername))
+}
+func (cm *Monitor) emitEvent(name string, data ...any) {
+	cm.eventMutex.Lock()
+	defer cm.eventMutex.Unlock()
+
+	if cm.app != nil {
+		cm.app.EmitEvent(name, data...)
+	}
+
 }
 
 // resetAccountUpdateStatus resets the account update status
@@ -367,7 +379,7 @@ func (cm *Monitor) resetAccountUpdateStatus() {
 	if err != nil {
 		cm.logger.Error("Error clearing username in account state", zap.Error(err))
 	}
-	cm.app.EmitEvent(websocketEvents.LeagueWebsocketStop)
+	cm.emitEvent(websocketEvents.LeagueWebsocketStop)
 	cm.stateMutex.Unlock()
 }
 

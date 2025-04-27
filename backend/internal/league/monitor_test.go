@@ -483,3 +483,44 @@ func TestOpenWebviewAndGetToken(t *testing.T) {
 		mockRiotAuth.AssertCalled(t, "SetupCaptchaVerification")
 	})
 }
+
+// TestEmitEventUnpacksParameters verifies that emitEvent correctly passes variadic parameters
+// to prevent nested arrays in emitted events
+func TestEmitEventUnpacksParameters(t *testing.T) {
+	cfg := &config.Config{LogLevel: "debug"}
+	logger := logger.New("TestEmitEventUnpacksParameters", cfg)
+
+	mockLeagueService := mocks.NewLeagueServicer(t)
+	mockAccountMonitor := mocks.NewAccountMonitorer(t)
+	mockRiotAuth := mocks.NewAuthenticator(t)
+	mockCaptcha := mocks.NewCaptcha(t)
+	mockAccountState := mocks.NewAccountState(t)
+	mockApp := mocks.NewAppEmitter(t)
+
+	// Create a test event and data
+	eventName := "test:event"
+	testData := &LeagueClientState{ClientState: ClientStateLoggedIn}
+
+	// Set expectation - parameters should be passed directly, not nested in another array
+	mockApp.On("EmitEvent", eventName, testData).Return()
+
+	// Create monitor and set app
+	cm := NewMonitor(
+		logger,
+		mockAccountMonitor,
+		mockLeagueService,
+		mockRiotAuth,
+		mockCaptcha,
+		mockAccountState,
+	)
+	cm.app = mockApp
+
+	// Call emitEvent with test data
+	cm.emitEvent(eventName, testData)
+
+	// Verify EmitEvent was called with correct parameters (not nested)
+	mockApp.AssertCalled(t, "EmitEvent", eventName, testData)
+
+	// Verify EmitEvent was NOT called with nested parameters
+	mockApp.AssertNotCalled(t, "EmitEvent", eventName, []interface{}{testData})
+}

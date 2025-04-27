@@ -19,12 +19,6 @@ export function useLeagueManager({
   const { state, isLoading } = useLeagueState();
   const logContext = `useLeagueManager:${account.id}`;
 
-  logger.info(logContext, 'Hook initialized', {
-    accountId: account.id,
-    username: account.username,
-    currentState: state,
-  });
-
   const { mutate: handleOpenCaptchaWebview, isPending: isCaptchaProcessing } = useMutation({
     mutationKey: ['account', 'solveCaptcha', account.id],
     mutationFn: async () => {

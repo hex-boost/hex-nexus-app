@@ -31,7 +31,7 @@ export function useLeagueState() {
 
     // Listen for state changes
     const cleanup = Events.On('league:state:changed', (event: { data: LeagueClientState[] }) => {
-      if (mounted) {
+      if (mounted && event.data[0] && event.data[0] !== state) {
         logger.info(logContext, 'State changed event received', event);
         setState(event.data[0]);
       }
