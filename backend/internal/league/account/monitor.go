@@ -61,21 +61,20 @@ type LeagueServicer interface {
 type (
 	AccountServicer interface{}
 	Monitor         struct {
-		riotAuth            RiotAuthenticator
-		accountClient       AccountClient
-		logger              *logger.Logger
-		lastCheckedUsername string
-		running             bool
-		accountState        AccountState
-		checkInterval       time.Duration
-		cachedAccounts      []types.SummonerRented
-		lastAccountsFetch   time.Time
-		accountCacheTTL     time.Duration
-		window              WindowEmitter
-		stopChan            chan struct{}
-		leagueService       LeagueServicer
-		mutex               sync.Mutex
-		watchdogState       WatchdogUpdater
+		riotAuth          RiotAuthenticator
+		accountClient     AccountClient
+		logger            *logger.Logger
+		running           bool
+		accountState      AccountState
+		checkInterval     time.Duration
+		cachedAccounts    []types.SummonerRented
+		lastAccountsFetch time.Time
+		accountCacheTTL   time.Duration
+		window            WindowEmitter
+		stopChan          chan struct{}
+		leagueService     LeagueServicer
+		mutex             sync.Mutex
+		watchdogState     WatchdogUpdater
 
 		summonerClient SummonerClient
 		LCUConnection  LCUConnection
@@ -105,7 +104,7 @@ func NewMonitor(
 		logger:          logger,
 		window:          nil,
 		accountClient:   accountClient,
-		accountCacheTTL: 5 * time.Minute,
+		accountCacheTTL: 1 * time.Hour,
 		accountState:    accountState,
 		checkInterval:   1 * time.Second,
 		stopChan:        make(chan struct{}),
@@ -140,17 +139,7 @@ func (am *Monitor) getAccountsWithCache() ([]types.SummonerRented, error) {
 
 	// If cache is empty or expired, fetch fresh data
 	if needsRefresh {
-		am.logger.Debug("Fetching fresh account data from repository")
-		accounts, err := am.accountClient.GetAllRented()
-		if err != nil {
-			return nil, err
-		}
-
-		am.cachedAccounts = accounts
-		am.lastAccountsFetch = time.Now()
-		am.logger.Debug("Updated account cache",
-			zap.Int("accountCount", len(accounts)),
-			zap.Time("cacheTimestamp", am.lastAccountsFetch))
+		_ = am.refreshAccountCache()
 	}
 
 	return am.cachedAccounts, nil
@@ -254,7 +243,7 @@ func (am *Monitor) getUsernameByLeagueClient() (string, error) {
 	return currentSummoner.Username, nil
 }
 
-func (am *Monitor) GetLoggedInUsername() string {
+func (am *Monitor) GetLoggedInUsername(lastUsername string) string {
 	var currentUsername string
 	if am.riotAuth.IsRunning() {
 		currentUsername = am.getSummonerNameByRiotClient()
@@ -265,7 +254,7 @@ func (am *Monitor) GetLoggedInUsername() string {
 		}
 		currentUsername = leagueCurrentUsername
 	} else if am.leagueService.IsPlaying() {
-		currentUsername = am.lastCheckedUsername
+		currentUsername = lastUsername
 	}
 	return strings.ToLower(currentUsername)
 }
@@ -277,9 +266,20 @@ func (am *Monitor) checkCurrentAccount() {
 		am.SetNexusAccount(false)
 		return
 	}
-	currentUsername := am.GetLoggedInUsername()
+	var currentAccount *types.PartialSummonerRented
+	currentAccount = am.accountState.Get()
+
+	currentUsername := am.GetLoggedInUsername(currentAccount.Username)
 	if currentUsername == "" {
 		return
+	}
+
+	if currentAccount.Username != currentUsername {
+		am.logger.Debug("Username changed, refreshing account cache",
+			zap.String("previous", currentAccount.Username),
+			zap.String("current", currentUsername))
+		currentAccount, _ = am.accountState.Update(&types.PartialSummonerRented{Username: currentUsername})
+		_ = am.refreshAccountCache()
 	}
 
 	accounts, err := am.getAccountsWithCache()
@@ -294,7 +294,7 @@ func (am *Monitor) checkCurrentAccount() {
 
 	isNexusAccount := false
 	for _, account := range accounts {
-		if strings.ToLower(account.Username) == currentUsername {
+		if strings.ToLower(account.Username) == currentAccount.Username {
 			isNexusAccount = true
 			break
 		}

@@ -181,15 +181,13 @@ func (h *Handler) GameflowPhase(event websocket.LCUWebSocketEvent) {
 		// Check if update is needed
 		needsUpdate := true
 		if currentAccount != nil && currentAccount.Rankings != nil {
-			// Compare the rankings to see if they've changed
-			//currentRank := currentAccount.Rankings
+			currentRank := currentAccount.Rankings
 
-			// Compare solo queue rankings if available
-			//if isRankingSame(currentRank.RankedSolo5x5, ranking.RankedSolo5x5) &&
-			//	isRankingSame(currentRank.RankedFlexSR, ranking.RankedFlexSR) {
-			//	h.logger.Debug("Rankings unchanged, skipping update")
-			//	needsUpdate = false
-			//}
+			if isRankingSame(currentRank.RankedSolo5x5, ranking.RankedSolo5x5) &&
+				isRankingSame(currentRank.RankedFlexSR, ranking.RankedFlexSR) {
+				h.logger.Debug("Rankings unchanged, skipping update")
+				needsUpdate = false
+			}
 		}
 
 		if needsUpdate {
@@ -209,35 +207,33 @@ func (h *Handler) GameflowPhase(event websocket.LCUWebSocketEvent) {
 	}
 }
 
-// isRankingSame compares two ranking maps to determine if they represent the same rank
-func isRankingSame(r1, r2 map[string]interface{}) bool {
-	if r1 == nil && r2 == nil {
-		return true
-	}
-	if r1 == nil || r2 == nil {
-		return false
-	}
-
-	// Compare tier
-	tier1, _ := r1["tier"].(string)
-	tier2, _ := r2["tier"].(string)
-	if tier1 != tier2 {
-		return false
-	}
-
-	// Compare division
-	div1, _ := r1["division"].(string)
-	div2, _ := r2["division"].(string)
-	if div1 != div2 {
+// isRankingSame compares two RankedDetails objects to determine if they are identical
+func isRankingSame(oldRank, newRank types.RankedDetails) bool {
+	// Compare tier, division and rank
+	if oldRank.Tier != newRank.Tier ||
+		oldRank.Division != newRank.Division ||
+		oldRank.Rank != newRank.Rank {
 		return false
 	}
 
 	// Compare LP
-	lp1, _ := r1["leaguePoints"].(float64)
-	lp2, _ := r2["leaguePoints"].(float64)
-	if lp1 != lp2 {
+	if oldRank.LeaguePoints != newRank.LeaguePoints {
 		return false
 	}
 
+	// Compare game counts
+	if oldRank.Wins != newRank.Wins ||
+		oldRank.Losses != newRank.Losses {
+		return false
+	}
+
+	// Compare provisional stats
+	if oldRank.IsProvisional != newRank.IsProvisional ||
+		oldRank.ProvisionalGameThreshold != newRank.ProvisionalGameThreshold ||
+		oldRank.ProvisionalGamesRemaining != newRank.ProvisionalGamesRemaining {
+		return false
+	}
+
+	// If we've gotten here, the rankings are the same
 	return true
 }

@@ -43,7 +43,7 @@ type LCUConnection interface {
 
 // AccountMonitor defines the contract for account monitoring
 type AccountMonitor interface {
-	GetLoggedInUsername() string
+	GetLoggedInUsername(lastUsername string) string
 }
 
 // AccountsRepository defines the contract for account data operations
@@ -420,7 +420,7 @@ func (s *Service) readMessages() {
 }
 
 func (s *Service) RefreshAccountState(summonerState types.PartialSummonerRented) {
-	username := s.accountMonitor.GetLoggedInUsername()
+	username := s.accountMonitor.GetLoggedInUsername(summonerState.Username)
 	if username == "" {
 		return
 	}

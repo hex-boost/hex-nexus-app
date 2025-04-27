@@ -50,7 +50,7 @@ type LeagueServicer interface {
 }
 
 type AccountMonitorer interface {
-	GetLoggedInUsername() string
+	GetLoggedInUsername(lastUsername string) string
 	IsNexusAccount() bool
 }
 type AppEmitter interface {
@@ -316,13 +316,13 @@ func (cm *Monitor) checkAndUpdateAccount() {
 	if !cm.leagueService.IsLCUConnectionReady() {
 		return
 	}
+	accountState := cm.accountState.Get()
 
-	loggedInUsername := cm.accountMonitor.GetLoggedInUsername()
+	loggedInUsername := cm.accountMonitor.GetLoggedInUsername(accountState.Username)
 	if loggedInUsername == "" {
 		cm.logger.Info("No username detected, skipping account update")
 		return
 	}
-	accountState := cm.accountState.Get()
 	loggedInUsername = strings.ToLower(loggedInUsername)
 
 	cm.logger.Sugar().Infow("Updating account status",
