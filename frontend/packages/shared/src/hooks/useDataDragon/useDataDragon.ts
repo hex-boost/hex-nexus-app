@@ -1,4 +1,4 @@
-import type {ChampionById, DDragonChampionsData} from '@/hooks/useDataDragon/types/ddragon.ts';
+import type {ChampionByID, ChampionById, DDragonChampionsData} from '@/hooks/useDataDragon/types/ddragon.ts';
 import type {UseDataDragonHook} from '@/hooks/useDataDragon/types/useDataDragonHook.ts';
 import {
     CACHE_STORE_NAME,
@@ -100,7 +100,7 @@ export function useAllDataDragon(): UseDataDragonHook {
 
       const currentVersion = versionQuery.data;
 
-      const cachedDetails = await getFromCache<any[]>('champion_details', currentVersion);
+      const cachedDetails = await getFromCache<ChampionByID[]>('champion_details', currentVersion);
       if (cachedDetails) {
         return cachedDetails;
       }
@@ -140,20 +140,24 @@ export function useAllDataDragon(): UseDataDragonHook {
   };
 
   const allChampions = useMemo(() => {
-    if (!versionQuery.data || !championsQuery.data) {
+    if (!versionQuery.data || !allChampionDetailsQuery.data) {
+      return [];
+    }
+
+    const championDetails = allChampionDetailsQuery.data;
+    if (!championDetails || championDetails.length === 0) {
       return [];
     }
 
     const version = versionQuery.data;
-    const championsData = championsQuery.data;
-
-    return Object.values(championsData).map(champion => ({
+    return championDetails.map((champion: ChampionByID) => ({
+      skins: champion.skins,
       id: champion.key,
       name: champion.name,
       title: champion.title,
       imageUrl: `https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${champion.image.full}`,
     }));
-  }, [versionQuery.data, championsQuery.data]);
+  }, [versionQuery.data, allChampionDetailsQuery.data, championsQuery.data]);
 
   const allSkins = useMemo(() => {
     if (!versionQuery.data || !allChampionDetailsQuery.data) {

@@ -1,19 +1,16 @@
-'use client';
-
-import type { Champion, Chroma, Skin, SkinTag } from '@/components/character-selection';
-import { Badge } from '@/components/ui/badge.tsx';
-import { cn } from '@/lib/utils.ts';
-import Image from 'next/image';
+import type {Skin} from '@/hooks/useDataDragon/types/ddragon.ts';
+import type {FormattedChampion, FormattedSkin} from '@/hooks/useDataDragon/types/useDataDragonHook.ts';
+import {cn} from '@/lib/utils.ts';
 
 type CharacterCardProps = {
-  champion: Champion;
+  skins: FormattedSkin[];
+  champion: FormattedChampion;
   onClick?: () => void;
   featured?: boolean;
   selectedSkin?: Skin;
-  selectedChroma?: Chroma | null;
+  selectedChroma?: any | null;
   layout?: 'grid' | 'list' | 'compact';
   size?: 'small' | 'medium' | 'large';
-  tags?: SkinTag[];
 };
 
 export default function CharacterCard({
@@ -24,11 +21,11 @@ export default function CharacterCard({
   selectedChroma,
   layout = 'grid',
   size = 'medium',
-  tags = [],
+  skins,
 }: CharacterCardProps) {
   // Use selected skin if available, otherwise use default champion image
-  const displaySkin = selectedSkin || champion.skins[0];
-  const displayImage = selectedChroma ? selectedChroma.image : displaySkin.image;
+  const displaySkin: Skin = selectedSkin || champion.skins[0] as Skin;
+  const displayImage = selectedChroma ? selectedChroma.image : skins.find(skin => skin.id.toString() === displaySkin.id.toString())?.imageUrl;
 
   // Determine card height based on size and featured status
   const getCardHeight = () => {
@@ -54,11 +51,10 @@ export default function CharacterCard({
         onClick={onClick}
       >
         <div className="relative w-12 h-12 rounded-md overflow-hidden flex-shrink-0">
-          <Image
+          <img
             src={displayImage || '/placeholder.svg'}
             alt={champion.name}
             className="object-cover"
-            fill
             sizes="48px"
           />
         </div>
@@ -74,20 +70,6 @@ export default function CharacterCard({
           )}
 
           {/* Tags */}
-          {tags.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-1">
-              {tags.map(tag => (
-                <Badge
-                  key={tag.id}
-                  variant="outline"
-                  className="text-[10px] px-1 py-0"
-                  style={{ borderColor: tag.color, color: tag.color }}
-                >
-                  {tag.name}
-                </Badge>
-              ))}
-            </div>
-          )}
         </div>
 
         {selectedSkin && selectedSkin.id !== champion.skins[0].id && (
@@ -112,11 +94,10 @@ export default function CharacterCard({
 
       {/* Champion image */}
       <div className="absolute inset-0 bg-shade8">
-        <Image
+        <img
           src={displayImage || '/placeholder.svg'}
           alt={champion.name}
           className="object-cover transition-transform group-hover:scale-105"
-          fill
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         />
       </div>
@@ -129,20 +110,6 @@ export default function CharacterCard({
       )}
 
       {/* Tags */}
-      {tags.length > 0 && (
-        <div className="absolute top-2 left-2 z-20 flex flex-wrap gap-1 max-w-[70%]">
-          {tags.map(tag => (
-            <Badge
-              key={tag.id}
-              variant="outline"
-              className="text-xs px-1.5 py-0 bg-shade10/80 backdrop-blur-sm"
-              style={{ borderColor: tag.color, color: tag.color }}
-            >
-              {tag.name}
-            </Badge>
-          ))}
-        </div>
-      )}
 
       {/* Champion name */}
       <div className="absolute bottom-0 left-0 right-0 p-3 z-20">

@@ -1,7 +1,5 @@
-'use client';
-
-import { cn } from '@/lib/utils.ts';
-import { ChevronRight } from 'lucide-react';
+import {cn} from '@/lib/utils.ts';
+import {ChevronRight} from 'lucide-react';
 
 type BreadcrumbItem = {
   label: string;

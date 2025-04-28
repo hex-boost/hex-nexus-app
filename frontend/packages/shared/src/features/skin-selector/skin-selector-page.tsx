@@ -1,13 +1,10 @@
 import type {UserPreferences} from '@/features/skin-selector/components/character-selection';
-import type {SkinHistoryEntry} from '@/features/skin-selector/skin-history.tsx';
-import {addToSkinHistory, SkinHistory} from '@/features/skin-selector/skin-history.tsx';
 import type {FormattedChampion, FormattedSkin} from '@/hooks/useDataDragon/types/useDataDragonHook.ts';
 import {Button} from '@/components/ui/button.tsx';
 import {Input} from '@/components/ui/input.tsx';
-import {SkinTags} from '@/features/skin-selector/skin-tags.tsx';
 import {useLocalStorage} from '@/hooks/use-local-storage.tsx';
 import {Search, X} from 'lucide-react';
-import {useState} from 'react';
+import {useCallback, useState} from 'react';
 
 // Define the Chroma type that's missing
 type Chroma = {
@@ -60,8 +57,31 @@ export default function SkinSelectorPage({
     setSkinHistory([]);
   };
 
+  // Local addToSkinHistory function to avoid importing a function that might cause update loops
+  const addToSkinHistory = useCallback((champion: FormattedChampion, skin: FormattedSkin) => {
+    setSkinHistory((prevHistory) => {
+      // Create a new history entry
+      const newEntry: SkinHistoryEntry = {
+        championId: Number.parseInt(champion.id),
+        skinId: skin.id,
+        championName: champion.name,
+        skinName: skin.name,
+        imageUrl: skin.imageUrl || champion.imageUrl,
+        timestamp: new Date().getTime(),
+      };
+
+      // Filter out any existing entries for the same champion/skin
+      const filteredHistory = prevHistory.filter(
+        entry => !(entry.championId === Number.parseInt(champion.id) && entry.skinId === skin.id),
+      );
+
+      // Add new entry at the beginning and limit to 10 entries
+      return [newEntry, ...filteredHistory].slice(0, 10);
+    });
+  }, []);
+
   // Handle skin selection from history
-  const handleSelectFromHistory = (championId: number, skinId: number) => {
+  const handleSelectFromHistory = useCallback((championId: number, skinId: number) => {
     const champion = champions.find(c => c.id === championId.toString());
     if (!champion) {
       return;
@@ -75,20 +95,20 @@ export default function SkinSelectorPage({
     setSelectedChampion(champion);
     setSelectedSkin(skin);
     setSelectedChroma(null);
-  };
+  }, [champions]);
 
   // Handle final skin selection
-  const handleConfirmSelection = () => {
+  const handleConfirmSelection = useCallback(() => {
     if (!selectedChampion || !selectedSkin) {
       return;
     }
 
     // Add to history
-    addToSkinHistory(selectedChampion, selectedSkin, setSkinHistory);
+    addToSkinHistory(selectedChampion, selectedSkin);
 
     // Pass selection back to parent
     onSelectSkin(selectedChampion, selectedSkin, selectedChroma);
-  };
+  }, [selectedChampion, selectedSkin, selectedChroma, onSelectSkin, addToSkinHistory]);
 
   // Filter champions and skins based on search and tags
   const filteredChampions = champions.filter((champion) => {
@@ -170,16 +190,6 @@ export default function SkinSelectorPage({
 
       {/* Main content */}
       <div className="flex-1 overflow-y-auto p-4">
-        {/* History section */}
-        <SkinHistory onSelectSkin={handleSelectFromHistory} onClearHistory={clearHistory} />
-
-        {/* Tags section */}
-        <SkinTags selectedTags={selectedTags} onTagSelect={handleTagSelect} onClearTags={clearTags} />
-
-        {/* Champions and skins grid */}
-        {/* Implementation would go here */}
-
-        {/* Selection confirmation */}
         {selectedChampion && selectedSkin && (
           <div className="fixed bottom-0 left-0 right-0 p-4 bg-shade9 border-t border-border">
             <div className="flex items-center justify-between">

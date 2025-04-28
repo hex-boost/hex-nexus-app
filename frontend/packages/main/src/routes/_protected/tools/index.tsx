@@ -1,5 +1,6 @@
-import type {FormattedChampion, FormattedSkin} from '@/hooks/useDataDragon/types/useDataDragonHook.ts';
-import SkinSelectorPage from '@/features/skin-selector/skin-selector-page.tsx';
+import type {Skin} from '@/hooks/useDataDragon/types/ddragon.ts';
+import type {FormattedChampion} from '@/hooks/useDataDragon/types/useDataDragonHook.ts';
+import CharacterSelection from '@/features/skin-selector/components/character-selection.tsx';
 import {useAllDataDragon} from '@/hooks/useDataDragon/useDataDragon.ts';
 import {createFileRoute} from '@tanstack/react-router';
 
@@ -8,17 +9,20 @@ export const Route = createFileRoute('/_protected/tools/')({
 });
 
 function RouteComponent() {
-  const { allChampions } = useAllDataDragon();
+  const { allChampions,allSkins } = useAllDataDragon();
 
-  const handleSelectSkin = (champion: FormattedChampion, skin: FormattedSkin, chroma: any | null = null) => {
+  const handleSelectSkin = (champion: FormattedChampion, skin: Skin, chroma: any | null = null) => {
     // Handle skin selection
     console.log('Selected', champion.name, skin.name, chroma);
   };
 
-  return <SkinSelectorPage
-    champions={allChampions}
-    onSelectSkin={handleSelectSkin}
-    initialChampionId={1}
-    initialSkinId={1001}
-  />;
+  return (
+    <CharacterSelection
+        skins={allSkins}
+      champions={allChampions}
+      onSelectSkin={handleSelectSkin}
+      initialChampionId={undefined}
+      initialSkinId={undefined}
+    />
+  );
 }

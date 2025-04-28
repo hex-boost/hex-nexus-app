@@ -1,296 +1,19 @@
-import AlphabetSidebar from '@/components/alphabet-sidebar';
-import Breadcrumb from '@/components/breadcrumb';
-import ChampionDetail from '@/components/champion-detail';
-import CharacterCard from '@/components/character-card';
-import ConfigPanel from '@/components/config-panel';
-import FilterPanel from '@/components/filter-panel';
-import SearchHistoryPanel from '@/components/search-history-panel';
-import SkinComparison from '@/components/skin-comparison';
-import TagsPanel from '@/components/tags-panel';
-import { Button } from '@/components/ui/button.tsx';
-import { Input } from '@/components/ui/input.tsx';
-import { Skeleton } from '@/components/ui/skeleton.tsx';
-import { useLocalStorage } from '@/hooks/use-local-storage.tsx';
-import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils.ts';
-import { AnimatePresence, motion } from 'framer-motion';
-import { Clock, Filter, Grid2X2, Grid3X3, List, Search, Settings, Tag, X } from 'lucide-react';
-import Image from 'next/image';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-
-// Champion data types
-export type Skin = {
-  id: number;
-  name: string;
-  image: string;
-  webm?: string;
-  model3d?: string;
-  abilities?: {
-    name: string;
-    image: string;
-    video?: string;
-  }[];
-  chromas?: Chroma[];
-  rarity: 'Common' | 'Epic' | 'Legendary' | 'Ultimate' | 'Mythic';
-  releaseDate: string;
-  skinLine: string;
-};
-
-export type Chroma = {
-  id: number;
-  name: string;
-  color: string;
-  image: string;
-};
-
-export type Champion = {
-  id: number;
-  name: string;
-  image: string;
-  skins: Skin[];
-};
-
-// Sample champion data
-const champions: Champion[] = [
-  {
-    id: 1,
-    name: 'Anivia',
-    image: '/placeholder.svg?height=400&width=300',
-    skins: [
-      {
-        id: 101,
-        name: 'Default',
-        image: '/placeholder.svg?height=400&width=300',
-        rarity: 'Common',
-        releaseDate: '2009-07-10',
-        skinLine: 'Classic',
-        abilities: [
-          { name: 'Q - Flash Frost', image: '/placeholder.svg?height=100&width=100&text=Q' },
-          { name: 'W - Crystallize', image: '/placeholder.svg?height=100&width=100&text=W' },
-          { name: 'E - Frostbite', image: '/placeholder.svg?height=100&width=100&text=E' },
-          { name: 'R - Glacial Storm', image: '/placeholder.svg?height=100&width=100&text=R' },
-        ],
-      },
-      {
-        id: 102,
-        name: 'Blackfrost',
-        image: '/placeholder.svg?height=400&width=300&text=Blackfrost',
-        webm: '/placeholder.svg?height=400&width=300&text=Blackfrost+Video',
-        model3d: '/placeholder.svg?height=400&width=300&text=3D+Model',
-        rarity: 'Legendary',
-        releaseDate: '2013-04-01',
-        skinLine: 'Blackfrost',
-        abilities: [
-          { name: 'Q - Flash Frost', image: '/placeholder.svg?height=100&width=100&text=Q+Blackfrost' },
-          { name: 'W - Crystallize', image: '/placeholder.svg?height=100&width=100&text=W+Blackfrost' },
-          { name: 'E - Frostbite', image: '/placeholder.svg?height=100&width=100&text=E+Blackfrost' },
-          { name: 'R - Glacial Storm', image: '/placeholder.svg?height=100&width=100&text=R+Blackfrost' },
-        ],
-      },
-      {
-        id: 103,
-        name: 'Cosmic',
-        image: '/placeholder.svg?height=400&width=300&text=Cosmic',
-        webm: '/placeholder.svg?height=400&width=300&text=Cosmic+Video',
-        rarity: 'Epic',
-        releaseDate: '2020-06-18',
-        skinLine: 'Cosmic',
-        abilities: [
-          { name: 'Q - Flash Frost', image: '/placeholder.svg?height=100&width=100&text=Q+Cosmic' },
-          { name: 'W - Crystallize', image: '/placeholder.svg?height=100&width=100&text=W+Cosmic' },
-          { name: 'E - Frostbite', image: '/placeholder.svg?height=100&width=100&text=E+Cosmic' },
-          { name: 'R - Glacial Storm', image: '/placeholder.svg?height=100&width=100&text=R+Cosmic' },
-        ],
-        chromas: [
-          { id: 1031, name: 'Ruby', color: '#ff0000', image: '/placeholder.svg?height=400&width=300&text=Ruby' },
-          {
-            id: 1032,
-            name: 'Sapphire',
-            color: '#0000ff',
-            image: '/placeholder.svg?height=400&width=300&text=Sapphire',
-          },
-          { id: 1033, name: 'Emerald', color: '#00ff00', image: '/placeholder.svg?height=400&width=300&text=Emerald' },
-        ],
-      },
-    ],
-  },
-  {
-    id: 2,
-    name: 'Annie',
-    image: '/placeholder.svg?height=400&width=300',
-    skins: [
-      {
-        id: 201,
-        name: 'Default',
-        image: '/placeholder.svg?height=400&width=300',
-        rarity: 'Common',
-        releaseDate: '2009-02-21',
-        skinLine: 'Classic',
-        abilities: [
-          { name: 'Q - Disintegrate', image: '/placeholder.svg?height=100&width=100&text=Q' },
-          { name: 'W - Incinerate', image: '/placeholder.svg?height=100&width=100&text=W' },
-          { name: 'E - Molten Shield', image: '/placeholder.svg?height=100&width=100&text=E' },
-          { name: 'R - Summon: Tibbers', image: '/placeholder.svg?height=100&width=100&text=R' },
-        ],
-      },
-      {
-        id: 202,
-        name: 'Frostfire',
-        image: '/placeholder.svg?height=400&width=300&text=Frostfire',
-        rarity: 'Epic',
-        releaseDate: '2011-01-14',
-        skinLine: 'Winter Wonder',
-        abilities: [
-          { name: 'Q - Disintegrate', image: '/placeholder.svg?height=100&width=100&text=Q+Frostfire' },
-          { name: 'W - Incinerate', image: '/placeholder.svg?height=100&width=100&text=W+Frostfire' },
-          { name: 'E - Molten Shield', image: '/placeholder.svg?height=100&width=100&text=E+Frostfire' },
-          { name: 'R - Summon: Tibbers', image: '/placeholder.svg?height=100&width=100&text=R+Frostfire' },
-        ],
-      },
-      {
-        id: 203,
-        name: 'Hextech',
-        image: '/placeholder.svg?height=400&width=300&text=Hextech',
-        webm: '/placeholder.svg?height=400&width=300&text=Hextech+Video',
-        rarity: 'Mythic',
-        releaseDate: '2019-03-30',
-        skinLine: 'Hextech',
-        abilities: [
-          { name: 'Q - Disintegrate', image: '/placeholder.svg?height=100&width=100&text=Q+Hextech' },
-          { name: 'W - Incinerate', image: '/placeholder.svg?height=100&width=100&text=W+Hextech' },
-          { name: 'E - Molten Shield', image: '/placeholder.svg?height=100&width=100&text=E+Hextech' },
-          { name: 'R - Summon: Tibbers', image: '/placeholder.svg?height=100&width=100&text=R+Hextech' },
-        ],
-      },
-    ],
-  },
-  {
-    id: 6,
-    name: 'Ezreal',
-    image: '/placeholder.svg?height=400&width=300',
-    skins: [
-      {
-        id: 601,
-        name: 'Default',
-        image: '/placeholder.svg?height=400&width=300',
-        rarity: 'Common',
-        releaseDate: '2010-03-16',
-        skinLine: 'Classic',
-        abilities: [
-          { name: 'Q - Mystic Shot', image: '/placeholder.svg?height=100&width=100&text=Q' },
-          { name: 'W - Essence Flux', image: '/placeholder.svg?height=100&width=100&text=W' },
-          { name: 'E - Arcane Shift', image: '/placeholder.svg?height=100&width=100&text=E' },
-          { name: 'R - Trueshot Barrage', image: '/placeholder.svg?height=100&width=100&text=R' },
-        ],
-      },
-      {
-        id: 602,
-        name: 'Star Guardian',
-        image: '/placeholder.svg?height=400&width=300&text=Star+Guardian',
-        webm: '/placeholder.svg?height=400&width=300&text=Star+Guardian+Video',
-        rarity: 'Legendary',
-        releaseDate: '2019-09-12',
-        skinLine: 'Star Guardian',
-        abilities: [
-          { name: 'Q - Mystic Shot', image: '/placeholder.svg?height=100&width=100&text=Q+SG' },
-          { name: 'W - Essence Flux', image: '/placeholder.svg?height=100&width=100&text=W+SG' },
-          { name: 'E - Arcane Shift', image: '/placeholder.svg?height=100&width=100&text=E+SG' },
-          { name: 'R - Trueshot Barrage', image: '/placeholder.svg?height=100&width=100&text=R+SG' },
-        ],
-      },
-      {
-        id: 603,
-        name: 'Battle Academia',
-        image: '/placeholder.svg?height=400&width=300&text=Battle+Academia',
-        webm: '/placeholder.svg?height=400&width=300&text=Battle+Academia+Video',
-        rarity: 'Epic',
-        releaseDate: '2019-03-28',
-        skinLine: 'Battle Academia',
-        abilities: [
-          { name: 'Q - Mystic Shot', image: '/placeholder.svg?height=100&width=100&text=Q+BA' },
-          { name: 'W - Essence Flux', image: '/placeholder.svg?height=100&width=100&text=W+BA' },
-          { name: 'E - Arcane Shift', image: '/placeholder.svg?height=100&width=100&text=E+BA' },
-          { name: 'R - Trueshot Barrage', image: '/placeholder.svg?height=100&width=100&text=R+BA' },
-        ],
-        chromas: [
-          {
-            id: 6031,
-            name: 'Amethyst',
-            color: '#9966cc',
-            image: '/placeholder.svg?height=400&width=300&text=Amethyst',
-          },
-          { id: 6032, name: 'Citrine', color: '#e4d00a', image: '/placeholder.svg?height=400&width=300&text=Citrine' },
-          {
-            id: 6033,
-            name: 'Rose Quartz',
-            color: '#f7cac9',
-            image: '/placeholder.svg?height=400&width=300&text=Rose+Quartz',
-          },
-        ],
-      },
-      {
-        id: 604,
-        name: 'Pulsefire',
-        image: '/placeholder.svg?height=400&width=300&text=Pulsefire',
-        webm: '/placeholder.svg?height=400&width=300&text=Pulsefire+Video',
-        model3d: '/placeholder.svg?height=400&width=300&text=3D+Model',
-        rarity: 'Ultimate',
-        releaseDate: '2017-06-01',
-        skinLine: 'Pulsefire',
-        abilities: [
-          { name: 'Q - Mystic Shot', image: '/placeholder.svg?height=100&width=100&text=Q+PF' },
-          { name: 'W - Essence Flux', image: '/placeholder.svg?height=100&width=100&text=W+PF' },
-          { name: 'E - Arcane Shift', image: '/placeholder.svg?height=100&width=100&text=E+PF' },
-          { name: 'R - Trueshot Barrage', image: '/placeholder.svg?height=100&width=100&text=R+PF' },
-        ],
-      },
-    ],
-  },
-];
-
-// Recently added skins
-const recentlyAddedSkins = [
-  {
-    champion: 'Ezreal',
-    skin: {
-      id: 605,
-      name: 'Porcelain',
-      image: '/placeholder.svg?height=400&width=300&text=Porcelain',
-      rarity: 'Epic',
-      releaseDate: '2023-01-12',
-      skinLine: 'Porcelain',
-    },
-  },
-  {
-    champion: 'Annie',
-    skin: {
-      id: 204,
-      name: 'Cafe Cuties',
-      image: '/placeholder.svg?height=400&width=300&text=Cafe+Cuties',
-      rarity: 'Epic',
-      releaseDate: '2023-02-15',
-      skinLine: 'Cafe Cuties',
-    },
-  },
-  {
-    champion: 'Anivia',
-    skin: {
-      id: 104,
-      name: 'Divine Phoenix',
-      image: '/placeholder.svg?height=400&width=300&text=Divine+Phoenix',
-      rarity: 'Legendary',
-      releaseDate: '2023-03-10',
-      skinLine: 'Divine',
-    },
-  },
-];
-
-// Featured champions
-const featuredChampions = [
-  champions[2], // Ezreal
-  champions[1], // Annie
-  champions[0], // Anivia
-];
+import type {Skin} from '@/hooks/useDataDragon/types/ddragon.ts';
+import type {FormattedChampion, FormattedSkin} from '@/hooks/useDataDragon/types/useDataDragonHook.ts';
+import type React from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
+import {Badge} from '@/components/ui/badge';
+import {Button} from '@/components/ui/button';
+import {Input} from '@/components/ui/input';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
+import {Skeleton} from '@/components/ui/skeleton';
+import Breadcrumb from '@/features/skin-selector/components/breadcrumb';
+import ChampionDetail from '@/features/skin-selector/components/champion-detail';
+import CharacterCard from '@/features/skin-selector/components/character-card';
+import {useLocalStorage} from '@/hooks/use-local-storage';
+import {cn} from '@/lib/utils';
+import {AnimatePresence, motion} from 'framer-motion';
+import {Filter, Grid2X2, Grid3X3, List, Search, Settings, X} from 'lucide-react';
 
 // Type for user preferences
 export type UserPreferences = {
@@ -308,56 +31,119 @@ export type LayoutConfig = {
   cacheLimit: number; // in MB
 };
 
-// Type for search history
-export type SearchHistoryItem = {
-  query: string;
-  timestamp: number;
-};
-
-// Type for skin tags
-export type SkinTag = {
-  id: string;
-  name: string;
-  color: string;
-};
-
-// Type for skin tag assignments
-export type SkinTagAssignment = {
-  skinId: number;
-  tagIds: string[];
-};
-
 // View states
-type ViewState = 'home' | 'champion' | 'comparison' | 'config' | 'tags' | 'history';
+type ViewState = 'home' | 'champion' | 'config';
 
 type CharacterSelectionProps = {
+  champions: FormattedChampion[];
+  skins: FormattedSkin[];
   isEmbedded?: boolean;
-  onSelectSkin?: (champion: Champion, skin: Skin, chroma?: Chroma | null) => void;
+  onSelectSkin?: (champion: FormattedChampion, skin: Skin, chroma?: any | null) => void;
   initialChampionId?: number;
   initialSkinId?: number;
 };
 
+// 1. Fix function parameter types in ChampionListProps
+type ChampionListProps = {
+  skins: FormattedSkin[];
+  champions: FormattedChampion[];
+  isLoading: boolean;
+  onSelectChampion: (champion: FormattedChampion) => void;
+  getSelectedSkin: (champion: FormattedChampion) => Skin; // Changed from Skin to FormattedChampion parameter
+  getSelectedChroma: (skin: Skin, championId: string) => any | null; // Changed parameter type to FormattedSkin
+  layout: 'grid' | 'list' | 'compact'; // Use literal union type instead of string
+  gridSize: 'small' | 'medium' | 'large'; // Use literal union type instead of string
+  animationDuration: number;
+};
+const ChampionListComp: React.FC<ChampionListProps> = ({
+  champions,
+  isLoading,
+  skins,
+  onSelectChampion,
+  getSelectedSkin,
+  getSelectedChroma,
+  layout,
+  gridSize,
+  animationDuration,
+}) => {
+  const getCardSize = useCallback(() => {
+    switch (gridSize) {
+      case 'small':
+        return 'h-[140px]';
+      case 'large':
+        return 'h-[220px]';
+      default:
+        return 'h-[180px]';
+    }
+  }, [gridSize]);
+
+  const getGridColumns = useCallback(() => {
+    if (layout === 'list') {
+      return 'grid-cols-1';
+    }
+    if (layout === 'compact') {
+      return 'grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10';
+    }
+    return 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6';
+  }, [layout]);
+
+  return (
+    <div className={`grid ${getGridColumns()} gap-4 mb-8`}>
+      {isLoading
+        ? Array.from({ length: 12 })
+            .fill(0)
+            .map((_, index) => (
+              <div key={index} className="space-y-2">
+                <Skeleton className={`${getCardSize()} w-full rounded-lg`} />
+                <Skeleton className="h-4 w-20" />
+              </div>
+            ))
+        : champions.map((champion) => {
+            const selectedSkin = getSelectedSkin(champion);
+            const selectedChroma = getSelectedChroma(selectedSkin, champion.id);
+
+            return (
+              <motion.div
+                key={champion.id}
+                whileHover={{ scale: layout !== 'list' ? 1.03 : 1 }}
+                whileTap={{ scale: layout !== 'list' ? 0.97 : 1 }}
+                transition={{ duration: animationDuration }}
+              >
+                <CharacterCard
+                  skins={skins}
+                  champion={champion}
+                  onClick={() => onSelectChampion(champion)}
+                  selectedSkin={selectedSkin}
+                  // selectedChroma={selectedChroma}
+                  layout={layout as 'grid' | 'list' | 'compact'}
+                  size={gridSize as 'small' | 'medium' | 'large'}
+                />
+              </motion.div>
+            );
+          })}
+    </div>
+  );
+};
+
 export default function CharacterSelection({
+  champions,
   isEmbedded = false,
+  skins,
   onSelectSkin,
   initialChampionId,
   initialSkinId,
 }: CharacterSelectionProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedChampion, setSelectedChampion] = useState<Champion | null>(null);
+  const [selectedChampion, setSelectedChampion] = useState<FormattedChampion | null>(null);
   const [viewState, setViewState] = useState<ViewState>('home');
-  const [comparisonSkins, setComparisonSkins] = useState<{ champion: Champion; skin: Skin }[]>([]);
   const [showFilters, setShowFilters] = useState(false);
-  const [showSidebar, setShowSidebar] = useState(true);
-  const { toast } = useToast();
 
   // Filters
   const [filters, setFilters] = useState({
     skinLine: '',
     rarity: '',
     releaseYear: '',
-    tags: [] as string[],
   });
 
   // User preferences with local storage persistence
@@ -370,19 +156,6 @@ export default function CharacterSelection({
     animationSpeed: 'fast',
     cacheLimit: 500, // 500MB default
   });
-
-  // Search history
-  const [searchHistory, setSearchHistory] = useLocalStorage<SearchHistoryItem[]>('search-history', []);
-
-  // Skin tags
-  const [skinTags, setSkinTags] = useLocalStorage<SkinTag[]>('skin-tags', [
-    { id: 'favorite', name: 'Favorite', color: '#FFD700' },
-    { id: 'owned', name: 'Owned', color: '#4CAF50' },
-    { id: 'wishlist', name: 'Wishlist', color: '#2196F3' },
-  ]);
-
-  // Skin tag assignments
-  const [skinTagAssignments, setSkinTagAssignments] = useLocalStorage<SkinTagAssignment[]>('skin-tag-assignments', []);
 
   // Calculate animation duration based on config
   const getAnimationDuration = useCallback(() => {
@@ -401,14 +174,14 @@ export default function CharacterSelection({
   // Initialize with selected champion if provided
   useEffect(() => {
     if (initialChampionId) {
-      const champion = champions.find(c => c.id === initialChampionId);
+      const champion = champions.find(c => c.id === initialChampionId.toString());
       if (champion) {
         setSelectedChampion(champion);
         setViewState('champion');
 
         // If a specific skin is requested, update the user preferences
         if (initialSkinId) {
-          const skin = champion.skins.find(s => s.id === initialSkinId);
+          const skin = champion.skins.find(s => s.id === initialSkinId.toString());
           if (skin) {
             setUserPreferences(prev => ({
               ...prev,
@@ -425,39 +198,14 @@ export default function CharacterSelection({
     }
   }, [initialChampionId, initialSkinId, setUserPreferences]);
 
-  // Add search query to history
-  const addToSearchHistory = useCallback(
-    (query: string) => {
-      if (!query.trim()) {
-        return;
-      }
-
-      setSearchHistory((prev) => {
-        // Remove duplicates and keep only the 10 most recent searches
-        const filtered = prev.filter(item => item.query.toLowerCase() !== query.toLowerCase());
-        return [{ query, timestamp: Date.now() }, ...filtered].slice(0, 10);
-      });
-    },
-    [setSearchHistory],
-  );
-
-  // Handle search query change
-  const handleSearchChange = (query: string) => {
-    setSearchQuery(query);
-    if (query.trim()) {
-      addToSearchHistory(query);
-    }
-  };
-
   // Memoize filters to prevent unnecessary re-renders
   const memoizedFilters = useMemo(() => {
     return {
       skinLine: filters.skinLine,
       rarity: filters.rarity,
       releaseYear: filters.releaseYear,
-      tags: [...filters.tags], // Create a new array reference
     };
-  }, [filters.skinLine, filters.rarity, filters.releaseYear, filters.tags]);
+  }, [filters.skinLine, filters.rarity, filters.releaseYear]);
 
   // Filter champions based on search query and filters
   const filteredChampions = useMemo(() => {
@@ -472,31 +220,22 @@ export default function CharacterSelection({
         memoizedFilters.skinLine
         || memoizedFilters.rarity
         || memoizedFilters.releaseYear
-        || memoizedFilters.tags.length > 0
       ) {
         return champion.skins.some((skin) => {
           // Basic filters
           const matchesSkinLine = !memoizedFilters.skinLine || skin.skinLine === memoizedFilters.skinLine;
           const matchesRarity = !memoizedFilters.rarity || skin.rarity === memoizedFilters.rarity;
           const matchesYear
-            = !memoizedFilters.releaseYear
-              || new Date(skin.releaseDate).getFullYear().toString() === memoizedFilters.releaseYear;
+                        = !memoizedFilters.releaseYear
+                          || new Date(skin.releaseDate).getFullYear().toString() === memoizedFilters.releaseYear;
 
-          // Tag filters
-          const matchesTags
-            = memoizedFilters.tags.length === 0
-              || memoizedFilters.tags.every((tagId) => {
-                const assignment = skinTagAssignments.find(a => a.skinId === skin.id);
-                return assignment && assignment.tagIds.includes(tagId);
-              });
-
-          return matchesSkinLine && matchesRarity && matchesYear && matchesTags;
+          return matchesSkinLine && matchesRarity && matchesYear;
         });
       }
 
       return true;
     });
-  }, [champions, searchQuery, memoizedFilters, skinTagAssignments]);
+  }, [champions, searchQuery, memoizedFilters]);
 
   // Simulate loading
   useEffect(() => {
@@ -509,22 +248,21 @@ export default function CharacterSelection({
 
   // Get the selected skin for a champion
   const getSelectedSkin = useCallback(
-    (champion: Champion) => {
-      const pref = userPreferences[champion.id];
+    (champion: FormattedChampion): Skin => {
+      const pref = userPreferences[Number(champion.id)];
       if (!pref) {
         return champion.skins[0];
-      } // Default skin
+      }
 
-      const selectedSkin = champion.skins.find(skin => skin.id === pref.selectedSkinId);
-      return selectedSkin || champion.skins[0];
+      const selectedSkin = champion.skins.find(skin => Number(skin.id) === pref.selectedSkinId);
+      return (selectedSkin || champion.skins[0]);
     },
     [userPreferences],
   );
-
   // Get the selected chroma for a skin
   const getSelectedChroma = useCallback(
-    (skin: Skin, championId: number) => {
-      const pref = userPreferences[championId];
+    (skin: FormattedSkin, championId: string): any | null => {
+      const pref = userPreferences[Number(championId)];
       if (!pref || !pref.selectedChromaId || !skin.chromas) {
         return null;
       }
@@ -533,195 +271,46 @@ export default function CharacterSelection({
     },
     [userPreferences],
   );
-
   // Save skin selection
   const saveSkinSelection = useCallback(
-    (championId: number, skinId: number, chromaId?: number) => {
-      setUserPreferences(prev => ({
-        ...prev,
-        [championId]: {
-          selectedSkinId: skinId,
-          ...(chromaId ? { selectedChromaId: chromaId } : {}),
-        },
-      }));
-
-      toast({
-        title: 'Preference saved',
-        description: 'Your skin selection has been saved.',
-        duration: 2000,
+    (championId: string, skinId: number, chromaId?: number) => {
+      setUserPreferences((prev) => {
+        const newPrefs = {
+          ...prev,
+          [Number(championId)]: {
+            selectedSkinId: skinId,
+            ...(chromaId ? { selectedChromaId: chromaId } : {}),
+          },
+        };
+        return newPrefs;
       });
 
       // If in embedded mode, call the onSelectSkin callback
       if (isEmbedded && onSelectSkin) {
         const champion = champions.find(c => c.id === championId);
         if (champion) {
-          const skin = champion.skins.find(s => s.id === skinId);
+          const skin = champion.skins.find(s => Number(s.id) === skinId) as FormattedSkin;
           if (skin) {
             const chroma = chromaId && skin.chromas ? skin.chromas.find(c => c.id === chromaId) : null;
-            onSelectSkin(champion, skin, chroma || undefined);
+            onSelectSkin(champion, skin as unknown as Skin, chroma || undefined);
           }
         }
       }
     },
-    [setUserPreferences, toast, isEmbedded, onSelectSkin],
+    [setUserPreferences, isEmbedded, onSelectSkin, champions],
   );
-
-  // Add skin to comparison
-  const addToComparison = useCallback(
-    (champion: Champion, skin: Skin) => {
-      if (comparisonSkins.length >= 3) {
-        toast({
-          title: 'Comparison limit reached',
-          description: 'You can compare up to 3 skins at once.',
-          variant: 'destructive',
-          duration: 2000,
-        });
-        return;
-      }
-
-      // Check if already in comparison
-      if (comparisonSkins.some(item => item.skin.id === skin.id)) {
-        toast({
-          title: 'Already in comparison',
-          description: 'This skin is already in your comparison.',
-          variant: 'destructive',
-          duration: 2000,
-        });
-        return;
-      }
-
-      setComparisonSkins(prev => [...prev, { champion, skin }]);
-
-      toast({
-        title: 'Added to comparison',
-        description: `${champion.name} - ${skin.name} added to comparison.`,
-        duration: 2000,
-      });
-
-      if (comparisonSkins.length === 2) {
-        setViewState('comparison');
-      }
-    },
-    [comparisonSkins, toast],
-  );
-
-  // Remove skin from comparison
-  const removeFromComparison = useCallback((skinId: number) => {
-    setComparisonSkins(prev => prev.filter(item => item.skin.id !== skinId));
-  }, []);
-
-  // Get tags for a skin
-  const getTagsForSkin = useCallback(
-    (skinId: number) => {
-      const assignment = skinTagAssignments.find(a => a.skinId === skinId);
-      if (!assignment) {
-        return [];
-      }
-
-      return assignment.tagIds
-        .map(tagId => skinTags.find(tag => tag.id === tagId))
-        .filter((tag): tag is SkinTag => tag !== undefined);
-    },
-    [skinTagAssignments, skinTags],
-  );
-
-  // Add tag to skin
-  const addTagToSkin = useCallback(
-    (skinId: number, tagId: string) => {
-      setSkinTagAssignments((prev) => {
-        const existing = prev.find(a => a.skinId === skinId);
-        if (existing) {
-          if (existing.tagIds.includes(tagId)) {
-            return prev;
-          }
-          return prev.map(a => (a.skinId === skinId ? { ...a, tagIds: [...a.tagIds, tagId] } : a));
-        } else {
-          return [...prev, { skinId, tagIds: [tagId] }];
-        }
-      });
-
-      const tag = skinTags.find(t => t.id === tagId);
-      if (tag) {
-        toast({
-          title: 'Tag added',
-          description: `${tag.name} tag added to skin.`,
-          duration: 2000,
-        });
-      }
-    },
-    [setSkinTagAssignments, skinTags, toast],
-  );
-
-  // Remove tag from skin
-  const removeTagFromSkin = useCallback(
-    (skinId: number, tagId: string) => {
-      setSkinTagAssignments((prev) => {
-        const existing = prev.find(a => a.skinId === skinId);
-        if (!existing) {
-          return prev;
-        }
-
-        const updatedTagIds = existing.tagIds.filter(id => id !== tagId);
-        if (updatedTagIds.length === 0) {
-          return prev.filter(a => a.skinId !== skinId);
-        }
-
-        return prev.map(a => (a.skinId === skinId ? { ...a, tagIds: updatedTagIds } : a));
-      });
-
-      const tag = skinTags.find(t => t.id === tagId);
-      if (tag) {
-        toast({
-          title: 'Tag removed',
-          description: `${tag.name} tag removed from skin.`,
-          duration: 2000,
-        });
-      }
-    },
-    [setSkinTagAssignments, skinTags, toast],
-  );
-
   // Get breadcrumb items based on current view
   const getBreadcrumbItems = useCallback(() => {
     const items = [{ label: 'Home', onClick: () => setViewState('home') }];
 
     if (viewState === 'champion' && selectedChampion) {
       items.push({ label: selectedChampion.name, onClick: () => {} });
-    } else if (viewState === 'comparison') {
-      items.push({ label: 'Skin Comparison', onClick: () => {} });
     } else if (viewState === 'config') {
       items.push({ label: 'Configuration', onClick: () => {} });
-    } else if (viewState === 'tags') {
-      items.push({ label: 'Tag Management', onClick: () => {} });
-    } else if (viewState === 'history') {
-      items.push({ label: 'Search History', onClick: () => {} });
     }
 
     return items;
   }, [viewState, selectedChampion]);
-
-  // Get card size based on grid size setting
-  const getCardSize = useCallback(() => {
-    switch (layoutConfig.gridSize) {
-      case 'small':
-        return 'h-[140px]';
-      case 'large':
-        return 'h-[220px]';
-      default:
-        return 'h-[180px]';
-    }
-  }, [layoutConfig.gridSize]);
-
-  // Get grid columns based on layout setting
-  const getGridColumns = useCallback(() => {
-    if (layoutConfig.layout === 'list') {
-      return 'grid-cols-1';
-    }
-    if (layoutConfig.layout === 'compact') {
-      return 'grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10';
-    }
-    return 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6';
-  }, [layoutConfig.layout]);
 
   return (
     <div className={cn('flex h-full w-full overflow-hidden bg-background', isEmbedded && 'rounded-lg')}>
@@ -740,74 +329,7 @@ export default function CharacterSelection({
               onBack={() => setViewState('home')}
               userPreferences={userPreferences[selectedChampion.id]}
               onSaveSkin={saveSkinSelection}
-              onAddToComparison={addToComparison}
               animationDuration={getAnimationDuration()}
-              skinTags={skinTags}
-              getTagsForSkin={getTagsForSkin}
-              onAddTag={addTagToSkin}
-              onRemoveTag={removeTagFromSkin}
-            />
-          </motion.div>
-        ) : viewState === 'comparison' ? (
-          <motion.div
-            key="skin-comparison"
-            className="flex-1 h-full"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: getAnimationDuration() }}
-          >
-            <SkinComparison
-              items={comparisonSkins}
-              onRemove={removeFromComparison}
-              onBack={() => setViewState('home')}
-              animationDuration={getAnimationDuration()}
-            />
-          </motion.div>
-        ) : viewState === 'config' ? (
-          <motion.div
-            key="config-panel"
-            className="flex-1 h-full"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: getAnimationDuration() }}
-          >
-            <ConfigPanel config={layoutConfig} onUpdateConfig={setLayoutConfig} onBack={() => setViewState('home')} />
-          </motion.div>
-        ) : viewState === 'tags' ? (
-          <motion.div
-            key="tags-panel"
-            className="flex-1 h-full"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: getAnimationDuration() }}
-          >
-            <TagsPanel
-              tags={skinTags}
-              onUpdateTags={setSkinTags}
-              tagAssignments={skinTagAssignments}
-              onBack={() => setViewState('home')}
-            />
-          </motion.div>
-        ) : viewState === 'history' ? (
-          <motion.div
-            key="history-panel"
-            className="flex-1 h-full"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: getAnimationDuration() }}
-          >
-            <SearchHistoryPanel
-              history={searchHistory}
-              onClearHistory={() => setSearchHistory([])}
-              onSelectQuery={(query) => {
-                setSearchQuery(query);
-                setViewState('home');
-              }}
-              onBack={() => setViewState('home')}
             />
           </motion.div>
         ) : (
@@ -819,22 +341,23 @@ export default function CharacterSelection({
             exit={{ opacity: 0 }}
             transition={{ duration: getAnimationDuration() }}
           >
-            {/* Sidebar */}
-            {showSidebar && (
-              <div className="w-60 bg-shade9 border-r border-border flex flex-col">
-                {/* Search bar */}
-                <div className="p-4">
-                  <div className="relative">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            {/* Main content with top filter bar */}
+            <div className="flex-1 bg-background overflow-y-auto">
+              {/* Top filter bar */}
+              <div className="sticky top-0 z-10 bg-shade9 border-b border-border p-4 space-y-3">
+                {/* Search and layout controls */}
+                <div className="flex items-center gap-3">
+                  <div className="relative flex-1 max-w-xl">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Search champions"
-                      className="pl-8 bg-shade8 border-shade7 text-foreground"
+                      placeholder="Search champions or skins..."
+                      className="pl-9 h-10 bg-shade8 border-shade7"
                       value={searchQuery}
-                      onChange={e => handleSearchChange(e.target.value)}
+                      onChange={e => setSearchQuery(e.target.value)}
                     />
                     {searchQuery && (
                       <button
-                        className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                         onClick={() => setSearchQuery('')}
                       >
                         <X className="h-4 w-4" />
@@ -842,166 +365,196 @@ export default function CharacterSelection({
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between mt-2">
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-xs flex items-center gap-1"
-                        onClick={() => setShowFilters(!showFilters)}
-                      >
-                        <Filter className="h-3 w-3" />
-                        Filters
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-xs flex items-center gap-1"
-                        onClick={() => setViewState('tags')}
-                      >
-                        <Tag className="h-3 w-3" />
-                        Tags
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-xs flex items-center gap-1"
-                        onClick={() => setViewState('history')}
-                      >
-                        <Clock className="h-3 w-3" />
-                        History
-                      </Button>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-1"
+                      onClick={() => setShowFilters(!showFilters)}
+                    >
+                      <Filter className="h-4 w-4 mr-1" />
+                      Filters
+                      {(filters.skinLine || filters.rarity || filters.releaseYear) && (
+                        <span className="ml-1 w-2 h-2 rounded-full bg-primary" />
+                      )}
+                    </Button>
 
-                    <div className="flex items-center gap-1">
+                    <div className="flex border rounded-md overflow-hidden ml-2">
                       <Button
                         variant={layoutConfig.layout === 'grid' ? 'secondary' : 'ghost'}
                         size="icon"
-                        className="h-7 w-7"
+                        className="h-9 w-9 rounded-none"
                         onClick={() => setLayoutConfig({ ...layoutConfig, layout: 'grid' })}
                       >
-                        <Grid3X3 className="h-3.5 w-3.5" />
+                        <Grid3X3 className="h-4 w-4" />
                       </Button>
                       <Button
                         variant={layoutConfig.layout === 'compact' ? 'secondary' : 'ghost'}
                         size="icon"
-                        className="h-7 w-7"
+                        className="h-9 w-9 rounded-none"
                         onClick={() => setLayoutConfig({ ...layoutConfig, layout: 'compact' })}
                       >
-                        <Grid2X2 className="h-3.5 w-3.5" />
+                        <Grid2X2 className="h-4 w-4" />
                       </Button>
                       <Button
                         variant={layoutConfig.layout === 'list' ? 'secondary' : 'ghost'}
                         size="icon"
-                        className="h-7 w-7"
+                        className="h-9 w-9 rounded-none"
                         onClick={() => setLayoutConfig({ ...layoutConfig, layout: 'list' })}
                       >
-                        <List className="h-3.5 w-3.5" />
+                        <List className="h-4 w-4" />
                       </Button>
                     </div>
+
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 ml-1"
+                      onClick={() => setViewState('config')}
+                      title="Settings"
+                    >
+                      <Settings className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
 
-                {/* Filter panel */}
+                {/* Expanded filter panel */}
                 {showFilters && (
-                  <FilterPanel
-                    filters={filters}
-                    setFilters={setFilters}
-                    onClose={() => setShowFilters(false)}
-                    skinTags={skinTags}
-                  />
-                )}
-
-                {/* Alphabet sidebar with champions */}
-                <AlphabetSidebar
-                  champions={champions}
-                  onSelectChampion={(champion) => {
-                    setSelectedChampion(champion);
-                    setViewState('champion');
-                  }}
-                  userPreferences={userPreferences}
-                  getSelectedSkin={getSelectedSkin}
-                  getTagsForSkin={getTagsForSkin}
-                />
-
-                {/* Version info */}
-                <div className="mt-auto p-4 flex items-center justify-between text-xs text-muted-foreground border-t border-border">
-                  <span>Version: 15.9</span>
-                  <button className="hover:text-foreground" onClick={() => setViewState('config')}>
-                    <Settings className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Main content */}
-            <div className="flex-1 bg-background overflow-y-auto">
-              {/* Breadcrumb */}
-              <div className="flex items-center justify-between">
-                <Breadcrumb items={getBreadcrumbItems()} />
-
-                {/* Toggle sidebar button (only in embedded mode) */}
-                {isEmbedded && (
-                  <Button variant="ghost" size="sm" className="mr-4" onClick={() => setShowSidebar(!showSidebar)}>
-                    {showSidebar ? 'Hide Sidebar' : 'Show Sidebar'}
-                  </Button>
-                )}
-              </div>
-
-              <div className="p-6">
-                {/* Comparison bar */}
-                {comparisonSkins.length > 0 && (
-                  <div className="mb-6 bg-shade8 rounded-lg p-3 border border-border">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-medium">Skin Comparison</h3>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => setComparisonSkins([])}>
-                          Clear
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={() => setViewState('comparison')}
-                          disabled={comparisonSkins.length < 2}
+                  <div className="bg-shade8 rounded-lg p-4 border border-border animate-in fade-in-50 slide-in-from-top-5 duration-200">
+                    <div className="flex flex-wrap gap-4">
+                      <div className="space-y-1 min-w-[180px]">
+                        <label className="text-xs text-muted-foreground">Skin Line</label>
+                        <Select
+                          value={filters.skinLine}
+                          onValueChange={value => setFilters({ ...filters, skinLine: value })}
                         >
-                          Compare
-                          {' '}
-                          {comparisonSkins.length > 0 && `(${comparisonSkins.length})`}
+                          <SelectTrigger className="bg-shade9 h-9">
+                            <SelectValue placeholder="All skin lines" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All skin lines</SelectItem>
+                            <SelectItem value="Classic">Classic</SelectItem>
+                            <SelectItem value="Star Guardian">Star Guardian</SelectItem>
+                            <SelectItem value="PROJECT">PROJECT</SelectItem>
+                            <SelectItem value="Battle Academia">Battle Academia</SelectItem>
+                            <SelectItem value="Pulsefire">Pulsefire</SelectItem>
+                            <SelectItem value="Cosmic">Cosmic</SelectItem>
+                            <SelectItem value="Blackfrost">Blackfrost</SelectItem>
+                            <SelectItem value="Hextech">Hextech</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-1 min-w-[180px]">
+                        <label className="text-xs text-muted-foreground">Rarity</label>
+                        <Select
+                          value={filters.rarity}
+                          onValueChange={value => setFilters({ ...filters, rarity: value })}
+                        >
+                          <SelectTrigger className="bg-shade9 h-9">
+                            <SelectValue placeholder="All rarities" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All rarities</SelectItem>
+                            <SelectItem value="Common">Common</SelectItem>
+                            <SelectItem value="Epic">Epic</SelectItem>
+                            <SelectItem value="Legendary">Legendary</SelectItem>
+                            <SelectItem value="Ultimate">Ultimate</SelectItem>
+                            <SelectItem value="Mythic">Mythic</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-1 min-w-[180px]">
+                        <label className="text-xs text-muted-foreground">Release Year</label>
+                        <Select
+                          value={filters.releaseYear}
+                          onValueChange={value => setFilters({ ...filters, releaseYear: value })}
+                        >
+                          <SelectTrigger className="bg-shade9 h-9">
+                            <SelectValue placeholder="All years" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All years</SelectItem>
+                            <SelectItem value="2023">2023</SelectItem>
+                            <SelectItem value="2022">2022</SelectItem>
+                            <SelectItem value="2021">2021</SelectItem>
+                            <SelectItem value="2020">2020</SelectItem>
+                            <SelectItem value="2019">2019</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="flex items-end">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setFilters({ skinLine: '', rarity: '', releaseYear: '' })}
+                          disabled={!filters.skinLine && !filters.rarity && !filters.releaseYear}
+                        >
+                          Reset Filters
                         </Button>
                       </div>
                     </div>
-                    <div className="flex gap-2 overflow-x-auto pb-2">
-                      {comparisonSkins.map(({ champion, skin }) => (
-                        <div
-                          key={skin.id}
-                          className="relative flex-shrink-0 w-20 h-20 rounded-md overflow-hidden group"
-                        >
-                          <Image
-                            src={skin.image || '/placeholder.svg'}
-                            alt={`${champion.name} - ${skin.name}`}
-                            className="object-cover"
-                            fill
-                            sizes="80px"
-                          />
-                          <button
-                            className="absolute top-1 right-1 bg-shade10/80 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => removeFromComparison(skin.id)}
-                          >
+                  </div>
+                )}
+
+                {/* Active filters display */}
+                {(filters.skinLine || filters.rarity || filters.releaseYear || searchQuery) && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-muted-foreground">Active filters:</span>
+                    <div className="flex flex-wrap gap-1">
+                      {searchQuery && (
+                        <Badge variant="secondary" className="flex items-center gap-1">
+                          Search:
+                          {' '}
+                          {searchQuery}
+                          <button onClick={() => setSearchQuery('')}>
                             <X className="h-3 w-3" />
                           </button>
-                          <div className="absolute bottom-0 left-0 right-0 bg-shade10/80 text-xs p-1 truncate">
-                            {skin.name}
-                          </div>
-                        </div>
-                      ))}
-                      {comparisonSkins.length < 3 && (
-                        <div className="flex-shrink-0 w-20 h-20 rounded-md border border-dashed border-border flex items-center justify-center text-muted-foreground">
-                          <span className="text-xs">Add skin</span>
-                        </div>
+                        </Badge>
+                      )}
+                      {filters.skinLine && (
+                        <Badge variant="secondary" className="flex items-center gap-1">
+                          Skin Line:
+                          {' '}
+                          {filters.skinLine}
+                          <button onClick={() => setFilters({ ...filters, skinLine: '' })}>
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      )}
+                      {filters.rarity && (
+                        <Badge variant="secondary" className="flex items-center gap-1">
+                          Rarity:
+                          {' '}
+                          {filters.rarity}
+                          <button onClick={() => setFilters({ ...filters, rarity: '' })}>
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      )}
+                      {filters.releaseYear && (
+                        <Badge variant="secondary" className="flex items-center gap-1">
+                          Year:
+                          {' '}
+                          {filters.releaseYear}
+                          <button onClick={() => setFilters({ ...filters, releaseYear: '' })}>
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
                       )}
                     </div>
                   </div>
                 )}
+              </div>
 
+              {/* Breadcrumb */}
+              <div className="p-4 pt-2">
+                <Breadcrumb items={getBreadcrumbItems()} />
+              </div>
+
+              <div className="p-6">
                 {/* Recently added section */}
                 <div className="mb-8">
                   <h2 className="text-2xl font-bold mb-4 text-foreground flex items-center">
@@ -1009,131 +562,104 @@ export default function CharacterSelection({
                     <span className="ml-2 text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">New</span>
                   </h2>
 
-                  <div className="grid grid-cols-3 gap-6">
-                    {isLoading
-                      ? Array.from({ length: 3 })
-                          .fill(0)
-                          .map((_, index) => (
-                            <div key={index} className="space-y-2">
-                              <Skeleton className="h-[180px] w-full rounded-lg" />
-                              <Skeleton className="h-4 w-24" />
-                              <Skeleton className="h-3 w-16" />
-                            </div>
-                          ))
-                      : recentlyAddedSkins.map(item => (
-                          <motion.div
-                            key={item.skin.id}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            transition={{ duration: getAnimationDuration() }}
-                            className="group"
-                          >
-                            <div className="relative overflow-hidden rounded-lg cursor-pointer h-[180px]">
-                              <div className="absolute inset-0 bg-gradient-to-t from-shade10 via-transparent to-transparent z-10" />
-                              <Image
-                                src={item.skin.image || '/placeholder.svg'}
-                                alt={`${item.champion} - ${item.skin.name}`}
-                                className="object-cover transition-transform group-hover:scale-105"
-                                fill
-                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                              />
-                              <div className="absolute top-2 right-2 z-20">
-                                <div className="px-2 py-0.5 bg-primary/80 rounded-full text-xs font-medium">
-                                  {item.skin.rarity}
-                                </div>
-                              </div>
-                              <div className="absolute bottom-0 left-0 right-0 p-3 z-20">
-                                <h3 className="text-foreground font-semibold">{item.skin.name}</h3>
-                                <p className="text-xs text-muted-foreground">{item.champion}</p>
-                              </div>
-                            </div>
-                          </motion.div>
-                        ))}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* {isLoading */}
+                    {/*  ? Array.from({ length: 3 }) */}
+                    {/*      .fill(0) */}
+                    {/*      .map((_, index) => ( */}
+                    {/*        <div key={index} className="space-y-2"> */}
+                    {/*          <Skeleton className="h-[180px] w-full rounded-lg" /> */}
+                    {/*          <Skeleton className="h-4 w-24" /> */}
+                    {/*          <Skeleton className="h-3 w-16" /> */}
+                    {/*        </div> */}
+                    {/*      )) */}
+                    {/*  : recentlyAddedSkins.map(item => ( */}
+                    {/*      <motion.div */}
+                    {/*        key={item.skin.id} */}
+                    {/*        whileHover={{ scale: 1.02 }} */}
+                    {/*        whileTap={{ scale: 0.98 }} */}
+                    {/*        transition={{ duration: getAnimationDuration() }} */}
+                    {/*        className="group" */}
+                    {/*      > */}
+                    {/*        <div className="relative overflow-hidden rounded-lg cursor-pointer h-[180px]"> */}
+                    {/*          <div className="absolute inset-0 bg-gradient-to-t from-shade10 via-transparent to-transparent z-10" /> */}
+                    {/*          <img */}
+                    {/*            src={item.skin.image || '/placeholder.svg'} */}
+                    {/*            alt={`${item.champion} - ${item.skin.name}`} */}
+                    {/*            className="object-cover transition-transform group-hover:scale-105" */}
+                    {/*            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" */}
+                    {/*          /> */}
+                    {/*          <div className="absolute top-2 right-2 z-20"> */}
+                    {/*            <div className="px-2 py-0.5 bg-primary/80 rounded-full text-xs font-medium"> */}
+                    {/*              {item.skin.rarity} */}
+                    {/*            </div> */}
+                    {/*          </div> */}
+                    {/*          <div className="absolute bottom-0 left-0 right-0 p-3 z-20"> */}
+                    {/*            <h3 className="text-foreground font-semibold">{item.skin.name}</h3> */}
+                    {/*            <p className="text-xs text-muted-foreground">{item.champion}</p> */}
+                    {/*          </div> */}
+                    {/*        </div> */}
+                    {/*      </motion.div> */}
+                    {/*    ))} */}
                   </div>
                 </div>
 
                 <h2 className="text-2xl font-bold mb-4 text-foreground">Featured Champions</h2>
 
                 {/* Featured champions grid */}
-                <div className="grid grid-cols-3 gap-6 mb-8">
-                  {isLoading
-                    ? Array.from({ length: 3 })
-                        .fill(0)
-                        .map((_, index) => (
-                          <div key={index} className="space-y-2">
-                            <Skeleton className="h-[220px] w-full rounded-lg" />
-                            <Skeleton className="h-4 w-24" />
-                          </div>
-                        ))
-                    : featuredChampions.map((champion) => {
-                        const selectedSkin = getSelectedSkin(champion);
-                        const selectedChroma = getSelectedChroma(selectedSkin, champion.id);
-                        const skinTags = getTagsForSkin(selectedSkin.id);
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                  {/* {isLoading */}
+                  {/*  ? Array.from({ length: 3 }) */}
+                  {/*      .fill(0) */}
+                  {/*      .map((_, index) => ( */}
+                  {/*        <div key={index} className="space-y-2"> */}
+                  {/*          <Skeleton className="h-[220px] w-full rounded-lg" /> */}
+                  {/*          <Skeleton className="h-4 w-24" /> */}
+                  {/*        </div> */}
+                  {/*      )) */}
+                  {/*  : featuredChampions.map((champion) => { */}
+                  {/*      const selectedSkin = getSelectedSkin(champion); */}
+                  {/*      const selectedChroma = getSelectedChroma(selectedSkin, champion.id); */}
 
-                        return (
-                          <motion.div
-                            key={champion.id}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            transition={{ duration: getAnimationDuration() }}
-                          >
-                            <CharacterCard
-                              champion={champion}
-                              onClick={() => {
-                                setSelectedChampion(champion);
-                                setViewState('champion');
-                              }}
-                              featured={true}
-                              selectedSkin={selectedSkin}
-                              selectedChroma={selectedChroma}
-                              tags={skinTags}
-                            />
-                          </motion.div>
-                        );
-                      })}
+                  {/*      return ( */}
+                  {/*        <motion.div */}
+                  {/*          key={champion.id} */}
+                  {/*          whileHover={{ scale: 1.02 }} */}
+                  {/*          whileTap={{ scale: 0.98 }} */}
+                  {/*          transition={{ duration: getAnimationDuration() }} */}
+                  {/*        > */}
+                  {/*          <CharacterCard */}
+                  {/*            champion={champion} */}
+                  {/*            onClick={() => { */}
+                  {/*              setSelectedChampion(champion); */}
+                  {/*              setViewState('champion'); */}
+                  {/*            }} */}
+                  {/*            featured={true} */}
+                  {/*            selectedSkin={selectedSkin} */}
+                  {/*            selectedChroma={selectedChroma} */}
+                  {/*          /> */}
+                  {/*        </motion.div> */}
+                  {/*      ); */}
+                  {/*    })} */}
                 </div>
 
                 <h2 className="text-2xl font-bold mb-4 text-foreground">All Champions</h2>
 
-                {/* All champions grid */}
-                <div className={`grid ${getGridColumns()} gap-4 mb-8`}>
-                  {isLoading
-                    ? Array.from({ length: 12 })
-                        .fill(0)
-                        .map((_, index) => (
-                          <div key={index} className="space-y-2">
-                            <Skeleton className={`${getCardSize()} w-full rounded-lg`} />
-                            <Skeleton className="h-4 w-20" />
-                          </div>
-                        ))
-                    : filteredChampions.map((champion) => {
-                        const selectedSkin = getSelectedSkin(champion);
-                        const selectedChroma = getSelectedChroma(selectedSkin, champion.id);
-                        const skinTags = getTagsForSkin(selectedSkin.id);
-
-                        return (
-                          <motion.div
-                            key={champion.id}
-                            whileHover={{ scale: layoutConfig.animationSpeed !== 'none' ? 1.03 : 1 }}
-                            whileTap={{ scale: layoutConfig.animationSpeed !== 'none' ? 0.97 : 1 }}
-                            transition={{ duration: getAnimationDuration() }}
-                          >
-                            <CharacterCard
-                              champion={champion}
-                              onClick={() => {
-                                setSelectedChampion(champion);
-                                setViewState('champion');
-                              }}
-                              selectedSkin={selectedSkin}
-                              selectedChroma={selectedChroma}
-                              layout={layoutConfig.layout}
-                              size={layoutConfig.gridSize}
-                              tags={skinTags}
-                            />
-                          </motion.div>
-                        );
-                      })}
-                </div>
+                {/* All champions grid using the new ChampionList component */}
+                <ChampionListComp
+                  champions={filteredChampions}
+                  isLoading={isLoading}
+                  onSelectChampion={(champion) => {
+                    setSelectedChampion(champion);
+                    setViewState('champion');
+                  }}
+                  skins={skins}
+                  getSelectedSkin={getSelectedSkin}
+                  getSelectedChroma={getSelectedChroma}
+                  layout={layoutConfig.layout}
+                  gridSize={layoutConfig.gridSize}
+                  animationDuration={getAnimationDuration()}
+                />
               </div>
             </div>
           </motion.div>

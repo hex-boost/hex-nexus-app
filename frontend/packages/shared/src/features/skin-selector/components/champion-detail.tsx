@@ -1,29 +1,23 @@
-import type { Champion, Chroma, Skin, SkinTag } from '@/components/character-selection';
-import Breadcrumb from '@/components/breadcrumb';
-import { Badge } from '@/components/ui/badge.tsx';
-import { Button } from '@/components/ui/button.tsx';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu.tsx';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.tsx';
-import { cn } from '@/lib/utils.ts';
-import { AnimatePresence, motion } from 'framer-motion';
-import { Check, CuboidIcon as Cube, Play, Plus, TagIcon, X } from 'lucide-react';
-import Image from 'next/image';
-import { useState } from 'react';
+import type {FormattedChampion, FormattedSkin} from '@/hooks/useDataDragon/types/useDataDragonHook.ts';
+
+import {Button} from '@/components/ui/button.tsx';
+import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs.tsx';
+import Breadcrumb from '@/features/skin-selector/components/breadcrumb';
+import {cn} from '@/lib/utils.ts';
+import {AnimatePresence, motion} from 'framer-motion';
+import {Check, CuboidIcon as Cube, Play} from 'lucide-react';
+import {useState} from 'react';
+import {Skin} from "@/hooks/useDataDragon/types/ddragon.ts";
 
 type ChampionDetailProps = {
-  champion: Champion;
+  champion: FormattedChampion;
   onBack: () => void;
   userPreferences?: {
     selectedSkinId: number;
     selectedChromaId?: number;
   };
   onSaveSkin: (championId: number, skinId: number, chromaId?: number) => void;
-  onAddToComparison: (champion: Champion, skin: Skin) => void;
   animationDuration?: number;
-  skinTags: SkinTag[];
-  getTagsForSkin: (skinId: number) => SkinTag[];
-  onAddTag: (skinId: number, tagId: string) => void;
-  onRemoveTag: (skinId: number, tagId: string) => void;
 };
 
 type MediaType = 'image' | 'video' | '3d';
@@ -33,12 +27,7 @@ export default function ChampionDetail({
   onBack,
   userPreferences,
   onSaveSkin,
-  onAddToComparison,
   animationDuration = 0.3,
-  skinTags,
-  getTagsForSkin,
-  onAddTag,
-  onRemoveTag,
 }: ChampionDetailProps) {
   // Get the initially selected skin based on user preferences
   const initialSkinId = userPreferences?.selectedSkinId || champion.skins[0].id;
@@ -46,7 +35,7 @@ export default function ChampionDetail({
 
   // State for selected skin and chroma
   const [selectedSkin, setSelectedSkin] = useState<Skin>(initialSkin);
-  const [selectedChroma, setSelectedChroma] = useState<Chroma | null>(
+  const [selectedChroma, setSelectedChroma] = useState<any | null>(
     userPreferences?.selectedChromaId && selectedSkin.chromas
       ? selectedSkin.chromas.find(c => c.id === userPreferences.selectedChromaId) || null
       : null,
@@ -95,11 +84,11 @@ export default function ChampionDetail({
     } else {
       // Default to image
       return (
-        <Image
-          src={selectedChroma?.image || selectedSkin.image}
+        <img
+          src={selectedChroma?.image || selectedSkin.}
           alt={`${champion.name} - ${selectedSkin.name} ${selectedChroma ? selectedChroma.name : ''}`}
           className="object-contain"
-          fill
+
           sizes="(max-width: 768px) 100vw, 600px"
         />
       );
@@ -107,7 +96,6 @@ export default function ChampionDetail({
   };
 
   // Get tags for current skin
-  const currentSkinTags = getTagsForSkin(selectedSkin.id);
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -119,11 +107,7 @@ export default function ChampionDetail({
           <h1 className="text-xl font-bold">{champion.name}</h1>
 
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => onAddToComparison(champion, selectedSkin)}>
-              <Plus className="h-4 w-4 mr-1" />
-              {' '}
-              Add to Comparison
-            </Button>
+
             <Button size="sm" onClick={handleSave}>
               Save Selection
             </Button>
@@ -143,7 +127,7 @@ export default function ChampionDetail({
                 size="sm"
                 onClick={() => setMediaType('image')}
               >
-                Image
+                img
               </Button>
               {selectedSkin.webm && (
                 <Button
@@ -206,75 +190,12 @@ export default function ChampionDetail({
             </div>
 
             {/* Tags */}
-            {currentSkinTags.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-2">
-                {currentSkinTags.map(tag => (
-                  <Badge
-                    key={tag.id}
-                    style={{ backgroundColor: `${tag.color}40`, color: tag.color }}
-                    className="flex items-center gap-1 cursor-pointer hover:opacity-80"
-                    onClick={() => onRemoveTag(selectedSkin.id, tag.id)}
-                  >
-                    {tag.name}
-                    <X className="h-3 w-3" />
-                  </Badge>
-                ))}
-              </div>
-            )}
 
             {/* Add tag dropdown */}
-            <div className="mt-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="text-xs">
-                    <TagIcon className="h-3 w-3 mr-1" />
-                    {' '}
-                    Add Tag
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  {skinTags
-                    .filter(tag => !currentSkinTags.some(t => t.id === tag.id))
-                    .map(tag => (
-                      <DropdownMenuItem
-                        key={tag.id}
-                        onClick={() => onAddTag(selectedSkin.id, tag.id)}
-                        className="flex items-center gap-2"
-                      >
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: tag.color }} />
-                        {tag.name}
-                      </DropdownMenuItem>
-                    ))}
-                  {skinTags.filter(tag => !currentSkinTags.some(t => t.id === tag.id)).length === 0 && (
-                    <DropdownMenuItem disabled>No more tags available</DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+
           </div>
 
           {/* Abilities preview */}
-          {selectedSkin.abilities && (
-            <div className="p-3 border-t border-border">
-              <h3 className="font-medium text-sm mb-2">Abilities</h3>
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                {selectedSkin.abilities.map((ability, index) => (
-                  <div key={index} className="flex-shrink-0 w-16 h-16 rounded-md overflow-hidden relative group">
-                    <Image
-                      src={ability.image || '/placeholder.svg'}
-                      alt={ability.name}
-                      className="object-cover"
-                      fill
-                      sizes="64px"
-                    />
-                    <div className="absolute inset-0 bg-shade10/80 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                      <span className="text-xs text-center px-1">{ability.name}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Selection area */}
@@ -298,7 +219,6 @@ export default function ChampionDetail({
                     onClick={() => handleSkinSelect(skin)}
                     hasChromas={!!skin.chromas?.length}
                     animationDuration={animationDuration}
-                    tags={getTagsForSkin(skin.id)}
                   />
                 ))}
               </div>
@@ -314,21 +234,20 @@ export default function ChampionDetail({
                     onClick={() => handleChromaSelect(null)}
                     label="Default"
                     animationDuration={animationDuration}
-                    tags={getTagsForSkin(selectedSkin.id)}
                   />
                 </div>
 
                 <h3 className="font-medium mb-2 text-sm text-muted-foreground">Chromas</h3>
                 <div className="grid grid-cols-2 gap-2">
-                  {selectedSkin.chromas?.map(chroma => (
-                    <ChromaOption
-                      key={chroma.id}
-                      chroma={chroma}
-                      isSelected={selectedChroma?.id === chroma.id}
-                      onClick={() => handleChromaSelect(chroma)}
-                      animationDuration={animationDuration}
-                    />
-                  ))}
+                  {/*{selectedSkin.chromas?.map(chroma => (*/}
+                  {/*  <ChromaOption*/}
+                  {/*    key={chroma.id}*/}
+                  {/*    chroma={chroma}*/}
+                  {/*    isSelected={selectedChroma?.id === chroma.id}*/}
+                  {/*    onClick={() => handleChromaSelect(chroma)}*/}
+                  {/*    animationDuration={animationDuration}*/}
+                  {/*  />*/}
+                  {/*))}*/}
                 </div>
               </div>
             </TabsContent>
@@ -347,7 +266,6 @@ type SkinOptionProps = {
   hasChromas?: boolean;
   label?: string;
   animationDuration?: number;
-  tags?: SkinTag[];
 };
 
 function SkinOption({
@@ -371,7 +289,7 @@ function SkinOption({
       onClick={onClick}
     >
       <div className="w-16 h-16 rounded-md overflow-hidden mr-3 flex-shrink-0 relative">
-        <Image src={skin.image || '/placeholder.svg'} alt={skin.name} className="object-cover" fill sizes="64px" />
+        <img src={skin.image || '/placeholder.svg'} alt={skin.name} className="object-cover" sizes="64px" />
       </div>
 
       <div className="flex-1">
@@ -406,7 +324,7 @@ function SkinOption({
 
 // Chroma option component
 type ChromaOptionProps = {
-  chroma: Chroma;
+  chroma: any;
   isSelected: boolean;
   onClick: () => void;
   animationDuration?: number;
@@ -425,7 +343,7 @@ function ChromaOption({ chroma, isSelected, onClick, animationDuration = 0.3 }: 
       onClick={onClick}
     >
       <div className="w-full aspect-square rounded-md overflow-hidden mb-2 relative">
-        <Image src={chroma.image || '/placeholder.svg'} alt={chroma.name} className="object-cover" fill sizes="100px" />
+        <img src={chroma.image || '/placeholder.svg'} alt={chroma.name} className="object-cover" sizes="100px" />
       </div>
 
       <span className="text-xs font-medium">{chroma.name}</span>
