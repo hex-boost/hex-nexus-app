@@ -1,10 +1,6 @@
 import type {Skin} from '@/hooks/useDataDragon/types/ddragon.ts';
 import type {FormattedChampion, FormattedSkin} from '@/hooks/useDataDragon/types/useDataDragonHook.ts';
-import {Badge} from '@/components/ui/badge';
-import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
-import Breadcrumb from '@/features/skin-selector/components/breadcrumb';
 import ChampionDetail from '@/features/skin-selector/components/champion-detail';
 import {ChampionListComp} from '@/features/skin-selector/components/champion-list-comp.tsx';
 import {useLocalStorage} from '@/hooks/use-local-storage';
@@ -152,17 +148,6 @@ export default function CharacterSelection({
     [setUserPreferences, isEmbedded, onSelectSkin, champions],
   );
   // Get breadcrumb items based on current view
-  const getBreadcrumbItems = useCallback(() => {
-    const items = [{ label: 'Home', onClick: () => setViewState('home') }];
-
-    if (viewState === 'champion' && selectedChampion) {
-      items.push({ label: selectedChampion.name, onClick: () => {} });
-    } else if (viewState === 'config') {
-      items.push({ label: 'Configuration', onClick: () => {} });
-    }
-
-    return items;
-  }, [viewState, selectedChampion]);
 
   return (
     <div className={cn('flex h-full w-full overflow-hidden bg-background', isEmbedded && 'rounded-lg')}>
@@ -196,14 +181,14 @@ export default function CharacterSelection({
             {/* Main content with top filter bar */}
             <div className="flex-1 bg-background overflow-y-auto">
               {/* Top filter bar */}
-              <div className="sticky top-0 z-10 bg-shade9 border-b border-border p-4 space-y-3">
+              <div className="sticky top-0 z-10 ">
                 {/* Search and layout controls */}
                 <div className="flex items-center gap-3">
                   <div className="relative flex-1 max-w-xl">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder="Search champions or skins..."
-                      className="pl-9 h-10 bg-shade8 border-shade7"
+                      className="pl-9 h-10 "
                       value={searchQuery}
                       onChange={e => setSearchQuery(e.target.value)}
                     />
@@ -219,143 +204,10 @@ export default function CharacterSelection({
 
                 </div>
 
-                {/* Expanded filter panel */}
-                {showFilters && (
-                  <div className="bg-shade8 rounded-lg p-4 border border-border animate-in fade-in-50 slide-in-from-top-5 duration-200">
-                    <div className="flex flex-wrap gap-4">
-                      <div className="space-y-1 min-w-[180px]">
-                        <label className="text-xs text-muted-foreground">Skin Line</label>
-                        <Select
-                          value={filters.skinLine}
-                          onValueChange={value => setFilters({ ...filters, skinLine: value })}
-                        >
-                          <SelectTrigger className="bg-shade9 h-9">
-                            <SelectValue placeholder="All skin lines" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All skin lines</SelectItem>
-                            <SelectItem value="Classic">Classic</SelectItem>
-                            <SelectItem value="Star Guardian">Star Guardian</SelectItem>
-                            <SelectItem value="PROJECT">PROJECT</SelectItem>
-                            <SelectItem value="Battle Academia">Battle Academia</SelectItem>
-                            <SelectItem value="Pulsefire">Pulsefire</SelectItem>
-                            <SelectItem value="Cosmic">Cosmic</SelectItem>
-                            <SelectItem value="Blackfrost">Blackfrost</SelectItem>
-                            <SelectItem value="Hextech">Hextech</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-1 min-w-[180px]">
-                        <label className="text-xs text-muted-foreground">Rarity</label>
-                        <Select
-                          value={filters.rarity}
-                          onValueChange={value => setFilters({ ...filters, rarity: value })}
-                        >
-                          <SelectTrigger className="bg-shade9 h-9">
-                            <SelectValue placeholder="All rarities" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All rarities</SelectItem>
-                            <SelectItem value="Common">Common</SelectItem>
-                            <SelectItem value="Epic">Epic</SelectItem>
-                            <SelectItem value="Legendary">Legendary</SelectItem>
-                            <SelectItem value="Ultimate">Ultimate</SelectItem>
-                            <SelectItem value="Mythic">Mythic</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-1 min-w-[180px]">
-                        <label className="text-xs text-muted-foreground">Release Year</label>
-                        <Select
-                          value={filters.releaseYear}
-                          onValueChange={value => setFilters({ ...filters, releaseYear: value })}
-                        >
-                          <SelectTrigger className="bg-shade9 h-9">
-                            <SelectValue placeholder="All years" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All years</SelectItem>
-                            <SelectItem value="2023">2023</SelectItem>
-                            <SelectItem value="2022">2022</SelectItem>
-                            <SelectItem value="2021">2021</SelectItem>
-                            <SelectItem value="2020">2020</SelectItem>
-                            <SelectItem value="2019">2019</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="flex items-end">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setFilters({ skinLine: '', rarity: '', releaseYear: '' })}
-                          disabled={!filters.skinLine && !filters.rarity && !filters.releaseYear}
-                        >
-                          Reset Filters
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
                 {/* Active filters display */}
-                {(filters.skinLine || filters.rarity || filters.releaseYear || searchQuery) && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="text-muted-foreground">Active filters:</span>
-                    <div className="flex flex-wrap gap-1">
-                      {searchQuery && (
-                        <Badge variant="secondary" className="flex items-center gap-1">
-                          Search:
-                          {' '}
-                          {searchQuery}
-                          <button onClick={() => setSearchQuery('')}>
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      )}
-                      {filters.skinLine && (
-                        <Badge variant="secondary" className="flex items-center gap-1">
-                          Skin Line:
-                          {' '}
-                          {filters.skinLine}
-                          <button onClick={() => setFilters({ ...filters, skinLine: '' })}>
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      )}
-                      {filters.rarity && (
-                        <Badge variant="secondary" className="flex items-center gap-1">
-                          Rarity:
-                          {' '}
-                          {filters.rarity}
-                          <button onClick={() => setFilters({ ...filters, rarity: '' })}>
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      )}
-                      {filters.releaseYear && (
-                        <Badge variant="secondary" className="flex items-center gap-1">
-                          Year:
-                          {' '}
-                          {filters.releaseYear}
-                          <button onClick={() => setFilters({ ...filters, releaseYear: '' })}>
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                )}
               </div>
 
-              {/* Breadcrumb */}
-              <div className="p-4 pt-2">
-                <Breadcrumb items={getBreadcrumbItems()} />
-              </div>
-
-              <div className="p-6">
+              <div className="pt-6">
 
                 <h2 className="text-2xl font-bold mb-4 text-foreground">All Champions</h2>
 

@@ -36,18 +36,8 @@ export const ChampionListComp: React.FC<ChampionListProps> = ({
     }
   }, [gridSize]);
 
-  const getGridColumns = useCallback(() => {
-    if (layout === 'list') {
-      return 'grid-cols-1';
-    }
-    if (layout === 'compact') {
-      return 'grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10';
-    }
-    return 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6';
-  }, [layout]);
-
   return (
-    <div className={`grid ${getGridColumns()} gap-4 mb-8`}>
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 mb-8">
       {isLoading
         ? Array.from({ length: 12 })
             .fill(0)
