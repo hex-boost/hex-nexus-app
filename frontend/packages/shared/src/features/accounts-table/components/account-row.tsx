@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge.tsx';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip.tsx';
 import { AccountActionsMenu } from '@/features/accounts-table/components/account-actions-menu.tsx';
 import { PriceDisplay } from '@/features/accounts-table/components/price-display.tsx';
-import { getLeaverBusterInfo } from '@/hooks/useAccounts.tsx';
+import { useRiotAccount } from '@/hooks/useRiotAccount.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
 import { cn } from '@/lib/utils.ts';
 import { AlertCircle, AlertOctagon, AlertTriangle, Shield } from 'lucide-react';
@@ -42,6 +42,7 @@ export function AccountRow({
   } as RankingType;
   const previousSoloqueueRank = account.rankings.find(ranking => ranking.queueType === 'soloqueue' && ranking.type === 'previous')!;
   const { getFormattedServer } = useMapping();
+  const { getLeaverBusterInfo } = useRiotAccount({ account });
   return (
     <tr
       className="border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/30 cursor-pointer"
@@ -64,7 +65,7 @@ export function AccountRow({
 
       <td className="p-3">
         {(() => {
-          const leaverInfo = getLeaverBusterInfo(account);
+          const leaverInfo = getLeaverBusterInfo();
 
           if (!leaverInfo) {
             return (

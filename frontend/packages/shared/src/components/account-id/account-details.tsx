@@ -13,9 +13,9 @@ import { FavoriteAccountNote } from '@/features/favorite-account/components/Favo
 import { FavoriteStar } from '@/features/favorite-account/components/FavoriteStar.tsx';
 import { useAccountActions } from '@/hooks/useAccountActions.ts';
 import { useAccountFilters } from '@/hooks/useAccountFilters.ts';
-import { getLeaverBusterInfo } from '@/hooks/useAccounts.tsx';
 import { useDateTime } from '@/hooks/useDateTime.ts';
 import { usePrice } from '@/hooks/usePrice.ts';
+import { useRiotAccount } from '@/hooks/useRiotAccount.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
 import { cn } from '@/lib/utils.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
@@ -27,7 +27,8 @@ function LeaverBusterDisplay({ account, compact = false }: {
   account: AccountType;
   compact?: boolean;
 }) {
-  const leaverInfo = getLeaverBusterInfo(account);
+  const { getLeaverBusterInfo } = useRiotAccount({ account });
+  const leaverInfo = getLeaverBusterInfo();
 
   // Define styling based on severity
   const getStatusConfig = () => {
@@ -189,7 +190,7 @@ export default function AccountDetails({ account, onAccountChange }: {
                   {/* <svg xmlns="http://www.w3.org/2000/svg" width="13" height="14" viewBox="0 0 13 14" fill="none"> */}
                   {/*  <path fill-rule="evenodd" clip-rule="evenodd" d="M8.63343 2.25848L6.5001 0.600098L4.36676 2.25848V8.25781L6.5001 9.7405L8.63343 8.25781V2.25848ZM12.0468 6.1152L12.9001 5.49383L10.3401 3.11553V9.11486L7.35343 11.2575V13.4001L12.9001 9.68479L12.0468 8.68634V6.1152ZM2.6601 3.11553L0.100098 5.49383L0.953431 6.1152V8.68634L0.100098 9.68479L5.64676 13.4001V11.2575L2.6601 9.11486V3.11553Z" fill="#E2BA3D" /> */}
                   {/* </svg> */}
-                  <img src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/icon-rp-72.png" />
+                  <img alt="rp" src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/icon-rp-72.png" />
 
                 </div>
                 <div>
