@@ -1,4 +1,7 @@
-import { vi } from 'vitest';
+import { setupServer } from 'msw/node';
+import { afterAll, afterEach, beforeAll, vi } from 'vitest';
+import { handlers } from './handlers';
+import '@testing-library/jest-dom';
 
 vi.mock('@wailsio/runtime', () => {
   return {
@@ -17,3 +20,15 @@ vi.mock('@wailsio/runtime', () => {
     },
   };
 });
+
+// Setup MSW server
+export const server = setupServer(...handlers);
+
+// Start server before all tests
+beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
+
+// Reset handlers after each test
+afterEach(() => server.resetHandlers());
+
+// Close server after all tests
+afterAll(() => server.close());

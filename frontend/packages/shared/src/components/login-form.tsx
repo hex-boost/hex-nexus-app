@@ -8,29 +8,32 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator.tsx';
 import { WindowControls } from '@/components/WindowControls.tsx';
-import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
-import { useProfileAvatar } from '@/hooks/useProfileAvatar.ts';
-import { userAuth } from '@/lib/strapi';
 import { cn } from '@/lib/utils';
-import { useUserStore } from '@/stores/useUserStore';
-import { Discord } from '@discord';
-import { HWID } from '@hwid';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@radix-ui/react-tabs';
-import { useMutation } from '@tanstack/react-query';
-import { useRouter } from '@tanstack/react-router';
 import { Eye, EyeOff } from 'lucide-react';
 import React, { useState } from 'react';
-import { toast } from 'sonner';
+
+// Types for props
+export type LoginFormProps = {
+  onLogin: (identifier: string, password: string) => Promise<void>;
+  onRegister: (email: string, username: string, password: string) => Promise<void>;
+  onDiscordLogin: () => Promise<void>;
+  isLoginLoading?: boolean;
+  isRegisterLoading?: boolean;
+  isDiscordLoading?: boolean;
+} & React.ComponentProps<'div'>;
 
 export function LoginForm({
   className,
+  onLogin,
+  onRegister,
+  onDiscordLogin,
+  isLoginLoading = false,
+  isRegisterLoading = false,
+  isDiscordLoading = false,
   ...props
-}: React.ComponentProps<'div'>) {
-  const { refetchUser } = useCommonFetch();
-  const router = useRouter();
-  const { getDefaultBase64Avatar, uploadImageFromBase64 } = useProfileAvatar();
+}: LoginFormProps) {
   const [activeTab, setActiveTab] = useState('login');
-  const { setAuthToken } = useUserStore();
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -38,117 +41,28 @@ export function LoginForm({
     username: '',
     password: '',
   });
-  const loginMutation = useMutation(
-    {
-      mutationFn: async () => {
-        return await userAuth.login({
-          identifier: formData.email,
-          password: formData.password,
-        });
-      },
-      onSuccess: async (data) => {
-        if (import.meta.env.MODE !== 'development') {
-          const currentHwid = await HWID.Get();
-          if (data.user.hwid && data.user.hwid !== currentHwid) {
-            setAuthToken(''); // Clear token
-            toast.error('Login failed: Hardware ID mismatch');
-            return;
-          }
-        }
 
-        setAuthToken(data.jwt);
-        await refetchUser();
-        router.navigate({ to: '/dashboard' });
-      },
-      onError: (error) => {
-        // @ts-expect-error ts is dumb
-        toast.error(`${error.error.message}`);
-      },
-    },
-  );
-  const registerMutation = useMutation(
-    {
-      mutationFn:
-        async () => {
-          const base64Avatar = await getDefaultBase64Avatar(formData.username);
-          const uploadedAvatar = await uploadImageFromBase64(base64Avatar);
-          const registerPayload = {
-            username: formData.username,
-            email: formData.email,
-            password: formData.password,
-            avatar: uploadedAvatar.data[0].id,
-            hwid: await HWID.Get(),
-          } as any;
-          return await userAuth.register(registerPayload);
-        },
-      onSuccess: async (data) => {
-        setAuthToken(data.jwt);
-        await refetchUser();
-
-        router.navigate({ to: '/dashboard' });
-      },
-      onError: (error) => {
-        // @ts-expect-error ts is dumb
-        toast.error(`${error.error.message}`);
-      },
-    },
-  );
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (activeTab === 'login') {
-      loginMutation.mutate();
+      await onLogin(formData.email, formData.password);
     } else {
-      registerMutation.mutate();
+      await onRegister(formData.email, formData.username, formData.password);
     }
   };
-  const discordLoginMutation = useMutation(
-    {
-      mutationFn:
-        async () => {
-          return Discord.StartOAuth();
-        },
-      onSuccess: async (data) => {
-        console.info('discord login data', data);
-        if (!data || !data.jwt) {
-          toast.error('Failed to authenticate with Discord');
-          return;
-        }
 
-        console.info('discord login jwt', data?.jwt);
-        setAuthToken(data.jwt);
+  const isLoading = activeTab === 'login' ? isLoginLoading : isRegisterLoading;
 
-        try {
-          await refetchUser();
-          console.info('User refetched successfully');
-
-          // Navigate to dashboard after successful authentication
-          router.navigate({ to: '/dashboard' });
-        } catch (error) {
-          console.error('Error refetching user:', error);
-          toast.error('Failed to load user data');
-        }
-      },
-      onError: (error) => {
-        console.error('Error in Discord login:', error);
-        toast.error('Failed to authenticate with Discord');
-      },
-    },
-  );
-  const isLoading = activeTab === 'login' ? loginMutation.isPending : registerMutation.isPending;
   return (
-
     <>
       <WindowControls className="absolute w-screen top-0 right-0 px-4 py-2" />
-      <div className=" min-h-screen   bg-background">
-        <div className="w-full min-h-screen  bg-background ">
-          <div
-            className={cn('  min-h-screen  gap-6', className)}
-            {...props}
-          >
+      <div className="min-h-screen bg-background">
+        <div className="w-full min-h-screen bg-background">
+          <div className={cn('min-h-screen gap-6', className)} {...props}>
             <Card className="border-none rounded-none overflow-hidden w-full h-full">
-              <CardContent className="grid  w-full min-h-screen p-0 md:grid-cols-2">
-                <div className="relative h-full hidden  md:block">
-                  <div className="absolute inset-0  flex items-start pt-6 h-full justify-center">
+              <CardContent className="grid w-full min-h-screen p-0 md:grid-cols-2">
+                <div className="relative h-full hidden md:block">
+                  <div className="absolute inset-0 flex items-start pt-6 h-full justify-center">
                     <div className="flex flex-col items-center p-8">
                       <img
                         src={hexNexusAuthBg}
@@ -177,14 +91,17 @@ export function LoginForm({
                     <Globe />
                   </div>
                 </div>
+
                 <Tabs
                   value={activeTab}
                   onValueChange={setActiveTab}
                   className="flex justify-center w-full items-center p-6 md:p-8"
+                  data-testid="auth-tabs"
                 >
                   <form
                     onSubmit={handleSubmit}
                     className="flex flex-col gap-6 justify-center max-w-[480px] w-full items-center"
+                    data-testid="auth-form"
                   >
                     <TabsContent
                       key="login"
@@ -207,6 +124,7 @@ export function LoginForm({
                           required
                           value={formData.email}
                           onChange={e => setFormData({ ...formData, email: e.target.value })}
+                          data-testid="login-email-input"
                         />
                       </div>
                       <div className="grid gap-2">
@@ -225,11 +143,13 @@ export function LoginForm({
                               ...formData,
                               password: e.target.value,
                             })}
+                            data-testid="login-password-input"
                           />
                           <button
                             type="button"
                             onClick={() => setShowLoginPassword(!showLoginPassword)}
                             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            data-testid="login-password-toggle"
                           >
                             {showLoginPassword
                               ? (
@@ -259,6 +179,7 @@ export function LoginForm({
                           required
                           value={formData.username}
                           onChange={e => setFormData({ ...formData, username: e.target.value })}
+                          data-testid="register-username-input"
                         />
                       </div>
                       <div className="grid gap-2">
@@ -271,13 +192,13 @@ export function LoginForm({
                           required
                           value={formData.email}
                           onChange={e => setFormData({ ...formData, email: e.target.value })}
+                          data-testid="register-email-input"
                         />
                       </div>
                       <div className="grid gap-2">
                         <Label htmlFor="password">Password</Label>
                         <div className="relative">
                           <Input
-
                             placeholder="**********"
                             id="password"
                             type={showRegisterPassword ? 'text' : 'password'}
@@ -288,11 +209,13 @@ export function LoginForm({
                               ...formData,
                               password: e.target.value,
                             })}
+                            data-testid="register-password-input"
                           />
                           <button
                             type="button"
                             onClick={() => setShowRegisterPassword(!showRegisterPassword)}
                             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            data-testid="register-password-toggle"
                           >
                             {showRegisterPassword
                               ? (
@@ -305,27 +228,38 @@ export function LoginForm({
                         </div>
                       </div>
                     </TabsContent>
-                    <Button loading={isLoading} type="submit" className="w-full " disabled={isLoading}>
+
+                    <Button
+                      loading={isLoading}
+                      type="submit"
+                      className="w-full"
+                      disabled={isLoading}
+                      data-testid="auth-submit-button"
+                    >
                       {activeTab === 'login'
-                        ? isLoading ? 'Signing in...' : 'Sign in'
-                        : isLoading ? 'Registering...' : 'Register'}
+                        ? isLoginLoading ? 'Signing in...' : 'Sign in'
+                        : isRegisterLoading ? 'Registering...' : 'Register'}
                     </Button>
-                    <div className="flex items-center  gap-4 w-full">
+
+                    <div className="flex items-center gap-4 w-full">
                       <Separator className="flex-1 w-full" />
                       <span className="text-muted-foreground text-xs">OR</span>
                       <Separator className="w-full flex-1" />
                     </div>
+
                     <Button
                       type="button"
-                      disabled={discordLoginMutation.isPending}
-                      loading={discordLoginMutation.isPending}
-                      onClick={() => discordLoginMutation.mutate()}
+                      disabled={isDiscordLoading}
+                      loading={isDiscordLoading}
+                      onClick={onDiscordLogin}
                       variant="outline"
                       className="w-full space-x-2"
+                      data-testid="discord-login-button"
                     >
-                      {!discordLoginMutation.isPending && <DiscordSvg />}
+                      {!isDiscordLoading && <DiscordSvg />}
                       <p>Continue with Discord</p>
                     </Button>
+
                     <TabsList className="text-center text-sm">
                       <span>
                         {activeTab === 'login' ? 'Don\'t have an account? ' : 'Already have an account? '}
@@ -333,18 +267,17 @@ export function LoginForm({
                       <TabsTrigger
                         value={activeTab === 'login' ? 'register' : 'login'}
                         className="underline underline-offset-4 cursor-pointer"
+                        data-testid="auth-tab-toggle"
                       >
                         {activeTab === 'login' ? 'Sign up' : 'Log in'}
                       </TabsTrigger>
                     </TabsList>
-
                   </form>
                 </Tabs>
               </CardContent>
             </Card>
           </div>
         </div>
-
       </div>
     </>
   );
