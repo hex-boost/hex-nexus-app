@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account/mocks"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -90,6 +91,7 @@ func TestAccountMonitor_CheckCurrentAccount(t *testing.T) {
 		mockRiot.On("IsRunning").Return(true)
 		mockRiot.On("IsClientInitialized").Return(true)
 		mockRiot.On("GetAuthenticationState").Return(&types.RiotIdentityResponse{Type: "error"}, nil)
+		mockAccountState.On("Get").Return(&types.PartialSummonerRented{Username: ""})
 
 		// Execute function under test
 		am.checkCurrentAccount()
@@ -132,10 +134,12 @@ func TestAccountMonitor_CheckCurrentAccount(t *testing.T) {
 		mockRiot.On("GetAuthenticationState").Return(&types.RiotIdentityResponse{Type: "success"}, nil)
 		mockRiot.On("GetUserinfo").Return(&types.UserInfo{Username: "testuser"}, nil)
 		mockRepo.On("GetAllRented").Return([]types.SummonerRented{}, errors.New("database error"))
+		mockAccountState.On("Update", mock.AnythingOfType("*types.PartialSummonerRented")).Return(&types.PartialSummonerRented{Username: "testuser"}, nil)
 
 		// Add the missing expectations:
 		mockAccountState.On("SetNexusAccount", false).Return(false)
 		mockAccountState.On("IsNexusAccount").Return(false)
+		mockAccountState.On("Get").Return(&types.PartialSummonerRented{Username: "fsda"})
 
 		// Execute function under test
 		am.checkCurrentAccount()
@@ -185,6 +189,8 @@ func TestAccountMonitor_CheckCurrentAccount(t *testing.T) {
 		}, nil)
 		mockAccountState.On("SetNexusAccount", false).Return(false)
 		mockAccountState.On("IsNexusAccount").Return(false)
+		mockAccountState.On("Get").Return(&types.PartialSummonerRented{Username: "fodase"})
+		mockAccountState.On("Update", mock.AnythingOfType("*types.PartialSummonerRented")).Return(&types.PartialSummonerRented{Username: "testuser"}, nil)
 
 		// Execute function under test
 		am.checkCurrentAccount()
@@ -237,6 +243,9 @@ func TestAccountMonitor_CheckCurrentAccount(t *testing.T) {
 		mockWatchdog.On("Update", true).Return(nil)
 		mockAccountState.On("SetNexusAccount", true).Return(true)
 		mockAccountState.On("IsNexusAccount").Return(true)
+		mockAccountState.On("Get").Return(&types.PartialSummonerRented{Username: "foadse"})
+		mockAccountState.On("Update", mock.AnythingOfType("*types.PartialSummonerRented")).Return(&types.PartialSummonerRented{Username: "testuser"}, nil)
+
 		// Execute function under test
 		am.checkCurrentAccount()
 
@@ -256,8 +265,9 @@ func TestAccountMonitor_CheckCurrentAccount(t *testing.T) {
 		mockSummoner := mocks.NewSummonerClient(t)
 		mockLCU := mocks.NewLCUConnection(t)
 		mockWatchdog := mocks.NewWatchdogUpdater(t)
-		mockWindow := mocks.NewWindowEmitter(t)
+
 		mockAccountState := mocks.NewAccountState(t)
+		mockWindow := mocks.NewWindowEmitter(t)
 
 		am := NewMonitor(
 			newLogger,
@@ -271,10 +281,11 @@ func TestAccountMonitor_CheckCurrentAccount(t *testing.T) {
 		)
 
 		cachedAccounts := []types.SummonerRented{
-			{Username: "testuser"}, // Match in cache
+			{Username: "testuser"}, // This matches the username returned by mock Riot client
 		}
+
 		// Setup window and additional fields
-		am.window = mockWindow
+		am.SetWindow(mockWindow)
 		am.mutex = sync.Mutex{}
 		am.cachedAccounts = cachedAccounts
 		am.lastAccountsFetch = time.Now() // Fresh cache
@@ -285,6 +296,9 @@ func TestAccountMonitor_CheckCurrentAccount(t *testing.T) {
 		mockRiot.On("IsClientInitialized").Return(true)
 		mockRiot.On("GetAuthenticationState").Return(&types.RiotIdentityResponse{Type: "success"}, nil)
 		mockRiot.On("GetUserinfo").Return(&types.UserInfo{Username: "testuser"}, nil)
+
+		// Change this to match the Riot username to avoid triggering cache refresh
+		mockAccountState.On("Get").Return(&types.PartialSummonerRented{Username: "testuser"})
 		mockAccountState.On("SetNexusAccount", true).Return(false)
 		mockAccountState.On("IsNexusAccount").Return(true)
 
@@ -297,7 +311,6 @@ func TestAccountMonitor_CheckCurrentAccount(t *testing.T) {
 		mockRepo.AssertNotCalled(t, "GetAllRented") // Should use cache
 		assert.True(t, am.IsNexusAccount())
 	})
-
 	t.Run("Reset cache when user is disconnected", func(t *testing.T) {
 		// Setup
 		mockRepo := mocks.NewAccountClient(t)
@@ -898,7 +911,7 @@ func TestMonitor_GetLoggedInUsername(t *testing.T) {
 		mockRiot.On("GetAuthenticationState").Return(&types.RiotIdentityResponse{Type: "success"}, nil)
 		mockRiot.On("GetUserinfo").Return(&types.UserInfo{Username: "RiotUser"}, nil)
 
-		username := am.GetLoggedInUsername()
+		username := am.GetLoggedInUsername("")
 		assert.Equal(t, "riotuser", username) // Should be lowercase
 		mockRiot.AssertExpectations(t)
 	})
@@ -929,7 +942,7 @@ func TestMonitor_GetLoggedInUsername(t *testing.T) {
 		mockLCU.On("IsClientInitialized").Return(true)
 		mockSummoner.On("GetLoginSession").Return(&types.LoginSession{Username: "LeagueUser"}, nil)
 
-		username := am.GetLoggedInUsername()
+		username := am.GetLoggedInUsername("")
 		assert.Equal(t, "leagueuser", username) // Should be lowercase
 		mockRiot.AssertExpectations(t)
 		mockLeague.AssertExpectations(t)
@@ -960,9 +973,7 @@ func TestMonitor_GetLoggedInUsername(t *testing.T) {
 		mockLeague.On("IsRunning").Return(false)
 		mockLeague.On("IsPlaying").Return(true)
 
-		am.lastCheckedUsername = "LastUser"
-
-		username := am.GetLoggedInUsername()
+		username := am.GetLoggedInUsername("lastuser")
 		assert.Equal(t, "lastuser", username) // Should be lowercase
 		mockRiot.AssertExpectations(t)
 		mockLeague.AssertExpectations(t)
@@ -993,7 +1004,7 @@ func TestMonitor_GetLoggedInUsername(t *testing.T) {
 		mockLeague.On("IsRunning").Return(false)
 		mockLeague.On("IsPlaying").Return(false)
 
-		username := am.GetLoggedInUsername()
+		username := am.GetLoggedInUsername("")
 		assert.Equal(t, "", username)
 		mockRiot.AssertExpectations(t)
 		mockLeague.AssertExpectations(t)

@@ -2,12 +2,11 @@ package handler
 
 import (
 	"encoding/json"
-	"go.uber.org/zap"
-
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account/events"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
+	"go.uber.org/zap"
 )
 
 // AccountState defines the contract for account state management
@@ -156,16 +155,16 @@ func (h *Handler) Champion(event websocket.LCUWebSocketEvent) {
 // GameflowPhase handles gameflow phase changes from the LCU
 // GameflowPhase handles gameflow phase changes from the LCU
 func (h *Handler) GameflowPhase(event websocket.LCUWebSocketEvent) {
-	var gameflowPhase string
+	var gameflowPhase types.LolChallengesGameflowPhase
 	if err := json.Unmarshal(event.Data, &gameflowPhase); err != nil {
 		h.logger.Error("Failed to parse gameflow phase data", zap.Error(err))
 		return
 	}
 
-	h.logger.Info("Gameflow phase changed", zap.String("phase", gameflowPhase))
+	h.logger.Info("Gameflow phase changed", zap.String("phase", string(gameflowPhase)))
 
 	// Check if this is an end-game phase
-	if gameflowPhase == "EndOfGame" || gameflowPhase == "PreEndOfGame" || gameflowPhase == "WaitingForStats" {
+	if gameflowPhase == types.LolChallengesGameflowPhaseEndOfGame || gameflowPhase == types.LolChallengesGameflowPhasePreEndOfGame || gameflowPhase == types.LolChallengesGameflowPhaseWaitingForStats {
 		h.logger.Info("Game ended, fetching ranking information")
 
 		// Get the current ranking information
@@ -183,8 +182,8 @@ func (h *Handler) GameflowPhase(event websocket.LCUWebSocketEvent) {
 		if currentAccount != nil && currentAccount.Rankings != nil {
 			currentRank := currentAccount.Rankings
 
-			if isRankingSame(currentRank.RankedSolo5x5, ranking.RankedSolo5x5) &&
-				isRankingSame(currentRank.RankedFlexSR, ranking.RankedFlexSR) {
+			if IsRankingSame(currentRank.RankedSolo5x5, ranking.RankedSolo5x5) &&
+				IsRankingSame(currentRank.RankedFlexSR, ranking.RankedFlexSR) {
 				h.logger.Debug("Rankings unchanged, skipping update")
 				needsUpdate = false
 			}
@@ -207,8 +206,8 @@ func (h *Handler) GameflowPhase(event websocket.LCUWebSocketEvent) {
 	}
 }
 
-// isRankingSame compares two RankedDetails objects to determine if they are identical
-func isRankingSame(oldRank, newRank types.RankedDetails) bool {
+// IsRankingSame compares two RankedDetails objects to determine if they are identical
+func IsRankingSame(oldRank, newRank types.RankedDetails) bool {
 	// Compare tier, division and rank
 	if oldRank.Tier != newRank.Tier ||
 		oldRank.Division != newRank.Division ||

@@ -329,3 +329,22 @@ type SkinJWT struct {
 		SKIN []int `json:"CHAMPION_SKIN"`
 	} `json:"items"`
 }
+
+type LolChallengesGameflowPhase string
+
+const (
+	LolChallengesGameflowPhaseTerminatedInError     LolChallengesGameflowPhase = "TerminatedInError"
+	LolChallengesGameflowPhaseEndOfGame             LolChallengesGameflowPhase = "EndOfGame"
+	LolChallengesGameflowPhasePreEndOfGame          LolChallengesGameflowPhase = "PreEndOfGame"
+	LolChallengesGameflowPhaseWaitingForStats       LolChallengesGameflowPhase = "WaitingForStats"
+	LolChallengesGameflowPhaseReconnect             LolChallengesGameflowPhase = "Reconnect"
+	LolChallengesGameflowPhaseInProgress            LolChallengesGameflowPhase = "InProgress"
+	LolChallengesGameflowPhaseFailedToLaunch        LolChallengesGameflowPhase = "FailedToLaunch"
+	LolChallengesGameflowPhaseGameStart             LolChallengesGameflowPhase = "GameStart"
+	LolChallengesGameflowPhaseChampSelect           LolChallengesGameflowPhase = "ChampSelect"
+	LolChallengesGameflowPhaseReadyCheck            LolChallengesGameflowPhase = "ReadyCheck"
+	LolChallengesGameflowPhaseCheckedIntoTournament LolChallengesGameflowPhase = "CheckedIntoTournament"
+	LolChallengesGameflowPhaseMatchmaking           LolChallengesGameflowPhase = "Matchmaking"
+	LolChallengesGameflowPhaseLobby                 LolChallengesGameflowPhase = "Lobby"
+	LolChallengesGameflowPhaseNone                  LolChallengesGameflowPhase = "None"
+)

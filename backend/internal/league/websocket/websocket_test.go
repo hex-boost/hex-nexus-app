@@ -252,7 +252,7 @@ func TestRefreshAccountState(t *testing.T) {
 		mockManager,
 	)
 
-	mockAccountMonitor.EXPECT().GetLoggedInUsername().Return(username)
+	mockAccountMonitor.EXPECT().GetLoggedInUsername("").Return(username)
 	mockAccountsRepo.EXPECT().Save(mock.MatchedBy(func(s types.PartialSummonerRented) bool {
 		return s.Username == username
 	})).Return(summonerResponse, nil)
@@ -284,7 +284,7 @@ func TestRefreshAccountStateWithEmptyUsername(t *testing.T) {
 		mockManager,
 	)
 
-	mockAccountMonitor.EXPECT().GetLoggedInUsername().Return("")
+	mockAccountMonitor.EXPECT().GetLoggedInUsername("").Return("")
 
 	service.RefreshAccountState(types.PartialSummonerRented{})
 
@@ -595,6 +595,21 @@ func TestEventHandlerRegistration(t *testing.T) {
 	mockAccountsRepo := mocks.NewAccountsRepository(t)
 	mockHandler := mocks.NewHandler(t)
 
+	// Create mock event handlers
+	mockEventHandler1 := &MockEventHandler{
+		Path:    "mock-path-1",
+		Handler: func(event websocket.LCUWebSocketEvent) {},
+	}
+	mockEventHandler2 := &MockEventHandler{
+		Path:    "mock-path-2",
+		Handler: func(event websocket.LCUWebSocketEvent) {},
+	}
+
+	// Setup manager mock to return our mock handlers regardless of input parameters
+	// This is the key change - we ignore the specific paths and handlers passed in
+	mockManager.EXPECT().NewEventHandler(mock.Anything, mock.Anything).Return(mockEventHandler1).Once()
+	mockManager.EXPECT().NewEventHandler(mock.Anything, mock.Anything).Return(mockEventHandler2).Once()
+
 	// Create service
 	service := websocket.NewService(
 		mockLogger,
@@ -607,26 +622,9 @@ func TestEventHandlerRegistration(t *testing.T) {
 		mockManager,
 	)
 
-	// Create mock event handlers
-	mockEventHandlers := []websocket.EventHandler{
-		&MockEventHandler{
-			Path:    "path1",
-			Handler: func(event websocket.LCUWebSocketEvent) {},
-		},
-		&MockEventHandler{
-			Path:    "path2",
-			Handler: func(event websocket.LCUWebSocketEvent) {},
-		},
-	}
-
-	// Setup manager to return our handlers, regardless of what path is requested
-	// First call returns first handler, second call returns second handler
-	mockManager.EXPECT().NewEventHandler(mock.Anything, mock.Anything).Return(mockEventHandlers[0]).Once()
-	mockManager.EXPECT().NewEventHandler(mock.Anything, mock.Anything).Return(mockEventHandlers[1]).Once()
-
-	// Setup router to expect registration for both handlers with their respective paths
-	mockRouter.EXPECT().RegisterHandler("path1", mock.Anything).Return().Once()
-	mockRouter.EXPECT().RegisterHandler("path2", mock.Anything).Return().Once()
+	// Set up router expectations for our mock paths
+	mockRouter.EXPECT().RegisterHandler("mock-path-1", mock.Anything).Return().Once()
+	mockRouter.EXPECT().RegisterHandler("mock-path-2", mock.Anything).Return().Once()
 
 	// Setup expectations for event registrations
 	mockApp.On("OnEvent", event.LeagueWebsocketStart, mock.AnythingOfType("func(*application.CustomEvent)")).Return(func() {})

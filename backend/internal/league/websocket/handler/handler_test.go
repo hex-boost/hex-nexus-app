@@ -11,59 +11,23 @@ import (
 
 	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"go.uber.org/zap"
-
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
-
-// MockLogger is a mock implementation of the logger
-type MockLogger struct {
-	mock.Mock
-}
-
-func (m *MockLogger) Info(msg string, fields ...zap.Field) {
-	m.Called(msg, fields)
-}
-
-func (m *MockLogger) Error(msg string, fields ...zap.Field) {
-	m.Called(msg, fields)
-}
-
-func (m *MockLogger) Debug(msg string, fields ...zap.Field) {
-	m.Called(msg, fields)
-}
-
-// MockState is a mock implementation of the account state
-
-type MockAccountsRepository struct {
-	mock.Mock
-}
-
-func (m *MockAccountsRepository) GetAllRented() ([]types.SummonerRented, error) {
-	args := m.Called()
-	return args.Get(0).([]types.SummonerRented), args.Error(1)
-}
-
-type MockApp struct {
-	mock.Mock
-}
-
-func (m *MockApp) EmitEvent(eventName string, data ...interface{}) {
-	m.Called(eventName)
-}
 
 func TestWalletEventWithValidData(t *testing.T) {
 	mockState := mocks.NewAccountState(t)
 	mockApp := mocks.NewApp(t)
 	mockAccountClient := mocks.NewAccountClient(t)
+	mockSummonerClient := mocks.NewSummonerClient(t)
+
 	testLogger := logger.New("test", &config.Config{})
 
-	handler := New(testLogger, mockApp, mockState, mockAccountClient)
+	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
 
 	blueEssence := 1000
 	currentAccount := &types.PartialSummonerRented{
@@ -150,9 +114,10 @@ func TestWalletEventWithNilAccount(t *testing.T) {
 	mockState := mocks.NewAccountState(t)
 	mockApp := mocks.NewApp(t)
 	mockAccountClient := mocks.NewAccountClient(t)
+	mockSummonerClient := mocks.NewSummonerClient(t)
 	testLogger := logger.New("test", &config.Config{})
 
-	handler := New(testLogger, mockApp, mockState, mockAccountClient)
+	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
 
 	blueEssence := 1000
 	updatedAccount := &types.PartialSummonerRented{
@@ -221,7 +186,8 @@ func TestWalletEventWithNilCurrencies(t *testing.T) {
 	mockLogger := zaptest.NewLogger(t)
 	mockApp := mocks.NewApp(t)
 	mockAccountClient := mocks.NewAccountClient(t)
-	handler := New(mockLogger, mockApp, mockState, mockAccountClient)
+	mockSummonerClient := mocks.NewSummonerClient(t)
+	handler := New(mockLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
 
 	blueEssence := 1000
 	currentAccount := &types.PartialSummonerRented{
@@ -267,8 +233,9 @@ func TestWalletEventWithNilCurrencies(t *testing.T) {
 func TestNewHandlerCreation(t *testing.T) {
 	testLogger := logger.New("test", &config.Config{})
 	mockState := &account.State{}
+	mockSummonerClient := mocks.NewSummonerClient(t)
 
-	handler := New(testLogger, mocks.NewApp(t), mockState, mocks.NewAccountClient(t))
+	handler := New(testLogger, mocks.NewApp(t), mockState, mocks.NewAccountClient(t), mockSummonerClient)
 
 	assert.NotNil(t, handler)
 	assert.Equal(t, testLogger, handler.logger)
@@ -278,9 +245,10 @@ func TestProcessAccountUpdateSuccess(t *testing.T) {
 	mockState := mocks.NewAccountState(t)
 	mockApp := mocks.NewApp(t)
 	mockAccountClient := mocks.NewAccountClient(t)
+	mockSummonerClient := mocks.NewSummonerClient(t)
 	testLogger := logger.New("test", &config.Config{})
 
-	handler := New(testLogger, mockApp, mockState, mockAccountClient)
+	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
 
 	update := &types.PartialSummonerRented{
 		Username: "testUser",
@@ -312,9 +280,10 @@ func TestProcessAccountUpdateFailedUpdate(t *testing.T) {
 	mockState := mocks.NewAccountState(t)
 	mockApp := mocks.NewApp(t)
 	mockAccountClient := mocks.NewAccountClient(t)
+	mockSummonerClient := mocks.NewSummonerClient(t)
 	testLogger := logger.New("test", &config.Config{})
 
-	handler := New(testLogger, mockApp, mockState, mockAccountClient)
+	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
 
 	update := &types.PartialSummonerRented{
 		Username: "testUser",
@@ -335,9 +304,10 @@ func TestProcessAccountUpdateFailedSave(t *testing.T) {
 	mockState := mocks.NewAccountState(t)
 	mockApp := mocks.NewApp(t)
 	mockAccountClient := mocks.NewAccountClient(t)
+	mockSummonerClient := mocks.NewSummonerClient(t)
 	testLogger := logger.New("test", &config.Config{})
 
-	handler := New(testLogger, mockApp, mockState, mockAccountClient)
+	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
 
 	update := &types.PartialSummonerRented{
 		Username: "testUser",
@@ -366,9 +336,10 @@ func TestChampionWithMoreChampions(t *testing.T) {
 	mockState := mocks.NewAccountState(t)
 	mockApp := mocks.NewApp(t)
 	mockAccountClient := mocks.NewAccountClient(t)
+	mockSummonerClient := mocks.NewSummonerClient(t)
 	testLogger := logger.New("test", &config.Config{})
 
-	handler := New(testLogger, mockApp, mockState, mockAccountClient)
+	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
 
 	// Current account has 2 champions
 	currentChampions := []int{1, 2}
@@ -416,9 +387,10 @@ func TestChampionWithFewerChampions(t *testing.T) {
 	mockState := mocks.NewAccountState(t)
 	mockApp := mocks.NewApp(t)
 	mockAccountClient := mocks.NewAccountClient(t)
+	mockSummonerClient := mocks.NewSummonerClient(t)
 	testLogger := logger.New("test", &config.Config{})
 
-	handler := New(testLogger, mockApp, mockState, mockAccountClient)
+	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
 
 	// Current account has 3 champions
 	currentChampions := []int{1, 2, 3}
@@ -451,9 +423,10 @@ func TestChampionWithInvalidData(t *testing.T) {
 	mockState := mocks.NewAccountState(t)
 	mockApp := mocks.NewApp(t)
 	mockAccountClient := mocks.NewAccountClient(t)
+	mockSummonerClient := mocks.NewSummonerClient(t)
 	testLogger := logger.New("test", &config.Config{})
 
-	handler := New(testLogger, mockApp, mockState, mockAccountClient)
+	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
 
 	invalidData := []byte(`{"invalid json`)
 	event := websocket.LCUWebSocketEvent{
@@ -472,9 +445,10 @@ func TestChampionWithEmptyData(t *testing.T) {
 	mockState := mocks.NewAccountState(t)
 	mockApp := mocks.NewApp(t)
 	mockAccountClient := mocks.NewAccountClient(t)
+	mockSummonerClient := mocks.NewSummonerClient(t)
 	testLogger := logger.New("test", &config.Config{})
 
-	handler := New(testLogger, mockApp, mockState, mockAccountClient)
+	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
 
 	emptyData := []types.LolInventoryItem{}
 	dataBytes, _ := json.Marshal(emptyData)
@@ -495,9 +469,10 @@ func TestChampionWithNonChampionInventoryType(t *testing.T) {
 	mockState := mocks.NewAccountState(t)
 	mockApp := mocks.NewApp(t)
 	mockAccountClient := mocks.NewAccountClient(t)
+	mockSummonerClient := mocks.NewSummonerClient(t)
 	testLogger := logger.New("test", &config.Config{})
 
-	handler := New(testLogger, mockApp, mockState, mockAccountClient)
+	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
 
 	// Data has only skins, no champions
 	skinsData := []types.LolInventoryItem{
@@ -522,9 +497,10 @@ func TestChampionWithNilCurrentAccount(t *testing.T) {
 	mockState := mocks.NewAccountState(t)
 	mockApp := mocks.NewApp(t)
 	mockAccountClient := mocks.NewAccountClient(t)
+	mockSummonerClient := mocks.NewSummonerClient(t)
 	testLogger := logger.New("test", &config.Config{})
 
-	handler := New(testLogger, mockApp, mockState, mockAccountClient)
+	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
 
 	// New data has 2 champions
 	championsData := []types.LolInventoryItem{
@@ -558,4 +534,422 @@ func TestChampionWithNilCurrentAccount(t *testing.T) {
 	mockState.AssertExpectations(t)
 	mockAccountClient.AssertExpectations(t)
 	mockApp.AssertExpectations(t)
+}
+func TestGameflowPhaseNonEndGamePhase(t *testing.T) {
+	mockState := mocks.NewAccountState(t)
+	mockApp := mocks.NewApp(t)
+	mockAccountClient := mocks.NewAccountClient(t)
+	mockSummonerClient := mocks.NewSummonerClient(t)
+	testLogger := logger.New("test", &config.Config{})
+
+	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
+
+	// Non-end game phase like "ChampSelect" or "InProgress"
+	phase := "ChampSelect"
+	phaseData, _ := json.Marshal(phase)
+	event := websocket.LCUWebSocketEvent{
+		URI:  "lol-gameflow-v1-gameflow-phase",
+		Data: phaseData,
+	}
+
+	handler.GameflowPhase(event)
+
+	// Since it's not an end game phase, summonerClient should not be called
+	mockSummonerClient.AssertNotCalled(t, "GetRanking")
+	mockState.AssertNotCalled(t, "Update")
+}
+
+func TestGameflowPhaseEndGameWithChangedRanking(t *testing.T) {
+	mockState := mocks.NewAccountState(t)
+	mockApp := mocks.NewApp(t)
+	mockAccountClient := mocks.NewAccountClient(t)
+	mockSummonerClient := mocks.NewSummonerClient(t)
+	testLogger := logger.New("test", &config.Config{})
+
+	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
+
+	// End game phase
+	phase := "EndOfGame"
+	phaseData, _ := json.Marshal(phase)
+	event := websocket.LCUWebSocketEvent{
+		URI:  "lol-gameflow-v1-gameflow-phase",
+		Data: phaseData,
+	}
+
+	// Current ranking in account state
+	currentRanking := &types.RankedStatsRefresh{
+		RankedSolo5x5: types.RankedDetails{
+			Tier:         "GOLD",
+			Division:     "II",
+			LeaguePoints: 50,
+		},
+	}
+
+	currentAccount := &types.PartialSummonerRented{
+		Rankings: currentRanking,
+	}
+
+	// New ranking from API
+	newRanking := &types.RankedStatsRefresh{
+		RankedSolo5x5: types.RankedDetails{
+			Tier:         "GOLD",
+			Division:     "I", // Division changed
+			LeaguePoints: 0,
+		},
+	}
+
+	updatedAccount := &types.PartialSummonerRented{
+		Rankings: newRanking,
+	}
+
+	savedResponse := &types.SummonerResponse{}
+
+	mockSummonerClient.On("GetRanking").Return(newRanking, nil)
+	mockState.On("Get").Return(currentAccount)
+	mockState.On("Update", mock.MatchedBy(func(s *types.PartialSummonerRented) bool {
+		return s.Rankings == newRanking
+	})).Return(updatedAccount, nil)
+	mockAccountClient.On("Save", *updatedAccount).Return(savedResponse, nil)
+	mockApp.On("EmitEvent", events.AccountStateChanged, savedResponse).Return()
+
+	handler.GameflowPhase(event)
+
+	mockSummonerClient.AssertExpectations(t)
+	mockState.AssertExpectations(t)
+	mockAccountClient.AssertExpectations(t)
+	mockApp.AssertExpectations(t)
+}
+
+func TestGameflowPhaseEndGameWithUnchangedRanking(t *testing.T) {
+	mockState := mocks.NewAccountState(t)
+	mockApp := mocks.NewApp(t)
+	mockAccountClient := mocks.NewAccountClient(t)
+	mockSummonerClient := mocks.NewSummonerClient(t)
+	testLogger := logger.New("test", &config.Config{})
+
+	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
+
+	// End game phase - let's use another valid phase
+	phase := "WaitingForStats"
+	phaseData, _ := json.Marshal(phase)
+	event := websocket.LCUWebSocketEvent{
+		URI:  "lol-gameflow-v1-gameflow-phase",
+		Data: phaseData,
+	}
+
+	// Ranking that will be the same in current account and in API response
+	sameRanking := types.RankedDetails{
+		Tier:                      "PLATINUM",
+		Division:                  "IV",
+		Rank:                      "IV",
+		LeaguePoints:              25,
+		Wins:                      10,
+		Losses:                    5,
+		IsProvisional:             false,
+		ProvisionalGameThreshold:  0,
+		ProvisionalGamesRemaining: 0,
+	}
+
+	currentRanking := &types.RankedStatsRefresh{
+		RankedSolo5x5: sameRanking,
+		RankedFlexSR:  sameRanking,
+	}
+
+	currentAccount := &types.PartialSummonerRented{
+		Rankings: currentRanking,
+	}
+
+	// New ranking with same values
+	newRanking := &types.RankedStatsRefresh{
+		RankedSolo5x5: sameRanking,
+		RankedFlexSR:  sameRanking,
+	}
+
+	mockSummonerClient.On("GetRanking").Return(newRanking, nil)
+	mockState.On("Get").Return(currentAccount)
+	// No update should be called since rankings are the same
+
+	handler.GameflowPhase(event)
+
+	mockSummonerClient.AssertExpectations(t)
+	mockState.AssertExpectations(t)
+	mockAccountClient.AssertNotCalled(t, "Save")
+}
+
+func TestGameflowPhaseWithInvalidData(t *testing.T) {
+	mockState := mocks.NewAccountState(t)
+	mockApp := mocks.NewApp(t)
+	mockAccountClient := mocks.NewAccountClient(t)
+	mockSummonerClient := mocks.NewSummonerClient(t)
+	testLogger := logger.New("test", &config.Config{})
+
+	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
+
+	// Invalid JSON data
+	invalidData := []byte(`{"invalid json`)
+	event := websocket.LCUWebSocketEvent{
+		URI:  "lol-gameflow-v1-gameflow-phase",
+		Data: invalidData,
+	}
+
+	handler.GameflowPhase(event)
+
+	mockSummonerClient.AssertNotCalled(t, "GetRanking")
+	mockState.AssertNotCalled(t, "Get")
+	mockState.AssertNotCalled(t, "Update")
+}
+
+func TestGameflowPhaseEndGameWithGetRankingError(t *testing.T) {
+	mockState := mocks.NewAccountState(t)
+	mockApp := mocks.NewApp(t)
+	mockAccountClient := mocks.NewAccountClient(t)
+	mockSummonerClient := mocks.NewSummonerClient(t)
+	testLogger := logger.New("test", &config.Config{})
+
+	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
+
+	// End game phase
+	phase := "PreEndOfGame"
+	phaseData, _ := json.Marshal(phase)
+	event := websocket.LCUWebSocketEvent{
+		URI:  "lol-gameflow-v1-gameflow-phase",
+		Data: phaseData,
+	}
+
+	mockSummonerClient.On("GetRanking").Return(nil, assert.AnError)
+	// No further calls should happen
+
+	handler.GameflowPhase(event)
+
+	mockSummonerClient.AssertExpectations(t)
+	mockState.AssertNotCalled(t, "Get")
+	mockState.AssertNotCalled(t, "Update")
+	mockAccountClient.AssertNotCalled(t, "Save")
+}
+
+func TestGameflowPhaseEndGameWithNilCurrentAccount(t *testing.T) {
+	mockState := mocks.NewAccountState(t)
+	mockApp := mocks.NewApp(t)
+	mockAccountClient := mocks.NewAccountClient(t)
+	mockSummonerClient := mocks.NewSummonerClient(t)
+	testLogger := logger.New("test", &config.Config{})
+
+	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
+
+	// End game phase
+	phase := "EndOfGame"
+	phaseData, _ := json.Marshal(phase)
+	event := websocket.LCUWebSocketEvent{
+		URI:  "lol-gameflow-v1-gameflow-phase",
+		Data: phaseData,
+	}
+
+	// New ranking from API
+	newRanking := &types.RankedStatsRefresh{
+		RankedSolo5x5: types.RankedDetails{
+			Tier:         "GOLD",
+			Division:     "I",
+			LeaguePoints: 0,
+		},
+	}
+
+	updatedAccount := &types.PartialSummonerRented{
+		Rankings: newRanking,
+	}
+
+	savedResponse := &types.SummonerResponse{}
+
+	mockSummonerClient.On("GetRanking").Return(newRanking, nil)
+	mockState.On("Get").Return(nil) // Return nil to simulate no current account
+	mockState.On("Update", mock.MatchedBy(func(s *types.PartialSummonerRented) bool {
+		return s.Rankings == newRanking
+	})).Return(updatedAccount, nil)
+	mockAccountClient.On("Save", *updatedAccount).Return(savedResponse, nil)
+	mockApp.On("EmitEvent", events.AccountStateChanged, savedResponse).Return()
+
+	handler.GameflowPhase(event)
+
+	mockSummonerClient.AssertExpectations(t)
+	mockState.AssertExpectations(t)
+	mockAccountClient.AssertExpectations(t)
+	mockApp.AssertExpectations(t)
+}
+func TestIsRankingSame(t *testing.T) {
+	// Base ranking for comparison
+	baseRanking := types.RankedDetails{
+		Tier:                      "GOLD",
+		Division:                  "II",
+		Rank:                      "II",
+		LeaguePoints:              50,
+		Wins:                      100,
+		Losses:                    75,
+		IsProvisional:             false,
+		ProvisionalGameThreshold:  10,
+		ProvisionalGamesRemaining: 0,
+	}
+
+	tests := []struct {
+		name     string
+		oldRank  types.RankedDetails
+		newRank  types.RankedDetails
+		expected bool
+	}{
+		{
+			name:     "Same rankings",
+			oldRank:  baseRanking,
+			newRank:  baseRanking,
+			expected: true,
+		},
+		{
+			name:    "Different Tier",
+			oldRank: baseRanking,
+			newRank: types.RankedDetails{
+				Tier:                      "PLATINUM", // Different
+				Division:                  "II",
+				Rank:                      "II",
+				LeaguePoints:              50,
+				Wins:                      100,
+				Losses:                    75,
+				IsProvisional:             false,
+				ProvisionalGameThreshold:  10,
+				ProvisionalGamesRemaining: 0,
+			},
+			expected: false,
+		},
+		{
+			name:    "Different Division",
+			oldRank: baseRanking,
+			newRank: types.RankedDetails{
+				Tier:                      "GOLD",
+				Division:                  "I", // Different
+				Rank:                      "II",
+				LeaguePoints:              50,
+				Wins:                      100,
+				Losses:                    75,
+				IsProvisional:             false,
+				ProvisionalGameThreshold:  10,
+				ProvisionalGamesRemaining: 0,
+			},
+			expected: false,
+		},
+		{
+			name:    "Different Rank",
+			oldRank: baseRanking,
+			newRank: types.RankedDetails{
+				Tier:                      "GOLD",
+				Division:                  "II",
+				Rank:                      "I", // Different
+				LeaguePoints:              50,
+				Wins:                      100,
+				Losses:                    75,
+				IsProvisional:             false,
+				ProvisionalGameThreshold:  10,
+				ProvisionalGamesRemaining: 0,
+			},
+			expected: false,
+		},
+		{
+			name:    "Different LeaguePoints",
+			oldRank: baseRanking,
+			newRank: types.RankedDetails{
+				Tier:                      "GOLD",
+				Division:                  "II",
+				Rank:                      "II",
+				LeaguePoints:              75, // Different
+				Wins:                      100,
+				Losses:                    75,
+				IsProvisional:             false,
+				ProvisionalGameThreshold:  10,
+				ProvisionalGamesRemaining: 0,
+			},
+			expected: false,
+		},
+		{
+			name:    "Different Wins",
+			oldRank: baseRanking,
+			newRank: types.RankedDetails{
+				Tier:                      "GOLD",
+				Division:                  "II",
+				Rank:                      "II",
+				LeaguePoints:              50,
+				Wins:                      110, // Different
+				Losses:                    75,
+				IsProvisional:             false,
+				ProvisionalGameThreshold:  10,
+				ProvisionalGamesRemaining: 0,
+			},
+			expected: false,
+		},
+		{
+			name:    "Different Losses",
+			oldRank: baseRanking,
+			newRank: types.RankedDetails{
+				Tier:                      "GOLD",
+				Division:                  "II",
+				Rank:                      "II",
+				LeaguePoints:              50,
+				Wins:                      100,
+				Losses:                    80, // Different
+				IsProvisional:             false,
+				ProvisionalGameThreshold:  10,
+				ProvisionalGamesRemaining: 0,
+			},
+			expected: false,
+		},
+		{
+			name:    "Different IsProvisional",
+			oldRank: baseRanking,
+			newRank: types.RankedDetails{
+				Tier:                      "GOLD",
+				Division:                  "II",
+				Rank:                      "II",
+				LeaguePoints:              50,
+				Wins:                      100,
+				Losses:                    75,
+				IsProvisional:             true, // Different
+				ProvisionalGameThreshold:  10,
+				ProvisionalGamesRemaining: 0,
+			},
+			expected: false,
+		},
+		{
+			name:    "Different ProvisionalGameThreshold",
+			oldRank: baseRanking,
+			newRank: types.RankedDetails{
+				Tier:                      "GOLD",
+				Division:                  "II",
+				Rank:                      "II",
+				LeaguePoints:              50,
+				Wins:                      100,
+				Losses:                    75,
+				IsProvisional:             false,
+				ProvisionalGameThreshold:  5, // Different
+				ProvisionalGamesRemaining: 0,
+			},
+			expected: false,
+		},
+		{
+			name:    "Different ProvisionalGamesRemaining",
+			oldRank: baseRanking,
+			newRank: types.RankedDetails{
+				Tier:                      "GOLD",
+				Division:                  "II",
+				Rank:                      "II",
+				LeaguePoints:              50,
+				Wins:                      100,
+				Losses:                    75,
+				IsProvisional:             false,
+				ProvisionalGameThreshold:  10,
+				ProvisionalGamesRemaining: 2, // Different
+			},
+			expected: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := IsRankingSame(test.oldRank, test.newRank)
+			assert.Equal(t, test.expected, result)
+		})
+	}
 }

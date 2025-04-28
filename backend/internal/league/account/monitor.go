@@ -139,12 +139,24 @@ func (am *Monitor) getAccountsWithCache() ([]types.SummonerRented, error) {
 
 	// If cache is empty or expired, fetch fresh data
 	if needsRefresh {
-		_ = am.refreshAccountCache()
+		am.logger.Debug("Fetching fresh account data from repository")
+		accounts, err := am.accountClient.GetAllRented()
+		if err != nil {
+			return nil, err
+		}
+
+		am.cachedAccounts = accounts
+		am.lastAccountsFetch = time.Now()
+		am.logger.Debug("Updated account cache",
+			zap.Int("accountCount", len(accounts)),
+			zap.Time("cacheTimestamp", am.lastAccountsFetch))
 	}
 
 	return am.cachedAccounts, nil
 }
-
+func (am *Monitor) SetWindow(window WindowEmitter) {
+	am.window = window
+}
 func (am *Monitor) Start(window WindowEmitter) {
 	am.window = window
 	fmt.Println("Starting account monitor")

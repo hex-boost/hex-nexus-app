@@ -44,6 +44,7 @@ func TestCheckAndUpdateAccount(t *testing.T) {
 		mockLeagueService.AssertNotCalled(t, "UpdateFromLCU")
 	})
 
+	// "No user logged in" test fix
 	t.Run("No user logged in", func(t *testing.T) {
 		mockLeagueService := mocks.NewLeagueServicer(t)
 		mockAccountMonitor := mocks.NewAccountMonitorer(t)
@@ -52,8 +53,13 @@ func TestCheckAndUpdateAccount(t *testing.T) {
 		mockAccountState := mocks.NewAccountState(t)
 		mockApp := mocks.NewAppEmitter(t)
 
+		// Add this line to mock the Get method
+		currentAccount := &types.PartialSummonerRented{Username: ""}
+		mockAccountState.On("Get").Return(currentAccount)
+
 		mockLeagueService.On("IsLCUConnectionReady").Return(true)
-		mockAccountMonitor.On("GetLoggedInUsername").Return("")
+		// Update this line to mock GetLoggedInUsername with a parameter
+		mockAccountMonitor.On("GetLoggedInUsername", "").Return("")
 
 		cm := NewMonitor(
 			newLogger,
@@ -67,10 +73,11 @@ func TestCheckAndUpdateAccount(t *testing.T) {
 
 		cm.checkAndUpdateAccount()
 
-		mockAccountMonitor.AssertCalled(t, "GetLoggedInUsername")
+		mockAccountMonitor.AssertCalled(t, "GetLoggedInUsername", "")
 		mockLeagueService.AssertNotCalled(t, "UpdateFromLCU")
 	})
 
+	// "Account needs updating" test fix
 	t.Run("Account needs updating", func(t *testing.T) {
 		mockLeagueService := mocks.NewLeagueServicer(t)
 		mockAccountMonitor := mocks.NewAccountMonitorer(t)
@@ -80,18 +87,23 @@ func TestCheckAndUpdateAccount(t *testing.T) {
 		mockApp := mocks.NewAppEmitter(t)
 
 		mockLeagueService.On("IsLCUConnectionReady").Return(true)
-		mockAccountMonitor.On("GetLoggedInUsername").Return("testuser")
-		mockLeagueService.On("UpdateFromLCU", "testuser").Return(nil)
-		mockApp.On("EmitEvent", websocketEvent.LeagueWebsocketStart).Return()
 
 		// Setup account state
 		currentAccount := &types.PartialSummonerRented{
 			Username: "different",
 		}
 		mockAccountState.On("Get").Return(currentAccount)
+
+		// Update to mock GetLoggedInUsername with the expected parameter
+		mockAccountMonitor.On("GetLoggedInUsername", "different").Return("testuser")
+
+		mockLeagueService.On("UpdateFromLCU", "testuser").Return(nil)
+		mockApp.On("EmitEvent", websocketEvent.LeagueWebsocketStart).Return()
+
+		// Two update calls happen - one for initial update, one after UpdateFromLCU
 		mockAccountState.On("Update", mock.MatchedBy(func(update *types.PartialSummonerRented) bool {
 			return update.Username == "testuser"
-		})).Return(currentAccount, nil)
+		})).Return(currentAccount, nil).Twice()
 
 		cm := NewMonitor(
 			newLogger,
@@ -109,6 +121,7 @@ func TestCheckAndUpdateAccount(t *testing.T) {
 		mockApp.AssertCalled(t, "EmitEvent", websocketEvent.LeagueWebsocketStart)
 	})
 
+	// "Error when updating account" test fix
 	t.Run("Error when updating account", func(t *testing.T) {
 		mockLeagueService := mocks.NewLeagueServicer(t)
 		mockAccountMonitor := mocks.NewAccountMonitorer(t)
@@ -118,17 +131,22 @@ func TestCheckAndUpdateAccount(t *testing.T) {
 		mockApp := mocks.NewAppEmitter(t)
 
 		mockLeagueService.On("IsLCUConnectionReady").Return(true)
-		mockAccountMonitor.On("GetLoggedInUsername").Return("testuser")
-		mockLeagueService.On("UpdateFromLCU", "testuser").Return(errors.New("update error"))
 
 		// Setup account state
 		currentAccount := &types.PartialSummonerRented{
 			Username: "different",
 		}
 		mockAccountState.On("Get").Return(currentAccount)
+
+		// Update to mock GetLoggedInUsername with the expected parameter
+		mockAccountMonitor.On("GetLoggedInUsername", "different").Return("testuser")
+
+		mockLeagueService.On("UpdateFromLCU", "testuser").Return(errors.New("update error"))
+
+		// Only the first update happens since UpdateFromLCU returns an error
 		mockAccountState.On("Update", mock.MatchedBy(func(update *types.PartialSummonerRented) bool {
 			return update.Username == "testuser"
-		})).Return(currentAccount, nil)
+		})).Return(currentAccount, nil).Once()
 
 		cm := NewMonitor(
 			newLogger,
