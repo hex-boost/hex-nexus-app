@@ -1,8 +1,8 @@
 // frontend/src/hooks/use-websocket.tsx
 import type { ServerNotification } from '@/types/types.ts';
 import type { Socket } from 'socket.io-client';
+import { NOTIFICATION_EVENTS } from '@/components/notification/types/notification.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
-import { NOTIFICATION_EVENTS } from '@/types/notification.ts';
 import { useCallback, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 
@@ -90,7 +90,7 @@ export function useWebSocket({
         globalSocket = null;
       }
     };
-  }, [url, jwt, handleConnect, handleDisconnect, handleError]);
+  }, [url, jwt, handleConnect, handleDisconnect, handleError, onMessage]);
 
   return {};
 }

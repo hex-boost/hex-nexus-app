@@ -1,7 +1,12 @@
-import type { NotificationPreferences, NotificationPriority } from '@/types/notification.ts';
+import type { NotificationPreferences, NotificationPriority } from '@/components/notification/types/notification.ts';
 import type { ServerNotification, ServerNotificationEvents, UserType, Version } from '@/types/types.ts';
 import type { ReactNode } from 'react';
 import notificationSound from '@/assets/sounds/notification.ogg';
+import {
+  DEFAULT_PREFERENCES,
+  NOTIFICATION_EVENTS,
+  NotificationContext,
+} from '@/components/notification/types/notification.ts';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { useWebSocket } from '@/hooks/use-websocket';
 import { useMembership } from '@/hooks/useMembership.ts';
@@ -9,7 +14,6 @@ import { strapiClient } from '@/lib/strapi.ts';
 import { useAccountStore } from '@/stores/useAccountStore.ts';
 import { usePremiumPaymentModalStore } from '@/stores/usePremiumPaymentModalStore';
 import { useUserStore } from '@/stores/useUserStore.ts';
-import { DEFAULT_PREFERENCES, NOTIFICATION_EVENTS, NotificationContext } from '@/types/notification.ts';
 import { Manager } from '@leagueManager';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Howl } from 'howler';

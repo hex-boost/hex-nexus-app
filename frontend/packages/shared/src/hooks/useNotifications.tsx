@@ -1,8 +1,8 @@
-import { NotificationContext } from '@/types/notification.ts';
-import { useContext } from 'react';
+import { NotificationContext } from '@/components/notification/types/notification.ts';
+import { use } from 'react';
 
 export function useNotifications() {
-  const context = useContext(NotificationContext);
+  const context = use(NotificationContext);
   if (context === undefined) {
     throw new Error('useNotifications must be used within a NotificationProvider');
   }
