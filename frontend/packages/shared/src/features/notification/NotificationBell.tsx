@@ -1,7 +1,7 @@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip.tsx';
-import { useOnClickOutside } from '@/hooks/use-on-click-outside.tsx';
+import { useNotifications } from '@/features/notification/hooks/useNotifications.tsx';
 
-import { useNotifications } from '@/hooks/useNotifications.tsx';
+import { useOnClickOutside } from '@/hooks/use-on-click-outside.tsx';
 import { cn } from '@/lib/utils.ts';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bell } from 'lucide-react';

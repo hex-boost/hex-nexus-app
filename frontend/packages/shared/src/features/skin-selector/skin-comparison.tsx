@@ -1,12 +1,9 @@
-'use client';
-
 import type { Champion, Skin } from '@/components/character-selection';
 import Breadcrumb from '@/components/breadcrumb';
 import { Button } from '@/components/ui/button.tsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.tsx';
 import { motion } from 'framer-motion';
 import { ChevronLeft, X } from 'lucide-react';
-import Image from 'next/image';
 
 type SkinTag = {
   id: string;
@@ -110,11 +107,10 @@ export default function SkinComparison({ items, onRemove, onBack, animationDurat
 
                           <div className="bg-shade9 rounded-lg overflow-hidden border border-border">
                             <div className="relative h-[400px]">
-                              <Image
+                              <img
                                 src={skin.image || '/placeholder.svg'}
                                 alt={`${champion.name} - ${skin.name}`}
                                 className="object-cover"
-                                fill
                                 sizes="(max-width: 768px) 100vw, 33vw"
                               />
                             </div>
@@ -183,7 +179,7 @@ export default function SkinComparison({ items, onRemove, onBack, animationDurat
                             {items.map(({ skin }) => (
                               <td key={skin.id} className="p-3">
                                 <div className="flex flex-wrap gap-1">
-                                  <span className="px-2 py-0.5 bg-shade8 rounded-full text-xs">Image</span>
+                                  <span className="px-2 py-0.5 bg-shade8 rounded-full text-xs">img</span>
                                   {skin.webm && <span className="px-2 py-0.5 bg-shade8 rounded-full text-xs">Video</span>}
                                   {skin.model3d && (
                                     <span className="px-2 py-0.5 bg-shade8 rounded-full text-xs">3D Model</span>
@@ -223,11 +219,10 @@ export default function SkinComparison({ items, onRemove, onBack, animationDurat
                                     ? (
                                         <div className="flex items-center gap-2">
                                           <div className="w-10 h-10 rounded overflow-hidden relative flex-shrink-0">
-                                            <Image
+                                            <img
                                               src={skin.abilities[index].image || '/placeholder.svg'}
                                               alt={skin.abilities[index].name}
                                               className="object-cover"
-                                              fill
                                               sizes="40px"
                                             />
                                           </div>

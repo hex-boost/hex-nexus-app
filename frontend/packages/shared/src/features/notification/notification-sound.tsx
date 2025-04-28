@@ -1,4 +1,4 @@
-import { useNotifications } from '@/hooks/useNotifications.tsx';
+import { useNotifications } from '@/features/notification/hooks/useNotifications.tsx';
 import { useEffect, useRef } from 'react';
 
 type NotificationSoundProps = {

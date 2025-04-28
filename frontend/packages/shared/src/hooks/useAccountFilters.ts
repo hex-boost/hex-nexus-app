@@ -1,5 +1,5 @@
 import type { AccountType } from '@/types/types';
-import { useAllDataDragon } from '@/hooks/useDataDragon';
+import { useAllDataDragon } from '@/hooks/useDataDragon/useDataDragon.ts';
 import { useMemo, useState } from 'react';
 
 export function useAccountFilters({

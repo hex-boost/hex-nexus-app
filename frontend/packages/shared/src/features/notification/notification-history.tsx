@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input.tsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select.tsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.tsx';
 import { CustomScrollbar } from '@/features/notification/CustomScrollbar.tsx';
-import { useNotifications } from '@/hooks/useNotifications.tsx';
+import { useNotifications } from '@/features/notification/hooks/useNotifications.tsx';
 import { AlertOctagon, AlertTriangle, Calendar, CheckCircle, Clock, Filter, Info, Search } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { NotificationEmptyState } from './notification-empty-state.tsx';

@@ -1,4 +1,4 @@
-import type { ChampionById, DDragonChampionsData } from '@/types/ddragon.ts';
+import type { ChampionById, DDragonChampionsData } from '@/hooks/useDataDragon/types/ddragon.ts';
 import { useQuery } from '@tanstack/react-query';
 import { openDB } from 'idb';
 import { useEffect, useMemo, useState } from 'react';

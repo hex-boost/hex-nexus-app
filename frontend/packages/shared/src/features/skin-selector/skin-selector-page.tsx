@@ -1,9 +1,9 @@
-import type { Champion, Chroma, Skin, UserPreferences } from '@/components/character-selection';
+import type { Champion, Chroma, Skin, UserPreferences } from '@/features/skin-selector/components/character-selection';
 import type { SkinHistoryEntry } from '@/features/skin-selector/skin-history.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { Input } from '@/components/ui/input.tsx';
-import SkinHistory, { addToSkinHistory } from '@/features/skin-selector/skin-history.tsx';
-import SkinTags from '@/features/skin-selector/skin-tags.tsx';
+import { addToSkinHistory, SkinHistory } from '@/features/skin-selector/skin-history.tsx';
+import { SkinTags } from '@/features/skin-selector/skin-tags.tsx';
 import { useLocalStorage } from '@/hooks/use-local-storage.tsx';
 import { Search, X } from 'lucide-react';
 import { useState } from 'react';

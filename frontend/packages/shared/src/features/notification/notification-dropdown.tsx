@@ -1,5 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.tsx';
-import { useNotifications } from '@/hooks/useNotifications.tsx';
+import { useNotifications } from '@/features/notification/hooks/useNotifications.tsx';
 import { cn } from '@/lib/utils.ts';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bell, Check, Cog, X } from 'lucide-react';

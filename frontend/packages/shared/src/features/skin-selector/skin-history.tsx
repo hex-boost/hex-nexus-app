@@ -1,13 +1,10 @@
-'use client';
-
-import type { Champion, Skin } from '@/components/character-selection';
+import type { Champion, Skin } from '@/features/skin-selector/components/character-selection.tsx';
 
 import type React from 'react';
 import { Button } from '@/components/ui/button.tsx';
 import { ScrollArea } from '@/components/ui/scroll-area.tsx';
 import { motion } from 'framer-motion';
 import { Clock, Search, Trash2 } from 'lucide-react';
-import Image from 'next/image';
 import { useCallback, useEffect, useState } from 'react';
 
 export type SkinHistoryEntry = {
@@ -78,11 +75,10 @@ export function SkinHistory({ onSelectSkin, onClearHistory }: SkinHistoryProps) 
               onClick={() => onSelectSkin(entry.championId, entry.skinId)}
             >
               <div className="relative w-16 h-16 rounded-md overflow-hidden mb-1">
-                <Image
+                <img
                   src={entry.skinImage || '/placeholder.svg'}
                   alt={`${entry.championName} - ${entry.skinName}`}
                   className="object-cover transition-transform group-hover:scale-110"
-                  fill
                   sizes="64px"
                 />
               </div>

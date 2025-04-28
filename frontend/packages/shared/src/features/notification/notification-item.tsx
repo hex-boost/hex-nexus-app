@@ -1,6 +1,6 @@
 import type { ServerNotification } from '@/types/types.ts';
 import type React from 'react';
-import { useNotifications } from '@/hooks/useNotifications.tsx';
+import { useNotifications } from '@/features/notification/hooks/useNotifications.tsx';
 import { cn } from '@/lib/utils.ts';
 import { formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';

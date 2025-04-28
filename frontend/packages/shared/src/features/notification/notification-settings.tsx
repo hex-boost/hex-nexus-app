@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button.tsx';
 import { Slider } from '@/components/ui/slider.tsx';
 import { Switch } from '@/components/ui/switch.tsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.tsx';
-import { useNotifications } from '@/hooks/useNotifications.tsx';
+import { useNotifications } from '@/features/notification/hooks/useNotifications.tsx';
 import { cn } from '@/lib/utils.ts';
 import {
   AlertOctagon,
