@@ -49,8 +49,8 @@ type ChampionListProps = {
   champions: FormattedChampion[];
   isLoading: boolean;
   onSelectChampion: (champion: FormattedChampion) => void;
-  getSelectedSkin: (champion: FormattedChampion) => Skin; // Changed from Skin to FormattedChampion parameter
-  getSelectedChroma: (skin: Skin, championId: string) => any | null; // Changed parameter type to FormattedSkin
+  getSelectedSkin: (champion: FormattedChampion) => FormattedSkin; // Changed from Skin to FormattedChampion parameter
+  getSelectedChroma: (skin: FormattedSkin, championId: string) => any | null; // Changed parameter type to FormattedSkin
   layout: 'grid' | 'list' | 'compact'; // Use literal union type instead of string
   gridSize: 'small' | 'medium' | 'large'; // Use literal union type instead of string
   animationDuration: number;
@@ -223,13 +223,13 @@ export default function CharacterSelection({
       ) {
         return champion.skins.some((skin) => {
           // Basic filters
-          const matchesSkinLine = !memoizedFilters.skinLine || skin.skinLine === memoizedFilters.skinLine;
-          const matchesRarity = !memoizedFilters.rarity || skin.rarity === memoizedFilters.rarity;
-          const matchesYear
-                        = !memoizedFilters.releaseYear
-                          || new Date(skin.releaseDate).getFullYear().toString() === memoizedFilters.releaseYear;
-
-          return matchesSkinLine && matchesRarity && matchesYear;
+          // const matchesSkinLine = !memoizedFilters.skinLine || skin.skinLine === memoizedFilters.skinLine;
+          // const matchesRarity = !memoizedFilters.rarity || skin.rarity === memoizedFilters.rarity;
+          // const matchesYear
+          //               = !memoizedFilters.releaseYear
+          //                 || new Date(skin.releaseDate).getFullYear().toString() === memoizedFilters.releaseYear;
+          return true;
+          // return matchesSkinLine && matchesRarity && matchesYear;
         });
       }
 
@@ -248,7 +248,7 @@ export default function CharacterSelection({
 
   // Get the selected skin for a champion
   const getSelectedSkin = useCallback(
-    (champion: FormattedChampion): Skin => {
+    (champion: FormattedChampion): FormattedSkin => {
       const pref = userPreferences[Number(champion.id)];
       if (!pref) {
         return champion.skins[0];
@@ -555,93 +555,6 @@ export default function CharacterSelection({
               </div>
 
               <div className="p-6">
-                {/* Recently added section */}
-                <div className="mb-8">
-                  <h2 className="text-2xl font-bold mb-4 text-foreground flex items-center">
-                    Recently Added
-                    <span className="ml-2 text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">New</span>
-                  </h2>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* {isLoading */}
-                    {/*  ? Array.from({ length: 3 }) */}
-                    {/*      .fill(0) */}
-                    {/*      .map((_, index) => ( */}
-                    {/*        <div key={index} className="space-y-2"> */}
-                    {/*          <Skeleton className="h-[180px] w-full rounded-lg" /> */}
-                    {/*          <Skeleton className="h-4 w-24" /> */}
-                    {/*          <Skeleton className="h-3 w-16" /> */}
-                    {/*        </div> */}
-                    {/*      )) */}
-                    {/*  : recentlyAddedSkins.map(item => ( */}
-                    {/*      <motion.div */}
-                    {/*        key={item.skin.id} */}
-                    {/*        whileHover={{ scale: 1.02 }} */}
-                    {/*        whileTap={{ scale: 0.98 }} */}
-                    {/*        transition={{ duration: getAnimationDuration() }} */}
-                    {/*        className="group" */}
-                    {/*      > */}
-                    {/*        <div className="relative overflow-hidden rounded-lg cursor-pointer h-[180px]"> */}
-                    {/*          <div className="absolute inset-0 bg-gradient-to-t from-shade10 via-transparent to-transparent z-10" /> */}
-                    {/*          <img */}
-                    {/*            src={item.skin.image || '/placeholder.svg'} */}
-                    {/*            alt={`${item.champion} - ${item.skin.name}`} */}
-                    {/*            className="object-cover transition-transform group-hover:scale-105" */}
-                    {/*            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" */}
-                    {/*          /> */}
-                    {/*          <div className="absolute top-2 right-2 z-20"> */}
-                    {/*            <div className="px-2 py-0.5 bg-primary/80 rounded-full text-xs font-medium"> */}
-                    {/*              {item.skin.rarity} */}
-                    {/*            </div> */}
-                    {/*          </div> */}
-                    {/*          <div className="absolute bottom-0 left-0 right-0 p-3 z-20"> */}
-                    {/*            <h3 className="text-foreground font-semibold">{item.skin.name}</h3> */}
-                    {/*            <p className="text-xs text-muted-foreground">{item.champion}</p> */}
-                    {/*          </div> */}
-                    {/*        </div> */}
-                    {/*      </motion.div> */}
-                    {/*    ))} */}
-                  </div>
-                </div>
-
-                <h2 className="text-2xl font-bold mb-4 text-foreground">Featured Champions</h2>
-
-                {/* Featured champions grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                  {/* {isLoading */}
-                  {/*  ? Array.from({ length: 3 }) */}
-                  {/*      .fill(0) */}
-                  {/*      .map((_, index) => ( */}
-                  {/*        <div key={index} className="space-y-2"> */}
-                  {/*          <Skeleton className="h-[220px] w-full rounded-lg" /> */}
-                  {/*          <Skeleton className="h-4 w-24" /> */}
-                  {/*        </div> */}
-                  {/*      )) */}
-                  {/*  : featuredChampions.map((champion) => { */}
-                  {/*      const selectedSkin = getSelectedSkin(champion); */}
-                  {/*      const selectedChroma = getSelectedChroma(selectedSkin, champion.id); */}
-
-                  {/*      return ( */}
-                  {/*        <motion.div */}
-                  {/*          key={champion.id} */}
-                  {/*          whileHover={{ scale: 1.02 }} */}
-                  {/*          whileTap={{ scale: 0.98 }} */}
-                  {/*          transition={{ duration: getAnimationDuration() }} */}
-                  {/*        > */}
-                  {/*          <CharacterCard */}
-                  {/*            champion={champion} */}
-                  {/*            onClick={() => { */}
-                  {/*              setSelectedChampion(champion); */}
-                  {/*              setViewState('champion'); */}
-                  {/*            }} */}
-                  {/*            featured={true} */}
-                  {/*            selectedSkin={selectedSkin} */}
-                  {/*            selectedChroma={selectedChroma} */}
-                  {/*          /> */}
-                  {/*        </motion.div> */}
-                  {/*      ); */}
-                  {/*    })} */}
-                </div>
 
                 <h2 className="text-2xl font-bold mb-4 text-foreground">All Champions</h2>
 

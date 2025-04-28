@@ -150,15 +150,26 @@ export function useAllDataDragon(): UseDataDragonHook {
     }
 
     const version = versionQuery.data;
-    return championDetails.map((champion: ChampionByID) => ({
-      skins: champion.skins,
-      id: champion.key,
-      name: champion.name,
-      title: champion.title,
-      imageUrl: `https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${champion.image.full}`,
-    }));
-  }, [versionQuery.data, allChampionDetailsQuery.data, championsQuery.data]);
+    return championDetails.map((champion: ChampionByID) => {
+      // Transform raw skins into FormattedSkin objects
+      const formattedSkins = champion.skins.map(skin => ({
+        id: Number.parseInt(skin.id),
+        name: skin.name || 'Default',
+        champion: champion.name,
+        imageAvatarUrl: `https://ddragon.leagueoflegends.com/cdn/img/champion/loading/${champion.id}_${skin.num}.jpg`,
+        rarity: determineRarity(skin),
+        imageUrl: `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${champion.id}_${skin.num}.jpg`,
+      }));
 
+      return {
+        id: champion.key,
+        name: champion.name,
+        title: champion.title,
+        imageUrl: `https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${champion.image.full}`,
+        skins: formattedSkins,
+      };
+    });
+  }, [versionQuery.data, allChampionDetailsQuery.data]);
   const allSkins = useMemo(() => {
     if (!versionQuery.data || !allChampionDetailsQuery.data) {
       return [];

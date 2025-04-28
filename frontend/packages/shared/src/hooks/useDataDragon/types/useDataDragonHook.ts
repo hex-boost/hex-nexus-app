@@ -1,5 +1,5 @@
 // Main hook return type
-import type {Champions, Image, Info, Skin, Stats} from '@/hooks/useDataDragon/types/ddragon.ts';
+import type {Champions, Image, Info, Stats} from '@/hooks/useDataDragon/types/ddragon.ts';
 
 export type FormattedSkin = {
   id: number;
@@ -20,7 +20,7 @@ export type FormattedChampion = {
   name: string;
   title: string;
   imageUrl: string;
-  skins: Skin[];
+  skins: FormattedSkin[];
 };
 
 export type UseDataDragonHook = {

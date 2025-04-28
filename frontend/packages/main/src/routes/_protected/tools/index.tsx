@@ -9,7 +9,7 @@ export const Route = createFileRoute('/_protected/tools/')({
 });
 
 function RouteComponent() {
-  const { allChampions,allSkins } = useAllDataDragon();
+  const { allChampions, allSkins } = useAllDataDragon();
 
   const handleSelectSkin = (champion: FormattedChampion, skin: Skin, chroma: any | null = null) => {
     // Handle skin selection
@@ -18,7 +18,7 @@ function RouteComponent() {
 
   return (
     <CharacterSelection
-        skins={allSkins}
+      skins={allSkins}
       champions={allChampions}
       onSelectSkin={handleSelectSkin}
       initialChampionId={undefined}
