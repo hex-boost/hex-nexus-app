@@ -1,4 +1,4 @@
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card.tsx';
 import { useEffect, useRef, useState } from 'react';
 
 type OrderActionTabsProps = {

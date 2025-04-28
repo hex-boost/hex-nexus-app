@@ -1,7 +1,7 @@
 import type { UserType } from '@/types/types';
-import FavoriteAccounts from '@/components/FavoriteAccounts.tsx';
 import { Separator } from '@/components/ui/separator.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
+import FavoriteAccounts from '@/features/favorite-account/components/FavoriteAccounts.tsx';
 import { Activity, Shield, Star } from 'lucide-react';
 import CurrentlyRentedAccounts from './currently-rented-accounts';
 import SubscriptionStatus from './subscription-status';

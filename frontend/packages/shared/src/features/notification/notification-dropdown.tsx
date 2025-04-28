@@ -1,13 +1,13 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.tsx';
 import { useNotifications } from '@/hooks/useNotifications.tsx';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils.ts';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bell, Check, Cog, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { CustomScrollbar } from './CustomScrollbar.tsx';
-import { NotificationEmptyState } from './notification-empty-state';
-import { NotificationItem } from './notification-item';
-import { NotificationSettings } from './notification-settings';
+import { NotificationEmptyState } from './notification-empty-state.tsx';
+import { NotificationItem } from './notification-item.tsx';
+import { NotificationSettings } from './notification-settings.tsx';
 
 export function NotificationDropdown() {
   const { notifications, markAllAsRead, clearAll, isDropdownOpen, setIsDropdownOpen, unreadCount } = useNotifications();

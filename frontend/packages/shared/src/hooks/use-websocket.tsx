@@ -1,7 +1,7 @@
 // frontend/src/hooks/use-websocket.tsx
 import type { ServerNotification } from '@/types/types.ts';
 import type { Socket } from 'socket.io-client';
-import { NOTIFICATION_EVENTS } from '@/components/notification/types/notification.ts';
+import { NOTIFICATION_EVENTS } from '@/features/notification/types/notification.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { useCallback, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';

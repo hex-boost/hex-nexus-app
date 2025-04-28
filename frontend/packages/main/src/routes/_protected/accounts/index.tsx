@@ -1,6 +1,6 @@
 import type { Price } from '@/types/price.ts';
 import type { AccountType, RankingType } from '@/types/types.ts';
-import { AccountsPagination } from '@/components/AccountsPagination';
+import { AccountsPagination } from '@/components/account-table/components/AccountsPagination.tsx';
 import { CoinIcon } from '@/components/coin-icon';
 import { AccountGameIcon } from '@/components/GameComponents';
 import { GameRankDisplay } from '@/components/GameRankDisplay.tsx';

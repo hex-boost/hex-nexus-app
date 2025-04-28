@@ -1,4 +1,4 @@
-import AccountDetails from '@/components/account-details.tsx';
+import AccountDetails from '@/components/account-id/account-details.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton.tsx';

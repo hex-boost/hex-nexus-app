@@ -1,13 +1,13 @@
-import { CustomScrollbar } from '@/components/notification/CustomScrollbar.tsx';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button.tsx';
+import { Input } from '@/components/ui/input.tsx';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select.tsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.tsx';
+import { CustomScrollbar } from '@/features/notification/CustomScrollbar.tsx';
 import { useNotifications } from '@/hooks/useNotifications.tsx';
 import { AlertOctagon, AlertTriangle, Calendar, CheckCircle, Clock, Filter, Info, Search } from 'lucide-react';
 import { useRef, useState } from 'react';
-import { NotificationEmptyState } from './notification-empty-state';
-import { NotificationItem } from './notification-item';
+import { NotificationEmptyState } from './notification-empty-state.tsx';
+import { NotificationItem } from './notification-item.tsx';
 
 export function NotificationHistory() {
   const { notifications, markAllAsRead, clearAll } = useNotifications();

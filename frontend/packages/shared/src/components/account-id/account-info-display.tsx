@@ -1,6 +1,6 @@
 import type { RankingType } from '@/types/types.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils.ts';
 
 type AccountInfoDisplayProps = {
   accountId: string;

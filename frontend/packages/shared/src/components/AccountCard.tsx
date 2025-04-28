@@ -1,13 +1,13 @@
 import type { AccountType } from '@/types/types.ts';
 import { CoinIcon } from '@/components/coin-icon.tsx';
-import { FavoriteAccountNote } from '@/components/FavoriteAccountNote.tsx';
-import { FavoriteStar } from '@/components/FavoriteStar.tsx';
 import { AccountGameIcon } from '@/components/GameComponents';
 import { GameRankDisplay } from '@/components/GameRankDisplay.tsx';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
+import { FavoriteAccountNote } from '@/features/favorite-account/components/FavoriteAccountNote.tsx';
+import { FavoriteStar } from '@/features/favorite-account/components/FavoriteStar.tsx';
 import { useDateTime } from '@/hooks/useDateTime.ts';
 import { useFavoriteAccounts } from '@/hooks/useFavoriteAccounts.ts';
 import { usePrice } from '@/hooks/usePrice.ts';

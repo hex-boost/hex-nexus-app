@@ -1,16 +1,16 @@
 import type { AccountType } from '@/types/types.ts';
-import { ChampionsSkinsTab } from '@/components/ChampionsSkinsTab.tsx';
+import { ChampionsSkinsTab } from '@/components/account-id/ChampionsSkinsTab.tsx';
 import { CoinIcon } from '@/components/coin-icon.tsx';
 import { CopyToClipboard } from '@/components/CopyToClipboard.tsx';
-import { DropAccountAction } from '@/components/DropAccountAction';
-import { FavoriteAccountNote } from '@/components/FavoriteAccountNote.tsx';
-import { FavoriteStar } from '@/components/FavoriteStar.tsx';
+import { DropAccountAction } from '@/components/DropAccountAction.tsx';
 import { RentedAccountButton } from '@/components/RentedAccountAction.tsx';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button.tsx';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card.tsx';
+import { Input } from '@/components/ui/input.tsx';
 import { Separator } from '@/components/ui/separator.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
+import { FavoriteAccountNote } from '@/features/favorite-account/components/FavoriteAccountNote.tsx';
+import { FavoriteStar } from '@/features/favorite-account/components/FavoriteStar.tsx';
 import { useAccountActions } from '@/hooks/useAccountActions.ts';
 import { useAccountFilters } from '@/hooks/useAccountFilters.ts';
 import { getLeaverBusterInfo } from '@/hooks/useAccounts.tsx';
@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { AlertCircle, AlertOctagon, AlertTriangle, Check, CircleCheckBig, Clock, Search, Shield, X } from 'lucide-react';
 import { useState } from 'react';
-import AccountInfoDisplay from './account-info-display';
+import AccountInfoDisplay from './account-info-display.tsx';
 
 function LeaverBusterDisplay({ account, compact = false }: {
   account: AccountType;

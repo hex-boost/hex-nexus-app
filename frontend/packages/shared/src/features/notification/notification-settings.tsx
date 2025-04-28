@@ -1,10 +1,10 @@
 import type { ServerNotificationEvents } from '@/types/types.ts';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button.tsx';
+import { Slider } from '@/components/ui/slider.tsx';
+import { Switch } from '@/components/ui/switch.tsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.tsx';
 import { useNotifications } from '@/hooks/useNotifications.tsx';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils.ts';
 import {
   AlertOctagon,
   AlertTriangle,
@@ -270,7 +270,7 @@ export function NotificationSettings({ inDropdown = false }: NotificationSetting
                         // Play test sound
                         const audio = new Audio('/sounds/account-expired.mp3');
                         audio.volume = volume / 100;
-                        audio.play();
+                        audio.play().then(r => r);
                       }
                     }}
                     className={cn(
@@ -295,7 +295,7 @@ export function NotificationSettings({ inDropdown = false }: NotificationSetting
                         // Play test sound
                         const audio = new Audio('/sounds/notification.mp3');
                         audio.volume = volume / 100;
-                        audio.play();
+                        audio.play().then(r => r);
                       }
                     }}
                     className={cn(

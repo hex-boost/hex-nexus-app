@@ -1,6 +1,6 @@
 // frontend/src/components/FavoriteStar.tsx
 import type { AccountType } from '@/types/types.ts';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip.tsx';
 import { useFavoriteAccounts } from '@/hooks/useFavoriteAccounts.ts';
 import { cn } from '@/lib/utils.ts';
 import { Star } from 'lucide-react';

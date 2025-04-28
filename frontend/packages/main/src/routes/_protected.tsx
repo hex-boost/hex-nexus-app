@@ -3,8 +3,6 @@ import AdminPanelLayout from '@/components/admin-panel/admin-panel-layout.tsx';
 import { CloseConfirmationHandler } from '@/components/CloseConfirmation.tsx';
 import { CoinIcon } from '@/components/coin-icon.tsx';
 import { DefaultContextMenu } from '@/components/DefaultContextMenu.tsx';
-import { NotificationProvider } from '@/components/notification/notification-provider.tsx';
-import { NotificationBell } from '@/components/notification/NotificationBell.tsx';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import {
@@ -22,6 +20,8 @@ import { Textarea } from '@/components/ui/textarea.tsx';
 import { UserProfile } from '@/components/UserProfile.tsx';
 import { WindowControls } from '@/components/WindowControls.tsx';
 import { ContextMenuProvider } from '@/contexts/ContextMenuContext.tsx';
+import { NotificationProvider } from '@/features/notification/notification-provider.tsx';
+import { NotificationBell } from '@/features/notification/NotificationBell.tsx';
 import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
 import { useFavoriteAccounts } from '@/hooks/useFavoriteAccounts.ts';
 import { useUserStore } from '@/stores/useUserStore';

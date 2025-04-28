@@ -1,4 +1,4 @@
-import { GameOverlay } from '@/components/GameOverlay.tsx';
+import { GameOverlay } from '@/features/game-overlay/components/GameOverlay.tsx';
 import { Overlay } from '@overlay';
 
 export function GameOverlayPage() {

@@ -6,7 +6,7 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from '@/components/ui/pagination';
+} from '@/components/ui/pagination.tsx';
 import React from 'react';
 
 type AccountsPaginationProps = {

@@ -1,4 +1,4 @@
-import { NotificationContext } from '@/components/notification/types/notification.ts';
+import { NotificationContext } from '@/features/notification/types/notification.ts';
 import { use } from 'react';
 
 export function useNotifications() {

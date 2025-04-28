@@ -1,8 +1,8 @@
 import type { UserType } from '@/types/types.ts';
 import { AccountCard } from '@/components/AccountCard.tsx';
-import { NoFavoritesFound } from '@/components/empty-states';
+import { NoFavoritesFound } from '@/components/empty-states.tsx';
 import { ScrollArea } from '@/components/ui/scroll-area.tsx';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils.ts';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { ArrowRight } from 'lucide-react';
 

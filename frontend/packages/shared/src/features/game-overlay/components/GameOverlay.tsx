@@ -1,4 +1,4 @@
-import type { ExtensionOption } from './extend-rental';
+import type { ExtensionOption } from '../../../components/extend-rental.ts';
 import logoHexBoost from '@/assets/logo-hex-boost.svg';
 
 import {
@@ -8,15 +8,15 @@ import {
   AnimatedTimeDisplay,
 } from '@/components/AnimatedNumber.tsx';
 import { CoinIcon } from '@/components/coin-icon.tsx';
-import { QuickExtendButtons } from '@/components/GameOverlayQuickExtend.tsx';
-import { GameOverlaySkeleton } from '@/components/GameOverlaySkeleton.tsx';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/components/ui/badge.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
-import { TooltipProvider } from '@/components/ui/tooltip';
+import { TooltipProvider } from '@/components/ui/tooltip.tsx';
+import { QuickExtendButtons } from '@/features/game-overlay/components/GameOverlayQuickExtend.tsx';
+import { GameOverlaySkeleton } from '@/features/game-overlay/components/GameOverlaySkeleton.tsx';
 import { useOverlayAccount } from '@/hooks/useOverlayAccount.ts';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { Monitor as AccountMonitor } from '@account';
 import { useQuery } from '@tanstack/react-query';

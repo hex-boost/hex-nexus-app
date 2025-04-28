@@ -1,8 +1,8 @@
-import type { ExtensionOption } from './extend-rental';
+import type { ExtensionOption } from '../../../components/extend-rental.ts';
 import { CoinIcon } from '@/components/coin-icon.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { usePrice } from '@/hooks/usePrice.ts';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils.ts';
 import React from 'react';
 
 export function QuickExtendButtons({

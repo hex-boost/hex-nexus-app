@@ -1,7 +1,7 @@
 import type { ServerNotification } from '@/types/types.ts';
 import type React from 'react';
 import { useNotifications } from '@/hooks/useNotifications.tsx';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils.ts';
 import { formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
 import { AlertOctagon, AlertTriangle, CheckCircle, Clock, Eye, EyeOff, Info, X } from 'lucide-react';

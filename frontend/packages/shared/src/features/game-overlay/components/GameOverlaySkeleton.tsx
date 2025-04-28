@@ -1,6 +1,6 @@
 import logoHexBoost from '@/assets/logo-hex-boost.svg';
 import { Button } from '@/components/ui/button.tsx';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils.ts';
 import { XIcon } from 'lucide-react';
 
 type GameOverlaySkeletonProps = {
