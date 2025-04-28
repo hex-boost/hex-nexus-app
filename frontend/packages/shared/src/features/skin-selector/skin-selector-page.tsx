@@ -1,16 +1,24 @@
-import type { Champion, Chroma, Skin, UserPreferences } from '@/features/skin-selector/components/character-selection';
-import type { SkinHistoryEntry } from '@/features/skin-selector/skin-history.tsx';
-import { Button } from '@/components/ui/button.tsx';
-import { Input } from '@/components/ui/input.tsx';
-import { addToSkinHistory, SkinHistory } from '@/features/skin-selector/skin-history.tsx';
-import { SkinTags } from '@/features/skin-selector/skin-tags.tsx';
-import { useLocalStorage } from '@/hooks/use-local-storage.tsx';
-import { Search, X } from 'lucide-react';
-import { useState } from 'react';
+import type {UserPreferences} from '@/features/skin-selector/components/character-selection';
+import type {SkinHistoryEntry} from '@/features/skin-selector/skin-history.tsx';
+import {addToSkinHistory, SkinHistory} from '@/features/skin-selector/skin-history.tsx';
+import type {FormattedChampion, FormattedSkin} from '@/hooks/useDataDragon/types/useDataDragonHook.ts';
+import {Button} from '@/components/ui/button.tsx';
+import {Input} from '@/components/ui/input.tsx';
+import {SkinTags} from '@/features/skin-selector/skin-tags.tsx';
+import {useLocalStorage} from '@/hooks/use-local-storage.tsx';
+import {Search, X} from 'lucide-react';
+import {useState} from 'react';
+
+// Define the Chroma type that's missing
+type Chroma = {
+  id: string;
+  name: string;
+  chromaPath: string;
+};
 
 type SkinSelectorPageProps = {
-  champions: Champion[];
-  onSelectSkin: (champion: Champion, skin: Skin, chroma?: Chroma | null) => void;
+  champions: FormattedChampion[];
+  onSelectSkin: (champion: FormattedChampion, skin: FormattedSkin, chroma?: any | null) => void;
   initialChampionId?: number;
   initialSkinId?: number;
 };
@@ -27,14 +35,14 @@ export default function SkinSelectorPage({
   const [userPreferences] = useLocalStorage<UserPreferences>('champion-preferences', {});
 
   // Find initial champion and skin if provided
-  const initialChampion = initialChampionId ? champions.find(c => c.id === initialChampionId) : null;
+  const initialChampion = initialChampionId ? champions.find(c => c.id === initialChampionId.toString()) : null;
 
   const initialSkin
-    = initialChampion && initialSkinId ? initialChampion.skins.find(s => s.id === initialSkinId) : null;
+    = initialChampion && initialSkinId ? initialChampion.skins?.find(s => s.id === initialSkinId) : null;
 
-  // Set up state for selected champion and skin
-  const [selectedChampion, setSelectedChampion] = useState<Champion | null>(initialChampion);
-  const [selectedSkin, setSelectedSkin] = useState<Skin | null>(initialSkin);
+  // Set up state for selected champion and skin with proper types
+  const [selectedChampion, setSelectedChampion] = useState<FormattedChampion | undefined | null>(initialChampion);
+  const [selectedSkin, setSelectedSkin] = useState<FormattedSkin | undefined | null>(initialSkin);
   const [selectedChroma, setSelectedChroma] = useState<Chroma | null>(null);
 
   // Handle tag selection
@@ -54,12 +62,12 @@ export default function SkinSelectorPage({
 
   // Handle skin selection from history
   const handleSelectFromHistory = (championId: number, skinId: number) => {
-    const champion = champions.find(c => c.id === championId);
+    const champion = champions.find(c => c.id === championId.toString());
     if (!champion) {
       return;
     }
 
-    const skin = champion.skins.find(s => s.id === skinId);
+    const skin = champion.skins?.find(s => s.id === skinId);
     if (!skin) {
       return;
     }
@@ -95,7 +103,7 @@ export default function SkinSelectorPage({
     }
 
     // Check if any skin matches the selected tags
-    return champion.skins.some((skin) => {
+    return champion.skins?.some((skin) => {
       // Check skin line tags
       const skinLineTags = selectedTags.filter(tag => tag.startsWith('skin-line-'));
       if (

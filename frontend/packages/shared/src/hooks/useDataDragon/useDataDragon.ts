@@ -1,52 +1,16 @@
-import type { ChampionById, DDragonChampionsData } from '@/hooks/useDataDragon/types/ddragon.ts';
-import { useQuery } from '@tanstack/react-query';
-import { openDB } from 'idb';
-import { useEffect, useMemo, useState } from 'react';
+import type {ChampionById, DDragonChampionsData} from '@/hooks/useDataDragon/types/ddragon.ts';
+import type {UseDataDragonHook} from '@/hooks/useDataDragon/types/useDataDragonHook.ts';
+import {
+    CACHE_STORE_NAME,
+    clearCache,
+    getDB,
+    getFromCache,
+    saveToCache,
+} from '@/hooks/useDataDragon/use-data-dragon-cache.ts';
+import {useQuery} from '@tanstack/react-query';
+import {useEffect, useMemo, useState} from 'react';
 
-const CACHE_DB_NAME = 'nexus_ddragon_cache';
-const CACHE_STORE_NAME = 'cache_store';
-const CACHE_VERSION = 1;
-
-type CachedItem<T> = {
-  data: T;
-  version: string;
-};
-
-async function getDB() {
-  return openDB(CACHE_DB_NAME, CACHE_VERSION, {
-    upgrade(db) {
-      db.createObjectStore(CACHE_STORE_NAME);
-    },
-  });
-}
-
-async function saveToCache<T>(key: string, data: T, version: string) {
-  const db = await getDB();
-  const tx = db.transaction(CACHE_STORE_NAME, 'readwrite');
-  tx.store.put({ data, version }, key);
-  await tx.done;
-}
-
-async function getFromCache<T>(key: string, currentVersion: string): Promise<T | null> {
-  const db = await getDB();
-  const tx = db.transaction(CACHE_STORE_NAME, 'readonly');
-  const cached = await tx.store.get(key) as CachedItem<T> | undefined;
-
-  if (cached && cached.version === currentVersion) {
-    return cached.data;
-  }
-
-  return null;
-}
-
-async function clearCache() {
-  const db = await getDB();
-  const tx = db.transaction(CACHE_STORE_NAME, 'readwrite');
-  await tx.store.clear();
-  await tx.done;
-}
-
-export function useAllDataDragon() {
+export function useAllDataDragon(): UseDataDragonHook {
   const [shouldFetch, setShouldFetch] = useState(false);
 
   useEffect(() => {
@@ -67,6 +31,7 @@ export function useAllDataDragon() {
           }, 2000);
         }
       } catch (error) {
+        console.log(error);
         // If any error, just start fetching after delay
         setTimeout(() => setShouldFetch(true), 2000);
       }
