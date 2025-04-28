@@ -172,23 +172,23 @@ export default function CharacterSelection({
   }, [layoutConfig.animationSpeed]);
 
   // Initialize with selected champion if provided
+  // Fix the comparison in useEffect for initialChampionId
   useEffect(() => {
     if (initialChampionId) {
-      const champion = champions.find(c => c.id === initialChampionId.toString());
+      const champion = champions.find(c => Number(c.id) === initialChampionId);
       if (champion) {
         setSelectedChampion(champion);
         setViewState('champion');
 
-        // If a specific skin is requested, update the user preferences
         if (initialSkinId) {
-          const skin = champion.skins.find(s => s.id === initialSkinId.toString());
+          const skin = champion.skins.find(s => Number(s.id) === initialSkinId);
           if (skin) {
             setUserPreferences(prev => ({
               ...prev,
-              [champion.id]: {
-                selectedSkinId: skin.id,
-                ...(prev[champion.id]?.selectedChromaId
-                  ? { selectedChromaId: prev[champion.id].selectedChromaId }
+              [initialChampionId]: {
+                selectedSkinId: initialSkinId,
+                ...(prev[initialChampionId]?.selectedChromaId
+                  ? { selectedChromaId: prev[initialChampionId].selectedChromaId }
                   : {}),
               },
             }));
@@ -196,7 +196,7 @@ export default function CharacterSelection({
         }
       }
     }
-  }, [initialChampionId, initialSkinId, setUserPreferences]);
+  }, [initialChampionId, initialSkinId, champions, setUserPreferences]);
 
   // Memoize filters to prevent unnecessary re-renders
   const memoizedFilters = useMemo(() => {
@@ -273,7 +273,7 @@ export default function CharacterSelection({
   );
   // Save skin selection
   const saveSkinSelection = useCallback(
-    (championId: string, skinId: number, chromaId?: number) => {
+    (championId: number, skinId: number, chromaId?: number) => {
       setUserPreferences((prev) => {
         const newPrefs = {
           ...prev,

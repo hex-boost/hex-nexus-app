@@ -55,7 +55,7 @@ export default function ChampionDetail({
 
   // Save current selection
   const handleSave = () => {
-    onSaveSkin(champion.id.toString(), selectedSkin.id, selectedChroma?.id);
+    onSaveSkin(Number(champion.id), selectedSkin.id, selectedChroma?.id);
   };
 
   // Get breadcrumb items
@@ -66,32 +66,15 @@ export default function ChampionDetail({
 
   // Get current media source based on type
   const getCurrentMedia = () => {
-    if (mediaType === 'video' && selectedSkin.webm) {
-      return <video src={selectedSkin.webm} className="object-contain h-full w-full" controls autoPlay loop />;
-    } else if (mediaType === '3d' && selectedSkin.model3d) {
-      return (
-        <div className="flex items-center justify-center h-full w-full">
-          <div className="text-center">
-            <Cube className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-            <p className="text-muted-foreground">3D Model Viewer</p>
-            <p className="text-xs text-muted-foreground mt-2">
-              (3D model would render here in a production environment)
-            </p>
-          </div>
-        </div>
-      );
-    } else {
-      // Default to image
-      return (
-        <img
-          src={selectedChroma?.image || selectedSkin.imageUrl}
-          alt={`${champion.name} - ${selectedSkin.name} ${selectedChroma ? selectedChroma.name : ''}`}
-          className="object-contain w-full h-full"
+    return (
+      <img
+        src={selectedChroma?.image || selectedSkin.imageUrl}
+        alt={`${champion.name} - ${selectedSkin.name} ${selectedChroma ? selectedChroma.name : ''}`}
+        className="object-contain w-full h-full"
 
-          // sizes="(max-width: 768px) 100vw, 600px"
-        />
-      );
-    }
+        // sizes="(max-width: 768px) 100vw, 600px"
+      />
+    );
   };
 
   // Get tags for current skin
