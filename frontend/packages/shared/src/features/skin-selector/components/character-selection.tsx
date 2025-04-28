@@ -10,7 +10,7 @@ import {ChampionListComp} from '@/features/skin-selector/components/champion-lis
 import {useLocalStorage} from '@/hooks/use-local-storage';
 import {cn} from '@/lib/utils';
 import {AnimatePresence, motion} from 'framer-motion';
-import {Filter, Grid2X2, Grid3X3, List, Search, Settings, X} from 'lucide-react';
+import {Search, X} from 'lucide-react';
 import {useCallback, useMemo, useState} from 'react';
 
 // Type for user preferences
@@ -217,57 +217,6 @@ export default function CharacterSelection({
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center gap-1"
-                      onClick={() => setShowFilters(!showFilters)}
-                    >
-                      <Filter className="h-4 w-4 mr-1" />
-                      Filters
-                      {(filters.skinLine || filters.rarity || filters.releaseYear) && (
-                        <span className="ml-1 w-2 h-2 rounded-full bg-primary" />
-                      )}
-                    </Button>
-
-                    <div className="flex border rounded-md overflow-hidden ml-2">
-                      <Button
-                        variant={layoutConfig.layout === 'grid' ? 'secondary' : 'ghost'}
-                        size="icon"
-                        className="h-9 w-9 rounded-none"
-                        onClick={() => setLayoutConfig({ ...layoutConfig, layout: 'grid' })}
-                      >
-                        <Grid3X3 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant={layoutConfig.layout === 'compact' ? 'secondary' : 'ghost'}
-                        size="icon"
-                        className="h-9 w-9 rounded-none"
-                        onClick={() => setLayoutConfig({ ...layoutConfig, layout: 'compact' })}
-                      >
-                        <Grid2X2 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant={layoutConfig.layout === 'list' ? 'secondary' : 'ghost'}
-                        size="icon"
-                        className="h-9 w-9 rounded-none"
-                        onClick={() => setLayoutConfig({ ...layoutConfig, layout: 'list' })}
-                      >
-                        <List className="h-4 w-4" />
-                      </Button>
-                    </div>
-
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-9 w-9 ml-1"
-                      onClick={() => setViewState('config')}
-                      title="Settings"
-                    >
-                      <Settings className="h-4 w-4" />
-                    </Button>
-                  </div>
                 </div>
 
                 {/* Expanded filter panel */}
