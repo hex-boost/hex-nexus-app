@@ -17,11 +17,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/compon
 import { Separator } from '@/components/ui/separator.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { Textarea } from '@/components/ui/textarea.tsx';
-import { UserProfile } from '@/components/UserProfile.tsx';
 import { WindowControls } from '@/components/WindowControls.tsx';
 import { ContextMenuProvider } from '@/contexts/ContextMenuContext.tsx';
 import { NotificationProvider } from '@/features/notification/notification-provider.tsx';
 import { NotificationBell } from '@/features/notification/NotificationBell.tsx';
+import { UserProfile } from '@/features/user-profile/UserProfile.tsx';
 import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
 import { useFavoriteAccounts } from '@/hooks/useFavoriteAccounts.ts';
 import { useUserStore } from '@/stores/useUserStore';

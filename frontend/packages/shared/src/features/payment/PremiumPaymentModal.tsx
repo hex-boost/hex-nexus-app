@@ -1,8 +1,8 @@
 import type { PaymentMethodsAccepted } from '@/types/membership.ts';
 import type { PremiumTiers } from '@/types/types.ts';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button.tsx';
+import { Card, CardContent } from '@/components/ui/card.tsx';
+import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog.tsx';
 import { useMembership } from '@/hooks/useMembership.ts';
 import { motion } from 'framer-motion';
 import { Check, CreditCard } from 'lucide-react';

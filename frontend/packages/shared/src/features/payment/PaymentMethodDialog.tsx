@@ -2,7 +2,7 @@ import type { PaymentMethodsAccepted } from '@/types/membership.ts';
 import type { PremiumTiers } from '@/types/types.ts';
 import { BoostRoyalInnerDialog } from '@/components/BoostRoyalInnerDialog.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/button.tsx';
 import {
   Dialog,
   DialogClose,
@@ -12,8 +12,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/nested-dialog';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+} from '@/components/ui/nested-dialog.tsx';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group.tsx';
 import { useMembershipActions } from '@/hooks/useMembershipActions.ts';
 import { ExternalLink } from 'lucide-react';
 import * as React from 'react';

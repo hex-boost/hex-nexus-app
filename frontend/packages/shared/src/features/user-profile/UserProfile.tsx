@@ -17,8 +17,8 @@ import { useCallback, useRef, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import ReactCrop, { cls } from 'react-image-crop';
 import { toast } from 'sonner';
-import { Button } from './ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import { Button } from '../../components/ui/button.tsx';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog.tsx';
 import 'react-image-crop/dist/ReactCrop.css';
 
 type MenuItem = {

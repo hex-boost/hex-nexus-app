@@ -1,8 +1,8 @@
 import { LoginForm } from '@/components/auth/login-form.tsx';
-import { useCommonFetch } from '@/hooks/useCommonFetch';
-import { useProfileAvatar } from '@/hooks/useProfileAvatar';
-import { userAuth } from '@/lib/strapi';
-import { useUserStore } from '@/stores/useUserStore';
+import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
+import { useProfileAvatar } from '@/hooks/useProfileAvatar.ts';
+import { userAuth } from '@/lib/strapi.ts';
+import { useUserStore } from '@/stores/useUserStore.ts';
 import { Discord } from '@discord';
 import { HWID } from '@hwid';
 import { useMutation } from '@tanstack/react-query';

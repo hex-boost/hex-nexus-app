@@ -1,5 +1,5 @@
 import { ErrorPage } from '@/components/error-page.tsx';
-import { PremiumPaymentModal } from '@/components/PremiumPaymentModal.tsx';
+import { PremiumPaymentModal } from '@/features/payment/PremiumPaymentModal.tsx';
 import { useGoState } from '@/hooks/useGoBindings.ts';
 import { usePremiumPaymentModalStore } from '@/stores/usePremiumPaymentModalStore';
 import { useUserStore } from '@/stores/useUserStore';
