@@ -1,4 +1,4 @@
-import { LoginForm } from '@/components/auth/login-form.tsx';
+import { LoginForm } from '@/features/auth/login-form.tsx';
 import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
 import { useProfileAvatar } from '@/hooks/useProfileAvatar.ts';
 import { userAuth } from '@/lib/strapi.ts';
