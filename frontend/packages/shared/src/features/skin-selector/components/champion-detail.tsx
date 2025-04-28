@@ -1,11 +1,9 @@
 import type {FormattedChampion, FormattedSkin} from '@/hooks/useDataDragon/types/useDataDragonHook.ts';
-
-import {Button} from '@/components/ui/button.tsx';
-import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs.tsx';
+import {ProgressiveBlur} from '@/components/ui/progressive-blur.tsx';
 import Breadcrumb from '@/features/skin-selector/components/breadcrumb';
 import {cn} from '@/lib/utils.ts';
-import {AnimatePresence, motion} from 'framer-motion';
-import {Check, CuboidIcon as Cube, Play} from 'lucide-react';
+import {motion} from 'framer-motion';
+import {Check} from 'lucide-react';
 import {useState} from 'react';
 
 type ChampionDetailProps = {
@@ -18,8 +16,6 @@ type ChampionDetailProps = {
   onSaveSkin: (championId: number, skinId: number, chromaId?: number) => void;
   animationDuration?: number;
 };
-
-type MediaType = 'image' | 'video' | '3d';
 
 export default function ChampionDetail({
   champion,
@@ -39,23 +35,12 @@ export default function ChampionDetail({
       ? selectedSkin.chromas.find(c => c.id === userPreferences.selectedChromaId) || null
       : null,
   );
-  const [mediaType, setMediaType] = useState<MediaType>('image');
 
   // Handle skin selection
   const handleSkinSelect = (skin: FormattedSkin) => {
     setSelectedSkin(skin);
     setSelectedChroma(null); // Reset chroma when changing skin
-    setMediaType('image'); // Reset media type when changing skin
-  };
-
-  // Handle chroma selection
-  // const handleChromaSelect = (chroma: Chroma | null) => {
-  //   setSelectedChroma(chroma);
-  // };
-
-  // Save current selection
-  const handleSave = () => {
-    onSaveSkin(Number(champion.id), selectedSkin.id, selectedChroma?.id);
+    onSaveSkin(Number(champion.id), skin.id);
   };
 
   // Get breadcrumb items
@@ -64,220 +49,78 @@ export default function ChampionDetail({
     { label: champion.name, onClick: () => {} },
   ];
 
-  // Get current media source based on type
-  const getCurrentMedia = () => {
-    return (
-      <img
-        src={selectedChroma?.image || selectedSkin.imageUrl}
-        alt={`${champion.name} - ${selectedSkin.name} ${selectedChroma ? selectedChroma.name : ''}`}
-        className="object-contain w-full h-full"
-
-        // sizes="(max-width: 768px) 100vw, 600px"
-      />
-    );
-  };
-
-  // Get tags for current skin
-
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex flex-col h-full overflow-auto bg-background">
       {/* Header */}
-      <div className="p-4 border-b border-border">
+      <div className="sticky top-0 z-10 bg-shade9 p-4 border-b border-border">
         <Breadcrumb items={breadcrumbItems} />
-
         <div className="flex items-center justify-between mt-2">
           <h1 className="text-xl font-bold">{champion.name}</h1>
-
-          <div className="flex gap-2">
-
-            <Button size="sm" onClick={handleSave}>
-              Save Selection
-            </Button>
-          </div>
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
-        {/* Preview area */}
-        <div className="w-full md:w-2/3 h-full relative bg-shade10 flex flex-col">
-          {/* Media type selector */}
-          {(selectedSkin.webm || selectedSkin.model3d) && (
-            <div className="flex items-center gap-2 p-2 border-b border-border">
-              <Button
-                variant={mediaType === 'image' ? 'secondary' : 'ghost'}
-                size="sm"
-                onClick={() => setMediaType('image')}
-              >
-                img
-              </Button>
-              {selectedSkin.webm && (
-                <Button
-                  variant={mediaType === 'video' ? 'secondary' : 'ghost'}
-                  size="sm"
-                  onClick={() => setMediaType('video')}
-                >
-                  <Play className="h-3 w-3 mr-1" />
-                  {' '}
-                  Video
-                </Button>
-              )}
-              {selectedSkin.model3d && (
-                <Button
-                  variant={mediaType === '3d' ? 'secondary' : 'ghost'}
-                  size="sm"
-                  onClick={() => setMediaType('3d')}
-                >
-                  <Cube className="h-3 w-3 mr-1" />
-                  {' '}
-                  3D Model
-                </Button>
-              )}
-            </div>
-          )}
+      {/* Main content - Grid of skins */}
+      <div className="p-6">
+        <h2 className="text-2xl font-bold mb-4 text-foreground">Available Skins</h2>
 
-          {/* Media preview */}
-          <div className="flex-1 relative flex items-center justify-center p-4">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={`${selectedSkin.id}-${selectedChroma?.id || 'default'}-${mediaType}`}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: animationDuration }}
-                className="relative h-[70vh] max-h-[600px] w-full max-w-[400px]"
-              >
-                {getCurrentMedia()}
-              </motion.div>
-            </AnimatePresence>
-          </div>
-
-          {/* Current selection info */}
-          <div className="p-3 bg-shade9 border-t border-border">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold">{selectedSkin.name}</h3>
-                {selectedChroma && (
-                  <p className="text-sm text-muted-foreground">
-                    {selectedChroma.name}
-                    {' '}
-                    Chroma
-                  </p>
-                )}
-              </div>
-              <div className="text-right">
-                <div className="text-sm font-medium">{selectedSkin.rarity}</div>
-                <div className="text-xs text-muted-foreground">{selectedSkin.skinLine}</div>
-              </div>
-            </div>
-
-            {/* Tags */}
-
-            {/* Add tag dropdown */}
-
-          </div>
-
-          {/* Abilities preview */}
-        </div>
-
-        {/* Selection area */}
-        <div className="w-full md:w-1/3 h-full border-l border-border overflow-y-auto">
-          <Tabs defaultValue="skins" className="w-full">
-            <TabsList className="w-full grid grid-cols-2">
-              <TabsTrigger value="skins">Skins</TabsTrigger>
-              <TabsTrigger value="chromas" disabled={!selectedSkin.chromas?.length}>
-                Chromas
-              </TabsTrigger>
-            </TabsList>
-
-            {/* Skins tab */}
-            <TabsContent value="skins" className="p-0">
-              <div className="grid grid-cols-1 gap-2 p-4">
-                {champion.skins.map(skin => (
-                  <SkinOption
-                    key={skin.id}
-                    skin={skin}
-                    isSelected={selectedSkin.id === skin.id}
-                    onClick={() => handleSkinSelect(skin)}
-                    hasChromas={!!skin.chromas}
-                    animationDuration={animationDuration}
-                  />
-                ))}
-              </div>
-            </TabsContent>
-
-            {/* Chromas tab */}
-            <TabsContent value="chromas" className="p-0">
-              <div className="p-4">
-                <div className="mb-4">
-                  <SkinOption
-                    skin={selectedSkin}
-                    isSelected={!selectedChroma}
-                    onClick={() => void 0}
-                    label="Default"
-                    animationDuration={animationDuration}
-                  />
-                </div>
-
-                <h3 className="font-medium mb-2 text-sm text-muted-foreground">Chromas</h3>
-
-              </div>
-            </TabsContent>
-          </Tabs>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 mb-8">
+          {champion.skins.map(skin => (
+            <motion.div
+              key={skin.id}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ duration: animationDuration }}
+            >
+              <SkinCard
+                skin={skin}
+                isSelected={selectedSkin.id === skin.id}
+                onClick={() => handleSkinSelect(skin)}
+              />
+            </motion.div>
+          ))}
         </div>
       </div>
     </div>
   );
 }
 
-// Skin option component
-type SkinOptionProps = {
+// Skin Card Component
+type SkinCardProps = {
   skin: FormattedSkin;
   isSelected: boolean;
   onClick: () => void;
-  hasChromas?: boolean;
-  label?: string;
-  animationDuration?: number;
 };
 
-function SkinOption({
-  skin,
-  isSelected,
-  onClick,
-  hasChromas,
-  label,
-  animationDuration = 0.3,
-}: SkinOptionProps) {
+function SkinCard({ skin, isSelected, onClick }: SkinCardProps) {
   return (
-    <motion.div
-      whileHover={{ scale: 1.01 }}
-      whileTap={{ scale: 0.99 }}
-      transition={{ duration: animationDuration }}
+    <button
       className={cn(
-        'flex items-center p-2 rounded-lg cursor-pointer transition-colors',
-        isSelected ? 'bg-primary/20 border border-primary' : 'bg-shade8 hover:bg-shade7 border border-transparent',
+        'relative aspect-square w-full overflow-hidden rounded-[4px]',
+        isSelected && 'ring-2 ring-primary',
       )}
       onClick={onClick}
     >
-      <div className="w-16 h-16 rounded-md overflow-hidden mr-3 flex-shrink-0 relative">
-        <img src={skin.imageUrl || '/placeholder.svg'} alt={skin.name} className="object-cover" sizes="64px" />
-      </div>
-
-      <div className="flex-1">
-        <h3 className="font-medium">{label || skin.name}</h3>
-        {skin.rarity && <p className="text-xs text-muted-foreground">{skin.rarity}</p>}
-        {hasChromas && <p className="text-xs text-primary/80">Has chromas</p>}
-
-        {/* Display tags */}
+      <img
+        src={skin.imageUrl}
+        alt={skin.name}
+        className="h-full w-full object-cover transition-transform group-hover:scale-105"
+      />
+      <ProgressiveBlur
+        className="pointer-events-none absolute bottom-0 left-0 h-[40%] w-full"
+        blurIntensity={1}
+      />
+      <div className="absolute bottom-0 left-0 w-full">
+        <div className="flex flex-col items-start gap-0 px-5 py-4">
+          <p className="text-base font-medium text-white">{skin.name}</p>
+          {skin.rarity && <span className="text-sm text-zinc-300">{skin.rarity}</span>}
+        </div>
       </div>
 
       {isSelected && (
-        <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-          <Check className="h-4 w-4 text-primary-foreground" />
+        <div className="absolute top-2 right-2 bg-primary rounded-full w-6 h-6 flex items-center justify-center">
+          <Check className="h-4 w-4 text-white" />
         </div>
       )}
-    </motion.div>
+    </button>
   );
 }
-
-// Chroma option component

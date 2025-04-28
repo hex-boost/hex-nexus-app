@@ -1,9 +1,9 @@
 // 1. Fix function parameter types in ChampionListProps
-import type { FormattedChampion, FormattedSkin } from '@/hooks/useDataDragon/types/useDataDragonHook.ts';
-import { Skeleton } from '@/components/ui/skeleton.tsx';
+import type {FormattedChampion, FormattedSkin} from '@/hooks/useDataDragon/types/useDataDragonHook.ts';
+import {Skeleton} from '@/components/ui/skeleton.tsx';
 import CharacterCard from '@/features/skin-selector/components/character-card.tsx';
-import { motion } from 'framer-motion';
-import React, { useCallback } from 'react';
+import {motion} from 'framer-motion';
+import React, {useCallback} from 'react';
 
 type ChampionListProps = {
   skins: FormattedSkin[];
@@ -11,7 +11,6 @@ type ChampionListProps = {
   isLoading: boolean;
   onSelectChampion: (champion: FormattedChampion) => void;
   getSelectedSkin: (champion: FormattedChampion) => FormattedSkin; // Changed from Skin to FormattedChampion parameter
-  getSelectedChroma: (skin: FormattedSkin, championId: string) => any | null; // Changed parameter type to FormattedSkin
   layout: 'grid' | 'list' | 'compact'; // Use literal union type instead of string
   gridSize: 'small' | 'medium' | 'large'; // Use literal union type instead of string
   animationDuration: number;
@@ -22,7 +21,6 @@ export const ChampionListComp: React.FC<ChampionListProps> = ({
   skins,
   onSelectChampion,
   getSelectedSkin,
-  getSelectedChroma,
   layout,
   gridSize,
   animationDuration,
@@ -61,7 +59,6 @@ export const ChampionListComp: React.FC<ChampionListProps> = ({
             ))
         : champions.map((champion) => {
             const selectedSkin = getSelectedSkin(champion);
-            const selectedChroma = getSelectedChroma(selectedSkin, champion.id);
 
             return (
               <motion.div
@@ -75,9 +72,6 @@ export const ChampionListComp: React.FC<ChampionListProps> = ({
                   champion={champion}
                   onClick={() => onSelectChampion(champion)}
                   selectedSkin={selectedSkin}
-                  // selectedChroma={selectedChroma}
-                  layout={layout as 'grid' | 'list' | 'compact'}
-                  size={gridSize as 'small' | 'medium' | 'large'}
                 />
               </motion.div>
             );

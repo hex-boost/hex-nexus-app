@@ -1,7 +1,5 @@
 import type {Skin} from '@/hooks/useDataDragon/types/ddragon.ts';
 import type {FormattedChampion, FormattedSkin} from '@/hooks/useDataDragon/types/useDataDragonHook.ts';
-import type React from 'react';
-import {useCallback, useEffect, useMemo, useState} from 'react';
 import {Badge} from '@/components/ui/badge';
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
@@ -13,6 +11,7 @@ import {useLocalStorage} from '@/hooks/use-local-storage';
 import {cn} from '@/lib/utils';
 import {AnimatePresence, motion} from 'framer-motion';
 import {Filter, Grid2X2, Grid3X3, List, Search, Settings, X} from 'lucide-react';
+import {useCallback, useMemo, useState} from 'react';
 
 // Type for user preferences
 export type UserPreferences = {
@@ -40,18 +39,17 @@ type CharacterSelectionProps = {
   onSelectSkin?: (champion: FormattedChampion, skin: Skin, chroma?: any | null) => void;
   initialChampionId?: number;
   initialSkinId?: number;
+  isLoading: boolean;
 };
 
 export default function CharacterSelection({
   champions,
+  isLoading,
   isEmbedded = false,
   skins,
   onSelectSkin,
-  initialChampionId,
-  initialSkinId,
 }: CharacterSelectionProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
   const [selectedChampion, setSelectedChampion] = useState<FormattedChampion | null>(null);
   const [viewState, setViewState] = useState<ViewState>('home');
   const [showFilters, setShowFilters] = useState(false);
@@ -88,42 +86,6 @@ export default function CharacterSelection({
     }
   }, [layoutConfig.animationSpeed]);
 
-  // Initialize with selected champion if provided
-  // Fix the comparison in useEffect for initialChampionId
-  useEffect(() => {
-    if (initialChampionId) {
-      const champion = champions.find(c => Number(c.id) === initialChampionId);
-      if (champion) {
-        setSelectedChampion(champion);
-        setViewState('champion');
-
-        if (initialSkinId) {
-          const skin = champion.skins.find(s => Number(s.id) === initialSkinId);
-          if (skin) {
-            setUserPreferences((prev: UserPreferences) => ({
-              ...prev,
-              [initialChampionId]: {
-                selectedSkinId: initialSkinId,
-                ...(prev[initialChampionId]?.selectedChromaId
-                  ? { selectedChromaId: prev[initialChampionId].selectedChromaId }
-                  : {}),
-              },
-            }));
-          }
-        }
-      }
-    }
-  }, [initialChampionId, initialSkinId, champions, setUserPreferences]);
-
-  // Memoize filters to prevent unnecessary re-renders
-  const memoizedFilters = useMemo(() => {
-    return {
-      skinLine: filters.skinLine,
-      rarity: filters.rarity,
-      releaseYear: filters.releaseYear,
-    };
-  }, [filters.skinLine, filters.rarity, filters.releaseYear]);
-
   // Filter champions based on search query and filters
   const filteredChampions = useMemo(() => {
     return champions.filter((champion) => {
@@ -133,26 +95,10 @@ export default function CharacterSelection({
       }
 
       // Apply additional filters
-      if (
-        memoizedFilters.skinLine
-        || memoizedFilters.rarity
-        || memoizedFilters.releaseYear
-      ) {
-        return champion.skins.some((skin) => {
-          // Basic filters
-          // const matchesSkinLine = !memoizedFilters.skinLine || skin.skinLine === memoizedFilters.skinLine;
-          // const matchesRarity = !memoizedFilters.rarity || skin.rarity === memoizedFilters.rarity;
-          // const matchesYear
-          //               = !memoizedFilters.releaseYear
-          //                 || new Date(skin.releaseDate).getFullYear().toString() === memoizedFilters.releaseYear;
-          return true;
-          // return matchesSkinLine && matchesRarity && matchesYear;
-        });
-      }
 
       return true;
     });
-  }, [champions, searchQuery, memoizedFilters]);
+  }, [champions, searchQuery]);
 
   const getSelectedSkin = useCallback(
     (champion: FormattedChampion): FormattedSkin => {
@@ -182,14 +128,13 @@ export default function CharacterSelection({
   const saveSkinSelection = useCallback(
     (championId: number, skinId: number, chromaId?: number) => {
       setUserPreferences((prev) => {
-        const newPrefs = {
+        return {
           ...prev,
           [Number(championId)]: {
             selectedSkinId: skinId,
             ...(chromaId ? { selectedChromaId: chromaId } : {}),
           },
         };
-        return newPrefs;
       });
 
       // If in embedded mode, call the onSelectSkin callback
@@ -475,7 +420,6 @@ export default function CharacterSelection({
                   }}
                   skins={skins}
                   getSelectedSkin={getSelectedSkin}
-                  getSelectedChroma={getSelectedChroma}
                   layout={layoutConfig.layout}
                   gridSize={layoutConfig.gridSize}
                   animationDuration={getAnimationDuration()}

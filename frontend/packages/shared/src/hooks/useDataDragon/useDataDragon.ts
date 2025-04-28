@@ -73,7 +73,7 @@ export function useAllDataDragon(): UseDataDragonHook {
 
       const currentVersion = versionQuery.data;
 
-      const cachedData = await getFromCache<Record<string, any>>('champions', currentVersion);
+      const cachedData = await getFromCache<ChampionByID>('champion_details', currentVersion);
       if (cachedData) {
         return cachedData;
       }

@@ -9,7 +9,7 @@ export const Route = createFileRoute('/_protected/tools/')({
 });
 
 function RouteComponent() {
-  const { allChampions, allSkins } = useAllDataDragon();
+  const { allChampions, allSkins, isLoading } = useAllDataDragon();
 
   const handleSelectSkin = (champion: FormattedChampion, skin: Skin, chroma: any | null = null) => {
     // Handle skin selection
@@ -18,11 +18,10 @@ function RouteComponent() {
 
   return (
     <CharacterSelection
+      isLoading={isLoading}
       skins={allSkins}
       champions={allChampions}
       onSelectSkin={handleSelectSkin}
-      initialChampionId={undefined}
-      initialSkinId={undefined}
     />
   );
 }
