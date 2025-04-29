@@ -41,8 +41,13 @@ tasks:
 
   mock:
     summary: Generate Mocks
+    deps:
+      - task: common:build:frontend
+        vars:
+          PRODUCTION: '{{.PRODUCTION}}'
     cmds:
       - cmd: mockery
+
   package:
     summary: Packages a production build of the application into a `.exe` bundle
     cmds:
