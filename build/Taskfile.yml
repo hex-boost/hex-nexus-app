@@ -22,8 +22,8 @@ tasks:
     cmds:
       - mkdir -p packages/main/dist
       - touch packages/main/dist/index.html
-      - mkdir -p packages/updater/dist
-      - touch packages/updater/dist/index.html
+      - mkdir -p ../backend/cmd/updater/dist
+      - touch ../backend/cmd/updater/dist/index.html
   install:frontend:deps:
     summary: Install frontend dependencies
     dir: frontend
