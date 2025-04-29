@@ -1,11 +1,10 @@
 import type {ChampionByID, ChampionById, DDragonChampionsData} from '@/hooks/useDataDragon/types/ddragon.ts';
 import type {UseDataDragonHook} from '@/hooks/useDataDragon/types/useDataDragonHook.ts';
 import {
-    CACHE_STORE_NAME,
     clearCache,
-    getDB,
-    getFromCache,
-    saveToCache,
+    getChampionDetails,
+    getCurrentVersion,
+    saveChampionDetails,
 } from '@/hooks/useDataDragon/use-data-dragon-cache.ts';
 import {useQuery} from '@tanstack/react-query';
 import {useEffect, useMemo, useState} from 'react';
@@ -17,11 +16,8 @@ export function useAllDataDragon(): UseDataDragonHook {
     const checkCache = async () => {
       try {
         // Check if version exists in cache
-        const db = await getDB();
-        const tx = db.transaction(CACHE_STORE_NAME, 'readonly');
-        const cachedVersionItem = await tx.store.get('cached_version');
-
-        if (cachedVersionItem) {
+        const cachedVersion = await getCurrentVersion();
+        if (cachedVersion) {
           // Cache exists, start fetching immediately
           setShouldFetch(true);
         } else {
@@ -46,24 +42,16 @@ export function useAllDataDragon(): UseDataDragonHook {
       const versions = await response.json() as string[];
       const latestVersion = versions[0];
 
-      const db = await getDB();
-      const tx = db.transaction(CACHE_STORE_NAME, 'readonly');
-      const cachedVersionItem = await tx.store.get('cached_version');
-      const cachedVersion = cachedVersionItem?.version;
-
+      const cachedVersion = await getCurrentVersion();
       if (cachedVersion && cachedVersion !== latestVersion) {
         await clearCache();
       }
 
-      await saveToCache('cached_version', null, latestVersion);
-
       return latestVersion;
     },
     staleTime: 60 * 60 * 1000,
-    enabled: shouldFetch, // Only run when shouldFetch is true
-
+    enabled: shouldFetch,
   });
-
   const championsQuery = useQuery({
     queryKey: ['champions', versionQuery.data],
     queryFn: async () => {
@@ -72,18 +60,17 @@ export function useAllDataDragon(): UseDataDragonHook {
       }
 
       const currentVersion = versionQuery.data;
+      const cached = await getChampionDetails<ChampionByID>();
 
-      const cachedData = await getFromCache<ChampionByID>('champion_details', currentVersion);
-      if (cachedData) {
-        return cachedData;
+      if (cached && cached.version === currentVersion) {
+        // We have champion details which includes all champion data
+        return cached.data;
       }
 
       const response = await fetch(
         `https://ddragon.leagueoflegends.com/cdn/${currentVersion}/data/en_US/champion.json`,
       );
       const data = await response.json() as DDragonChampionsData;
-
-      await saveToCache('champions', data.data, currentVersion);
 
       return data.data;
     },
@@ -99,10 +86,10 @@ export function useAllDataDragon(): UseDataDragonHook {
       }
 
       const currentVersion = versionQuery.data;
+      const cached = await getChampionDetails<ChampionByID[]>();
 
-      const cachedDetails = await getFromCache<ChampionByID[]>('champion_details', currentVersion);
-      if (cachedDetails) {
-        return cachedDetails;
+      if (cached && cached.version === currentVersion) {
+        return cached.data;
       }
 
       const championsData = championsQuery.data;
@@ -118,14 +105,14 @@ export function useAllDataDragon(): UseDataDragonHook {
 
       const allDetails = await Promise.all(detailPromises);
 
-      await saveToCache('champion_details', allDetails, currentVersion);
+      // Store all champion details in the single cache entry
+      await saveChampionDetails(allDetails, currentVersion);
 
       return allDetails;
     },
     staleTime: Infinity,
     enabled: !!versionQuery.data && !!championsQuery.data,
   });
-
   const determineRarity = (skin: any): string => {
     if (skin.name.includes('Ultimate')) {
       return 'Ultimate';
