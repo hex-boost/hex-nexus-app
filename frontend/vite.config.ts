@@ -26,6 +26,7 @@ export default defineConfig({
       '@lolskin': path.resolve(__dirname, 'packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/internal/league/tools/lolskin'),
       '@hwid': path.resolve(__dirname, 'packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/pkg/hwid'),
       '@leagueManager': path.resolve(__dirname, 'packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/internal/league/manager'),
+      '@manager': path.resolve(__dirname, 'packages/updater/bindings/github.com/hex-boost/hex-nexus-app/backend/internal/updater'),
       '@account': path.resolve(__dirname, 'packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/internal/league/account'),
 
       '@discord': path.resolve(__dirname, 'packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/discord'),

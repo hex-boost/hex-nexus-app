@@ -1,9 +1,9 @@
-import path, { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import path, {dirname} from 'node:path';
+import {fileURLToPath} from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 import TanStackRouterVite from '@tanstack/router-plugin/vite';
 import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vite';
+import {defineConfig} from 'vite';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -25,7 +25,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@manager': path.resolve(__dirname, '../updater/bindings/github.com/hex-boost/hex-nexus-app/backend/cmd/updater/manager'),
+      '@manager': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/internal/updater'),
       '@': path.resolve(__dirname, '../shared/src'),
     },
 
