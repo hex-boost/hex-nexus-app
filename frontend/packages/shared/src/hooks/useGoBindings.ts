@@ -1,5 +1,10 @@
 import type {AccountType} from '@/types/types.ts';
+import {useAllDataDragon} from '@/hooks/useDataDragon/useDataDragon.ts';
+
+import {getSkinSelections} from '@/lib/champion-skin-store';
+
 import {useAccountStore} from '@/stores/useAccountStore.ts';
+import {State as LolSkinState} from '@lolskin';
 import {useQueryClient} from '@tanstack/react-query';
 import {Events} from '@wailsio/runtime';
 import {useEffect, useRef} from 'react';
@@ -7,9 +12,33 @@ import {useEffect, useRef} from 'react';
 export function useGoState() {
   const queryClient = useQueryClient();
   const { setIsNexusAccount } = useAccountStore();
+  const { isLoading, allChampions } = useAllDataDragon();
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const processingAccountsRef = useRef<Set<string>>(new Set());
 
+  useEffect(() => {
+    const applySavedSelections = async () => {
+      if (isLoading || allChampions.length === 0) {
+        return;
+      }
+
+      try {
+        const selections = await getSkinSelections();
+        selections.forEach((selection) => {
+          LolSkinState.SetChampionSkin(
+            selection.championId,
+            selection.skinNum,
+            selection.chromaId,
+          );
+        });
+        console.log('Applied saved skin selections:', selections.length);
+      } catch (error) {
+        console.error('Error loading skin selections:', error);
+      }
+    };
+
+    applySavedSelections();
+  }, [isLoading, allChampions]);
   useEffect(() => {
     // Store a reference to the Set inside the effect
     const processingAccounts = processingAccountsRef.current;
