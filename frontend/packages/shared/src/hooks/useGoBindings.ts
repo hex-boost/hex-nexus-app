@@ -31,6 +31,7 @@ export function useGoState() {
             selection.chromaId,
           );
         });
+
         console.log('Applied saved skin selections:', selections.length);
       } catch (error) {
         console.error('Error loading skin selections:', error);

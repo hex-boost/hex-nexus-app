@@ -176,6 +176,8 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 	clientMonitor := league.NewMonitor(appInstance.Log().League(), accountMonitor, leagueService, riotService, captchaService, accountState)
 
 	lolSkinState := lolskin.NewState()
+
+	websocketHandler := handler.New(appInstance.Log().League(), accountState, accountClient, summonerClient, lolSkinService, lolSkinState)
 	mainApp := application.New(application.Options{
 		Name:        "Nexus",
 		Description: "Nexus",
@@ -240,8 +242,9 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 			application.NewService(stripeService),
 			application.NewService(gameOverlayManager),
 			application.NewService(updateManager),
-			//application.NewService(lolSkinService),
+			application.NewService(lolSkinService),
 			application.NewService(lolSkinState),
+			application.NewService(websocketHandler),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.BundledAssetFileServer(assets),
@@ -293,7 +296,6 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 		},
 	)
 
-	websocketHandler := handler.New(appInstance.Log().League(), mainApp, accountState, accountClient, summonerClient, lolSkinService, lolSkinState)
 	websocketRouter := websocket.NewRouter(appInstance.Log().League())
 	websocketManager := websocket.NewManager()
 	websocketService := websocket.NewService(appInstance.Log().League(), accountMonitor, leagueService, lcuConn, accountClient, websocketRouter, websocketHandler, websocketManager)

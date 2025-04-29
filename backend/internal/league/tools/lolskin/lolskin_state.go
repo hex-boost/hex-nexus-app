@@ -2,6 +2,7 @@ package lolskin
 
 import (
 	"encoding/json"
+	"github.com/wailsapp/wails/v3/pkg/application"
 	"os"
 	"sync"
 )
@@ -72,14 +73,31 @@ func (s *State) GetAllSelections() []ChampionSkin {
 }
 
 // SetChampionSkin updates or adds a skin selection for a champion
+// SetChampionSkin updates or adds a skin selection for a champion
 func (s *State) SetChampionSkin(championID, skinID int32, chromaID *int32) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
+	// Store previous skin (if any)
+	previousSkin, exists := s.selections[championID]
+
+	// Update the selection
 	s.selections[championID] = ChampionSkin{
 		ChampionID: championID,
 		SkinID:     skinID,
 		ChromaID:   chromaID,
+	}
+
+	// Only emit event if this is a change
+	if !exists || previousSkin.SkinID != skinID ||
+		(previousSkin.ChromaID == nil && chromaID != nil) ||
+		(previousSkin.ChromaID != nil && chromaID == nil) ||
+		(previousSkin.ChromaID != nil && chromaID != nil && *previousSkin.ChromaID != *chromaID) {
+
+		app := application.Get()
+		app.EmitEvent("")
+		// Emit an event via app.EmitEvent if we have access to the app instance
+		// We'll need to modify the struct to store a reference to the app
 	}
 }
 

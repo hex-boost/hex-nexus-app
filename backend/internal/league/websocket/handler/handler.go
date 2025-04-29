@@ -7,6 +7,7 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
+	"github.com/wailsapp/wails/v3/pkg/application"
 	"go.uber.org/zap"
 )
 
@@ -37,17 +38,17 @@ type LolSkinState interface {
 
 // Handler implements WebSocketEventHandler with standard event handling logic
 type Handler struct {
-	logger         logger.Loggerer
-	accountClient  AccountClient
-	summonerClient SummonerClient
-	accountState   AccountState
-	app            App
-	lolSkin        LolSkin
-	lolSkinState   LolSkinState
+	logger                   logger.Loggerer
+	accountClient            AccountClient
+	summonerClient           SummonerClient
+	accountState             AccountState
+	lolSkin                  LolSkin
+	lolSkinState             LolSkinState
+	previousChampionInjected int
 }
 
 // New creates a new WebSocket event handler
-func New(logger logger.Loggerer, app App, accountState AccountState, accountClient AccountClient, summonerClient SummonerClient, lolSkin LolSkin, lolSkinState LolSkinState) *Handler {
+func New(logger logger.Loggerer, accountState AccountState, accountClient AccountClient, summonerClient SummonerClient, lolSkin LolSkin, lolSkinState LolSkinState) *Handler {
 	return &Handler{
 		accountState:   accountState,
 		summonerClient: summonerClient,
@@ -55,8 +56,8 @@ func New(logger logger.Loggerer, app App, accountState AccountState, accountClie
 		lolSkin:        lolSkin,
 		lolSkinState:   lolSkinState,
 		accountClient:  accountClient,
-		app:            app,
 	}
+
 }
 
 // processAccountUpdate handles the common pattern of updating account state and saving it
@@ -72,8 +73,8 @@ func (h *Handler) ProcessAccountUpdate(update *types.PartialSummonerRented) erro
 		h.logger.Error("Failed to save account data", zap.Error(err))
 		return err
 	}
-
-	h.app.EmitEvent(events.AccountStateChanged, accountSaved)
+	app := application.Get()
+	app.EmitEvent(events.AccountStateChanged, accountSaved)
 	return nil
 }
 
@@ -172,7 +173,9 @@ func (h *Handler) GameflowPhase(event websocket.LCUWebSocketEvent) {
 		h.logger.Error("Failed to parse gameflow phase data", zap.Error(err))
 		return
 	}
-	h.app.EmitEvent(event.EventTopic, gameflowPhase)
+	app := application.Get()
+
+	app.EmitEvent(event.EventTopic, gameflowPhase)
 
 	h.logger.Info("Gameflow phase changed", zap.String("phase", string(gameflowPhase)))
 
@@ -237,6 +240,8 @@ func (h *Handler) ChampionPicked(event websocket.LCUWebSocketEvent) {
 		championSkin, found := h.lolSkinState.GetChampionSkin(championId)
 		if !found {
 			h.logger.Info("Champion skin not found for this champion")
+			h.previousChampionInjected = 0 // Reset on error
+
 			return
 		}
 
@@ -245,23 +250,29 @@ func (h *Handler) ChampionPicked(event websocket.LCUWebSocketEvent) {
 			fantomePath, err := h.lolSkin.DownloadFantome(championId, championSkin.SkinID)
 			if err != nil {
 				h.logger.Error("Failed to download fantome", zap.Error(err))
+				h.previousChampionInjected = 0 // Reset on error
+
 				return
 			}
 
 			h.logger.Info("Injecting skin for champion",
 				zap.String("championName", LolChampSelect.Name),
 				zap.Int32("skinID", championSkin.SkinID))
-
 			err = h.lolSkin.InjectFantome(fantomePath)
 			if err != nil {
 				h.logger.Error("Failed to inject fantome", zap.Error(err))
+				h.previousChampionInjected = 0 // Reset on error
+				return
 			}
+
+			h.previousChampionInjected = int(championId)
 		}()
 	}
 }
 func (h *Handler) ReemitEvent(event websocket.LCUWebSocketEvent) {
 	h.logger.Info("Re-emitting event", zap.String("event", event.EventTopic))
-	h.app.EmitEvent(event.EventTopic, event.Data)
+	app := application.Get()
+	app.EmitEvent(event.EventTopic, event.Data)
 }
 
 // IsRankingSame compares two RankedDetails objects to determine if they are identical
@@ -293,4 +304,37 @@ func IsRankingSame(oldRank, newRank types.RankedDetails) bool {
 
 	// If we've gotten here, the rankings are the same
 	return true
+}
+
+func (h *Handler) SkinSelectionChanged(championID, skinID int32) {
+	if h.previousChampionInjected != int(championID) {
+		return
+	}
+	h.logger.Info("Skin selection changed",
+		zap.Int32("championId", championID),
+		zap.Int32("skinId", skinID))
+
+	// Download and inject in a single goroutine to ensure proper sequence
+	go func() {
+
+		fantomePath, err := h.lolSkin.DownloadFantome(championID, skinID)
+		if err != nil {
+			h.logger.Error("Failed to download fantome", zap.Error(err))
+			h.previousChampionInjected = 0 // Reset on error
+
+			return
+		}
+
+		h.logger.Info("Injecting new skin for champion",
+			zap.Int32("championId", championID),
+			zap.Int32("skinId", skinID))
+
+		err = h.lolSkin.InjectFantome(fantomePath)
+		if err != nil {
+			h.logger.Error("Failed to inject fantome", zap.Error(err))
+			h.previousChampionInjected = 0 // Reset on error
+			return
+		}
+		h.previousChampionInjected = int(championID)
+	}()
 }
