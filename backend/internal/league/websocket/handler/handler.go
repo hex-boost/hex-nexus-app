@@ -172,6 +172,7 @@ func (h *Handler) GameflowPhase(event websocket.LCUWebSocketEvent) {
 		h.logger.Error("Failed to parse gameflow phase data", zap.Error(err))
 		return
 	}
+	h.app.EmitEvent(event.EventTopic, gameflowPhase)
 
 	h.logger.Info("Gameflow phase changed", zap.String("phase", string(gameflowPhase)))
 
@@ -257,6 +258,10 @@ func (h *Handler) ChampionPicked(event websocket.LCUWebSocketEvent) {
 			}
 		}()
 	}
+}
+func (h *Handler) ReemitEvent(event websocket.LCUWebSocketEvent) {
+	h.logger.Info("Re-emitting event", zap.String("event", event.EventTopic))
+	h.app.EmitEvent(event.EventTopic, event.Data)
 }
 
 // IsRankingSame compares two RankedDetails objects to determine if they are identical

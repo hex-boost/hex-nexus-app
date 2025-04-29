@@ -61,6 +61,7 @@ type Handler interface {
 	ChampionPurchase(event LCUWebSocketEvent)
 	GameflowPhase(event LCUWebSocketEvent)
 	ChampionPicked(event LCUWebSocketEvent)
+	ReemitEvent(event LCUWebSocketEvent)
 }
 
 // RouterInterface defines the contract for the event router
@@ -245,7 +246,7 @@ func (s *Service) Unsubscribe(eventPath string) error {
 // sendSubscriptionImpl implements sending a subscription message to LCU websocket
 func (s *Service) sendSubscriptionImpl(eventPath string) error {
 	// Format according to WAMP 1.0 protocol (opcode 5 for subscribe)
-	subscribeMsg := []byte(fmt.Sprintf(`[5, "%s%s"]`, JsonApiPrefix, eventPath))
+	subscribeMsg := []byte(fmt.Sprintf(`[5, "%s"]`, eventPath))
 
 	err := s.conn.WriteMessage(websocket.TextMessage, subscribeMsg)
 	if err != nil {
@@ -441,10 +442,11 @@ func (s *Service) RefreshAccountState(summonerState types.PartialSummonerRented)
 }
 func (s *Service) GetHandlers() []EventHandler {
 	return []EventHandler{
-		s.manager.NewEventHandler("lol-inventory_v1_wallet", s.handler.Wallet),
-		s.manager.NewEventHandler("lol-gameflow_v1_gameflow-phase", s.handler.GameflowPhase),
-		s.manager.NewEventHandler("lol-inventory_v2_inventory", s.handler.ChampionPurchase),
-		s.manager.NewEventHandler("lol-champ-select_v1_grid-champions", s.handler.ChampionPicked),
+		s.manager.NewEventHandler("OnJsonApiEvent_lol-inventory_v1_wallet", s.handler.Wallet),
+		s.manager.NewEventHandler("OnJsonApiEvent_lol-gameflow_v1_gameflow-phase", s.handler.GameflowPhase),
+		s.manager.NewEventHandler("OnJsonApiEvent_lol-inventory_v2_inventory", s.handler.ChampionPurchase),
+		s.manager.NewEventHandler("OnJsonApiEvent_lol-champ-select_v1_grid-champions", s.handler.ChampionPicked),
+		s.manager.NewEventHandler("OnJsonApiEvent_lol-lobby-team-builder_champ-select_v1", s.handler.ReemitEvent),
 	}
 }
 func (s *Service) SubscribeToLeagueEvents() {

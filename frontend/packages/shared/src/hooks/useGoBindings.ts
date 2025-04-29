@@ -1,8 +1,8 @@
-import type { AccountType } from '@/types/types.ts';
-import { useAccountStore } from '@/stores/useAccountStore.ts';
-import { useQueryClient } from '@tanstack/react-query';
-import { Events } from '@wailsio/runtime';
-import { useEffect, useRef } from 'react';
+import type {AccountType} from '@/types/types.ts';
+import {useAccountStore} from '@/stores/useAccountStore.ts';
+import {useQueryClient} from '@tanstack/react-query';
+import {Events} from '@wailsio/runtime';
+import {useEffect, useRef} from 'react';
 
 export function useGoState() {
   const queryClient = useQueryClient();
@@ -14,6 +14,13 @@ export function useGoState() {
     // Store a reference to the Set inside the effect
     const processingAccounts = processingAccountsRef.current;
 
+    const cancel3 = Events.On('OnJsonApiEvent_lol-lobby-team-builder_champ-select_v1', (event) => {
+      console.log('champ-select_v1', event.data);
+    });
+
+    const cancel4 = Events.On('OnJsonApiEvent_lol-gameflow_v1_gameflow-phase', (event) => {
+      console.log('gameflow-phase', event.data);
+    });
     const cancel = Events.On('nexusAccount:state', (event) => {
       console.log('nexusAccount:state', event);
       setIsNexusAccount(event.data[0]);
@@ -74,7 +81,9 @@ export function useGoState() {
 
     return () => {
       cancel();
+      cancel4();
       cancel2();
+      cancel3();
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }

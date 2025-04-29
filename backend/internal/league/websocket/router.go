@@ -1,8 +1,6 @@
 package websocket
 
 import (
-	"strings"
-
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 )
 
@@ -32,11 +30,8 @@ func (r *Router) DeleteHandler(pattern string) {
 
 // Dispatch sends an event to the appropriate handler
 func (r *Router) Dispatch(event LCUWebSocketEvent) {
-	// Normalize the URI by replacing slashes with underscores and removing the leading slash
-	normalizedURI := strings.ReplaceAll(strings.TrimPrefix(event.URI, "/"), "/", "_")
-
 	for pattern, handler := range r.routes {
-		if strings.Contains(normalizedURI, pattern) {
+		if pattern == event.EventTopic {
 			handler(event)
 			return
 		}
