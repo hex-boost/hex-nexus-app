@@ -19,7 +19,7 @@ tasks:
       - task: common:build:frontend:updater
         vars:
           PRODUCTION: '{{.PRODUCTION}}'
-      - task: mock
+      - task: common:mock
       - task: common:go:mod:tidy
       - task: clean
         vars:
@@ -39,14 +39,6 @@ tasks:
       GOARCH: '{{.ARCH | default ARCH}}'
       PRODUCTION: '{{.PRODUCTION | default "false"}}'
 
-  mock:
-    summary: Generate Mocks
-    deps:
-      - task: common:build:frontend
-        vars:
-          PRODUCTION: '{{.PRODUCTION}}'
-    cmds:
-      - cmd: mockery
 
   package:
     summary: Packages a production build of the application into a `.exe` bundle

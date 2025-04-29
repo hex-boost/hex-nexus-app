@@ -3,10 +3,25 @@ version: '3'
 tasks:
   go:mod:tidy:
     summary: Runs `go mod tidy`
+    deps:
+      - task: mock
     internal: true
     cmds:
       - go mod tidy
 
+  mock:
+    summary: Generate Mocks
+    deps:
+      - task: prepare:frontend:dist
+    cmds:
+      - cmd: mockery
+
+  prepare:frontend:dist:
+    summary: Ensure frontend dist directory exists
+    dir: frontend
+    cmds:
+      - mkdir -p packages/main/dist
+      - touch packages/main/dist/index.html
   install:frontend:deps:
     summary: Install frontend dependencies
     dir: frontend

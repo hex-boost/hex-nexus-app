@@ -16,6 +16,5 @@ bindings
 /build/windows/nsis/Nexus-Setup-1.0.0.exe
 logs
 *.log
-*.exe
 dist
 **/mocks/
