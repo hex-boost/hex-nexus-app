@@ -379,32 +379,6 @@ func (c *LolSkin) loadCatalog(path string) (*Catalog, error) {
 }
 
 func (c *LolSkin) DownloadFantome(championId int32, skinId int32) (string, error) {
-	// Use the pre-parsed catalog
-	if c.parsedCatalog == nil {
-		return "", fmt.Errorf("catalog not initialized")
-	}
-
-	// Find the champion and skin in the catalog
-	var downloadUrl string
-	for _, champion := range c.parsedCatalog.Catalog {
-		if int32(champion.ChampionKey) == championId {
-			// Find the skin
-			for _, skin := range champion.Skins {
-				if int32(skin.SkinId) == skinId {
-					downloadUrl = skin.DownloadUrl
-					break
-				}
-			}
-			if downloadUrl != "" {
-				break
-			}
-		}
-	}
-
-	if downloadUrl == "" {
-		return "", fmt.Errorf("skin not found for champion ID %d, skin ID %d", championId, skinId)
-	}
-
 	// Get executable path for cache directory location
 	exePath, err := os.Executable()
 	if err != nil {
@@ -417,14 +391,24 @@ func (c *LolSkin) DownloadFantome(championId int32, skinId int32) (string, error
 		return "", fmt.Errorf("failed to create cache directory: %w", err)
 	}
 
-	// Extract filename from URL
-	filename := filepath.Base(downloadUrl)
+	// Construct filename and local path
+	filename := fmt.Sprintf("%d_%d.fantome", championId, skinId)
 	localPath := filepath.Join(cachePath, filename)
 
 	// Check if file already exists in cache
 	if _, err := os.Stat(localPath); err == nil {
-		return localPath, nil // File already exists
+		c.logger.Info("Using cached skin file",
+			zap.Int32("championId", championId),
+			zap.Int32("skinId", skinId),
+			zap.String("path", localPath))
+		return localPath, nil // Return cached file path immediately
 	}
+
+	// File not found in cache, download it
+	c.logger.Info("Skin not in cache, downloading")
+
+	// Construct download URL
+	downloadUrl := fmt.Sprintf("https://raw.githubusercontent.com/koobzaar/lol-skins-developer/main/%d/%d.fantome", championId, skinId)
 
 	// Download the file
 	resp, err := http.Get(downloadUrl)
@@ -449,6 +433,10 @@ func (c *LolSkin) DownloadFantome(championId int32, skinId int32) (string, error
 	if err != nil {
 		return "", fmt.Errorf("failed to write file: %w", err)
 	}
+
+	c.logger.Info("Successfully downloaded and cached skin",
+		zap.Int32("championId", championId),
+		zap.Int32("skinId", skinId))
 
 	return localPath, nil
 }
