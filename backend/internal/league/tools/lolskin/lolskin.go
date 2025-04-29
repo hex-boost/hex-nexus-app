@@ -297,60 +297,6 @@ func (c *LolSkin) runPatcher(args []string) {
 	}()
 }
 
-// Helper method for executing commands with proper output capture
-// RunPatcher starts the patcher process with the specified arguments
-func (c *LolSkin) runPatcher(args []string) {
-	// Create the command
-	execPath := filepath.Join(c.tempDir, ModToolsExe)
-	c.patcherProcess = exec.Command(execPath, args...)
-
-	// Set up pipes
-	stdout, _ := c.patcherProcess.StdoutPipe()
-	stderr, _ := c.patcherProcess.StderrPipe()
-	stdin, _ := c.patcherProcess.StdinPipe()
-	c.patcherStdin = stdin.(*os.File)
-
-	// Monitor stdout
-	go func() {
-		scanner := bufio.NewScanner(stdout)
-		for scanner.Scan() {
-			line := scanner.Text()
-			fmt.Println(line) // Echo to console
-			c.setStatus(line)
-		}
-	}()
-
-	// Monitor stderr
-	go func() {
-		scanner := bufio.NewScanner(stderr)
-		for scanner.Scan() {
-			line := scanner.Text()
-			fmt.Println("ERROR: " + line)
-		}
-	}()
-
-	// Start the process
-	err := c.patcherProcess.Start()
-	if err != nil {
-		c.reportError("Run mod-tools", err.Error(), fmt.Sprintf("arguments:\n  %s\n", strings.Join(args, "\n  ")))
-		c.setState(StateIdle)
-		return
-	}
-
-	c.setState(StateRunning)
-
-	// Wait for process completion
-	go func() {
-		err := c.patcherProcess.Wait()
-		if err != nil {
-			c.reportError("Run mod-tools", err.Error(), "")
-		}
-		c.setState(StateIdle)
-		c.patcherProcess = nil
-		c.patcherStdin = nil
-	}()
-}
-
 // StopProfile terminates the injection process
 func (c *LolSkin) StopProfile() {
 	c.mutex.Lock()
