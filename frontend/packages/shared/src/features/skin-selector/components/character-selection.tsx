@@ -26,10 +26,8 @@ type CharacterSelectionProps = {
 
 export default function CharacterSelection({
   champions,
-  skins,
   onSelectSkin,
   initialChampionId,
-  initialSkinId,
   isLoading,
 }: CharacterSelectionProps) {
   const [searchQuery, setSearchQuery] = useState('');

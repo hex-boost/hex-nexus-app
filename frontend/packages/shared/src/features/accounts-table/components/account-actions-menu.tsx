@@ -1,12 +1,11 @@
-import { Button } from '@/components/ui/button.tsx';
+import {Button} from '@/components/ui/button.tsx';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu.tsx';
-import { MoreHorizontal } from 'lucide-react';
-import React from 'react';
+import {MoreHorizontal} from 'lucide-react';
 
 type AccountActionsMenuProps = {
   accountId: string;

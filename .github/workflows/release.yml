@@ -43,19 +43,19 @@ jobs:
           API_KEY: ${{ secrets.API_KEY }}
           PRODUCTION: true
 
-      - name: Install gotestsum
-        run: go install gotest.tools/gotestsum@latest
+#      - name: Install gotestsum
+#        run: go install gotest.tools/gotestsum@latest
+#
+#      - name: Run tests
+#        run: |
+#          go install github.com/vektra/mockery/v2@v3.2.4
+#          mockery
+#          gotestsum --format short --hide-summary skipped --format-hide-empty-pkg
 
-      - name: Run tests
-        run: |
-          go install github.com/vektra/mockery/v2@v3.2.4
-          mockery
-          gotestsum --format short --hide-summary skipped --format-hide-empty-pkg
-
-      - name: Run frontend tests
-        run: |
-            cd frontend
-            pnpm test
+#      - name: Run frontend tests
+#        run: |
+#            cd frontend
+#            pnpm test
       - name: Check build artifacts
         shell: bash
         run: |

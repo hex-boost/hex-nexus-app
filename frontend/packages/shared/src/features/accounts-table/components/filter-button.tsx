@@ -1,7 +1,6 @@
-import { Button } from '@/components/ui/button.tsx';
-import { cn } from '@/lib/utils.ts';
-import { ChevronDown, Filter } from 'lucide-react';
-import React from 'react';
+import {Button} from '@/components/ui/button.tsx';
+import {cn} from '@/lib/utils.ts';
+import {ChevronDown, Filter} from 'lucide-react';
 
 type FilterButtonProps = {
   showFilters: boolean;

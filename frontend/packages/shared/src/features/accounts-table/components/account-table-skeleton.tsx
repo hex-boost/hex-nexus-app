@@ -1,5 +1,4 @@
-import { Skeleton } from '@/components/ui/skeleton.tsx';
-import React from 'react';
+import {Skeleton} from '@/components/ui/skeleton.tsx';
 
 export function AccountTableSkeleton() {
   return (

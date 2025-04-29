@@ -185,7 +185,6 @@ type RankCardProps = {
 };
 
 export default function RankCard({
-  title = 'Ranqueada Solo',
   rank = 'Bronze 2',
   points = 89,
   pointsLabel = 'PDL',

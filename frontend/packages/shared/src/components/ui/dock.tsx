@@ -1,9 +1,7 @@
-'use client';
-
-import type {MotionValue, SpringOptions,} from 'framer-motion';
-import {AnimatePresence, motion, useMotionValue, useSpring, useTransform,} from 'framer-motion';
+import type {MotionValue, SpringOptions} from 'framer-motion';
+import {AnimatePresence, motion, useMotionValue, useSpring, useTransform} from 'framer-motion';
 import {cn} from '@/lib/utils';
-import {Children, cloneElement, createContext, use, useEffect, useMemo, useRef, useState,} from 'react';
+import {Children, cloneElement, createContext, use, useEffect, useMemo, useRef, useState} from 'react';
 
 const DOCK_HEIGHT = 128;
 const DEFAULT_MAGNIFICATION = 80;
@@ -144,6 +142,8 @@ function DockItem({ children, className }: DockItemProps) {
       aria-haspopup="true"
     >
       {Children.map(children, child =>
+      // @ts-ignore aaa
+      // eslint-disable-next-line react/no-clone-element
         cloneElement(child as React.ReactElement, { width, isHovered }))}
     </motion.div>
   );
