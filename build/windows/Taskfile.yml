@@ -22,6 +22,7 @@ tasks:
       - task: common:build:frontend:updater
         vars:
           PRODUCTION: '{{.PRODUCTION}}'
+      - task: mocks
       - task: common:generate:icons
     cmds:
       - task: generate:syso
@@ -36,6 +37,11 @@ tasks:
       CGO_ENABLED: 0
       GOARCH: '{{.ARCH | default ARCH}}'
       PRODUCTION: '{{.PRODUCTION | default "false"}}'
+
+  mocks:
+    summary: Generate Mocks
+    cmds:
+      - cmd: mockery
   package:
     summary: Packages a production build of the application into a `.exe` bundle
     cmds:

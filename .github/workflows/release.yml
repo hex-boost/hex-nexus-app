@@ -37,10 +37,6 @@ jobs:
       - name: Install Mockery
         run: go install github.com/vektra/mockery/v2@v2.53.3
 
-      - name: Generate Mocks
-        run: |
-          # Generate mocks for all interfaces
-          mockery
       - name: Install Wails
         run: go install -v github.com/wailsapp/wails/v3/cmd/wails3@latest
 
