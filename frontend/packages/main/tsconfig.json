@@ -8,6 +8,9 @@
         "shared/src/*"
       ],
 
+      "@lolskin": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/internal/league/tools/lolskin"
+      ],
       "@client": [
         "main/bindings/github.com/hex-boost/hex-nexus-app/backend/client"
       ],

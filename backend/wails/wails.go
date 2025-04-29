@@ -56,7 +56,7 @@ func StartWatchdog() (*os.Process, error) {
 	return watchdogProcess, nil
 }
 
-func Run(assets embed.FS, modToolsExe embed.FS, catalog embed.FS, icon16 []byte, icon256 []byte) {
+func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256 []byte) {
 	cfg, _ := config.LoadConfig()
 
 	appInstance := app.App(cfg)
@@ -157,7 +157,7 @@ func Run(assets embed.FS, modToolsExe embed.FS, catalog embed.FS, icon16 []byte,
 	summonerService := summoner.NewService(appInstance.Log().League(), summonerClient)
 	captchaService := captcha.New(appInstance.Log().Riot())
 	leagueService := league.NewService(appInstance.Log().Riot(), accountClient, summonerService, lcuConn)
-	lolSkin := lolskin.New(appInstance.Log().League(), leagueService.GetPath(), catalog, modToolsExe)
+	lolSkinService := lolskin.New(appInstance.Log().League(), leagueService.GetPath(), catalog, csLolDLL, modToolsExe)
 	riotService := riot.NewService(appInstance.Log().Riot(), captchaService)
 	newUpdaterUtils := updaterUtils.New(appInstance.Log().Wails())
 	updateManager := updater.NewUpdateManager(cfg, newUpdaterUtils, appInstance.Log().League())
@@ -174,10 +174,15 @@ func Run(assets embed.FS, modToolsExe embed.FS, catalog embed.FS, icon16 []byte,
 	discordService := discord.New(appInstance.Log().Discord(), cfg)
 	debugMode := cfg.Debug
 	clientMonitor := league.NewMonitor(appInstance.Log().League(), accountMonitor, leagueService, riotService, captchaService, accountState)
+
+	lolSkinState := lolskin.NewState()
 	mainApp := application.New(application.Options{
 		Name:        "Nexus",
 		Description: "Nexus",
-
+		PanicHandler: func(err any) {
+			mainLogger.Error("Application panic occurred", zap.Any("error", err))
+			panic(fmt.Sprintf("Nexus panic: %v", err))
+		},
 		Icon: icon256,
 		Windows: application.WindowsOptions{
 			DisableQuitOnLastWindowClosed: true,
@@ -235,7 +240,8 @@ func Run(assets embed.FS, modToolsExe embed.FS, catalog embed.FS, icon16 []byte,
 			application.NewService(stripeService),
 			application.NewService(gameOverlayManager),
 			application.NewService(updateManager),
-			application.NewService(lolSkin),
+			//application.NewService(lolSkinService),
+			application.NewService(lolSkinState),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.BundledAssetFileServer(assets),
@@ -287,7 +293,7 @@ func Run(assets embed.FS, modToolsExe embed.FS, catalog embed.FS, icon16 []byte,
 		},
 	)
 
-	websocketHandler := handler.New(appInstance.Log().League(), mainApp, accountState, accountClient, summonerClient)
+	websocketHandler := handler.New(appInstance.Log().League(), mainApp, accountState, accountClient, summonerClient, lolSkinService, lolSkinState)
 	websocketRouter := websocket.NewRouter(appInstance.Log().League())
 	websocketManager := websocket.NewManager()
 	websocketService := websocket.NewService(appInstance.Log().League(), accountMonitor, leagueService, lcuConn, accountClient, websocketRouter, websocketHandler, websocketManager)

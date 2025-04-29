@@ -348,3 +348,139 @@ const (
 	LolChallengesGameflowPhaseLobby                 LolChallengesGameflowPhase = "Lobby"
 	LolChallengesGameflowPhaseNone                  LolChallengesGameflowPhase = "None"
 )
+
+type LolChampSelectGridChampions struct {
+	Disabled           bool          `json:"disabled"`
+	FreeToPlay         bool          `json:"freeToPlay"`
+	FreeToPlayForQueue bool          `json:"freeToPlayForQueue"`
+	ChampionId         int           `json:"id"`
+	LoyaltyReward      bool          `json:"loyaltyReward"`
+	MasteryLevel       int           `json:"masteryLevel"`
+	MasteryPoints      int           `json:"masteryPoints"`
+	Name               string        `json:"name"`
+	Owned              bool          `json:"owned"`
+	PositionsFavorited []interface{} `json:"positionsFavorited"`
+	Rented             bool          `json:"rented"`
+	Roles              []string      `json:"roles"`
+	SelectionStatus    struct {
+		BanIntented           bool   `json:"banIntented"`
+		BanIntentedByMe       bool   `json:"banIntentedByMe"`
+		IsBanned              bool   `json:"isBanned"`
+		PickIntented          bool   `json:"pickIntented"`
+		PickIntentedByMe      bool   `json:"pickIntentedByMe"`
+		PickIntentedPosition  string `json:"pickIntentedPosition"`
+		PickedByOtherOrBanned bool   `json:"pickedByOtherOrBanned"`
+		SelectedByMe          bool   `json:"selectedByMe"`
+	} `json:"selectionStatus"`
+	SquarePortraitPath string `json:"squarePortraitPath"`
+	XboxGPReward       bool   `json:"xboxGPReward"`
+}
+
+type DDChampionByID struct {
+	Id           int    `json:"id"`
+	Name         string `json:"name"`
+	Alias        string `json:"alias"`
+	Title        string `json:"title"`
+	ShortBio     string `json:"shortBio"`
+	TacticalInfo struct {
+		Style      int    `json:"style"`
+		Difficulty int    `json:"difficulty"`
+		DamageType string `json:"damageType"`
+	} `json:"tacticalInfo"`
+	PlaystyleInfo struct {
+		Damage       int `json:"damage"`
+		Durability   int `json:"durability"`
+		CrowdControl int `json:"crowdControl"`
+		Mobility     int `json:"mobility"`
+		Utility      int `json:"utility"`
+	} `json:"playstyleInfo"`
+	SquarePortraitPath      string        `json:"squarePortraitPath"`
+	StingerSfxPath          string        `json:"stingerSfxPath"`
+	ChooseVoPath            string        `json:"chooseVoPath"`
+	BanVoPath               string        `json:"banVoPath"`
+	Roles                   []string      `json:"roles"`
+	RecommendedItemDefaults []interface{} `json:"recommendedItemDefaults"`
+	Skins                   []struct {
+		Id                           int         `json:"id"`
+		ContentId                    string      `json:"contentId"`
+		IsBase                       bool        `json:"isBase"`
+		Name                         string      `json:"name"`
+		SplashPath                   string      `json:"splashPath"`
+		UncenteredSplashPath         string      `json:"uncenteredSplashPath"`
+		TilePath                     string      `json:"tilePath"`
+		LoadScreenPath               string      `json:"loadScreenPath"`
+		SkinType                     string      `json:"skinType"`
+		Rarity                       string      `json:"rarity"`
+		IsLegacy                     bool        `json:"isLegacy"`
+		SplashVideoPath              interface{} `json:"splashVideoPath"`
+		CollectionSplashVideoPath    interface{} `json:"collectionSplashVideoPath"`
+		CollectionCardHoverVideoPath interface{} `json:"collectionCardHoverVideoPath"`
+		FeaturesText                 interface{} `json:"featuresText"`
+		ChromaPath                   *string     `json:"chromaPath"`
+		Emblems                      interface{} `json:"emblems"`
+		RegionRarityId               int         `json:"regionRarityId"`
+		RarityGemPath                interface{} `json:"rarityGemPath"`
+		SkinLines                    []struct {
+			Id int `json:"id"`
+		} `json:"skinLines"`
+		Description *string `json:"description"`
+		Chromas     []struct {
+			Id           int      `json:"id"`
+			Name         string   `json:"name"`
+			ContentId    string   `json:"contentId"`
+			ChromaPath   string   `json:"chromaPath"`
+			Colors       []string `json:"colors"`
+			Descriptions []struct {
+				Region      string `json:"region"`
+				Description string `json:"description"`
+			} `json:"descriptions"`
+			Rarities []struct {
+				Region string `json:"region"`
+				Rarity int    `json:"rarity"`
+			} `json:"rarities"`
+		} `json:"chromas,omitempty"`
+		LoadScreenVintagePath string `json:"loadScreenVintagePath,omitempty"`
+	} `json:"skins"`
+	Passive struct {
+		Name                  string `json:"name"`
+		AbilityIconPath       string `json:"abilityIconPath"`
+		AbilityVideoPath      string `json:"abilityVideoPath"`
+		AbilityVideoImagePath string `json:"abilityVideoImagePath"`
+		Description           string `json:"description"`
+	} `json:"passive"`
+	Spells []struct {
+		SpellKey              string `json:"spellKey"`
+		Name                  string `json:"name"`
+		AbilityIconPath       string `json:"abilityIconPath"`
+		AbilityVideoPath      string `json:"abilityVideoPath"`
+		AbilityVideoImagePath string `json:"abilityVideoImagePath"`
+		Cost                  string `json:"cost"`
+		Cooldown              string `json:"cooldown"`
+		Description           string `json:"description"`
+		DynamicDescription    string `json:"dynamicDescription"`
+		Range                 []int  `json:"range"`
+		CostCoefficients      []int  `json:"costCoefficients"`
+		CooldownCoefficients  []int  `json:"cooldownCoefficients"`
+		Coefficients          struct {
+			Coefficient1 int `json:"coefficient1"`
+			Coefficient2 int `json:"coefficient2"`
+		} `json:"coefficients"`
+		EffectAmounts struct {
+			Effect1Amount  []int `json:"Effect1Amount"`
+			Effect2Amount  []int `json:"Effect2Amount"`
+			Effect3Amount  []int `json:"Effect3Amount"`
+			Effect4Amount  []int `json:"Effect4Amount"`
+			Effect5Amount  []int `json:"Effect5Amount"`
+			Effect6Amount  []int `json:"Effect6Amount"`
+			Effect7Amount  []int `json:"Effect7Amount"`
+			Effect8Amount  []int `json:"Effect8Amount"`
+			Effect9Amount  []int `json:"Effect9Amount"`
+			Effect10Amount []int `json:"Effect10Amount"`
+		} `json:"effectAmounts"`
+		Ammo struct {
+			AmmoRechargeTime []int `json:"ammoRechargeTime"`
+			MaxAmmo          []int `json:"maxAmmo"`
+		} `json:"ammo"`
+		MaxLevel int `json:"maxLevel"`
+	} `json:"spells"`
+}

@@ -4,6 +4,7 @@ import type {Champions, Image, Info, Stats} from '@/hooks/useDataDragon/types/dd
 export type FormattedSkin = {
   id: number;
   name: string;
+  num: number;
   champion: string;
   imageAvatarUrl: string;
   rarity: string; // Assuming determineRarity returns a string

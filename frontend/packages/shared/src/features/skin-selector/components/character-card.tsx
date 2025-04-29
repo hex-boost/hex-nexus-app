@@ -75,7 +75,7 @@ export default function CharacterCard({
         <div className="flex flex-col items-start gap-0 px-5 py-4">
           <p className="text-base font-bold text-white">{primaryName}</p>
           {secondaryName && (
-            <span className="text-sm text-zinc-300 uppercase truncate">
+            <span className="text-sm text-zinc-300 capitalize truncate">
               {secondaryName.toLowerCase().includes(primaryName.toLowerCase())
                 ? secondaryName.replace(new RegExp(primaryName, 'i'), '').trim()
                 : secondaryName}

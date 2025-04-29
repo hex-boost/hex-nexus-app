@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account/events"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/league/tools/lolskin"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
@@ -30,6 +31,10 @@ type LolSkin interface {
 	InjectFantome(fantomePath string) error
 }
 
+type LolSkinState interface {
+	GetChampionSkin(championID int32) (lolskin.ChampionSkin, bool)
+}
+
 // Handler implements WebSocketEventHandler with standard event handling logic
 type Handler struct {
 	logger         logger.Loggerer
@@ -38,14 +43,17 @@ type Handler struct {
 	accountState   AccountState
 	app            App
 	lolSkin        LolSkin
+	lolSkinState   LolSkinState
 }
 
 // New creates a new WebSocket event handler
-func New(logger logger.Loggerer, app App, accountState AccountState, accountClient AccountClient, summonerClient SummonerClient) *Handler {
+func New(logger logger.Loggerer, app App, accountState AccountState, accountClient AccountClient, summonerClient SummonerClient, lolSkin LolSkin, lolSkinState LolSkinState) *Handler {
 	return &Handler{
 		accountState:   accountState,
 		summonerClient: summonerClient,
 		logger:         logger,
+		lolSkin:        lolSkin,
+		lolSkinState:   lolSkinState,
 		accountClient:  accountClient,
 		app:            app,
 	}
@@ -209,8 +217,37 @@ func (h *Handler) GameflowPhase(event websocket.LCUWebSocketEvent) {
 		}
 	}
 }
-func (h *Handler) ChampionPicked() {
+func (h *Handler) ChampionPicked(event websocket.LCUWebSocketEvent) {
+	var LolChampSelect types.LolChampSelectGridChampions
+	if err := json.Unmarshal(event.Data, &LolChampSelect); err != nil {
+		h.logger.Error("Failed to parse champion data", zap.Error(err))
+		return
+	}
 
+	if LolChampSelect.SelectionStatus.SelectedByMe && (!LolChampSelect.SelectionStatus.PickIntented && !LolChampSelect.SelectionStatus.PickIntentedByMe) {
+		championId := int32(LolChampSelect.ChampionId)
+		h.logger.Info("Champion picked", zap.String("championName", LolChampSelect.Name), zap.Int32("championId", championId))
+		championSkin, found := h.lolSkinState.GetChampionSkin(championId)
+		if !found {
+			h.logger.Info("Champion skin not found for this champion")
+			return
+		}
+
+		fantomePath, err := h.lolSkin.DownloadFantome(championId, championSkin.SkinID)
+		if err != nil {
+			h.logger.Error("Failed to download fantome", zap.Error(err))
+			return
+		}
+		go func() {
+			err = h.lolSkin.InjectFantome(fantomePath)
+			if err != nil {
+				h.logger.Error("Failed to inject fantome", zap.Error(err))
+				return
+			}
+			h.logger.Info("Lolskin has stopped")
+		}()
+		h.logger.Info("Lolskin started")
+	}
 }
 
 // IsRankingSame compares two RankedDetails objects to determine if they are identical

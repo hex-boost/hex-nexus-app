@@ -17,6 +17,7 @@ require (
 	go.uber.org/zap v1.27.0
 	golang.org/x/sync v0.12.0
 	golang.org/x/sys v0.31.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -70,7 +71,6 @@ require (
 	golang.org/x/tools v0.23.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 // replace github.com/wailsapp/wails/v2 v2.10.1 => /home/jacoba/go/pkg/mod

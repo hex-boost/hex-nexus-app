@@ -11,6 +11,10 @@
       "@client": [
         "main/bindings/github.com/hex-boost/hex-nexus-app/backend/client"
       ],
+
+      "@lolskin": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/internal/league/tools/lolskin"
+      ],
       "@hwid": [
         "main/bindings/github.com/hex-boost/hex-nexus-app/backend/pkg/hwid"
       ],

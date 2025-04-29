@@ -26,6 +26,30 @@ func NewState() *State {
 	}
 }
 
+// UpdateSelections updates multiple champion skin selections at once
+func (s *State) UpdateSelections(selections []ChampionSkin) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	for _, selection := range selections {
+		s.selections[selection.ChampionID] = selection
+	}
+}
+
+// ReplaceAllSelections replaces all existing selections with the provided ones
+func (s *State) ReplaceAllSelections(selections []ChampionSkin) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	// Clear existing selections
+	s.selections = make(map[int32]ChampionSkin)
+
+	// Add new selections
+	for _, selection := range selections {
+		s.selections[selection.ChampionID] = selection
+	}
+}
+
 // GetChampionSkin returns the selected skin for a champion
 func (s *State) GetChampionSkin(championID int32) (ChampionSkin, bool) {
 	s.mutex.RLock()

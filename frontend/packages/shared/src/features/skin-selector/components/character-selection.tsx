@@ -1,4 +1,3 @@
-import type {Skin} from '@/hooks/useDataDragon/types/ddragon.ts';
 import type {FormattedChampion, FormattedSkin} from '@/hooks/useDataDragon/types/useDataDragonHook.ts';
 import {Button} from '@/components/ui/button.tsx';
 import {Input} from '@/components/ui/input';
@@ -19,8 +18,7 @@ export type UserPreferences = {
 type CharacterSelectionProps = {
   champions: FormattedChampion[];
   skins: FormattedSkin[];
-  isEmbedded?: boolean;
-  onSelectSkin?: (champion: FormattedChampion, skin: Skin, chroma?: any | null) => void;
+  onSelectSkin?: (champion: FormattedChampion, skin: FormattedSkin, chroma?: any | null) => void;
   initialChampionId?: number;
   initialSkinId?: number;
   isLoading: boolean;
@@ -28,7 +26,6 @@ type CharacterSelectionProps = {
 
 export default function CharacterSelection({
   champions,
-  isEmbedded = false,
   skins,
   onSelectSkin,
   initialChampionId,
@@ -111,15 +108,15 @@ export default function CharacterSelection({
       }));
 
       // If in embedded mode, call the onSelectSkin callback
-      if (isEmbedded && onSelectSkin && selectedChampion) {
+      if (onSelectSkin && selectedChampion) {
         const skin = selectedChampion.skins.find(s => Number(s.id) === skinId) as FormattedSkin;
         if (skin) {
           const chroma = chromaId && skin.chromas ? skin.chromas.find(c => c.id === chromaId) : null;
-          onSelectSkin(selectedChampion, skin as unknown as Skin, chroma || undefined);
+          onSelectSkin(selectedChampion, skin, chroma || undefined);
         }
       }
     },
-    [isEmbedded, onSelectSkin, selectedChampion, setUserPreferences],
+    [onSelectSkin, selectedChampion, setUserPreferences],
   );
 
   // Handle card click based on current view
@@ -142,7 +139,7 @@ export default function CharacterSelection({
   const pageTitle = selectedChampion ? selectedChampion.name : 'All Champions';
 
   return (
-    <div className={cn('flex flex-col h-full w-full  bg-background', isEmbedded && 'rounded-lg')}>
+    <div className={cn('flex flex-col h-full w-full  bg-background')}>
       <div className="pb-6">
         {/* Header with back button if showing skins */}
         <div className="flex gap-4 items-center mb-4">

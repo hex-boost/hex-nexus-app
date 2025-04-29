@@ -20,6 +20,7 @@ import (
 
 type LolSkin struct {
 	modToolsExe     embed.FS
+	csLolDLL        embed.FS
 	game            string
 	state           CSLOLState
 	mutex           sync.Mutex
@@ -47,8 +48,9 @@ const (
 
 // Platform-specific constants
 const ModToolsExe = "mod-tools.exe"
+const CsLolDLL = "cslol-dll.dll"
 
-func New(logger *logger.Logger, leaguePath string, catalog, modToolsExe embed.FS) *LolSkin {
+func New(logger *logger.Logger, leaguePath string, catalog, csLolDLL, modToolsExe embed.FS) *LolSkin {
 	// Create a temporary directory for our extracted files
 	tempDir, err := os.MkdirTemp("", "lolskin")
 	if err != nil {
@@ -60,24 +62,24 @@ func New(logger *logger.Logger, leaguePath string, catalog, modToolsExe embed.FS
 	lolskin := &LolSkin{
 		logger:      logger,
 		modToolsExe: modToolsExe,
+		csLolDLL:    csLolDLL,
 		game:        leaguePath,
 		state:       StateIdle,
 		tempDir:     tempDir,
 	}
 
 	// Parse the catalog during initialization
-	catalogData, err := catalog.ReadFile("catalog.json")
+	catalogData, err := catalog.ReadFile("backend/assets/mod-tools/catalog.json")
 	if err != nil {
 		fmt.Printf("Failed to read catalog: %v\n", err)
 		os.RemoveAll(tempDir)
-		return nil
+		panic("error reading catalog")
 	}
-
 	var parsedCatalog Catalog
 	if err := json.Unmarshal(catalogData, &parsedCatalog); err != nil {
 		fmt.Printf("Failed to parse catalog: %v\n", err)
 		os.RemoveAll(tempDir)
-		return nil
+		panic("error parsing catalog")
 	}
 	lolskin.parsedCatalog = &parsedCatalog
 
@@ -85,7 +87,7 @@ func New(logger *logger.Logger, leaguePath string, catalog, modToolsExe embed.FS
 	if err != nil {
 		fmt.Printf("Failed to extract mod tools: %v\n", err)
 		os.RemoveAll(tempDir)
-		return nil
+		panic("error extracting mod tools")
 	}
 
 	// Create necessary directories
@@ -97,7 +99,7 @@ func New(logger *logger.Logger, leaguePath string, catalog, modToolsExe embed.FS
 
 // Helper to extract the mod tools executable
 func (c *LolSkin) extractModTools() error {
-	exeData, err := c.modToolsExe.ReadFile(ModToolsExe)
+	exeData, err := c.modToolsExe.ReadFile(fmt.Sprintf("backend/assets/mod-tools/%s", ModToolsExe))
 	if err != nil {
 		return fmt.Errorf("failed to read embedded mod-tools.exe: %w", err)
 	}
@@ -105,7 +107,19 @@ func (c *LolSkin) extractModTools() error {
 	exePath := filepath.Join(c.tempDir, ModToolsExe)
 	err = os.WriteFile(exePath, exeData, 0755) // 0755 makes it executable
 	if err != nil {
+
 		return fmt.Errorf("failed to write mod-tools.exe to temp directory: %w", err)
+
+	}
+
+	csLolDLL, err := c.csLolDLL.ReadFile(fmt.Sprintf("backend/assets/mod-tools/%s", CsLolDLL))
+	if err != nil {
+		return fmt.Errorf("failed to read embedded mod-tools.exe: %w", err)
+	}
+	csLolPath := filepath.Join(c.tempDir, CsLolDLL)
+	err = os.WriteFile(csLolPath, csLolDLL, 0755) // 0755 makes it executable
+	if err != nil {
+		return fmt.Errorf("failed to write cslol-dll.dll to temp directory: %w", err)
 	}
 
 	return nil
