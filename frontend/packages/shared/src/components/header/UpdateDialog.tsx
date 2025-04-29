@@ -1,17 +1,17 @@
-import { Button } from '@/components/ui/button.tsx';
+import {Button} from '@/components/ui/button.tsx';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from '@/components/ui/dialog.tsx';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip.tsx';
-import { useUpdate } from '@/hooks/useUpdate/useUpdate.tsx';
-import { Download } from 'lucide-react';
-import { useState } from 'react';
-import { cls } from 'react-image-crop';
+import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from '@/components/ui/tooltip.tsx';
+import {useUpdate} from '@/hooks/useUpdate/useUpdate.tsx';
+import {Download} from 'lucide-react';
+import {useState} from 'react';
+import {cls} from 'react-image-crop';
 
 export function UpdateDialog() {
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
@@ -25,7 +25,7 @@ export function UpdateDialog() {
               onClick={() => isAvailable ? setUpdateDialogOpen(true) : refetchVersion()}
               className={cls('relative p-2 rounded-full hover:bg-shade7 transition-colors duration-200 group', isAvailable && 'text-blue-400')}
             >
-              <Download className="h-5 w-5 text-muted-foreground" />
+              <Download className={cls('h-5 w-5 text-muted-foreground', isAvailable && '!text-blue-400')} />
               {
                 isAvailable
                 && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-500 rounded-full"></span>

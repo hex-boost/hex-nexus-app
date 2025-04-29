@@ -224,29 +224,38 @@ func (h *Handler) ChampionPicked(event websocket.LCUWebSocketEvent) {
 		return
 	}
 
-	if LolChampSelect.SelectionStatus.SelectedByMe && (!LolChampSelect.SelectionStatus.PickIntented && !LolChampSelect.SelectionStatus.PickIntentedByMe) {
+	if LolChampSelect.SelectionStatus.SelectedByMe &&
+		(!LolChampSelect.SelectionStatus.PickIntented &&
+			!LolChampSelect.SelectionStatus.PickIntentedByMe) {
+
 		championId := int32(LolChampSelect.ChampionId)
-		h.logger.Info("Champion picked", zap.String("championName", LolChampSelect.Name), zap.Int32("championId", championId))
+		h.logger.Info("Champion picked",
+			zap.String("championName", LolChampSelect.Name),
+			zap.Int32("championId", championId))
+
 		championSkin, found := h.lolSkinState.GetChampionSkin(championId)
 		if !found {
 			h.logger.Info("Champion skin not found for this champion")
 			return
 		}
 
-		fantomePath, err := h.lolSkin.DownloadFantome(championId, championSkin.SkinID)
-		if err != nil {
-			h.logger.Error("Failed to download fantome", zap.Error(err))
-			return
-		}
+		// Download and inject in a single goroutine to ensure proper sequence
 		go func() {
+			fantomePath, err := h.lolSkin.DownloadFantome(championId, championSkin.SkinID)
+			if err != nil {
+				h.logger.Error("Failed to download fantome", zap.Error(err))
+				return
+			}
+
+			h.logger.Info("Injecting skin for champion",
+				zap.String("championName", LolChampSelect.Name),
+				zap.Int32("skinID", championSkin.SkinID))
+
 			err = h.lolSkin.InjectFantome(fantomePath)
 			if err != nil {
 				h.logger.Error("Failed to inject fantome", zap.Error(err))
-				return
 			}
-			h.logger.Info("Lolskin has stopped")
 		}()
-		h.logger.Info("Lolskin started")
 	}
 }
 

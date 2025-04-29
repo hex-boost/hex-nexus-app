@@ -38,12 +38,9 @@ type LolSkin struct {
 type CSLOLState int
 
 const (
-	StateUnitialized CSLOLState = iota
-	StateIdle
+	StateIdle CSLOLState = iota // Will be 0
 	StateBusy
 	StateRunning
-	StateStopping
-	StateCriticalError
 )
 
 // Platform-specific constants
@@ -126,7 +123,6 @@ func (c *LolSkin) extractModTools() error {
 }
 
 func (c *LolSkin) changeLeaguePath() {
-	c.setStatus("Change League Path")
 
 	// Canonicalize the League path
 	gameDir := filepath.Dir(c.game)
@@ -135,7 +131,34 @@ func (c *LolSkin) changeLeaguePath() {
 	}
 }
 
+// StopRunningPatcher safely stops any running patcher process
+func (c *LolSkin) StopRunningPatcher() {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	if c.state == StateRunning && c.patcherProcess != nil {
+		c.logger.Info("Stopping previous patcher...")
+		// Send newline to gracefully stop the patcher
+		if c.patcherStdin != nil {
+			c.patcherStdin.Write([]byte("\n"))
+		}
+
+		// Wait for a moment to let the process terminate gracefully
+		time.Sleep(500 * time.Millisecond)
+
+		// Force kill if still running
+		if c.patcherProcess != nil && c.patcherProcess.Process != nil {
+			c.patcherProcess.Process.Kill()
+			c.patcherProcess = nil
+			c.patcherStdin = nil
+		}
+
+		c.setState(StateIdle)
+	}
+}
 func (c *LolSkin) InjectFantome(fantomePath string) error {
+	c.StopRunningPatcher()
+
 	c.mutex.Lock()
 	if c.state != StateIdle {
 		c.mutex.Unlock()
@@ -161,7 +184,6 @@ func (c *LolSkin) InjectFantome(fantomePath string) error {
 	}
 
 	// Step 1: Import mod
-	c.setStatus("Installing Mod")
 	importArgs := []string{
 		"import",
 		fantomePath,
@@ -175,12 +197,10 @@ func (c *LolSkin) InjectFantome(fantomePath string) error {
 	}
 
 	// Save profile
-	c.setStatus("Save profile")
+
 	profileName := "Default Profile"
 	c.writeCurrentProfile(profileName)
 
-	// Write profile
-	c.setStatus("Write profile")
 	profileFile, _ := os.Create(filepath.Join(c.tempDir, "profiles", profileName+".profile"))
 	if profileFile != nil {
 		profileFile.WriteString(modName + "\n")
@@ -202,7 +222,6 @@ func (c *LolSkin) InjectFantome(fantomePath string) error {
 	}
 
 	// Step 3: Run the patcher
-	c.setStatus("Starting patcher...")
 	patcherArgs := []string{
 		"runoverlay",
 		filepath.Join(c.tempDir, "profiles", profileName),
@@ -274,7 +293,6 @@ func (c *LolSkin) runPatcher(args []string) {
 		for scanner.Scan() {
 			line := scanner.Text()
 			c.logger.Info("Patcher output", zap.String("message", line))
-			c.setStatus(line)
 		}
 	}()
 
@@ -335,16 +353,6 @@ func (c *LolSkin) setState(state CSLOLState) {
 			c.onStateChanged(state)
 		}
 	}
-}
-
-func (c *LolSkin) setStatus(status string) {
-	if c.onStatusChanged != nil {
-		c.onStatusChanged(status)
-	}
-}
-
-func (c *LolSkin) reportError(name, message, trace string) {
-	fmt.Printf("Error while: %s\n%s\n%s\n", name, message, trace)
 }
 
 func (c *LolSkin) writeCurrentProfile(profile string) {
