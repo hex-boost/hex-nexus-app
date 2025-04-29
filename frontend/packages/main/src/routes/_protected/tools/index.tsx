@@ -1,40 +1,42 @@
 import {Dock, DockIcon, DockItem, DockLabel} from '@/components/ui/dock';
 
-import {createFileRoute} from '@tanstack/react-router';
+import {createFileRoute, Link} from '@tanstack/react-router';
+import {motion} from 'framer-motion';
 
 import {Activity} from 'lucide-react';
 
 export const Route = createFileRoute('/_protected/tools/')({
   component: RouteComponent,
 });
-const data = [
-  {
-    title: 'Active Game',
-    icon: (
-      <Activity className="h-full w-full text-neutral-600 dark:text-neutral-300" />
-    ),
-    href: '#',
-  },
-];
 
 export function AppleStyleDock() {
   return (
     <div className="absolute bottom-12 left-11/12 max-w-full -translate-x-1/2">
-      <Dock className="items-end pb-3">
-        {data.map((item, idx) => (
-          <DockItem
-            key={idx}
-            className="aspect-square rounded-full bg-gray-200 dark:bg-neutral-800 "
-          >
-            <DockLabel>{item.title}</DockLabel>
-            <DockIcon>{item.icon}</DockIcon>
+      <Link to="/active-game">
+        <Dock className="items-end pb-3 !bg-[#11101a] border">
+          <DockItem className="aspect-square flex rounded-full bg-gray-200 dark:bg-neutral-800 relative">
+            <motion.div
+              className="absolute inset-0 w-full h-full rounded-full bg-gray-300 dark:bg-emerald-500/30"
+              animate={{
+                scale: [1, 1.05, 1],
+                opacity: [0.6, 0.8, 0.6],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+            />
+            <DockLabel>Active Game</DockLabel>
+            <DockIcon>
+              <Activity className="h-full w-full text-neutral-600 dark:text-neutral-300" />
+            </DockIcon>
           </DockItem>
-        ))}
-      </Dock>
+        </Dock>
+      </Link>
     </div>
   );
 }
-
 function RouteComponent() {
   // const { allChampions, allSkins, isLoading } = useAllDataDragon();
   //

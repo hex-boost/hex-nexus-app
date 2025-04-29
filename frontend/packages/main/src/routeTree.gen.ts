@@ -19,6 +19,7 @@ import { Route as ProtectedToolsIndexImport } from './routes/_protected/tools/in
 import { Route as ProtectedSubscriptionIndexImport } from './routes/_protected/subscription/index'
 import { Route as ProtectedNotificationsIndexImport } from './routes/_protected/notifications/index'
 import { Route as ProtectedDashboardIndexImport } from './routes/_protected/dashboard/index'
+import { Route as ProtectedActiveGameIndexImport } from './routes/_protected/active-game/index'
 import { Route as ProtectedAccountsIndexImport } from './routes/_protected/accounts/index'
 import { Route as ProtectedAccountsIdImport } from './routes/_protected/accounts/$id'
 
@@ -71,6 +72,12 @@ const ProtectedNotificationsIndexRoute =
 const ProtectedDashboardIndexRoute = ProtectedDashboardIndexImport.update({
   id: '/dashboard/',
   path: '/dashboard/',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+
+const ProtectedActiveGameIndexRoute = ProtectedActiveGameIndexImport.update({
+  id: '/active-game/',
+  path: '/active-game/',
   getParentRoute: () => ProtectedRoute,
 } as any)
 
@@ -132,6 +139,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedAccountsIndexImport
       parentRoute: typeof ProtectedImport
     }
+    '/_protected/active-game/': {
+      id: '/_protected/active-game/'
+      path: '/active-game'
+      fullPath: '/active-game'
+      preLoaderRoute: typeof ProtectedActiveGameIndexImport
+      parentRoute: typeof ProtectedImport
+    }
     '/_protected/dashboard/': {
       id: '/_protected/dashboard/'
       path: '/dashboard'
@@ -168,6 +182,7 @@ declare module '@tanstack/react-router' {
 interface ProtectedRouteChildren {
   ProtectedAccountsIdRoute: typeof ProtectedAccountsIdRoute
   ProtectedAccountsIndexRoute: typeof ProtectedAccountsIndexRoute
+  ProtectedActiveGameIndexRoute: typeof ProtectedActiveGameIndexRoute
   ProtectedDashboardIndexRoute: typeof ProtectedDashboardIndexRoute
   ProtectedNotificationsIndexRoute: typeof ProtectedNotificationsIndexRoute
   ProtectedSubscriptionIndexRoute: typeof ProtectedSubscriptionIndexRoute
@@ -177,6 +192,7 @@ interface ProtectedRouteChildren {
 const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedAccountsIdRoute: ProtectedAccountsIdRoute,
   ProtectedAccountsIndexRoute: ProtectedAccountsIndexRoute,
+  ProtectedActiveGameIndexRoute: ProtectedActiveGameIndexRoute,
   ProtectedDashboardIndexRoute: ProtectedDashboardIndexRoute,
   ProtectedNotificationsIndexRoute: ProtectedNotificationsIndexRoute,
   ProtectedSubscriptionIndexRoute: ProtectedSubscriptionIndexRoute,
@@ -194,6 +210,7 @@ export interface FileRoutesByFullPath {
   '/overlay': typeof OverlayRoute
   '/accounts/$id': typeof ProtectedAccountsIdRoute
   '/accounts': typeof ProtectedAccountsIndexRoute
+  '/active-game': typeof ProtectedActiveGameIndexRoute
   '/dashboard': typeof ProtectedDashboardIndexRoute
   '/notifications': typeof ProtectedNotificationsIndexRoute
   '/subscription': typeof ProtectedSubscriptionIndexRoute
@@ -207,6 +224,7 @@ export interface FileRoutesByTo {
   '/overlay': typeof OverlayRoute
   '/accounts/$id': typeof ProtectedAccountsIdRoute
   '/accounts': typeof ProtectedAccountsIndexRoute
+  '/active-game': typeof ProtectedActiveGameIndexRoute
   '/dashboard': typeof ProtectedDashboardIndexRoute
   '/notifications': typeof ProtectedNotificationsIndexRoute
   '/subscription': typeof ProtectedSubscriptionIndexRoute
@@ -221,6 +239,7 @@ export interface FileRoutesById {
   '/overlay': typeof OverlayRoute
   '/_protected/accounts/$id': typeof ProtectedAccountsIdRoute
   '/_protected/accounts/': typeof ProtectedAccountsIndexRoute
+  '/_protected/active-game/': typeof ProtectedActiveGameIndexRoute
   '/_protected/dashboard/': typeof ProtectedDashboardIndexRoute
   '/_protected/notifications/': typeof ProtectedNotificationsIndexRoute
   '/_protected/subscription/': typeof ProtectedSubscriptionIndexRoute
@@ -236,6 +255,7 @@ export interface FileRouteTypes {
     | '/overlay'
     | '/accounts/$id'
     | '/accounts'
+    | '/active-game'
     | '/dashboard'
     | '/notifications'
     | '/subscription'
@@ -248,6 +268,7 @@ export interface FileRouteTypes {
     | '/overlay'
     | '/accounts/$id'
     | '/accounts'
+    | '/active-game'
     | '/dashboard'
     | '/notifications'
     | '/subscription'
@@ -260,6 +281,7 @@ export interface FileRouteTypes {
     | '/overlay'
     | '/_protected/accounts/$id'
     | '/_protected/accounts/'
+    | '/_protected/active-game/'
     | '/_protected/dashboard/'
     | '/_protected/notifications/'
     | '/_protected/subscription/'
@@ -305,6 +327,7 @@ export const routeTree = rootRoute
       "children": [
         "/_protected/accounts/$id",
         "/_protected/accounts/",
+        "/_protected/active-game/",
         "/_protected/dashboard/",
         "/_protected/notifications/",
         "/_protected/subscription/",
@@ -323,6 +346,10 @@ export const routeTree = rootRoute
     },
     "/_protected/accounts/": {
       "filePath": "_protected/accounts/index.tsx",
+      "parent": "/_protected"
+    },
+    "/_protected/active-game/": {
+      "filePath": "_protected/active-game/index.tsx",
       "parent": "/_protected"
     },
     "/_protected/dashboard/": {
