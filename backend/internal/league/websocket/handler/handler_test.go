@@ -376,7 +376,7 @@ func TestChampionWithMoreChampions(t *testing.T) {
 	mockAccountClient.On("Save", *updatedAccount).Return(savedResponse, nil)
 	mockApp.On("EmitEvent", events.AccountStateChanged, savedResponse).Return()
 
-	handler.Champion(event)
+	handler.ChampionPurchase(event)
 
 	mockState.AssertExpectations(t)
 	mockAccountClient.AssertExpectations(t)
@@ -413,7 +413,7 @@ func TestChampionWithFewerChampions(t *testing.T) {
 	mockState.On("Get").Return(currentAccount)
 	// Update should not be called
 
-	handler.Champion(event)
+	handler.ChampionPurchase(event)
 
 	mockState.AssertExpectations(t)
 	mockAccountClient.AssertNotCalled(t, "Save")
@@ -434,7 +434,7 @@ func TestChampionWithInvalidData(t *testing.T) {
 		Data: invalidData,
 	}
 
-	handler.Champion(event)
+	handler.ChampionPurchase(event)
 
 	mockState.AssertNotCalled(t, "Get")
 	mockState.AssertNotCalled(t, "Update")
@@ -458,7 +458,7 @@ func TestChampionWithEmptyData(t *testing.T) {
 		Data: dataBytes,
 	}
 
-	handler.Champion(event)
+	handler.ChampionPurchase(event)
 
 	mockState.AssertNotCalled(t, "Get")
 	mockState.AssertNotCalled(t, "Update")
@@ -486,7 +486,7 @@ func TestChampionWithNonChampionInventoryType(t *testing.T) {
 		Data: dataBytes,
 	}
 
-	handler.Champion(event)
+	handler.ChampionPurchase(event)
 
 	mockState.AssertNotCalled(t, "Get")
 	mockState.AssertNotCalled(t, "Update")
@@ -529,7 +529,7 @@ func TestChampionWithNilCurrentAccount(t *testing.T) {
 	mockAccountClient.On("Save", *updatedAccount).Return(savedResponse, nil)
 	mockApp.On("EmitEvent", events.AccountStateChanged, savedResponse).Return()
 
-	handler.Champion(event)
+	handler.ChampionPurchase(event)
 
 	mockState.AssertExpectations(t)
 	mockAccountClient.AssertExpectations(t)

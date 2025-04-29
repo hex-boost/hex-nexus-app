@@ -25,6 +25,10 @@ type App interface {
 type SummonerClient interface {
 	GetRanking() (*types.RankedStatsRefresh, error)
 }
+type LolSkin interface {
+	DownloadFantome(championId int32, skinId int32) (string, error)
+	InjectFantome(fantomePath string) error
+}
 
 // Handler implements WebSocketEventHandler with standard event handling logic
 type Handler struct {
@@ -33,6 +37,7 @@ type Handler struct {
 	summonerClient SummonerClient
 	accountState   AccountState
 	app            App
+	lolSkin        LolSkin
 }
 
 // New creates a new WebSocket event handler
@@ -99,7 +104,7 @@ func (h *Handler) Wallet(event websocket.LCUWebSocketEvent) {
 	}
 }
 
-func (h *Handler) Champion(event websocket.LCUWebSocketEvent) {
+func (h *Handler) ChampionPurchase(event websocket.LCUWebSocketEvent) {
 	var championsData types.LolInventoryV2
 	if err := json.Unmarshal(event.Data, &championsData); err != nil {
 		h.logger.Error("Failed to parse champion data", zap.Error(err))
@@ -132,7 +137,7 @@ func (h *Handler) Champion(event websocket.LCUWebSocketEvent) {
 		// Check if the count in the current state is greater than or equal to what we just found
 		currentCount := len(*currentAccount.LCUchampions)
 		if currentCount >= championCount {
-			h.logger.Debug("Champion count unchanged or less than current",
+			h.logger.Debug("ChampionPurchase count unchanged or less than current",
 				zap.Int("current", currentCount),
 				zap.Int("new", championCount))
 			needsUpdate = false
@@ -152,7 +157,6 @@ func (h *Handler) Champion(event websocket.LCUWebSocketEvent) {
 	}
 }
 
-// GameflowPhase handles gameflow phase changes from the LCU
 // GameflowPhase handles gameflow phase changes from the LCU
 func (h *Handler) GameflowPhase(event websocket.LCUWebSocketEvent) {
 	var gameflowPhase types.LolChallengesGameflowPhase
@@ -204,6 +208,9 @@ func (h *Handler) GameflowPhase(event websocket.LCUWebSocketEvent) {
 			h.logger.Info("Account ranking updated successfully")
 		}
 	}
+}
+func (h *Handler) ChampionPicked() {
+
 }
 
 // IsRankingSame compares two RankedDetails objects to determine if they are identical
