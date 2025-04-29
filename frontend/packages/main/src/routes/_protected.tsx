@@ -1,33 +1,34 @@
 import AdminPanelLayout from '@/components/admin-panel/admin-panel-layout.tsx';
 // frontend/src/routes/_protected.tsx
-import { CloseConfirmationHandler } from '@/components/CloseConfirmation.tsx';
-import { CoinIcon } from '@/components/coin-icon.tsx';
-import { DefaultContextMenu } from '@/components/DefaultContextMenu.tsx';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
-import { Button } from '@/components/ui/button.tsx';
+import {CloseConfirmationHandler} from '@/components/CloseConfirmation.tsx';
+import {CoinIcon} from '@/components/coin-icon.tsx';
+import {DefaultContextMenu} from '@/components/DefaultContextMenu.tsx';
+import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar.tsx';
+import {Button} from '@/components/ui/button.tsx';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from '@/components/ui/dialog.tsx';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu.tsx';
-import { Separator } from '@/components/ui/separator.tsx';
-import { Skeleton } from '@/components/ui/skeleton.tsx';
-import { Textarea } from '@/components/ui/textarea.tsx';
-import { WindowControls } from '@/components/WindowControls.tsx';
-import { ContextMenuProvider } from '@/contexts/ContextMenuContext.tsx';
-import { NotificationProvider } from '@/features/notification/notification-provider.tsx';
-import { NotificationBell } from '@/features/notification/NotificationBell.tsx';
-import { UserProfile } from '@/features/user-profile/UserProfile.tsx';
-import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
-import { useFavoriteAccounts } from '@/hooks/useFavoriteAccounts.ts';
-import { useUserStore } from '@/stores/useUserStore';
-import { createFileRoute, Outlet, useRouter } from '@tanstack/react-router';
+import {DropdownMenu, DropdownMenuContent, DropdownMenuTrigger} from '@/components/ui/dropdown-menu.tsx';
+import {Separator} from '@/components/ui/separator.tsx';
+import {Skeleton} from '@/components/ui/skeleton.tsx';
+import {Textarea} from '@/components/ui/textarea.tsx';
+import {WindowControls} from '@/components/WindowControls.tsx';
+import {ContextMenuProvider} from '@/contexts/ContextMenuContext.tsx';
+import {NotificationProvider} from '@/features/notification/notification-provider.tsx';
+import {NotificationBell} from '@/features/notification/NotificationBell.tsx';
+import {UserProfile} from '@/features/user-profile/UserProfile.tsx';
+import {useCommonFetch} from '@/hooks/useCommonFetch.ts';
+import {useFavoriteAccounts} from '@/hooks/useFavoriteAccounts.ts';
+import {useUserStore} from '@/stores/useUserStore';
+import {createFileRoute, Outlet, useRouter} from '@tanstack/react-router';
 import React from 'react';
-import { cls } from 'react-image-crop';
+import {cls} from 'react-image-crop';
+import {AppleStyleDock} from './_protected/tools';
 import 'non.geist';
 
 export const Route = createFileRoute('/_protected')({
@@ -52,6 +53,7 @@ function DashboardLayout() {
   return (
     <>
 
+      <AppleStyleDock />
       <CloseConfirmationHandler />
 
       <NotificationProvider>
