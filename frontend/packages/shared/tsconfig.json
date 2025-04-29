@@ -31,7 +31,7 @@
       ],
 
       "@manager": [
-        "updater/bindings/github.com/hex-boost/hex-nexus-app/backend/cmd/updater/manager"
+        "updater/bindings/github.com/hex-boost/hex-nexus-app/backend/internal/updater"
       ],
 
       "@time": [
