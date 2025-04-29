@@ -38,7 +38,7 @@ tasks:
       GOARCH: '{{.ARCH | default ARCH}}'
       PRODUCTION: '{{.PRODUCTION | default "false"}}'
 
-  mocks:
+  mock:
     summary: Generate Mocks
     cmds:
       - cmd: mockery
