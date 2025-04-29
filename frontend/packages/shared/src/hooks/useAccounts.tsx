@@ -1,12 +1,12 @@
-import type { AccountType, Server } from '@/types/types';
+import type {AccountType, Server} from '@/types/types';
 
-import type { StrapiResponse } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
-import { strapiClient } from '@/lib/strapi.ts';
-import { useMapping } from '@/lib/useMapping';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from '@tanstack/react-router';
-import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import type {StrapiResponse} from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
+import {strapiClient} from '@/lib/strapi.ts';
+import {useMapping} from '@/lib/useMapping';
+import {useQuery, useQueryClient} from '@tanstack/react-query';
+import {useRouter} from '@tanstack/react-router';
+import {ArrowDown, ArrowUp, ArrowUpDown} from 'lucide-react';
+import {useCallback, useEffect, useState} from 'react';
 
 export const availableRegions: Server[] = [
   'NA1',
@@ -54,6 +54,7 @@ type AccountsState = {
   pagination: {
     page: number;
     pageSize: number;
+    pageCount?: number;
   };
 };
 

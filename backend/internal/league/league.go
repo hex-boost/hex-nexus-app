@@ -9,6 +9,9 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/mitchellh/go-ps"
 	"go.uber.org/zap"
+	"gopkg.in/yaml.v3"
+	"os"
+	"path/filepath"
 )
 
 type Service struct {
@@ -25,6 +28,35 @@ func NewService(logger *logger.Logger, api *account.Client, summonerService *sum
 		logger:          logger,
 		summonerService: summonerService,
 	}
+}
+func (s *Service) GetPath() string {
+	programData := os.Getenv("PROGRAMDATA")
+	if programData == "" {
+		programData = "C:\\ProgramData"
+	}
+
+	leaguePath := filepath.Join(programData, "Riot Games", "Metadata", "league_of_legends.live", "league_of_legends.live.product_settings.yaml")
+	fileContent, err := os.ReadFile(leaguePath)
+	if err != nil {
+		s.logger.Error("Failed to read League settings file", zap.Error(err))
+		return ""
+	}
+
+	var settings struct {
+		ProductInstallFullPath string `yaml:"product_install_full_path"`
+	}
+
+	if err := yaml.Unmarshal(fileContent, &settings); err != nil {
+		s.logger.Error("Failed to parse League settings file", zap.Error(err))
+		return ""
+	}
+
+	if settings.ProductInstallFullPath == "" {
+		s.logger.Error("Could not find League installation path in settings file")
+		return ""
+	}
+
+	return filepath.Join(settings.ProductInstallFullPath, "Game", "League of Legends.exe")
 }
 
 func (s *Service) IsPlaying() bool {

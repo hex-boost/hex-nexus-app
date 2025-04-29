@@ -3,6 +3,7 @@ package wails
 import (
 	"embed"
 	"fmt"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/league/tools/lolskin"
 	"log"
 	"os"
 	"os/signal"
@@ -55,7 +56,7 @@ func StartWatchdog() (*os.Process, error) {
 	return watchdogProcess, nil
 }
 
-func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
+func Run(assets embed.FS, modToolsExe embed.FS, catalog embed.FS, icon16 []byte, icon256 []byte) {
 	cfg, _ := config.LoadConfig()
 
 	appInstance := app.App(cfg)
@@ -156,6 +157,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 	summonerService := summoner.NewService(appInstance.Log().League(), summonerClient)
 	captchaService := captcha.New(appInstance.Log().Riot())
 	leagueService := league.NewService(appInstance.Log().Riot(), accountClient, summonerService, lcuConn)
+	lolSkin := lolskin.New(appInstance.Log().League(), leagueService.GetPath(), catalog, modToolsExe)
 	riotService := riot.NewService(appInstance.Log().Riot(), captchaService)
 	newUpdaterUtils := updaterUtils.New(appInstance.Log().Wails())
 	updateManager := updater.NewUpdateManager(cfg, newUpdaterUtils, appInstance.Log().League())
@@ -233,6 +235,7 @@ func Run(assets embed.FS, icon16 []byte, icon256 []byte) {
 			application.NewService(stripeService),
 			application.NewService(gameOverlayManager),
 			application.NewService(updateManager),
+			application.NewService(lolSkin),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.BundledAssetFileServer(assets),

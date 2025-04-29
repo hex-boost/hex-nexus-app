@@ -1,25 +1,26 @@
-import { DivisionsMultiSelect, RanksMultiSelect } from '@/components/RanksRadioGroup.tsx';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
-import { Badge } from '@/components/ui/badge.tsx';
+import type {Rank} from '@/components/RanksRadioGroup.tsx';
+import {DivisionsMultiSelect, RanksMultiSelect} from '@/components/RanksRadioGroup.tsx';
+import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar.tsx';
+import {Badge} from '@/components/ui/badge.tsx';
 
-import { Button } from '@/components/ui/button.tsx';
-import { Label } from '@/components/ui/label.tsx';
-import { MultiSelectCombobox } from '@/components/ui/multi-select-combobox.tsx';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select.tsx';
-import { Slider } from '@/components/ui/slider.tsx';
-import { AccountsTable } from '@/features/accounts-table/components/accounts-table.tsx';
-import { AccountsPagination } from '@/features/accounts-table/components/AccountsPagination.tsx';
-import { FilterButton } from '@/features/accounts-table/components/filter-button.tsx';
-import { ItemsPerPageSelector } from '@/features/accounts-table/components/items-per-page-selector.tsx';
-import { ResultsCount } from '@/features/accounts-table/components/results-count.tsx';
-import { SearchBar } from '@/features/accounts-table/components/search-query.tsx';
-import { useAccounts } from '@/hooks/useAccounts.tsx';
-import { useAllDataDragon } from '@/hooks/useDataDragon/useDataDragon.ts';
-import { usePrice } from '@/hooks/usePrice.ts';
-import { useMapping } from '@/lib/useMapping.tsx';
-import { cn } from '@/lib/utils.ts';
-import { AlertCircle, AlertOctagon, AlertTriangle, Check, Shield, XIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import {Button} from '@/components/ui/button.tsx';
+import {Label} from '@/components/ui/label.tsx';
+import {MultiSelectCombobox} from '@/components/ui/multi-select-combobox.tsx';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select.tsx';
+import {Slider} from '@/components/ui/slider.tsx';
+import {AccountsTable} from '@/features/accounts-table/components/accounts-table.tsx';
+import {AccountsPagination} from '@/features/accounts-table/components/AccountsPagination.tsx';
+import {FilterButton} from '@/features/accounts-table/components/filter-button.tsx';
+import {ItemsPerPageSelector} from '@/features/accounts-table/components/items-per-page-selector.tsx';
+import {ResultsCount} from '@/features/accounts-table/components/results-count.tsx';
+import {SearchBar} from '@/features/accounts-table/components/search-query.tsx';
+import {useAccounts} from '@/hooks/useAccounts.tsx';
+import {useAllDataDragon} from '@/hooks/useDataDragon/useDataDragon.ts';
+import {usePrice} from '@/hooks/usePrice.ts';
+import {useMapping} from '@/lib/useMapping.tsx';
+import {cn} from '@/lib/utils.ts';
+import {AlertCircle, AlertOctagon, AlertTriangle, Check, Shield, XIcon} from 'lucide-react';
+import {useEffect, useState} from 'react';
 
 export function AccountsTablePage() {
   const [currentPage, setCurrentPage] = useState(1);
@@ -116,7 +117,7 @@ export function AccountsTablePage() {
                     )}
                   </div>
                   <RanksMultiSelect
-                    defaultSelected={filters.ranks as any[]} // Cast to satisfy type requirements
+                    defaultSelected={filters.ranks as Rank[]} // Cast to satisfy type requirements
                     onChange={(selectedRanks) => {
                       setFilters({ ...filters, ranks: selectedRanks });
                     }}
@@ -423,7 +424,7 @@ export function AccountsTablePage() {
         />
 
         {/* Pagination component */}
-        {totalPages > 1 && (
+        {filteredAccounts.length > 0 && (
           <div className="flex w-full justify-between items-center">
             <div className="flex items-center gap-4">
               <ResultsCount filteredCount={filteredAccounts.length} totalCount={totalItems}>

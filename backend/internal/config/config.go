@@ -25,6 +25,7 @@ type Config struct {
 	LeagueAuthType string `json:"auth_type"`
 	BackendURL     string `json:"backendUrl"`
 	Debug          bool   `json:"debug"`
+	ModToolsPath   string `json:"modToolsPath"`
 
 	LogsDirectory string `json:"logsDirectory"`
 
@@ -45,6 +46,7 @@ func LoadConfig() (*Config, error) {
 	}
 
 	config := &Config{
+		ModToolsPath:   getEnv("MOD_TOOLS_PATH", ""),
 		Version:        getEnv("VERSION", Version),
 		RefreshApiKey:  getEnv("REFRESH_API_KEY", RefreshApiKey),
 		BackendURL:     getEnv("API_URL", BackendURL),

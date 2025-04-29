@@ -158,7 +158,6 @@ func (s *Service) LoginWithCaptcha(ctx context.Context, username, password, capt
 	s.logger.Error("Authentication with captcha failed", zap.Any("response", loginResult))
 	return "", errors.New("authentication with captcha failed")
 }
-
 func (s *Service) Launch() error {
 	s.ResetRestyClient()
 	s.logger.Info("Attempting to launch Riot client")

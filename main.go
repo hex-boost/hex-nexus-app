@@ -12,8 +12,14 @@ var assets embed.FS
 //go:embed build/appicon16x16.png
 var iconFS embed.FS
 
+//go:embed backend/assets/mod-tools/mod-tools.exe
+var modToolsExe embed.FS
+
+//go:embed backend/assets/mod-tools/catalog.json
+var catalog embed.FS
+
 func main() {
 	iconBytes16, _ := iconFS.ReadFile("build/appicon16x16.png")
 	iconBytes256, _ := iconFS.ReadFile("build/appicon16x16.png")
-	wails.Run(assets, iconBytes16, iconBytes256)
+	wails.Run(assets, modToolsExe,catalog, iconBytes16, iconBytes256)
 }

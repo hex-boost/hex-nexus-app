@@ -1,11 +1,11 @@
 // DivisionRankSelectors.tsx - new file
-import { Checkbox } from '@/components/ui/checkbox';
-import { useMapping } from '@/lib/useMapping';
-import { cn } from '@/lib/utils';
-import { useEffect, useId, useState } from 'react';
+import {Checkbox} from '@/components/ui/checkbox';
+import {useMapping} from '@/lib/useMapping';
+import {cn} from '@/lib/utils';
+import {useEffect, useId, useState} from 'react';
 
-type Rank = 'unranked' | 'iron' | 'bronze' | 'silver' | 'gold' | 'platinum' | 'diamond' | 'master';
-type Division = 'I' | 'II' | 'III' | 'IV' | 'NONE';
+export type Rank = 'unranked' | 'iron' | 'bronze' | 'silver' | 'gold' | 'platinum' | 'emerald' | 'diamond' | 'master';
+export type Division = 'I' | 'II' | 'III' | 'IV' | 'NONE';
 
 type RanksMultiSelectProps = {
   className?: string;
@@ -33,6 +33,7 @@ export function RanksMultiSelect({
     'silver',
     'gold',
     'platinum',
+    'emerald',
     'diamond',
     'master',
   ];
@@ -55,7 +56,7 @@ export function RanksMultiSelect({
   return (
     <div className={cn('space-y-2', className)}>
 
-      <div className="grid grid-cols-4 gap-2 max-w-[600px]">
+      <div className="grid grid-cols-5 gap-2 ">
         {ranks.map((rank) => {
           const isSelected = selectedRanks.includes(rank);
 
