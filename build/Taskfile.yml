@@ -24,6 +24,7 @@ tasks:
       - touch packages/main/dist/index.html
       - mkdir -p ../backend/cmd/updater/dist
       - touch ../backend/cmd/updater/dist/index.html
+
   install:frontend:deps:
     summary: Install frontend dependencies
     dir: frontend
@@ -33,12 +34,10 @@ tasks:
     generates:
       - node_modules/*
     cmds:
-#      - cmd: |
-#          powershell -Command "if (-not (Get-Command pnpm -ErrorAction SilentlyContinue)) { echo 'PNPM not found, installing...'; npm install -g pnpm } else { echo 'PNPM already installed' }"
-#        platforms: [windows]
-      - pnpm install
-    method: checksum  # Add this to prevent parallel execution
-
+      - cmd: powershell -Command "if (Test-Path frontend/node_modules) { Remove-Item -Force -Recurse frontend/node_modules -ErrorAction SilentlyContinue }"
+        platforms: [windows]
+      - pnpm install --frozen-lockfile --store-dir=./.pnpm-store
+    method: checksum
   build:frontend:updater:
     summary: Build the frontend project
     dir: frontend

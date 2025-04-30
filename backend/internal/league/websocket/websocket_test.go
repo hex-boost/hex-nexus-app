@@ -8,7 +8,6 @@ import (
 
 	gorillaWs "github.com/gorilla/websocket"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket"
-	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket/mocks"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 
 	"github.com/stretchr/testify/assert"
