@@ -1,38 +1,35 @@
 import type {CurrentSummoner} from '@types';
+import * as Summoner from '@summonerClient';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 
-export const SUMMONER_QUERY_KEY = ['currentSummoner'];
+export const SUMMONER_RANK_QUERY = ['summoner-rank'];
 
-export function useSummonerQuery() {
+export function useSummonerRankQuery() {
   const queryClient = useQueryClient();
 
   // For initial fetch and refetching
-  const { data: currentSummoner, isLoading, error, refetch } = useQuery({
-    queryKey: SUMMONER_QUERY_KEY,
-    queryFn: () => {
-
-    },
+  const { data: currentSummonerRank, isLoading, error, refetch } = useQuery({
+    queryKey: SUMMONER_RANK_QUERY,
+    queryFn: Summoner.Client.GetRanking,
     staleTime: 5 * 60 * 1000,
     retry: 3,
   });
 
   // Function to update state from websocket
   const update = (websocketData: CurrentSummoner) => {
-    queryClient.setQueryData(SUMMONER_QUERY_KEY, websocketData);
+    queryClient.setQueryData(SUMMONER_RANK_QUERY, websocketData);
   };
 
-  // Connect this to your websocket listener elsewhere
-
   return {
-    currentSummoner,
+    currentSummonerRank,
     isLoading,
     error,
     refetch,
     refresh: async () => {
-      queryClient.invalidateQueries({ queryKey: SUMMONER_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: SUMMONER_RANK_QUERY });
     },
     clearSummoner: () => {
-      queryClient.setQueryData(SUMMONER_QUERY_KEY, null);
+      queryClient.setQueryData(SUMMONER_RANK_QUERY, null);
     },
     update, // Export to use with websocket
   };

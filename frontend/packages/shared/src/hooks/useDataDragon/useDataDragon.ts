@@ -151,6 +151,7 @@ export function useAllDataDragon(): UseDataDragonHook {
 
       return {
         id: champion.key,
+        name_id: champion.id,
         name: champion.name,
         title: champion.title,
         imageUrl: `https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${champion.image.full}`,

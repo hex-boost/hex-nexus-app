@@ -315,19 +315,52 @@ func (s *Client) GetUserInfo() (*types.UserInfo, error) {
 }
 
 func (s *Client) GetGameflowSession() (*types.LolGameflowV1Session, error) {
-	s.logger.Debug("Fetching account userinfo")
+	s.logger.Debug("Fetching gameflow session")
 	var lolGameflowSession types.LolGameflowV1Session
 	resp, err := s.conn.Client.R().SetResult(&lolGameflowSession).Get("/lol-gameflow/v1/session")
 	if err != nil {
-		s.logger.Error("Error fetching userinfo data", zap.Error(err))
+		s.logger.Error("Error fetching gameflow data", zap.Error(err))
 		return nil, err
 	}
 
+	// Special case for "No gameflow session exists" (404)
+	if resp.StatusCode() == http.StatusNotFound {
+		// Check if the error message matches the expected one
+		var errorResp struct {
+			ErrorCode string `json:"errorCode"`
+			Message   string `json:"message"`
+		}
+		if err := json.Unmarshal(resp.Body(), &errorResp); err == nil {
+			if errorResp.Message == "No gameflow session exists." {
+				s.logger.Debug("No gameflow session exists, returning nil without error")
+				return nil, errors.New(errorResp.Message)
+			}
+		}
+	}
+
 	if resp.IsError() {
-		errMsg := fmt.Sprintf("Failed to get userinfo status: %d", resp.StatusCode())
+		errMsg := fmt.Sprintf("Failed to get gameflow status: %d", resp.StatusCode())
 		s.logger.Warn(errMsg)
 		return nil, errors.New(errMsg)
 	}
 
 	return &lolGameflowSession, nil
+}
+
+func (s *Client) GetCurrentSummonerProfile() (*types.CurrentSummonerProfile, error) {
+	s.logger.Debug("Fetching current summoner profile")
+	var currentSummonerProfile types.CurrentSummonerProfile
+	resp, err := s.conn.Client.R().SetResult(currentSummonerProfile).Get("/lol-summoner/v1/current-summoner/summoner-profile")
+	if err != nil {
+		s.logger.Error("Error fetching current summoner profile data", zap.Error(err))
+		return nil, err
+	}
+
+	if resp.IsError() {
+		errMsg := fmt.Sprintf("Failed to get current summoner profile status: %d", resp.StatusCode())
+		s.logger.Warn(errMsg)
+		return nil, errors.New(errMsg)
+	}
+
+	return &currentSummonerProfile, nil
 }

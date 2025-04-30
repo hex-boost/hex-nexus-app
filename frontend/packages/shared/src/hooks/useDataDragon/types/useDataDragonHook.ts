@@ -18,6 +18,7 @@ export type FormattedSkin = {
 
 export type FormattedChampion = {
   id: string;
+  name_id: string;
   name: string;
   title: string;
   imageUrl: string;

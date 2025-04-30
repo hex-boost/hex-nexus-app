@@ -1,35 +1,221 @@
-import {Avatar, AvatarImage} from '@/components/ui/avatar.tsx';
+import type {PlayerChampion} from '@/hooks/blitz/types/PlayerChampion.ts';
+import type {Server} from '@/types/types.ts';
+import {LobbySummonerCard} from '@/components/LobbySummonerCard.tsx';
+
 import {Badge} from '@/components/ui/badge.tsx';
 import {Button} from '@/components/ui/button.tsx';
+import {Skeleton} from '@/components/ui/skeleton.tsx';
+import {useBlitzPlayerChampion} from '@/hooks/blitz/useBlitzPlayerChampion.ts';
+import {useChatMeQuery} from '@/hooks/useChatMeQuery.ts';
+import {useCurrentSummonerProfileQuery} from '@/hooks/useCurrentSummonerProfileQuery.ts';
+import {useCurrentSummonerQuery} from '@/hooks/useCurrentSummonerQuery.ts';
+import {useAllDataDragon} from '@/hooks/useDataDragon/useDataDragon.ts';
 import {useGameflowPhase} from '@/hooks/useGameflowPhaseQuery.ts';
+import {useSummonerRankQuery} from '@/hooks/useSummonerRankQuery.ts';
 import {useMapping} from '@/lib/useMapping.tsx';
 import {createFileRoute} from '@tanstack/react-router';
+import {Browser} from '@wailsio/runtime';
 import {ExternalLink} from 'lucide-react';
 
 export const Route = createFileRoute('/_protected/active-game/')({
   component: RouteComponent,
 });
 
+const SummonerCardSkeleton = () => (
+  <div className="border rounded-md p-4 w-full">
+    <div className="flex items-center space-x-4 mb-4">
+      <Skeleton className="h-12 w-12 rounded-full" />
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-[100px]" />
+        <Skeleton className="h-3 w-[80px]" />
+      </div>
+    </div>
+    <Skeleton className="h-[140px] w-full mb-4" />
+    <div className="space-y-2">
+      <Skeleton className="h-4 w-full" />
+      <Skeleton className="h-4 w-3/4" />
+      <Skeleton className="h-4 w-1/2" />
+    </div>
+  </div>
+);
+
+// Creating the empty state component since it's not defined in the provided code
+function EmptyLobbySummonerCard() {
+  return (
+    <div className="relative max-w-xs aspect-[3/4] bg-card overflow-hidden rounded-xl flex flex-col items-center justify-center p-4">
+      <div className="absolute inset-0 z-0 bg-gradient-to-t from-card from-40% to-transparent" />
+      <div className="relative z-10 flex flex-col items-center text-center">
+        <div className="text-4xl mb-3 text-muted-foreground">?</div>
+        <p className="font-medium">No Summoner</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          Waiting for summoner to join...
+        </p>
+      </div>
+    </div>
+  );
+}
 function RouteComponent() {
-  // const { user } = useUserStore();
-  // const { currentRanking } = useRiotAccount({ account: user?.rentedAccounts[0] });
   const { getEloIcon } = useMapping();
-  const { gameflowPhase } = useGameflowPhase();
+  const { version, allChampions, isLoading: isDataDragonLoading } = useAllDataDragon();
+  const { gameflowPhase, isLoading: isGameflowLoading } = useGameflowPhase();
+  const { currentSummoner, isLoading: isSummonerLoading } = useCurrentSummonerQuery();
+  const { currentSummonerProfile } = useCurrentSummonerProfileQuery();
+  const { chatMe, isLoading: isChatLoading } = useChatMeQuery();
+  const { currentSummonerRank, isLoading: isRankLoading } = useSummonerRankQuery();
+
+  // Only fetch player champion when we have all required data
+  const { playerChampion, isLoading: isChampionLoading } = useBlitzPlayerChampion({
+    gameName: currentSummoner?.gameName || '',
+    tagLine: currentSummoner?.tagLine || '',
+    region: chatMe?.platformId as Server || '',
+  });
+
+  // Combined loading state
+  const isLoading = {
+    dataDragon: isDataDragonLoading,
+    gameflow: isGameflowLoading,
+    summoner: isSummonerLoading,
+    chat: isChatLoading,
+    rank: isRankLoading,
+    champion: isChampionLoading,
+  };
+
+  const anyLoading = Object.values(isLoading).some(loading => loading);
+
+  const getBackgroundImageUrl = (backgroundSkinId: number) => {
+    if (!backgroundSkinId || !version) {
+      return null;
+    }
+
+    // Convert to string for easier manipulation
+    const skinIdStr = backgroundSkinId.toString();
+
+    // Extract champion ID and skin number
+    const championId = skinIdStr.slice(0, -3);
+    const skinNum = skinIdStr.slice(-3).replace(/^0+/, '') || '0'; // Remove leading zeros
+
+    // You need a mapping from champion IDs to champion names
+    // This would ideally come from your DataDragon data
+    const championName = allChampions.find(champion => Number(champion.id) === Number(championId))?.name_id;
+
+    if (!championName) {
+      return null;
+    }
+
+    // Return either splash art (fullscreen) or loading art (champion card)
+    return `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${championName}_${skinNum}.jpg`;
+  };
+
+  function calculateWinPercentage(rankData: any) {
+    const wins = rankData?.RANKED_SOLO_5x5?.wins || 0;
+    const losses = rankData?.RANKED_SOLO_5x5?.losses || 0;
+    return wins + losses > 0 ? (wins / (wins + losses) * 100) : 0;
+  }
+
+  const calculateKDA = (champion: PlayerChampion | undefined) => {
+    if (!champion) {
+      return 0;
+    }
+    return champion.deaths > 0
+      ? ((champion.kills + champion.assists) / champion.deaths).toFixed(2)
+      : (champion.kills + champion.assists).toFixed(2);
+  };
+
+  // Create a champion variable to simplify access and checks
+  const champion = playerChampion && playerChampion?.length > 0 ? playerChampion[0] : null;
+  const currentSummonerCard = {
+    summonerName: 'NinjaWarrior',
+    summonerTag: 'NA1',
+    championLoadingImage: 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Yasuo_0.jpg',
+    championSquareImage: 'https://ddragon.leagueoflegends.com/cdn/13.24.1/img/champion/Yasuo.png',
+    championName: 'Yasuo',
+    winRate: 54.3,
+    gamesPlayed: 128,
+    kda: 2.75,
+    kills: 7.2,
+    deaths: 5.1,
+    assists: 6.8,
+    rank: 'Platinum 2',
+    rankPoints: 67,
+    rankPointsLabel: 'PDL',
+    winPercentage: 51.2,
+    victories: 83,
+    defeats: 79,
+    rankIcon: 'https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-shared-components/global/default/images/ranked-mini-crests/platinum.png',
+  };
+  // const currentSummonerCard = {
+  //   summonerName: currentSummoner?.gameName || 'YourSummoner',
+  //   summonerTag: currentSummoner?.tagLine || 'TAG',
+  //   championLoadingImage: (currentSummonerProfile ? getBackgroundImageUrl(currentSummonerProfile.backgroundSkinId) : '') || '',
+  //   championSquareImage: champion && version
+  //     ? `https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${champion.champion_id}.png`
+  //     : 'https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-icons/-1.png',
+  //   championName: champion?.champion_id?.toString() || 'N/A',
+  //   winRate: champion?.wins && champion.game_count ? (champion.wins / champion.game_count * 100) : 0,
+  //   gamesPlayed: champion?.game_count || 0,
+  //   kda: champion ? Number(calculateKDA(champion)) : 0.00,
+  //   kills: champion?.kills || 0,
+  //   deaths: champion?.deaths || 0,
+  //   assists: champion?.assists || 0,
+  //   rank: `${currentSummonerRank?.RANKED_SOLO_5x5?.tier || 'Gold'} ${currentSummonerRank?.RANKED_SOLO_5x5?.division || '4'}`,
+  //   rankPoints: currentSummonerRank?.RANKED_SOLO_5x5?.leaguePoints || 0,
+  //   rankPointsLabel: 'PDL',
+  //   winPercentage: calculateWinPercentage(currentSummonerRank),
+  //   victories: currentSummonerRank?.RANKED_SOLO_5x5?.wins || 0,
+  //   defeats: currentSummonerRank?.RANKED_SOLO_5x5?.losses || 0,
+  //   rankIcon: getEloIcon((currentSummonerRank?.RANKED_SOLO_5x5?.tier || 'unranked').toLowerCase()),
+  // };
+
+  // Create an array for 5 player positions
+  // Initialize with null values - we'll fill in actual data later
+  const allPlayers = Array.from({ length: 5 }).fill(null);
+
+  // Place current summoner in the middle position (index 2)
+  // allPlayers[2] = anyLoading ? null : currentSummonerCard;
+  allPlayers[2] = currentSummonerCard;
+
+  // In a real scenario, you would populate other player data here
+  // For now we'll leave them as null, which will render as empty cards
+
+  // Example of how to populate other players (in a real scenario):
+  // const otherPlayers = [...]; // Your data for other players in lobby
+  //
+  // // Place other players in alternating positions around the middle
+  // let leftIndex = 1; // Position to the left of center
+  // let rightIndex = 3; // Position to the right of center
+  //
+  // otherPlayers.forEach(player => {
+  //   if (leftIndex >= 0) {
+  //     allPlayers[leftIndex] = player;
+  //     leftIndex--;
+  //   } else if (rightIndex < 5) {
+  //     allPlayers[rightIndex] = player;
+  //     rightIndex++;
+  //   }
+  // });
+
+  // Skeleton loader for the card
+
   return (
     <>
       <div className="flex justify-between pb-6 items-center w-full">
         <div className="flex items-center gap-2">
-          <h1 className="text-3xl font-semibold ">Current Lobby</h1>
-          <Badge
-            variant="outline"
-            className="py-1 px-3  rounded-full border-emerald-500/50 bg-emerald-500/10 "
-          >
-            <div className="h-2 w-2 bg-emerald-300 animate-pulse rounded-full"></div>
-            <span className="text-emerald-500">{gameflowPhase}</span>
-          </Badge>
+          <h1 className="text-3xl font-semibold">Current Lobby</h1>
+          {isLoading.gameflow
+            ? (
+                <Skeleton className="h-6 w-24 rounded-full" />
+              )
+            : (
+                <Badge
+                  variant="outline"
+                  className="py-1 px-3 rounded-full border-emerald-500/50 bg-emerald-500/10"
+                >
+                  <div className="h-2 w-2 bg-emerald-300 animate-pulse rounded-full"></div>
+                  <span className="text-emerald-500">{gameflowPhase?.phase || 'Idle'}</span>
+                </Badge>
+              )}
         </div>
         <Button>
-
           <img
             src="https://s-opgg-kit.op.gg/gnb/config/images/icon/bfa5abe2f78d6e9a55e81c9988c31442.svg?image=q_auto:good,f_webp,w_48,h_48"
             width="24"
@@ -41,210 +227,30 @@ function RouteComponent() {
           <ExternalLink className="ml-2" size={16} />
         </Button>
       </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        {Array.from({ length: 5 }).map((_, index) => (
-          <div
-            key={index}
-            className="relative max-w-xs aspect-[3/4] bg-white/5 overflow-hidden rounded-xl"
-          >
-            <img
-              alt="aatrox"
-              className="absolute top-0 w-full object-contain object-top z-0 transition-transform duration-300 rounded-lg scale-105"
-              src="https://ddragon.leagueoflegends.com/cdn/img/champion/loading/Aatrox_20.jpg"
-            />
-            <div
-              className="absolute inset-0 z-10 bg-gradient-to-t from-card from-40% to-transparent transition-opacity duration-300"
-            />
+        {allPlayers.map((player: any, index) => {
+          // If any data is loading, show skeleton for all cards
+          // if (anyLoading) {
+          //   return <SummonerCardSkeleton key={index} />;
+          // }
 
-            {/* Centered content */}
-            <div className="relative z-20 h-full flex flex-col items-center justify-end">
-              <p className="text-xl font-bold">
-                AYordle
-                {' '}
-                <span className="text-muted-foreground">#Yuumi</span>
-              </p>
-
-              <p className="text-muted-foreground font-light text-xs uppercase">Aatrox</p>
-
-              {/* Stats section - properly positioned within the card */}
-              <div className="flex gap-4 items-center mt-4">
-                <Avatar className="rounded-md">
-                  <AvatarImage
-                    className="scale-110"
-                    alt="flash"
-                    src="https://ddragon.leagueoflegends.com/cdn/15.8.1/img/champion/Aatrox.png"
-                  />
-                </Avatar>
-                <div className="flex flex-col justify-center items-center">
-                  <p className="text-blue-500 text-xs">
-                    54%
-                  </p>
-                  <p className="text-xs text-muted-foreground">45 played</p>
-                </div>
-
-                <div className="flex flex-col items-center justify-center">
-                  <p className="font-medium text-xs text-orange-200">
-                    1.82
-                    {' '}
-                    <span className="text-xs text-muted-foreground">KDA</span>
-                  </p>
-                  <p className="text-xs">3 / 5.8/ 15.2</p>
-                </div>
-              </div>
-              <RankCard
-                title="Ranqueada Solo"
-                rank="Bronze 2"
-                points={89}
-                pointsLabel="PDL"
-                winPercentage={30.8}
-                victories={20}
-                defeats={45}
-                badgeUrl={getEloIcon('bronze')}
+          // If we have player data, render the card
+          if (player) {
+            return (
+              <LobbySummonerCard
+                key={index}
+                {...player}
+                onOpenOpgg={() => Browser.OpenURL(`https://op.gg/summoner/userName=${player.summonerName}`)}
+                onOpenBlitz={() => Browser.OpenURL(`https://blitz.gg/lol/profile/${player.summonerName}`)}
               />
-              {' '}
-              {/* <GameRankDisplay ranking={currentRanking} /> */}
-              <div className="flex gap-2 px-4 w-full py-2">
-                <Button variant="custom" className="bg-white/[0.01] gap-2 w-full hover:bg-white/[0.02] py-2">
-                  <img
-                    src="https://s-opgg-kit.op.gg/gnb/config/images/icon/bfa5abe2f78d6e9a55e81c9988c31442.svg?image=q_auto:good,f_webp,w_48,h_48"
-                    width="24"
-                    height="24"
-                    alt=""
-                    loading="lazy"
-                  />
-                  <p className="text-medium text-muted-foreground">Opgg</p>
-                </Button>
-                <Button variant="custom" className="bg-white/[0.01] w-full hover:bg-white/[0.02] py-2 gap-2">
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 -8 56 80"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="original-colors"
-                  >
-                    <path
-                      d="M24.13 64c-2.578 0-4.587-2.21-4.312-4.742l1.95-17.993A1.148 1.148 0 0 0 20.618 40H5.847a2.324 2.324 0 0 1-1.762-.805L2.55 37.412a2.265 2.265 0 0 1-.068-2.878L29.321.222A.58.58 0 0 1 29.778 0h2.046c2.577 0 4.586 2.21 4.311 4.742l-1.95 17.993A1.148 1.148 0 0 0 35.335 24h14.784c.672 0 1.31.289 1.75.791l1.568 1.794c.72.823.753 2.034.079 2.894l-26.884 34.3a.58.58 0 0 1-.457.221h-2.046Z"
-                      fill="url(#blitz-logo-a-0)"
-                    >
-                    </path>
-                    <path
-                      d="m20.812 59.365 1.95-17.993c.14-1.28-.874-2.372-2.143-2.372H5.846c-.39 0-.756-.17-1.004-.457L3.309 36.76a1.265 1.265 0 0 1-.038-1.61L29.98 1h1.843c1.995 0 3.526 1.706 3.317 3.635l-1.95 17.993c-.14 1.28.874 2.372 2.143 2.372H50.12c.385 0 .749.166.997.45l1.568 1.793c.404.462.422 1.137.045 1.62L25.972 63h-1.843c-1.995 0-3.526-1.706-3.317-3.635Z"
-                      stroke="url(#blitz-logo-b-0)"
-                      stroke-width="2"
-                      fill="transparent"
-                    >
-                    </path>
-                    <defs>
-                      <linearGradient
-                        id="blitz-logo-a-0"
-                        x1="45.528"
-                        y1="40.793"
-                        x2="15.769"
-                        y2="15.467"
-                        gradientUnits="userSpaceOnUse"
-                      >
-                        <stop stop-color="#CE0F50"></stop>
-                        <stop offset="1" stop-color="#FE112D"></stop>
-                      </linearGradient>
-                      <linearGradient
-                        id="blitz-logo-b-0"
-                        x1="28"
-                        y1="0"
-                        x2="28"
-                        y2="64"
-                        gradientUnits="userSpaceOnUse"
-                      >
-                        <stop stop-color="#FF003D"></stop>
-                        <stop offset="1" stop-color="#FF003D" stop-opacity="0"></stop>
-                      </linearGradient>
-                    </defs>
-                  </svg>
+            );
+          }
 
-                  <p className="text-medium text-muted-foreground">
-
-                    Blitz
-                  </p>
-                </Button>
-              </div>
-            </div>
-          </div>
-        ))}
+          // Otherwise show empty state
+          return <EmptyLobbySummonerCard key={index} />;
+        })}
       </div>
     </>
-  );
-}
-
-type RankCardProps = {
-  title: string;
-  rank: string;
-  points: number;
-  pointsLabel?: string;
-  winPercentage: number;
-  victories: number;
-  defeats: number;
-  badgeUrl?: string;
-};
-
-export default function RankCard({
-  rank = 'Bronze 2',
-  points = 89,
-  pointsLabel = 'PDL',
-  winPercentage = 30.8,
-  victories = 20,
-  defeats = 45,
-  badgeUrl = '/bronze-badge.png',
-}: RankCardProps) {
-  // Calculate progress percentage based on points (assuming 100 is max for simplicity)
-  // You can adjust this calculation based on your actual requirements
-  const progressPercentage = Math.min(points, 100);
-
-  return (
-    <div className="w-full max-w-xs rounded-md p-4 text-white shadow-md">
-
-      <div className="flex gap-4 items-center">
-        {badgeUrl && (
-          <div className="">
-            <img
-              src={badgeUrl || '/placeholder.svg'}
-              alt={`${rank} badge`}
-              height={60}
-              width={60}
-            />
-          </div>
-        )}
-        <div className="flex flex-col w-full">
-          <div className="flex items-center justify-between gap-3 mb-2">
-            <div className="text-[#C27C3A] font-medium">{rank}</div>
-            <span className="text-sm text-gray-300">
-              {points}
-              {' '}
-              {pointsLabel}
-            </span>
-          </div>
-
-          {/* Progress bar */}
-          <div className="h-1.5 bg-[#1E1E24] rounded-full w-full mb-2 overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-[#8E5524] to-[#C27C3A]"
-              style={{ width: `${progressPercentage}%` }}
-            />
-          </div>
-
-          <div className="flex justify-between text-xs text-gray-400 mt-1">
-            <div>
-              {winPercentage.toFixed(1).replace('.', ',')}
-              % PV
-            </div>
-            <div>
-              {victories}
-              V -
-              {defeats}
-              D
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
   );
 }

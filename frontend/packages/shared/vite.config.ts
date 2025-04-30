@@ -18,8 +18,8 @@ export default defineConfig({
     alias: {
       '@shared': path.resolve(__dirname, '../shared'),
       '@': path.resolve(__dirname, '../shared/src'),
-      '@summonerClient': 'packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/internal/league/summoner',
-      '@types': 'packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/types',
+      '@summonerClient': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/internal/league/summoner'),
+      '@types': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/types'),
 
       '@manager': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/internal/updater'),
       '@client': path.resolve(__dirname, './bindings/github.com/hex-boost/hex-nexus-app/backend/client'),

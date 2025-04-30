@@ -619,3 +619,7 @@ type LolGameflowV1Session struct {
 	} `json:"map"`
 	Phase string `json:"phase"`
 }
+type CurrentSummonerProfile struct {
+	BackgroundSkinId int    `json:"backgroundSkinId"`
+	Regalia          string `json:"regalia"`
+}

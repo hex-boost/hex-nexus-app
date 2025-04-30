@@ -20,9 +20,9 @@ export default defineConfig({
     alias: {
       // This is the key change - ensure this works for imports from both packages
       '@': path.resolve(__dirname, 'packages/shared/src'),
-      '@summonerClient': 'packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/internal/league/summoner',
+      '@summonerClient': path.resolve(__dirname, 'packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/internal/league/summoner'),
 
-      '@types': 'packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/internal/types',
+      '@types': path.resolve(__dirname, 'packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/types'),
       '@shared': path.resolve(__dirname, 'packages/shared'),
       '@app': path.resolve(__dirname, 'packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/app'),
       '@client': path.resolve(__dirname, 'packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/client'),
