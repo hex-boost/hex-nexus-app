@@ -36,9 +36,8 @@ tasks:
     cmds:
       - cmd: powershell -Command "if (Test-Path frontend/node_modules) { Remove-Item -Force -Recurse frontend/node_modules -ErrorAction SilentlyContinue }"
         platforms: [windows]
-      - npx --yes pnpm@latest install --frozen-lockfile --prefer-offline --no-verify-store-integrity --retry-network-timeout 300000 ||
-      - npx --yes pnpm@latest install --frozen-lockfile --prefer-offline --no-verify-store-integrity --retry-network-timeout 300000 ||
-      - npx --yes pnpm@latest install --frozen-lockfile --prefer-offline --no-verify-store-integrity --retry-network-timeout 300000
+      - pnpm store prune
+      - pnpm install --frozen-lockfile
     method: checksum
   build:frontend:updater:
     summary: Build the frontend project
