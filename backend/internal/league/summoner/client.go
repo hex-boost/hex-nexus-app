@@ -269,7 +269,7 @@ func (s *Client) GetRanking() (*types.RankedStatsRefresh, error) {
 func (s *Client) GetLolChat() (*types.FriendPresence, error) {
 	s.logger.Debug("Fetching account region")
 	var friendPresence types.FriendPresence
-	resp, err := s.conn.Client.R().SetResult(friendPresence).Get("/lol-chat/v1/me")
+	resp, err := s.conn.Client.R().SetResult(&friendPresence).Get("/lol-chat/v1/me")
 	if err != nil {
 		s.logger.Error("Error fetching region data", zap.Error(err))
 		return nil, err
@@ -350,7 +350,7 @@ func (s *Client) GetGameflowSession() (*types.LolGameflowV1Session, error) {
 func (s *Client) GetCurrentSummonerProfile() (*types.CurrentSummonerProfile, error) {
 	s.logger.Debug("Fetching current summoner profile")
 	var currentSummonerProfile types.CurrentSummonerProfile
-	resp, err := s.conn.Client.R().SetResult(currentSummonerProfile).Get("/lol-summoner/v1/current-summoner/summoner-profile")
+	resp, err := s.conn.Client.R().SetResult(&currentSummonerProfile).Get("/lol-summoner/v1/current-summoner/summoner-profile")
 	if err != nil {
 		s.logger.Error("Error fetching current summoner profile data", zap.Error(err))
 		return nil, err
@@ -363,4 +363,21 @@ func (s *Client) GetCurrentSummonerProfile() (*types.CurrentSummonerProfile, err
 	}
 
 	return &currentSummonerProfile, nil
+}
+func (s *Client) GetChampionMastery() (*types.LocalPlayerChampionMastery, error) {
+	s.logger.Debug("Fetching champion mastery")
+	var championMastery types.LocalPlayerChampionMastery
+	resp, err := s.conn.Client.R().SetResult(&championMastery).Get("/lol-summoner/v1/current-summoner/summoner-profile")
+	if err != nil {
+		s.logger.Error("Error fetching current champion mastery data", zap.Error(err))
+		return nil, err
+	}
+
+	if resp.IsError() {
+		errMsg := fmt.Sprintf("Failed to get champion mastery status: %d", resp.StatusCode())
+		s.logger.Warn(errMsg)
+		return nil, errors.New(errMsg)
+	}
+
+	return &championMastery, nil
 }

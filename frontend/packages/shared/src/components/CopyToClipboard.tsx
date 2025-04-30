@@ -1,10 +1,9 @@
-import { Button } from '@/components/ui/button.tsx';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
-import { Clipboard } from '@wailsio/runtime';
-import { Check, Copy } from 'lucide-react';
-import { useState } from 'react';
-import { cls } from 'react-image-crop';
+import {Button} from '@/components/ui/button.tsx';
+import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from '@/components/ui/tooltip';
+import {cn} from '@/lib/utils';
+import {Clipboard} from '@wailsio/runtime';
+import {Check, Copy} from 'lucide-react';
+import {useState} from 'react';
 
 export function CopyToClipboard({ className, text }: { className: string; text: string }) {
   const [copied, setCopied] = useState<boolean>(false);
@@ -26,7 +25,7 @@ export function CopyToClipboard({ className, text }: { className: string; text: 
           <Button
             variant="outline"
             size="icon"
-            className={cls('disabled:opacity-100  ', className)}
+            className={cn('disabled:opacity-100  ', className)}
             onClick={handleCopy}
             aria-label={copied ? 'Copied' : 'Copy to clipboard'}
             disabled={copied}

@@ -71,7 +71,7 @@ export type UserMedia = MediaFileType;
 export type RankingGame = RankingType['game'];
 export type PremiumTiers = PremiumType['tier'];
 
-export type Root = {
+export type TeamBuilderChampionSelect = {
   actions: Action[][];
   allowBattleBoost: boolean;
   allowDuplicatePicks: boolean;

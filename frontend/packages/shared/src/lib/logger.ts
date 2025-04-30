@@ -1,5 +1,5 @@
 export const logger = {
-  info: (component: string, message: string, data?: any) => {
+  info: (component: string, message: any, data?: any) => {
     const logEntry = {
       timestamp: new Date().toISOString(),
       level: 'INFO',

@@ -60,8 +60,8 @@ function RankDisplay({
               <div className="flex flex-col gap-2">
                 <div className="flex gap-1 items-end">
 
-                  <p className={`text-sm capitalize font-medium `}>
-                    {rank.elo || 'Unranked'}
+                  <p className="text-sm font-medium">
+                    {rank.elo[0]?.toUpperCase() + rank.elo?.slice(1).toLowerCase() || 'Unranked'}
                     {' '}
                     {rank.division}
                   </p>
@@ -119,10 +119,8 @@ export default function AccountInfoDisplay({
   return (
     <div className={cn('w-full', compact ? 'space-y-2' : 'space-y-4')}>
 
-      {}
       {gameName && <div className="text-base font-medium text-zinc-900 dark:text-zinc-50">{gameName}</div>}
 
-      {}
       <div className={cn('grid gap-3', compact ? 'grid-cols-2' : 'grid-cols-1 sm:grid-cols-2')}>
         <>
           <RankDisplay

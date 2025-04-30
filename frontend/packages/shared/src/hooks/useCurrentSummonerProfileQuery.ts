@@ -1,11 +1,11 @@
-import type {CurrentSummoner} from '@types';
+import type { CurrentSummonerProfile } from '@types';
 import * as Summoner from '@summonerClient';
 
-import {useQuery, useQueryClient} from '@tanstack/react-query';
-import {Events} from '@wailsio/runtime';
-import {useEffect} from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Events } from '@wailsio/runtime';
+import { useCallback, useEffect } from 'react';
 
-export const CURRENT_SUMMONER_PROFILE_KEY = ['currentSummoner', 'profile'];
+export const CURRENT_SUMMONER_PROFILE_KEY = ['active-game', 'current-summoner', 'profile'];
 
 export function useCurrentSummonerProfileQuery() {
   const queryClient = useQueryClient();
@@ -14,14 +14,13 @@ export function useCurrentSummonerProfileQuery() {
   const { data: currentSummonerProfile, isLoading, error, refetch } = useQuery({
     queryKey: CURRENT_SUMMONER_PROFILE_KEY,
     queryFn: Summoner.Client.GetCurrentSummonerProfile,
-    staleTime: 5 * 60 * 1000,
-    retry: 3,
+    retry: true,
   });
 
   // Function to update state from websocket
-  const update = (websocketData: CurrentSummoner) => {
+  const update = useCallback((websocketData: CurrentSummonerProfile) => {
     queryClient.setQueryData(CURRENT_SUMMONER_PROFILE_KEY, websocketData);
-  };
+  }, [queryClient]);
 
   useEffect(() => {
     const cancel = Events.On('OnJsonApiEvent_lol-summoner_v1_current-summoner', (event) => {

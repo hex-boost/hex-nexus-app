@@ -48,6 +48,32 @@ export function useMapping() {
         return 'text-stone-600 dark:text-stone-400';
     }
   };
+  const getRankBackground = (tier: string) => {
+    switch (tier?.toLowerCase() || '') {
+      case 'iron':
+        return 'bg-gradient-to-r from-[#43464B] to-[#71797E]';
+      case 'bronze':
+        return 'bg-gradient-to-r from-[#8E5524] to-[#C27C3A]';
+      case 'silver':
+        return 'bg-gradient-to-r from-[#71797E] to-[#C0C0C0]';
+      case 'gold':
+        return 'bg-gradient-to-r from-[#B38728] to-[#FFDC73]';
+      case 'emerald':
+        return 'bg-gradient-to-r from-[#046C4E] to-[#34D399]';
+      case 'platinum':
+        return 'bg-gradient-to-r from-[#328DA8] to-[#7ADBF0]';
+      case 'diamond':
+        return 'bg-gradient-to-r from-[#4F8FCA] to-[#7EB3FF]';
+      case 'master':
+        return 'bg-gradient-to-r from-[#8C34A8] to-[#D17FF9]';
+      case 'grandmaster':
+        return 'bg-gradient-to-r from-[#B3392C] to-[#FF6A56]';
+      case 'challenger':
+        return 'bg-gradient-to-r from-[#0A5D7A] to-[#4DB9E3]';
+      default:
+        return 'bg-gradient-to-r from-gray-700 to-gray-500';
+    }
+  };
   function getEloIcon(rank: string) {
     const icons: Record<string, string> = {
       iron: ironIcon,
@@ -265,7 +291,31 @@ export function useMapping() {
       return <ValorantIcon />;
     }
   };
+  const rangeBucket = (tuples: [number, any][]) => {
+    // Return a function that takes a number and returns the corresponding value
+    return (value: number): any => {
+      for (let i = tuples.length - 1; i >= 0; i--) {
+        const [k, v] = tuples[i];
+        if (value >= k) {
+          return v;
+        }
+      }
+      // Default to first value if below all ranges
+      return tuples[0][1];
+    };
+  };
+  const kdaColorRange = rangeBucket([
+    [0, '#828790'],
+    [1.5, '#978D87'],
+    [3.0, '#C4A889'],
+    [4.5, '#DEAF78'],
+    [6.5, '#E6A85F'],
+    [8.5, '#FF9417'],
+  ]);
 
+  const getKdaColor = (kda: number): string => {
+    return kdaColorRange[kda];
+  };
   const getFormattedServer = (server: Server): string => {
     switch (server) {
       case 'LA2':
@@ -284,14 +334,42 @@ export function useMapping() {
         return server.slice(0, server.length - 1);
     }
   };
+  function getWinrateColorClass(winRate: number) {
+    let winRateColorClass = 'text-zinc-600 dark:text-muted-foreground';
+    if (winRate > 55) {
+      if (winRate >= 95) {
+        winRateColorClass = 'text-blue-500 dark:text-blue-500 font-medium';
+      } else if (winRate >= 85) {
+        winRateColorClass = 'text-blue-400 dark:text-blue-400 font-medium';
+      } else if (winRate >= 75) {
+        winRateColorClass = 'text-blue-300 dark:text-blue-300 font-medium';
+      } else if (winRate >= 65) {
+        winRateColorClass = 'text-blue-200 dark:text-blue-200';
+      } else {
+        winRateColorClass = 'text-blue-100 dark:text-blue-100';
+      }
+    } else if (winRate < 40 && winRate > 0) {
+      if (winRate < 30) {
+        winRateColorClass = 'text-red-500 dark:text-red-400';
+      } else if (winRate < 40) {
+        winRateColorClass = 'text-red-300 dark:text-red-300';
+      } else {
+        winRateColorClass = 'text-red-100 dark:text-red-100';
+      }
+    }
+    return winRateColorClass;
+  }
   return {
     getRegionIcon,
     getCompanyIcon,
     getEloIcon,
     getRankColor,
     getGameIcon,
+    getKdaColor,
     getStatusColor,
     getSkinRarityColor,
     getFormattedServer,
+    getWinrateColorClass,
+    getRankBackground,
   };
 }

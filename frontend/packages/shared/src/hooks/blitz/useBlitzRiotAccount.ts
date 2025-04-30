@@ -1,7 +1,7 @@
 import type {Server} from '@/types/types.ts';
 import type {UseQueryOptions} from '@tanstack/react-query';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
-import type {PlayerChampionList} from './types/PlayerChampion.ts';
+import type {BlitzRiotAccount} from './types/BlitzRiotAccount.ts';
 import axios from 'axios';
 
 export enum QueueType {
@@ -9,8 +9,8 @@ export enum QueueType {
   RankedFlex = 450,
 }
 
-type UseBlitzPlayerChampionResult = {
-  playerChampion: PlayerChampionList | undefined;
+type UseBlitzRiotAccountResult = {
+  blitzRiotAccount: BlitzRiotAccount | undefined;
   isLoading: boolean;
   error: Error | null;
   refetch: () => Promise<any>;
@@ -18,38 +18,37 @@ type UseBlitzPlayerChampionResult = {
   clearSummoner: () => void;
 };
 
-export function useBlitzPlayerChampion({
+export function useBlitzRiotAccount({
   gameName,
   tagLine,
-  queueType = QueueType.RankedSolo,
   region,
   queryOptions,
 }: {
   gameName: string;
   tagLine: string;
   region: Server;
-  queueType?: QueueType;
-  queryOptions?: Omit<UseQueryOptions<PlayerChampionList, Error, PlayerChampionList, (string | number | Server)[]>, 'queryKey' | 'queryFn'>;
-}): UseBlitzPlayerChampionResult {
+  queryOptions?: Omit<UseQueryOptions<BlitzRiotAccount, Error, BlitzRiotAccount, (string | number | Server)[]>, 'queryKey' | 'queryFn' | 'enabled'>;
+}): UseBlitzRiotAccountResult {
   const queryClient = useQueryClient();
 
   // Include all parameters in the query key for proper caching
-  const queryKey = ['blitz', 'playerChampion', region, gameName, tagLine, queueType];
+  const queryKey = ['blitz', 'riot_account', region, gameName, tagLine];
 
-  const { data: playerChampion, isLoading, error, refetch } = useQuery<PlayerChampionList, Error>({
+  const { data: blitzRiotAccount, isLoading, error, refetch } = useQuery<BlitzRiotAccount, Error>({
     queryKey,
     queryFn: async () => {
-      const response = await axios.get<PlayerChampionList>(
-        `https://lol.iesdev.com/lol/player_champion_aggregate/${region}/${gameName}/${tagLine}/${queueType}`,
+      const response = await axios.get<BlitzRiotAccount>(
+        `https://lol.iesdev.com/lol/riot_account/lol/${region}/${gameName}/${tagLine}`,
       );
       return response.data;
     },
+    enabled: !!gameName && !!tagLine && !!region,
     ...queryOptions,
   });
 
   // Rest of the code remains the same
   return {
-    playerChampion,
+    blitzRiotAccount,
     isLoading,
     error,
     refetch,

@@ -1,12 +1,19 @@
-import { Toaster } from '@/components/ui/sonner.tsx';
-import { useUserStore } from '@/stores/useUserStore.ts';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { createRouter, RouterProvider } from '@tanstack/react-router';
-import React from 'react';
+import {Toaster} from '@/components/ui/sonner.tsx';
+import {useUserStore} from '@/stores/useUserStore.ts';
+import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
+import {ReactQueryDevtools} from '@tanstack/react-query-devtools';
+import {createRouter, RouterProvider} from '@tanstack/react-router';
+import React, {lazy, Suspense, useEffect, useState} from 'react';
 import ReactDOM from 'react-dom/client';
-import { routeTree } from './routeTree.gen.ts';
+import {routeTree} from './routeTree.gen.ts';
 import '@/index.css';
+
+// Lazy load the production version of devtools
+const ReactQueryDevtoolsProduction = lazy(() =>
+  import('@tanstack/react-query-devtools/production').then(d => ({
+    default: d.ReactQueryDevtools,
+  })),
+);
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -16,6 +23,7 @@ const queryClient = new QueryClient({
     },
   },
 });
+
 const router = createRouter({
   routeTree,
   context: {
@@ -23,27 +31,43 @@ const router = createRouter({
       isAuthenticated: () => useUserStore.getState().isAuthenticated(),
     },
   },
-},
-);
+});
 
-ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
-  <React.StrictMode>
+// Create a wrapper component to handle the devtools
+function App() {
+  const [showDevtools, setShowDevtools] = useState(true);
 
-    <Toaster
-      theme="dark"
-      richColors
+  useEffect(() => {
+    // @ts-ignore
+    window.toggleDevtools = () => setShowDevtools(prev => !prev);
+  }, []);
 
-      toastOptions={
-        {
+  return (
+    <React.StrictMode>
+      <Toaster
+        theme="dark"
+        richColors
+        toastOptions={{
           classNames: {
             loading: '!bg-card border border-white/5 text-white',
           },
-        }
-      }
-    />
-    <ReactQueryDevtools client={queryClient} />
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
-  </React.StrictMode>,
-);
+        }}
+      />
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+
+        {/* Development devtools - automatically excluded in production */}
+        <ReactQueryDevtools initialIsOpen={false} />
+
+        {/* Production devtools - only shown when toggled */}
+        {showDevtools && (
+          <Suspense fallback={null}>
+            <ReactQueryDevtoolsProduction />
+          </Suspense>
+        )}
+      </QueryClientProvider>
+    </React.StrictMode>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(<App />);

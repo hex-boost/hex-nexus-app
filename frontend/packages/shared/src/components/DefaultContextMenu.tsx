@@ -34,10 +34,29 @@ export function DefaultContextMenu({ children }: { children: React.ReactNode }) 
       if (!isReloading) {
         setIsReloading(true);
 
-        // Create a promise that refetches all queries
+        // Create an AbortController to cancel queries
+        const controller = new AbortController();
+        const signal = controller.signal;
+
+        // Show a loading toast with cancel button
+        const toastId = toast.loading('Reloading', {
+          action: {
+            label: 'Cancel',
+            onClick: () => {
+              controller.abort();
+              queryClient.cancelQueries();
+              setIsReloading(false);
+              toast.dismiss(toastId);
+              toast.info('Reload canceled');
+            },
+          },
+        });
+
+        // Create a promise that refetches all queries with the signal
         const allQueriesPromise = queryClient.refetchQueries({
           type: 'active',
           predicate: query => !query.queryKey.includes('accounts'),
+          signal,
         });
 
         // Handle accounts queries separately with the specific parameters
@@ -45,20 +64,22 @@ export function DefaultContextMenu({ children }: { children: React.ReactNode }) 
           exact: false,
           type: 'active',
           queryKey: ['accounts'],
+          signal,
         });
 
-        // Wait for both to complete
-        toast.promise(Promise.all([allQueriesPromise, accountsPromise]), {
-          loading: 'Reloading',
-          success: () => {
-            setIsReloading(false);
-            return 'Reloaded Successfully';
-          },
-          error: () => {
-            setIsReloading(false);
-            return 'Reload failed';
-          },
-        });
+        // Handle the promise resolution manually
+        try {
+          await Promise.all([allQueriesPromise, accountsPromise]);
+          toast.success('Reloaded Successfully', { id: toastId });
+        } catch (err) {
+          if (signal.aborted) {
+            // Already handled by the cancel button
+          } else {
+            toast.error('Reload failed', { id: toastId });
+          }
+        } finally {
+          setIsReloading(false);
+        }
       }
     } catch (error) {
       setIsReloading(false);

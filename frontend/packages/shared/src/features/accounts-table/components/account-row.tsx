@@ -41,7 +41,7 @@ export function AccountRow({
     losses: 0,
   } as RankingType;
   const previousSoloqueueRank = account.rankings.find(ranking => ranking.queueType === 'soloqueue' && ranking.type === 'previous')!;
-  const { getFormattedServer } = useMapping();
+  const { getFormattedServer, getWinrateColorClass } = useMapping();
   const { getLeaverBusterInfo } = useRiotAccount({ account });
   return (
     <tr
@@ -211,29 +211,7 @@ export function AccountRow({
         {(() => {
           const totalGames = (currentSoloqueueRank?.wins || 0) + (currentSoloqueueRank?.losses || 0);
           const winRate = totalGames > 0 ? Math.round(((currentSoloqueueRank?.wins || 0) / totalGames) * 100) : 0;
-
-          let winRateColorClass = 'text-zinc-600 dark:text-muted-foreground';
-          if (winRate > 55) {
-            if (winRate >= 95) {
-              winRateColorClass = 'text-blue-500 dark:text-blue-500 font-medium';
-            } else if (winRate >= 85) {
-              winRateColorClass = 'text-blue-400 dark:text-blue-400 font-medium';
-            } else if (winRate >= 75) {
-              winRateColorClass = 'text-blue-300 dark:text-blue-300 font-medium';
-            } else if (winRate >= 65) {
-              winRateColorClass = 'text-blue-200 dark:text-blue-200';
-            } else {
-              winRateColorClass = 'text-blue-100 dark:text-blue-100';
-            }
-          } else if (winRate < 40 && winRate > 0) {
-            if (winRate < 30) {
-              winRateColorClass = 'text-red-500 dark:text-red-400';
-            } else if (winRate < 40) {
-              winRateColorClass = 'text-red-300 dark:text-red-300';
-            } else {
-              winRateColorClass = 'text-red-100 dark:text-red-100';
-            }
-          }
+          const winRateColorClass = getWinrateColorClass(winRate);
           return (
             <span className="text-sm text-muted-foreground">
               {currentSoloqueueRank?.wins || 0}

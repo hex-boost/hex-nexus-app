@@ -1,4 +1,4 @@
-import type {CurrentSummoner} from '@types';
+import type {RankedStatsRefresh} from '@types';
 import * as Summoner from '@summonerClient';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 
@@ -16,7 +16,7 @@ export function useSummonerRankQuery() {
   });
 
   // Function to update state from websocket
-  const update = (websocketData: CurrentSummoner) => {
+  const update = (websocketData: RankedStatsRefresh) => {
     queryClient.setQueryData(SUMMONER_RANK_QUERY, websocketData);
   };
 

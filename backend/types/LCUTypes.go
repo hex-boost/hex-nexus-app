@@ -620,6 +620,32 @@ type LolGameflowV1Session struct {
 	Phase string `json:"phase"`
 }
 type CurrentSummonerProfile struct {
-	BackgroundSkinId int    `json:"backgroundSkinId"`
-	Regalia          string `json:"regalia"`
+	BackgroundSkinId       int    `json:"backgroundSkinId"`
+	Regalia                string `json:"regalia"`
+	BackgroundSkinAugments string `json:"backgroundSkinAugments"`
+}
+type LocalPlayerChampionMastery struct {
+	ChampionId                   int           `json:"championId"`
+	ChampionLevel                int           `json:"championLevel"`
+	ChampionPoints               int           `json:"championPoints"`
+	ChampionPointsSinceLastLevel int           `json:"championPointsSinceLastLevel"`
+	ChampionPointsUntilNextLevel int           `json:"championPointsUntilNextLevel"`
+	ChampionSeasonMilestone      int           `json:"championSeasonMilestone"`
+	HighestGrade                 string        `json:"highestGrade"`
+	LastPlayTime                 int64         `json:"lastPlayTime"`
+	MarkRequiredForNextLevel     int           `json:"markRequiredForNextLevel"`
+	MilestoneGrades              []interface{} `json:"milestoneGrades"`
+	NextSeasonMilestone          struct {
+		Bonus              bool `json:"bonus"`
+		RequireGradeCounts struct {
+			A int `json:"A-"`
+		} `json:"requireGradeCounts"`
+		RewardConfig struct {
+			MaximumReward int    `json:"maximumReward"`
+			RewardValue   string `json:"rewardValue"`
+		} `json:"rewardConfig"`
+		RewardMarks int `json:"rewardMarks"`
+	} `json:"nextSeasonMilestone"`
+	Puuid        string `json:"puuid"`
+	TokensEarned int    `json:"tokensEarned"`
 }

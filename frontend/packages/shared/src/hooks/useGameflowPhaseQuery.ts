@@ -1,5 +1,5 @@
 import * as Summoner from '@summonerClient';
-import {useQuery, useQueryClient} from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 export const GAMEFLOW_PHASE_QUERY = ['gameflow-phase'];
 export enum LolChallengesGameflowPhase {
@@ -25,9 +25,7 @@ export function useGameflowPhase() {
   const { data: gameflowPhase, isLoading, error, refetch } = useQuery({
     queryKey: GAMEFLOW_PHASE_QUERY,
     queryFn: Summoner.Client.GetGameflowSession,
-    staleTime: 5 * 60 * 1000,
-    retry: 3,
-    refetchInterval: 60 * 1000, // Re-fetch every 3 seconds
+    retry: true,
 
   });
 
