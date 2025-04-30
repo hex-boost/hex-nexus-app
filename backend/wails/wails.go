@@ -245,6 +245,7 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 			application.NewService(lolSkinService),
 			application.NewService(lolSkinState),
 			application.NewService(websocketHandler),
+			application.NewService(summonerClient),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.BundledAssetFileServer(assets),

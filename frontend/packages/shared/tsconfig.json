@@ -7,7 +7,12 @@
       "@/*": [
         "shared/src/*"
       ],
-
+      "@types": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/types"
+      ],
+      "@summonerClient": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/internal/league/summoner"
+      ],
       "@client": [
         "main/bindings/github.com/hex-boost/hex-nexus-app/backend/client"
       ],

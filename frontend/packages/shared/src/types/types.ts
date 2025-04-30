@@ -71,116 +71,116 @@ export type UserMedia = MediaFileType;
 export type RankingGame = RankingType['game'];
 export type PremiumTiers = PremiumType['tier'];
 
-export interface Root {
-    actions: Action[][]
-    allowBattleBoost: boolean
-    allowDuplicatePicks: boolean
-    allowLockedEvents: boolean
-    allowRerolling: boolean
-    allowSkinSelection: boolean
-    allowSubsetChampionPicks: boolean
-    benchChampions: any[]
-    benchEnabled: boolean
-    boostableSkinCount: number
-    chatDetails: ChatDetails
-    counter: number
-    gameId: number
-    hasSimultaneousBans: boolean
-    hasSimultaneousPicks: boolean
-    isLegacyChampSelect: boolean
-    isSpectating: boolean
-    localPlayerCellId: number
-    lockedEventIndex: number
-    myTeam: MyTeam[]
-    pickOrderSwaps: PickOrderSwap[]
-    positionSwaps: PositionSwap[]
-    rerollsRemaining: number
-    showQuitButton: boolean
-    skipChampionSelect: boolean
-    theirTeam: TheirTeam[]
-    timer: Timer
-    trades: any[]
-}
+export type Root = {
+  actions: Action[][];
+  allowBattleBoost: boolean;
+  allowDuplicatePicks: boolean;
+  allowLockedEvents: boolean;
+  allowRerolling: boolean;
+  allowSkinSelection: boolean;
+  allowSubsetChampionPicks: boolean;
+  benchChampions: any[];
+  benchEnabled: boolean;
+  boostableSkinCount: number;
+  chatDetails: ChatDetails;
+  counter: number;
+  gameId: number;
+  hasSimultaneousBans: boolean;
+  hasSimultaneousPicks: boolean;
+  isLegacyChampSelect: boolean;
+  isSpectating: boolean;
+  localPlayerCellId: number;
+  lockedEventIndex: number;
+  myTeam: MyTeam[];
+  pickOrderSwaps: PickOrderSwap[];
+  positionSwaps: PositionSwap[];
+  rerollsRemaining: number;
+  showQuitButton: boolean;
+  skipChampionSelect: boolean;
+  theirTeam: TheirTeam[];
+  timer: Timer;
+  trades: any[];
+};
 
-export interface Action {
-    actorCellId: number
-    championId: number
-    completed: boolean
-    id: number
-    isAllyAction: boolean
-    isInProgress: boolean
-    type: string
-}
+export type Action = {
+  actorCellId: number;
+  championId: number;
+  completed: boolean;
+  id: number;
+  isAllyAction: boolean;
+  isInProgress: boolean;
+  type: string;
+};
 
-export interface ChatDetails {
-    mucJwtDto: MucJwtDto
-    multiUserChatId: string
-    multiUserChatPassword: string
-}
+export type ChatDetails = {
+  mucJwtDto: MucJwtDto;
+  multiUserChatId: string;
+  multiUserChatPassword: string;
+};
 
-export interface MucJwtDto {
-    channelClaim: string
-    domain: string
-    jwt: string
-    targetRegion: string
-}
+export type MucJwtDto = {
+  channelClaim: string;
+  domain: string;
+  jwt: string;
+  targetRegion: string;
+};
 
-export interface MyTeam {
-    assignedPosition: string
-    cellId: number
-    championId: number
-    championPickIntent: number
-    gameName: string
-    isHumanoid: boolean
-    nameVisibilityType: string
-    obfuscatedPuuid: string
-    obfuscatedSummonerId: number
-    playerType: string
-    puuid: string
-    selectedSkinId: number
-    spell1Id: number
-    spell2Id: number
-    summonerId: number
-    tagLine: string
-    team: number
-}
+export type MyTeam = {
+  assignedPosition: string;
+  cellId: number;
+  championId: number;
+  championPickIntent: number;
+  gameName: string;
+  isHumanoid: boolean;
+  nameVisibilityType: string;
+  obfuscatedPuuid: string;
+  obfuscatedSummonerId: number;
+  playerType: string;
+  puuid: string;
+  selectedSkinId: number;
+  spell1Id: number;
+  spell2Id: number;
+  summonerId: number;
+  tagLine: string;
+  team: number;
+};
 
-export interface PickOrderSwap {
-    cellId: number
-    id: number
-    state: string
-}
+export type PickOrderSwap = {
+  cellId: number;
+  id: number;
+  state: string;
+};
 
-export interface PositionSwap {
-    cellId: number
-    id: number
-    state: string
-}
+export type PositionSwap = {
+  cellId: number;
+  id: number;
+  state: string;
+};
 
-export interface TheirTeam {
-    assignedPosition: string
-    cellId: number
-    championId: number
-    championPickIntent: number
-    gameName: string
-    isHumanoid: boolean
-    nameVisibilityType: string
-    obfuscatedPuuid: string
-    obfuscatedSummonerId: number
-    playerType: string
-    puuid: string
-    selectedSkinId: number
-    spell1Id: number
-    spell2Id: number
-    summonerId: number
-    tagLine: string
-    team: number
-}
+export type TheirTeam = {
+  assignedPosition: string;
+  cellId: number;
+  championId: number;
+  championPickIntent: number;
+  gameName: string;
+  isHumanoid: boolean;
+  nameVisibilityType: string;
+  obfuscatedPuuid: string;
+  obfuscatedSummonerId: number;
+  playerType: string;
+  puuid: string;
+  selectedSkinId: number;
+  spell1Id: number;
+  spell2Id: number;
+  summonerId: number;
+  tagLine: string;
+  team: number;
+};
 
-export interface Timer {
-    adjustedTimeLeftInPhase: number
-    internalNowInEpochMs: number
-    isInfinite: boolean
-    phase: string
-    totalTimeInPhase: number
-}
+export type Timer = {
+  adjustedTimeLeftInPhase: number;
+  internalNowInEpochMs: number;
+  isInfinite: boolean;
+  phase: string;
+  totalTimeInPhase: number;
+};

@@ -8,6 +8,13 @@
         "shared/src/*"
       ],
 
+      "@types": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/types"
+      ],
+      "@summonerClient": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/internal/league/summoner"
+      ],
+
       "@lolskin": [
         "main/bindings/github.com/hex-boost/hex-nexus-app/backend/internal/league/tools/lolskin"
       ],

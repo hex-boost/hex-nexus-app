@@ -299,7 +299,7 @@ func (s *Client) GetUserInfo() (*types.UserInfo, error) {
 		return nil, err
 	}
 
-	if resp.StatusCode() != http.StatusOK {
+	if resp.IsError() {
 		errMsg := fmt.Sprintf("Failed to get userinfo status: %d", resp.StatusCode())
 		s.logger.Warn(errMsg)
 		return nil, errors.New(errMsg)
@@ -312,4 +312,22 @@ func (s *Client) GetUserInfo() (*types.UserInfo, error) {
 		return nil, err
 	}
 	return &decodedUserinfo, nil
+}
+
+func (s *Client) GetGameflowSession() (*types.LolGameflowV1Session, error) {
+	s.logger.Debug("Fetching account userinfo")
+	var lolGameflowSession types.LolGameflowV1Session
+	resp, err := s.conn.Client.R().SetResult(&lolGameflowSession).Get("/lol-gameflow/v1/session")
+	if err != nil {
+		s.logger.Error("Error fetching userinfo data", zap.Error(err))
+		return nil, err
+	}
+
+	if resp.IsError() {
+		errMsg := fmt.Sprintf("Failed to get userinfo status: %d", resp.StatusCode())
+		s.logger.Warn(errMsg)
+		return nil, errors.New(errMsg)
+	}
+
+	return &lolGameflowSession, nil
 }

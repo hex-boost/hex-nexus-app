@@ -29,6 +29,7 @@ import {createFileRoute, Outlet, useRouter} from '@tanstack/react-router';
 import React from 'react';
 import {cls} from 'react-image-crop';
 import 'non.geist';
+import {AppleStyleDock} from "./_protected/tools";
 
 export const Route = createFileRoute('/_protected')({
   component: DashboardLayout,
@@ -52,7 +53,7 @@ function DashboardLayout() {
   return (
     <>
 
-      {/*<AppleStyleDock />*/}
+      <AppleStyleDock />
       <CloseConfirmationHandler />
 
       <NotificationProvider>

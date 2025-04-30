@@ -1,6 +1,7 @@
 import {Avatar, AvatarImage} from '@/components/ui/avatar.tsx';
 import {Badge} from '@/components/ui/badge.tsx';
 import {Button} from '@/components/ui/button.tsx';
+import {useGameflowPhase} from '@/hooks/useGameflowPhaseQuery.ts';
 import {useMapping} from '@/lib/useMapping.tsx';
 import {createFileRoute} from '@tanstack/react-router';
 import {ExternalLink} from 'lucide-react';
@@ -13,6 +14,7 @@ function RouteComponent() {
   // const { user } = useUserStore();
   // const { currentRanking } = useRiotAccount({ account: user?.rentedAccounts[0] });
   const { getEloIcon } = useMapping();
+  const { gameflowPhase } = useGameflowPhase();
   return (
     <>
       <div className="flex justify-between pb-6 items-center w-full">
@@ -22,8 +24,8 @@ function RouteComponent() {
             variant="outline"
             className="py-1 px-3  rounded-full border-emerald-500/50 bg-emerald-500/10 "
           >
-            <div className="h-2 w-2 bg-emerald-300 animate-pulse rounded-full "></div>
-            <span className="text-emerald-500">Lobby</span>
+            <div className="h-2 w-2 bg-emerald-300 animate-pulse rounded-full"></div>
+            <span className="text-emerald-500">{gameflowPhase}</span>
           </Badge>
         </div>
         <Button>

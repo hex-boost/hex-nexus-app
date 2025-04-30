@@ -413,7 +413,6 @@ func (s *Service) readMessages() {
 			return
 		}
 		if len(message) < 1 {
-			s.logger.Debug("Received empty WebSocket message")
 			continue
 		}
 		// Log message type for debugging
@@ -447,6 +446,8 @@ func (s *Service) GetHandlers() []EventHandler {
 		s.manager.NewEventHandler("OnJsonApiEvent_lol-inventory_v2_inventory", s.handler.ChampionPurchase),
 		s.manager.NewEventHandler("OnJsonApiEvent_lol-champ-select_v1_grid-champions", s.handler.ChampionPicked),
 		s.manager.NewEventHandler("OnJsonApiEvent_lol-lobby-team-builder_champ-select_v1", s.handler.ReemitEvent),
+		s.manager.NewEventHandler("OnJsonApiEvent_lol-summoner_v1_current-summoner", s.handler.ReemitEvent),
+		s.manager.NewEventHandler("OnJsonApiEvent_lol-gameflow_v1_session", s.handler.ReemitEvent),
 	}
 }
 func (s *Service) SubscribeToLeagueEvents() {

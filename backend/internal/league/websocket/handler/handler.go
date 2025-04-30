@@ -270,7 +270,7 @@ func (h *Handler) ChampionPicked(event websocket.LCUWebSocketEvent) {
 	}
 }
 func (h *Handler) ReemitEvent(event websocket.LCUWebSocketEvent) {
-	h.logger.Info("Re-emitting event", zap.String("event", event.EventTopic))
+	h.logger.Info("Re-emitting event", zap.String("event", event.EventTopic), zap.String("uri", event.URI))
 	app := application.Get()
 	app.EmitEvent(event.EventTopic, event.Data)
 }
