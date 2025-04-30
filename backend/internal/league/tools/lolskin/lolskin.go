@@ -6,6 +6,7 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/command"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"go.uber.org/zap"
 	"io"
@@ -246,8 +247,8 @@ func (c *LolSkin) executeCommand(executable string, args []string, logPrefix str
 		fmt.Fprintf(logFile, "Command: %s\n", execPath)
 		fmt.Fprintf(logFile, "Arguments: %v\n", args)
 	}
-
-	cmd := exec.Command(execPath, args...)
+	commander := command.New()
+	cmd := commander.Exec(execPath, args...)
 
 	// Capture output
 	var stdoutBuf, stderrBuf bytes.Buffer
@@ -277,7 +278,8 @@ func (c *LolSkin) executeCommand(executable string, args []string, logPrefix str
 func (c *LolSkin) runPatcher(args []string) {
 	// Create the command
 	execPath := filepath.Join(c.tempDir, ModToolsExe)
-	c.patcherProcess = exec.Command(execPath, args...)
+	commander := command.New()
+	c.patcherProcess = commander.Exec(execPath, args...)
 
 	c.logger.Info("Starting patcher process", zap.String("executable", execPath), zap.Strings("args", args))
 
@@ -440,5 +442,3 @@ func (c *LolSkin) DownloadFantome(championId int32, skinId int32) (string, error
 
 	return localPath, nil
 }
-
-

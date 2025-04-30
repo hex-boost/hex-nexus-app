@@ -31,3 +31,8 @@ func (c *Command) Run(command string, arg ...string) error {
 	cmd = c.hideConsole(cmd)
 	return cmd.Run()
 }
+func (c *Command) Exec(command string, arg ...string) *exec.Cmd {
+	cmd := exec.Command(command, arg...)
+	cmd = c.hideConsole(cmd)
+	return cmd
+}
