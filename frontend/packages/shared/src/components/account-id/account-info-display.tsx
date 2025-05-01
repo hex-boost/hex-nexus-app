@@ -61,7 +61,7 @@ function RankDisplay({
                 <div className="flex gap-1 items-end">
 
                   <p className="text-sm font-medium">
-                    {rank.elo[0]?.toUpperCase() + rank.elo?.slice(1).toLowerCase() || 'Unranked'}
+                    {rank.elo ? `${rank.elo[0].toUpperCase()}${rank.elo.slice(1).toLowerCase()}` : 'Unranked'}
                     {' '}
                     {rank.division}
                   </p>

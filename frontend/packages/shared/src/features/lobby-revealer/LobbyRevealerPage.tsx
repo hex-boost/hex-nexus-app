@@ -14,6 +14,7 @@ import { useCurrentSummonerProfileQuery } from '@/hooks/useCurrentSummonerProfil
 import { useCurrentSummonerQuery } from '@/hooks/useCurrentSummonerQuery.ts';
 import { useAllDataDragon } from '@/hooks/useDataDragon/useDataDragon.ts';
 import { useGameflowPhase } from '@/hooks/useGameflowPhaseQuery.ts';
+import { useLobbyRevealer } from '@/hooks/useLobbyRevealer.ts';
 import { useSummonerRankQuery } from '@/hooks/useSummonerRankQuery.ts';
 import { logger } from '@/lib/logger.ts';
 import { useQuery } from '@tanstack/react-query';
@@ -47,6 +48,7 @@ export function LobbyRevealerPage() {
   const { chatMe, isLoading: isChatMeLoading } = useChatMeQuery();
   const { currentSummoner, isLoading: isSummonerLoading } = useCurrentSummonerQuery();
   const { championMastery, isLoading: isChampionMasteryLoading } = useChampionMasteryQuery();
+  const {} = useLobbyRevealer();
 
   // Debug logging for hooks loading states
   useEffect(() => {
