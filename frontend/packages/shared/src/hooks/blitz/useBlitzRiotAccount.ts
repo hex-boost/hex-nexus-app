@@ -1,14 +1,24 @@
-import type {Server} from '@/types/types.ts';
-import type {UseQueryOptions} from '@tanstack/react-query';
-import {useQuery, useQueryClient} from '@tanstack/react-query';
-import type {BlitzRiotAccount} from './types/BlitzRiotAccount.ts';
+import type { Server } from '@/types/types.ts';
+import type { UseQueryOptions } from '@tanstack/react-query';
+import type { BlitzRiotAccount } from './types/BlitzRiotAccount.ts';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 
 export enum QueueType {
   RankedSolo = 420,
   RankedFlex = 450,
 }
-
+export async function fetchRiotAccount({ gameName, tagLine, platformId }: { gameName: string; tagLine: string; platformId: Server }): Promise<BlitzRiotAccount> {
+  try {
+    const response = await axios.get<BlitzRiotAccount>(
+      `https://lol.iesdev.com/riot_account/lol/${platformId}/${gameName}/${tagLine}`,
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching riot account:', error);
+    throw error;
+  }
+}
 type UseBlitzRiotAccountResult = {
   blitzRiotAccount: BlitzRiotAccount | undefined;
   isLoading: boolean;
@@ -36,11 +46,8 @@ export function useBlitzRiotAccount({
 
   const { data: blitzRiotAccount, isLoading, error, refetch } = useQuery<BlitzRiotAccount, Error>({
     queryKey,
-    queryFn: async () => {
-      const response = await axios.get<BlitzRiotAccount>(
-        `https://lol.iesdev.com/lol/riot_account/lol/${region}/${gameName}/${tagLine}`,
-      );
-      return response.data;
+    queryFn: () => {
+      return fetchRiotAccount({ gameName, tagLine, platformId: region });
     },
     enabled: !!gameName && !!tagLine && !!region,
     ...queryOptions,

@@ -48,7 +48,6 @@ export function LobbyRevealerPage() {
   const { chatMe, isLoading: isChatMeLoading } = useChatMeQuery();
   const { currentSummoner, isLoading: isSummonerLoading } = useCurrentSummonerQuery();
   const { championMastery, isLoading: isChampionMasteryLoading } = useChampionMasteryQuery();
-  const {} = useLobbyRevealer();
 
   // Debug logging for hooks loading states
   useEffect(() => {
@@ -128,6 +127,7 @@ export function LobbyRevealerPage() {
   const tagLine = currentSummoner?.tagLine || chatMe?.gameTag || '';
   const region = chatMe?.platformId as Server || '';
 
+  const { isPending, summonerCards } = useLobbyRevealer({ platformId: region });
   // Log derived properties
   useEffect(() => {
     logger.info('DERIVED_PROPS', {
@@ -229,7 +229,19 @@ export function LobbyRevealerPage() {
         : null;
       const backgroundImageUrl = currentSummonerProfile && currentSummonerProfile.backgroundSkinId !== 0
         ? getBackgroundImageUrl(currentSummonerProfile.backgroundSkinId)
-        : allChampions.find(dragonChampion => championMastery?.championId === Number(dragonChampion.id))?.skins[0].imageUrl || null;
+        : (() => {
+            // Find champion with highest mastery points
+            const highestMasteryChampion = championMastery?.reduce(
+              (highest, current) =>
+                (current.championPoints > highest.championPoints) ? current : highest,
+              championMastery[0],
+            );
+
+            // Find matching data dragon champion and get skin URL
+            return highestMasteryChampion
+              ? allChampions.find(dragonChampion => highestMasteryChampion.championId === Number(dragonChampion.id))?.skins[0].imageAvatarUrl
+              : null;
+          })();
 
       logger.info('SUMMONER_CARD_DATA', {
         playerChampion,
@@ -370,30 +382,55 @@ export function LobbyRevealerPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        {allPlayers.map((player: LobbySummonerCardProps | null, index) => {
-          // Show skeleton while loading
+        {Array.from({ length: 5 }).map((_, index) => {
+          // Current user's position is in the middle (index 2)
           if (index === 2 && isLoading) {
-            logger.info('RENDERING_PLAYER', { index, position: 'middle', type: 'skeleton', reason: 'loading' });
-            return <SummonerCardSkeleton key={index} />;
+            logger.info('RENDERING_PLAYER', { index, position: 'middle', type: 'skeleton', reason: 'loading current user' });
+            return <SummonerCardSkeleton key={`current-${index}`} />;
           }
 
-          if (player) {
+          // If this is the middle position and we have current user data
+          if (index === 2 && summonerCard) {
             logger.info('RENDERING_PLAYER', {
               index,
-              type: 'player card',
-              summonerName: player.summonerName,
-              summonerTag: player.summonerTag,
+              type: 'current user card',
+              summonerName: summonerCard.summonerName,
+              summonerTag: summonerCard.summonerTag,
             });
             return (
               <LobbySummonerCard
-                key={player.summonerName + player.summonerTag}
-                {...player}
+                key={`current-${summonerCard.summonerName}-${summonerCard.summonerTag}`}
+                {...summonerCard}
               />
             );
           }
 
-          logger.info('RENDERING_PLAYER', { index, type: 'skeleton', reason: 'no player data' });
-          return <SummonerCardEmptyState key={index} />;
+          // For other positions, check if we have lobby data for this position
+          const lobbyPlayer = summonerCards[index < 2 ? index : index - 1];
+
+          // If we're loading other players data, show skeleton
+          if (isPending && index !== 2) {
+            logger.info('RENDERING_PLAYER', { index, type: 'skeleton', reason: 'loading other players' });
+            return <SummonerCardSkeleton key={`lobby-loading-${index}`} />;
+          }
+
+          // If we have lobby data for this position
+          // In LobbyRevealerPage component
+          { lobbyPlayer
+            ? (
+                <LobbySummonerCard
+                  key={`lobby-${lobbyPlayer.summonerName}-${lobbyPlayer.summonerTag}`}
+                  {...lobbyPlayer}
+                />
+              )
+            : (
+                <div className="bg-neutral-900 rounded-lg p-4 text-center">
+                  <p className="text-neutral-400 text-sm">Waiting for pick...</p>
+                </div>
+              ); }
+          // Otherwise show empty state
+          logger.info('RENDERING_PLAYER', { index, type: 'empty', reason: 'no player data' });
+          return <SummonerCardEmptyState key={`empty-${index}`} />;
         })}
       </div>
     </>

@@ -11,11 +11,10 @@ export function useChampionMasteryQuery() {
   const { data: championMastery, isLoading, error, refetch } = useQuery({
     queryKey: CHAMPION_MASTERY_QUERY_KEY,
     queryFn: Summoner.Client.GetChampionMastery,
-    retry: true, // This enables infinite retries
   });
 
   // Function to update state from websocket
-  const update = (websocketData: LocalPlayerChampionMastery) => {
+  const update = (websocketData: LocalPlayerChampionMastery[]) => {
     queryClient.setQueryData(CHAMPION_MASTERY_QUERY_KEY, websocketData);
   };
 

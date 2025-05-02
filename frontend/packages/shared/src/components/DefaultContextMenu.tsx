@@ -56,7 +56,6 @@ export function DefaultContextMenu({ children }: { children: React.ReactNode }) 
         const allQueriesPromise = queryClient.refetchQueries({
           type: 'active',
           predicate: query => !query.queryKey.includes('accounts'),
-          signal,
         });
 
         // Handle accounts queries separately with the specific parameters
@@ -64,7 +63,6 @@ export function DefaultContextMenu({ children }: { children: React.ReactNode }) 
           exact: false,
           type: 'active',
           queryKey: ['accounts'],
-          signal,
         });
 
         // Handle the promise resolution manually

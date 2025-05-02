@@ -1,17 +1,21 @@
 import type { LobbySummonerCardProps } from '@/components/LobbySummonerCard.tsx';
+import type { PlayerChampion } from '@/hooks/blitz/types/PlayerChampion.ts';
 import type { Server, TeamBuilderChampionSelect } from '@/types/types.ts';
-import { useBlitzPlayerChampion } from '@/hooks/blitz/useBlitzPlayerChampion.ts';
+import { fetchRiotAccount } from '@/hooks/blitz/useBlitzRiotAccount.ts';
 import { useAllDataDragon } from '@/hooks/useDataDragon/useDataDragon.ts';
-import { logger } from '@/lib/logger.ts';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Events } from '@wailsio/runtime';
-import { useEffect, useState } from 'react';
+import axios from 'axios';
+import { useEffect } from 'react';
 
 export function useLobbyRevealer({ platformId }: { platformId: string }) {
   const { allChampions, version } = useAllDataDragon();
-  const [summonerCards, setSummonerCards] = useState<LobbySummonerCardProps[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const queryClient = useQueryClient();
 
-  // Helper function to get champion data
+  // Query key for caching summoner cards
+  const summonerCardsKey = ['summonerCards', platformId];
+
+  // Helper functions for champion data
   function getChampionData(championId: number) {
     if (!championId) {
       return null;
@@ -19,93 +23,82 @@ export function useLobbyRevealer({ platformId }: { platformId: string }) {
     return allChampions.find(champion => Number(champion.id) === Number(championId));
   }
 
-  // Get champion loading splash URL
   function getChampionLoadingUrl(championId: number, skinId: number | null): string | null {
     if (!championId) {
       return null;
     }
-
     const champion = getChampionData(championId);
     if (!champion) {
       return null;
     }
-
     return `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${champion.name_id}_${skinId || 0}.jpg`;
   }
 
-  // Get champion square image
   function getChampionSquareImage(championId: number): string | null {
     if (!championId || !version) {
       return null;
     }
-
     const champion = getChampionData(championId);
     if (!champion) {
       return null;
     }
-
     return `https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${champion.name_id}.png`;
   }
 
-  useEffect(() => {
-    // Initial loading state
-    setIsLoading(true);
-
-    const cancel = Events.On('OnJsonApiEvent_lol-lobby-team-builder_champ-select_v1', async (event) => {
-      logger.info('CHAMPION_SELECT_UPDATE', {
-        message: 'Received champion select update event',
-        timestamp: new Date().toISOString(),
-      });
-
-      const champSelect = event.data[0] as TeamBuilderChampionSelect;
+  // Mutation for processing champion select data
+  const { mutate: processSummonerCards, isPending } = useMutation({
+    mutationFn: async (champSelect: TeamBuilderChampionSelect) => {
       if (!champSelect || !champSelect.myTeam) {
-        logger.info('CHAMPION_SELECT_ERROR', {
-          message: 'Invalid champion select data',
-          data: event.data,
-        });
         return;
       }
 
       // Process all players in my team
-      const updatedCards = await Promise.all(champSelect.myTeam.map(async (summoner) => {
-        // Only fetch detailed player data if we have all required information
-        let playerChampionStats = null;
-        try {
-          if (summoner.gameName && summoner.tagLine) {
-            const { playerChampion } = useBlitzPlayerChampion({
-              gameName: summoner.gameName,
-              tagLine: summoner.tagLine,
-              region: platformId as Server,
-            });
+      const playerDataPromises = champSelect.myTeam.map(async (summoner) => {
+        // Get player data
+        const blitzRiotAccount = await fetchRiotAccount({
+          gameName: summoner.gameName,
+          tagLine: summoner.tagLine,
+          platformId: platformId as Server,
+        });
 
-            playerChampionStats = playerChampion?.find(champion =>
-              champion.champion_id === summoner.championId,
+        const playerKey = summoner.gameName && summoner.tagLine
+          ? `${summoner.gameName}#${summoner.tagLine}`
+          : null;
+
+        let playerChampionStats: PlayerChampion | null = null;
+
+        // Fetch player champion stats if we have a name and tag
+        if (playerKey) {
+          try {
+            const response = await axios.get(
+              `https://lol.iesdev.com/lol/player_champion_aggregate/${platformId}/${summoner.gameName}/${summoner.tagLine}/420`,
             );
+            const playerChampions = response.data;
+            playerChampionStats = playerChampions?.find(champion =>
+              champion.champion_id === summoner.championId,
+            ) || null;
+          } catch (error) {
+            console.error('Error fetching player champion data', error);
           }
-        } catch (error) {
-          logger.error('PLAYER_CHAMPION_ERROR', {
-            error,
-            summoner: `${summoner.gameName}#${summoner.tagLine}`,
-          });
         }
 
-        // Determine champion information
-        const championId = summoner.championId || summoner.championPickIntent;
-        const championData = getChampionData(championId);
-
+        const playerRank = blitzRiotAccount?.league_lol.find(
+          league => league.queue_type === 'RANKED_SOLO_5x5',
+        );
+        const championIdToUse = summoner.championId || summoner.championPickIntent;
+        const champion = getChampionData(championIdToUse);
         // Create card data with available information
         return {
           summonerName: summoner.gameName || 'Player',
           summonerTag: summoner.tagLine || 'Unknown',
-          assignedPosition: summoner.assignedPosition || '',
-          championId,
-          championName: championData?.name || 'Unknown',
-          championSquareImage: getChampionSquareImage(championId),
-          championLoadingImage: getChampionLoadingUrl(championId, summoner.selectedSkinId),
-          isPickIntent: summoner.championId === 0 && summoner.championPickIntent > 0,
-          isPicking: summoner.championId === 0,
-          hasLocked: summoner.championId > 0,
-
+          championName: champion?.name || 'Unknown',
+          championSquareImage: getChampionSquareImage(Number(champion?.id)),
+          championLoadingImage: getChampionLoadingUrl(Number(champion?.id), summoner.selectedSkinId),
+          rank: playerRank?.tier,
+          division: playerRank?.rank,
+          rankPoints: playerRank?.league_points,
+          victories: 0,
+          defeats: 0,
           kills: playerChampionStats?.kills || 0,
           deaths: playerChampionStats?.deaths || 0,
           assists: playerChampionStats?.assists || 0,
@@ -113,25 +106,31 @@ export function useLobbyRevealer({ platformId }: { platformId: string }) {
           gamesPlayed: playerChampionStats?.game_count || 0,
           platformId,
         } as LobbySummonerCardProps;
-      }));
-
-      setSummonerCards(updatedCards);
-      setIsLoading(false);
-
-      logger.info('CHAMPION_SELECT_PROCESSED', {
-        message: 'Processed champion select data',
-        players: updatedCards.length,
-        playerNames: updatedCards.map(card => card.summonerName),
       });
+
+      const summonerCards = await Promise.all(playerDataPromises);
+      return summonerCards.filter(Boolean) as LobbySummonerCardProps[];
+    },
+    onSuccess: (data) => {
+      // Update the cache when successful
+      queryClient.setQueryData(summonerCardsKey, data);
+    },
+  });
+
+  // Register event listener
+  useEffect(() => {
+    const cancel = Events.On('OnJsonApiEvent_lol-lobby-team-builder_champ-select_v1', (event) => {
+      console.log('lol-lobby-team-builder_champ-select_v1', event.data[0]);
+      const champSelect = event.data[0] as TeamBuilderChampionSelect;
+
+      processSummonerCards(champSelect);
     });
 
-    return () => {
-      cancel();
-      logger.info('CHAMPION_SELECT_LISTENER_REMOVED', {
-        message: 'Champion select event listener removed',
-      });
-    };
-  }, [platformId, allChampions, version]);
+    return () => cancel();
+  }, [platformId, allChampions, version, processSummonerCards]);
 
-  return { summonerCards, isLoading };
+  // Get the current summoner cards from cache
+  const summonerCards = queryClient.getQueryData<LobbySummonerCardProps[]>(summonerCardsKey) || [];
+
+  return { summonerCards, isPending };
 }

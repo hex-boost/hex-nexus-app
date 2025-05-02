@@ -1,6 +1,8 @@
 import type { AccountType } from '@/types/types.ts';
 import { ChampionsSkinsTab } from '@/components/account-id/ChampionsSkinsTab.tsx';
+
 import { LeaverBusterDisplay } from '@/components/account-id/leaver-buster-display.tsx';
+import { BoostRoyalOrderModal } from '@/components/BoostRoyalOrderModal.tsx';
 import { CoinIcon } from '@/components/coin-icon.tsx';
 import { CopyToClipboard } from '@/components/CopyToClipboard.tsx';
 import { DropAccountAction } from '@/components/DropAccountAction.tsx';
@@ -28,15 +30,44 @@ export default function AccountDetails({ account, onAccountChange }: {
   account: AccountType;
 }) {
   const { user } = useUserStore();
-  const { championsSearch, setChampionsSearch, skinsSearch, setSkinsSearch, filteredChampions, filteredSkins } = useAccountFilters({ account });
-  const { dropRefund, selectedRentalOptionIndex, handleExtendAccount, isExtendPending, setSelectedRentalOptionIndex, isRentPending, handleRentAccount } = useAccountActions({ account, onAccountChange, user });
+  const [isBoostRoyalModalOpen, setIsBoostRoyalModalOpen] = useState(false);
+
+  const {
+    championsSearch,
+    setChampionsSearch,
+    skinsSearch,
+    setSkinsSearch,
+    filteredChampions,
+    filteredSkins,
+  } = useAccountFilters({ account });
+  const {
+    dropRefund,
+    selectedRentalOptionIndex,
+    handleExtendAccount,
+    isExtendPending,
+    setSelectedRentalOptionIndex,
+    isRentPending,
+    handleRentAccount,
+  } = useAccountActions({ account, onAccountChange, user });
   const [activeTab, setActiveTab] = useState(0);
   const { getCompanyIcon, getGameIcon, getFormattedServer } = useMapping();
   const soloQueueRank = account.rankings?.find(lc => lc.queueType === 'soloqueue');
   const flexQueueRank = account.rankings?.find(lc => lc.queueType === 'flex');
   const { calculateTimeRemaining } = useDateTime();
   const { price, getAccountPrice, isPriceLoading } = usePrice();
+  const handleRentClick = () => {
+    if (account.type === 'boostroyal') {
+      setIsBoostRoyalModalOpen(true);
+    } else {
+      handleRentAccount(selectedRentalOptionIndex);
+    }
+  };
 
+  // Add function to handle BoostRoyal order submission
+  const handleBoostRoyalOrderSubmit = (boostRoyalOrderId: number) => {
+    handleRentAccount(selectedRentalOptionIndex, boostRoyalOrderId);
+    setIsBoostRoyalModalOpen(false);
+  };
   return (
     <>
       <div className="lg:col-span-3 space-y-6">
@@ -54,7 +85,10 @@ export default function AccountDetails({ account, onAccountChange }: {
 
                       </span>
 
-                      <CopyToClipboard className="bg-transparent border-none h-4 w-4 !p-0 " text={account.documentId} />
+                      <CopyToClipboard
+                        className="bg-transparent border-none h-4 w-4 !p-0 "
+                        text={account.documentId}
+                      />
 
                       <FavoriteStar account={account} />
                       <FavoriteAccountNote account={account} />
@@ -64,11 +98,24 @@ export default function AccountDetails({ account, onAccountChange }: {
 
                         ? (
                             <div className="flex gap-4 items-center ">
-                              <span className="text-sm text-muted-foreground   transition-all duration-200">{`${account.gamename}#${account.tagline}`}</span>
-                              <CopyToClipboard className="bg-transparent p-0 w-0 h-0" text={`${account.gamename}#${account.tagline}`} />
+                              <span
+                                className="text-sm text-muted-foreground   transition-all duration-200"
+                              >
+                                {`${account.gamename}#${account.tagline}`}
+                              </span>
+                              <CopyToClipboard
+                                className="bg-transparent p-0 w-0 h-0"
+                                text={`${account.gamename}#${account.tagline}`}
+                              />
                             </div>
                           )
-                        : <span className="text-sm text-muted-foreground blur-[2px] select-none transition-all duration-200">Summoner Name</span>
+                        : (
+                            <span
+                              className="text-sm text-muted-foreground blur-[2px] select-none transition-all duration-200"
+                            >
+                              Summoner Name
+                            </span>
+                          )
                     }
                   </div>
                 </div>
@@ -114,7 +161,9 @@ export default function AccountDetails({ account, onAccountChange }: {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center gap-3 bg-blue-50 border border-blue-300/20 dark:bg-blue-900/20 p-3 rounded-lg">
+              <div
+                className="flex items-center gap-3 bg-blue-50 border border-blue-300/20 dark:bg-blue-900/20 p-3 rounded-lg"
+              >
                 <div className="w-10 h-10 ">
                   {/* eslint-disable-next-line jsx-a11y/alt-text */}
                   <img
@@ -129,12 +178,14 @@ export default function AccountDetails({ account, onAccountChange }: {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 bg-orange-50 dark:bg-yellow-900/20 border border-yellow-300/20 p-3 rounded-lg">
+              <div
+                className="flex items-center gap-3 bg-orange-50 dark:bg-yellow-900/20 border border-yellow-300/20 p-3 rounded-lg"
+              >
                 <div className="w-10 h-10">
-                  {/* <svg xmlns="http://www.w3.org/2000/svg" width="13" height="14" viewBox="0 0 13 14" fill="none"> */}
-                  {/*  <path fill-rule="evenodd" clip-rule="evenodd" d="M8.63343 2.25848L6.5001 0.600098L4.36676 2.25848V8.25781L6.5001 9.7405L8.63343 8.25781V2.25848ZM12.0468 6.1152L12.9001 5.49383L10.3401 3.11553V9.11486L7.35343 11.2575V13.4001L12.9001 9.68479L12.0468 8.68634V6.1152ZM2.6601 3.11553L0.100098 5.49383L0.953431 6.1152V8.68634L0.100098 9.68479L5.64676 13.4001V11.2575L2.6601 9.11486V3.11553Z" fill="#E2BA3D" /> */}
-                  {/* </svg> */}
-                  <img alt="rp" src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/icon-rp-72.png" />
+                  <img
+                    alt="rp"
+                    src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/icon-rp-72.png"
+                  />
 
                 </div>
                 <div>
@@ -181,7 +232,9 @@ export default function AccountDetails({ account, onAccountChange }: {
                 )}
               </div>
 
-              <div className="grid grid-cols-3 sm:grid-cols-7  md:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-12 gap-2 overflow-y-auto overflow-x-hidden max-h-[60vh] ">
+              <div
+                className="grid grid-cols-3 sm:grid-cols-7  md:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-12 gap-2 overflow-y-auto overflow-x-hidden max-h-[60vh] "
+              >
                 {filteredChampions.map(champion => (
                   <div
                     key={champion?.id}
@@ -238,7 +291,9 @@ export default function AccountDetails({ account, onAccountChange }: {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 overflow-y-auto max-h-[60vh]">
+              <div
+                className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 overflow-y-auto max-h-[60vh]"
+              >
                 {filteredSkins.map(skin => (
                   <div
                     key={skin.id}
@@ -305,7 +360,11 @@ export default function AccountDetails({ account, onAccountChange }: {
 
                   <div className=" border-white/10 rounded-md px-6">
                     <div className="flex justify-between items-center ">
-                      <span className="text-zinc-600 dark:text-zinc-400 flex items-center gap-1 text-sm">Refundable amount:</span>
+                      <span
+                        className="text-zinc-600 dark:text-zinc-400 flex items-center gap-1 text-sm"
+                      >
+                        Refundable amount:
+                      </span>
                       <div
                         className="flex  items-center gap-1 text-lg font-semibold text-zinc-900 dark:text-zinc-50 "
                       >
@@ -320,7 +379,10 @@ export default function AccountDetails({ account, onAccountChange }: {
                   </div>
                   <Separator />
                   <div className="px-6 mb-6">
-                    <div className="text-sm mb-2 text-zinc-600 dark:text-zinc-400">Quick extend options</div>
+                    <div className="text-sm mb-2 text-zinc-600 dark:text-zinc-400">
+                      Quick extend
+                      options
+                    </div>
                     <div className="grid grid-cols-3 gap-2">
                       {isPriceLoading
                         ? Array.from({ length: 3 }).map((_, index) => (
@@ -425,7 +487,7 @@ export default function AccountDetails({ account, onAccountChange }: {
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                       disabled={!price || (price && !getAccountPrice(price, soloQueueRank?.elo)) || isPriceLoading || isRentPending || selectedRentalOptionIndex == null}
                       loading={isRentPending}
-                      onClick={() => handleRentAccount(selectedRentalOptionIndex)}
+                      onClick={handleRentClick}
                     >
                       Rent Now
                     </Button>
@@ -475,6 +537,12 @@ export default function AccountDetails({ account, onAccountChange }: {
           </CardContent>
         </Card>
       </div>
+      <BoostRoyalOrderModal
+        isOpen={isBoostRoyalModalOpen}
+        onClose={() => setIsBoostRoyalModalOpen(false)}
+        onSubmit={handleBoostRoyalOrderSubmit}
+        isLoading={isRentPending}
+      />
     </>
   );
 }

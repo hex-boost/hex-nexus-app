@@ -61,72 +61,73 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 
 	appInstance := app.App(cfg)
 	leagueManager := manager.New()
+	if !cfg.Debug {
+		if len(os.Args) >= 3 && os.Args[1] == "--watchdog" {
+			mainPID, err := strconv.Atoi(os.Args[2])
+			if err != nil {
+				log.Fatalf("Invalid PID: %v", err)
+			}
 
-	if len(os.Args) >= 3 && os.Args[1] == "--watchdog" {
-		mainPID, err := strconv.Atoi(os.Args[2])
+			newWatchdog := watchdog.New(mainPID, os.Args[0])
+
+			// Add cleanup functions
+			newWatchdog.AddCleanupFunction(func() {
+				// Load state to check if account was active
+				state, err := newWatchdog.LoadState()
+				if err == nil && state.AccountActive {
+					err := leagueManager.ForceCloseAllClients()
+					if err != nil {
+						fmt.Println(fmt.Errorf("error closing clients: %v", err))
+						return
+					}
+					log.Println("Performing emergency league client logout for Nexus account")
+				}
+			})
+
+			// Start watchdog
+			if err := newWatchdog.Start(); err != nil {
+				log.Fatalf("Failed to start watchdog: %v", err)
+			}
+
+			// Instead of select{}, use a WaitGroup
+			var wg sync.WaitGroup
+			wg.Add(1)
+
+			// Add signal handling for graceful shutdown
+			sigChan := make(chan os.Signal, 1)
+			signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
+
+			go func() {
+				defer wg.Done()
+				select {
+				case <-sigChan:
+					log.Println("Watchdog received termination signal")
+					newWatchdog.Stop() // Gracefully stop the watchdog
+				}
+			}()
+
+			// Also set up a monitor for our own PID to detect forceful termination
+			go func() {
+				ticker := time.NewTicker(5 * time.Second)
+				defer ticker.Stop()
+
+				for {
+					<-ticker.C
+					if !newWatchdog.IsRunning() {
+						log.Println("Main process exited, watchdog shutting down")
+						os.Exit(0)
+					}
+				}
+			}()
+
+			wg.Wait()
+			return
+		}
+		_, err := StartWatchdog()
 		if err != nil {
-			log.Fatalf("Invalid PID: %v", err)
+			panic(fmt.Sprintf("error starting watchdog %v", err))
+			return
 		}
-
-		newWatchdog := watchdog.New(mainPID, os.Args[0])
-
-		// Add cleanup functions
-		newWatchdog.AddCleanupFunction(func() {
-			// Load state to check if account was active
-			state, err := newWatchdog.LoadState()
-			if err == nil && state.AccountActive {
-				err := leagueManager.ForceCloseAllClients()
-				if err != nil {
-					fmt.Println(fmt.Errorf("error closing clients: %v", err))
-					return
-				}
-				log.Println("Performing emergency league client logout for Nexus account")
-			}
-		})
-
-		// Start watchdog
-		if err := newWatchdog.Start(); err != nil {
-			log.Fatalf("Failed to start watchdog: %v", err)
-		}
-
-		// Instead of select{}, use a WaitGroup
-		var wg sync.WaitGroup
-		wg.Add(1)
-
-		// Add signal handling for graceful shutdown
-		sigChan := make(chan os.Signal, 1)
-		signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
-
-		go func() {
-			defer wg.Done()
-			select {
-			case <-sigChan:
-				log.Println("Watchdog received termination signal")
-				newWatchdog.Stop() // Gracefully stop the watchdog
-			}
-		}()
-
-		// Also set up a monitor for our own PID to detect forceful termination
-		go func() {
-			ticker := time.NewTicker(5 * time.Second)
-			defer ticker.Stop()
-
-			for {
-				<-ticker.C
-				if !newWatchdog.IsRunning() {
-					log.Println("Main process exited, watchdog shutting down")
-					os.Exit(0)
-				}
-			}
-		}()
-
-		wg.Wait()
-		return
-	}
-	_, err := StartWatchdog()
-	if err != nil {
-		panic(fmt.Sprintf("error starting watchdog %v", err))
-		return
 	}
 
 	// Create a watchdog client for communication with the watchdog process
@@ -337,7 +338,7 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 		gameOverlayManager.Start()
 	})
 
-	err = mainApp.Run()
+	err := mainApp.Run()
 	if err != nil {
 		log.Fatal(err)
 		return

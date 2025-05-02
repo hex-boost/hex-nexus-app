@@ -364,10 +364,10 @@ func (s *Client) GetCurrentSummonerProfile() (*types.CurrentSummonerProfile, err
 
 	return &currentSummonerProfile, nil
 }
-func (s *Client) GetChampionMastery() (*types.LocalPlayerChampionMastery, error) {
+func (s *Client) GetChampionMastery() (*[]types.LocalPlayerChampionMastery, error) {
 	s.logger.Debug("Fetching champion mastery")
-	var championMastery types.LocalPlayerChampionMastery
-	resp, err := s.conn.Client.R().SetResult(&championMastery).Get("/lol-summoner/v1/current-summoner/summoner-profile")
+	var championMastery []types.LocalPlayerChampionMastery
+	resp, err := s.conn.Client.R().SetResult(&championMastery).Get("/lol-champion-mastery/v1/local-player/champion-mastery")
 	if err != nil {
 		s.logger.Error("Error fetching current champion mastery data", zap.Error(err))
 		return nil, err

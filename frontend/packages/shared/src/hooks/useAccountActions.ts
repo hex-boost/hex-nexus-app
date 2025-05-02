@@ -108,19 +108,22 @@ export function useAccountActions({
       }
     },
   });
+  // In useAccountActions.ts, update the handleRentAccount mutation:
   const { mutate: handleRentAccount, isPending: isRentPending } = useMutation<
     { message: string },
     StrapiError,
-    number
+    number,
+    unknown
   >({
     mutationKey: ['accounts', 'rent', account?.documentId],
-    mutationFn: async (timeIndex) => {
+    mutationFn: async (timeIndex, boostRoyalOrderId?: number) => {
       return strapiClient.request<{
         message: string;
       }>('post', `accounts/${account?.documentId}/rentals`, {
         data: {
           game: 'league',
           time: timeIndex,
+          boostRoyalOrderId,
         },
       });
     },
@@ -132,7 +135,6 @@ export function useAccountActions({
       toast.error(error.error.message);
     },
   });
-
   return {
     setSelectedExtensionIndex,
     selectedRentalOptionIndex,
