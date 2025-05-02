@@ -1,4 +1,5 @@
 import type { AccountType, RankingType } from '@/types/types.ts';
+import logoBoostRoyal from '@/assets/logo-boost-royal.svg';
 import { AccountGameIcon } from '@/components/GameComponents.tsx';
 import { GameRankDisplay } from '@/components/GameRankDisplay.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
@@ -10,6 +11,8 @@ import { useMapping } from '@/lib/useMapping.tsx';
 import { cn } from '@/lib/utils.ts';
 import { AlertCircle, AlertOctagon, AlertTriangle, Shield } from 'lucide-react';
 import React from 'react';
+
+<img src={logoBoostRoyal} alt="BoostRoyal" className="w-5 h-5" />;
 
 type AccountRowProps = {
   account: AccountType;
@@ -41,7 +44,7 @@ export function AccountRow({
     losses: 0,
   } as RankingType;
   const previousSoloqueueRank = account.rankings.find(ranking => ranking.queueType === 'soloqueue' && ranking.type === 'previous')!;
-  const { getFormattedServer, getWinrateColorClass } = useMapping();
+  const { getFormattedServer, getWinrateColorClass, getCompanyIcon } = useMapping();
   const { getLeaverBusterInfo } = useRiotAccount({ account });
   return (
     <tr
@@ -63,6 +66,11 @@ export function AccountRow({
         </div>
       </td>
 
+      <td className="p-3">
+
+        <img src={getCompanyIcon(account.type)} alt="BoostRoyal" className="w-6 h-6" />
+
+      </td>
       <td className="p-3">
         {(() => {
           const leaverInfo = getLeaverBusterInfo();

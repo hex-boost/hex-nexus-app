@@ -59,13 +59,13 @@ export default function AccountDetails({ account, onAccountChange }: {
     if (account.type === 'boostroyal') {
       setIsBoostRoyalModalOpen(true);
     } else {
-      handleRentAccount(selectedRentalOptionIndex);
+      handleRentAccount({ timeIndex: selectedRentalOptionIndex });
     }
   };
 
   // Add function to handle BoostRoyal order submission
   const handleBoostRoyalOrderSubmit = (boostRoyalOrderId: number) => {
-    handleRentAccount(selectedRentalOptionIndex, boostRoyalOrderId);
+    handleRentAccount({ timeIndex: selectedRentalOptionIndex, boostRoyalOrderId });
     setIsBoostRoyalModalOpen(false);
   };
   return (

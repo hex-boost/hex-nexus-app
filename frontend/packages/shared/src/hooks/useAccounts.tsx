@@ -1,12 +1,13 @@
-import type {AccountType, Server} from '@/types/types';
+import type { AccountType, Server } from '@/types/types';
 
-import type {StrapiResponse} from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
-import {strapiClient} from '@/lib/strapi.ts';
-import {useMapping} from '@/lib/useMapping';
-import {useQuery, useQueryClient} from '@tanstack/react-query';
-import {useRouter} from '@tanstack/react-router';
-import {ArrowDown, ArrowUp, ArrowUpDown} from 'lucide-react';
-import {useCallback, useEffect, useState} from 'react';
+import type { StrapiResponse } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
+import { strapiClient } from '@/lib/strapi.ts';
+import { useMapping } from '@/lib/useMapping';
+import { useUserStore } from '@/stores/useUserStore.ts';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from '@tanstack/react-router';
+import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 
 export const availableRegions: Server[] = [
   'NA1',
@@ -58,34 +59,34 @@ type AccountsState = {
   };
 };
 
-const DEFAULT_STATE: AccountsState = {
-  searchQuery: '',
-  showFilters: false,
-  selectedChampionIds: [],
-  selectedSkinIds: [],
-  filters: {
-    leaverStatus: [],
-    game: '',
-    divisions: [],
-    ranks: [],
-    region: '',
-    company: '',
-    status: '',
-    selectedChampions: [],
-    minBlueEssence: 0,
-    selectedSkins: [],
-  },
-  sortConfig: {
-    key: null,
-    direction: null,
-  },
-  pagination: {
-    page: 1,
-    pageSize: 20,
-  },
-};
-
 export function useAccounts(initialPage = 1, initialPageSize = 20) {
+  const { user } = useUserStore();
+  const DEFAULT_STATE: AccountsState = {
+    searchQuery: '',
+    showFilters: false,
+    selectedChampionIds: [],
+    selectedSkinIds: [],
+    filters: {
+      leaverStatus: [],
+      game: '',
+      divisions: [],
+      ranks: [],
+      region: '',
+      company: user?.accountPermissions.includes('boostroyal') ? 'boostroyal' : 'nexus',
+      status: '',
+      selectedChampions: [],
+      minBlueEssence: 0,
+      selectedSkins: [],
+    },
+    sortConfig: {
+      key: null,
+      direction: null,
+    },
+    pagination: {
+      page: 1,
+      pageSize: 20,
+    },
+  };
   const queryClient = useQueryClient();
   const router = useRouter();
 
@@ -229,11 +230,9 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
       strapiFilters.server = filters.region;
     }
 
-    // Company/account type filter
-    if (filters.company && filters.company !== 'any') {
+    if (filters.company && filters.company !== '') {
       strapiFilters.type = filters.company;
     }
-
     if (filters.selectedChampions?.length > 0) {
       const championsFilter = {} as any;
       filters.selectedChampions.forEach((id, index) => {

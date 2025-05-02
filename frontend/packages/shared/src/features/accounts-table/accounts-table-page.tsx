@@ -1,4 +1,6 @@
 import type { Rank } from '@/components/RanksRadioGroup.tsx';
+import logoBoostRoyal from '@/assets/logo-boost-royal.svg';
+import logoHexBoost from '@/assets/logo-hex-boost.svg';
 import { DivisionsMultiSelect, RanksMultiSelect } from '@/components/RanksRadioGroup.tsx';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
@@ -6,6 +8,7 @@ import { Badge } from '@/components/ui/badge.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { Label } from '@/components/ui/label.tsx';
 import { MultiSelectCombobox } from '@/components/ui/multi-select-combobox.tsx';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group.tsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select.tsx';
 import { Slider } from '@/components/ui/slider.tsx';
 import { AccountsTable } from '@/features/accounts-table/components/accounts-table.tsx';
@@ -19,12 +22,13 @@ import { useAllDataDragon } from '@/hooks/useDataDragon/useDataDragon.ts';
 import { usePrice } from '@/hooks/usePrice.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
 import { cn } from '@/lib/utils.ts';
+import { useUserStore } from '@/stores/useUserStore.ts';
 import { AlertCircle, AlertOctagon, AlertTriangle, Check, Shield, XIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export function AccountsTablePage() {
   const [currentPage, setCurrentPage] = useState(1);
-
+  const { user } = useUserStore();
   const {
     isLoading,
     filteredAccounts,
@@ -79,20 +83,18 @@ export function AccountsTablePage() {
         <div className="flex flex-col sm:flex-row gap-4 justify-between">
           <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
           <div className="flex gap-4">
-            {
-              showFilters
-              && (
-                <Button variant="outline" size="sm" className="" onClick={resetFilters}>
-                  <XIcon className="mr-1" size={16}></XIcon>
-                  Reset Filters
-                </Button>
-              )
-            }
+            {showFilters && (
+              <Button variant="outline" size="sm" className="" onClick={resetFilters}>
+                <XIcon className="mr-1" size={16}></XIcon>
+                Reset Filters
+              </Button>
+            )}
             <FilterButton showFilters={showFilters} setShowFilters={setShowFilters} />
           </div>
         </div>
 
         {showFilters && (
+
           <div
             className="bg-white dark:bg-black/20 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 space-y-6"
           >
@@ -303,16 +305,81 @@ export function AccountsTablePage() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <Label className="text-sm font-medium mb-1.5 block">
+                      Company
+                    </Label>
+                    {filters.company !== '' && user?.accountPermissions.includes('boostroyal') && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setFilters({ ...filters, company: '' })}
+                        className="h-6 text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        Clear
+                      </Button>
+                    )}
+                  </div>
+                  <RadioGroup
+                    disabled={!user?.accountPermissions.includes('boostroyal')}
+                    value={filters.company}
+                    onValueChange={value => setFilters({ ...filters, company: value })}
+                    className="flex space-x-2"
+                  >
+                    <div className="flex items-center w-full space-x-2">
+                      <RadioGroupItem value="nexus" id="nexus" className="peer" />
+                      <Label
+                        htmlFor="nexus"
+                        className="flex items-center gap-2 cursor-pointer peer-data-[state=checked]:text-primary"
+                      >
+                        <img src={logoHexBoost} alt="Nexus" className="w-6 h-6" />
+                        <span>Nexus</span>
+                      </Label>
+                    </div>
+
+                    <div className="flex w-full items-center space-x-2">
+                      <RadioGroupItem value="boostroyal" id="boostroyal" className="peer" />
+                      <Label
+                        htmlFor="boostroyal"
+                        className="flex items-center gap-2 cursor-pointer peer-data-[state=checked]:text-primary"
+                      >
+                        <img src={logoBoostRoyal} alt="BoostRoyal" className="w-6 h-6" />
+                        <span>BoostRoyal</span>
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
               </div>
               <div className="space-y-6 flex flex-col justify-between h-full">
 
                 <Label className="text-sm font-medium mb-1.5 block">Account Restrictions</Label>
                 <div className="grid grid-cols-2 gap-4">
                   {[
-                    { value: 'none', label: 'None', icon: Shield, className: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' },
-                    { value: 'low', label: 'Low', icon: AlertCircle, className: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800' },
-                    { value: 'medium', label: 'Medium', icon: AlertTriangle, className: 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800' },
-                    { value: 'high', label: 'High', icon: AlertOctagon, className: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800' },
+                    {
+                      value: 'none',
+                      label: 'None',
+                      icon: Shield,
+                      className: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
+                    },
+                    {
+                      value: 'low',
+                      label: 'Low',
+                      icon: AlertCircle,
+                      className: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+                    },
+                    {
+                      value: 'medium',
+                      label: 'Medium',
+                      icon: AlertTriangle,
+                      className: 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800',
+                    },
+                    {
+                      value: 'high',
+                      label: 'High',
+                      icon: AlertOctagon,
+                      className: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800',
+                    },
                   ].map((status) => {
                     const Icon = status.icon;
                     const isSelected = filters.leaverStatus?.includes(status.value);

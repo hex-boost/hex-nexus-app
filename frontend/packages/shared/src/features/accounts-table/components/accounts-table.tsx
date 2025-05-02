@@ -39,6 +39,10 @@ export function AccountsTable({
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">
               Region
             </th>
+
+            <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+              Company
+            </th>
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Restrictions</th>
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Current Rank</th>
             <th className="text-left p-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">

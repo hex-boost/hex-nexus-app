@@ -108,11 +108,15 @@ export function useAccountActions({
       }
     },
   });
+  type RentAccountVariables = {
+    timeIndex: number;
+    boostRoyalOrderId?: number;
+  };
   // In useAccountActions.ts, update the handleRentAccount mutation:
   const { mutate: handleRentAccount, isPending: isRentPending } = useMutation<
     { message: string },
     StrapiError,
-    number,
+    RentAccountVariables,
     unknown
   >({
     mutationKey: ['accounts', 'rent', account?.documentId],
