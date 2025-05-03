@@ -1,11 +1,11 @@
-import type {FormattedChampion, FormattedSkin} from '@/hooks/useDataDragon/types/useDataDragonHook.ts';
-import {Button} from '@/components/ui/button.tsx';
-import {Input} from '@/components/ui/input';
+import type { FormattedChampion, FormattedSkin } from '@/hooks/useDataDragon/types/useDataDragonHook.ts';
+import { Button } from '@/components/ui/button.tsx';
+import { Input } from '@/components/ui/input.tsx';
 import CharacterCard from '@/features/skin-selector/components/character-card.tsx';
-import {useLocalStorage} from '@/hooks/use-local-storage';
-import {cn} from '@/lib/utils';
-import {ArrowLeft, Search, X} from 'lucide-react';
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import { useLocalStorage } from '@/hooks/use-local-storage.tsx';
+import { cn } from '@/lib/utils.ts';
+import { ArrowLeft, Search, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 // Type for user preferences
 export type UserPreferences = {

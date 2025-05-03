@@ -1,16 +1,16 @@
-import type {FormattedChampion, FormattedSkin} from '@/hooks/useDataDragon/types/useDataDragonHook.ts';
-import {Dock, DockIcon, DockItem, DockLabel} from '@/components/ui/dock';
-import CharacterSelection from '@/features/skin-selector/components/character-selection.tsx';
+import type { FormattedChampion, FormattedSkin } from '@/hooks/useDataDragon/types/useDataDragonHook.ts';
+import { Dock, DockIcon, DockItem, DockLabel } from '@/components/ui/dock';
+import CharacterSelection from '@/features/skin-selector/character-selection.tsx';
 
-import {useAllDataDragon} from '@/hooks/useDataDragon/useDataDragon.ts';
-import {saveSkinSelection} from '@/lib/champion-skin-store';
-import {State as LolSkinState} from '@lolskin';
+import { useAllDataDragon } from '@/hooks/useDataDragon/useDataDragon.ts';
+import { saveSkinSelection } from '@/lib/champion-skin-store';
+import { State as LolSkinState } from '@lolskin';
 
-import {createFileRoute, Link} from '@tanstack/react-router';
-import {motion} from 'framer-motion';
-import {Activity} from 'lucide-react';
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { motion } from 'framer-motion';
+import { Activity } from 'lucide-react';
 import {
-    Handler
+  Handler,
 } from '../../../../bindings/github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket/handler/index.ts';
 
 export const Route = createFileRoute('/_protected/tools/')({

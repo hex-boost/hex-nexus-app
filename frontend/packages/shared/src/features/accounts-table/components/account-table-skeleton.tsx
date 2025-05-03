@@ -50,7 +50,7 @@ export function AccountTableSkeleton() {
           </td>
 
           <td className="p-3 text-center">
-            <AccountActionsMenu accountId={0} onViewDetails={() => void 0} />
+            <AccountActionsMenu accountId="0" onViewDetails={() => void 0} />
           </td>
         </tr>
       ))}
