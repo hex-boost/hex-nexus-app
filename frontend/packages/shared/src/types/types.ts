@@ -1,32 +1,34 @@
 import type {
-    AdminApiToken,
-    AdminApiTokenPermission,
-    AdminPermission,
-    AdminRole,
-    AdminTransferToken,
-    AdminTransferTokenPermission,
-    AdminUser,
-    ApiAccountAccount,
-    ApiActionAction,
-    ApiFavoriteAccountFavoriteAccount,
-    ApiNotificationNotification,
-    ApiPremiumPremium,
-    ApiPricePrice,
-    ApiRankingRanking,
-    ApiTransactionTransaction,
-    ApiVersionVersion,
-    PluginContentReleasesRelease,
-    PluginContentReleasesReleaseAction,
-    PluginI18NLocale,
-    PluginReviewWorkflowsWorkflow,
-    PluginReviewWorkflowsWorkflowStage,
-    PluginUploadFile,
-    PluginUploadFolder,
-    PluginUsersPermissionsPermission,
-    PluginUsersPermissionsRole,
-    PluginUsersPermissionsUser,
+  AdminApiToken,
+  AdminApiTokenPermission,
+  AdminPermission,
+  AdminRole,
+  AdminTransferToken,
+  AdminTransferTokenPermission,
+  AdminUser,
+  ApiAccountAccount,
+  ApiActionAction,
+  ApiFavoriteAccountFavoriteAccount,
+  ApiNotificationNotification,
+  ApiPremiumPremium,
+  ApiPricePrice,
+  ApiRankingRanking,
+  ApiTransactionTransaction,
+  ApiVersionVersion,
+  PluginContentReleasesRelease,
+  PluginContentReleasesReleaseAction,
+  PluginI18NLocale,
+  PluginReviewWorkflowsWorkflow,
+  PluginReviewWorkflowsWorkflowStage,
+  PluginUploadFile,
+  PluginUploadFolder,
+  PluginUsersPermissionsPermission,
+  PluginUsersPermissionsRole,
+  PluginUsersPermissionsUser,
 } from '@/types/generated/contentTypes';
-import type {Entity} from './conversion';
+
+import type { AxiosResponse } from 'axios';
+import type { Entity } from './conversion';
 
 export type UserType = Entity<PluginUsersPermissionsUser>;
 export type AccountType = Entity<ApiAccountAccount>;
@@ -184,3 +186,13 @@ export type Timer = {
   phase: string;
   totalTimeInPhase: number;
 };
+
+export type StrapiError = AxiosResponse<{
+  data: null;
+  error: {
+    status: number;
+    name: string;
+    message: string;
+    details: Record<string, unknown>;
+  };
+}>;

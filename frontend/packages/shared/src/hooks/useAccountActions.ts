@@ -1,5 +1,4 @@
-import type { AccountType, UserType } from '@/types/types';
-import type { StrapiError } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
+import type { AccountType, StrapiError, UserType } from '@/types/types';
 import { strapiClient } from '@/lib/strapi';
 import { useAccountStore } from '@/stores/useAccountStore.ts';
 import { Manager } from '@leagueManager';
@@ -60,7 +59,7 @@ export function useAccountActions({
       toast.success(data.message);
     },
     onError: (error) => {
-      toast.error(error.error.message);
+      toast.error(error.data.error.message);
     },
   });
 
@@ -120,23 +119,21 @@ export function useAccountActions({
     unknown
   >({
     mutationKey: ['accounts', 'rent', account?.documentId],
-    mutationFn: async (timeIndex, boostRoyalOrderId?: number) => {
-      return strapiClient.request<{
+    mutationFn: async ({ boostRoyalOrderId, timeIndex }: { timeIndex: number; boostRoyalOrderId?: number }) => {
+      return (await strapiClient.create<{
         message: string;
-      }>('post', `accounts/${account?.documentId}/rentals`, {
-        data: {
-          game: 'league',
-          time: timeIndex,
-          boostRoyalOrderId,
-        },
-      });
+      }>(`accounts/${account?.documentId}/rentals`, {
+        game: 'league',
+        time: timeIndex,
+        boostRoyalOrderId,
+      })).data;
     },
     onSuccess: async (data) => {
       await invalidateRelatedQueries();
       toast.success(data.message);
     },
     onError: (error) => {
-      toast.error(error.error.message);
+      toast.error(error.data.error.message);
     },
   });
   return {

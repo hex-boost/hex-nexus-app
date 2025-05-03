@@ -1,6 +1,6 @@
-import type {Schema, Struct} from '@strapi/types';
+import type { Schema, Struct } from '@strapi/types';
 
-export interface AdminApiToken extends Struct.CollectionTypeSchema {
+export type AdminApiToken = {
   collectionName: 'strapi_api_tokens';
   info: {
     description: '';
@@ -58,9 +58,9 @@ export interface AdminApiToken extends Struct.CollectionTypeSchema {
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
   };
-}
+} & Struct.CollectionTypeSchema;
 
-export interface AdminApiTokenPermission extends Struct.CollectionTypeSchema {
+export type AdminApiTokenPermission = {
   collectionName: 'strapi_api_token_permissions';
   info: {
     description: '';
@@ -94,16 +94,16 @@ export interface AdminApiTokenPermission extends Struct.CollectionTypeSchema {
       'oneToMany',
       'admin::api-token-permission'
     > &
-      Schema.Attribute.Private;
+    Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
     token: Schema.Attribute.Relation<'manyToOne', 'admin::api-token'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
   };
-}
+} & Struct.CollectionTypeSchema;
 
-export interface AdminPermission extends Struct.CollectionTypeSchema {
+export type AdminPermission = {
   collectionName: 'admin_permissions';
   info: {
     description: '';
@@ -148,9 +148,9 @@ export interface AdminPermission extends Struct.CollectionTypeSchema {
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
   };
-}
+} & Struct.CollectionTypeSchema;
 
-export interface AdminRole extends Struct.CollectionTypeSchema {
+export type AdminRole = {
   collectionName: 'admin_roles';
   info: {
     description: '';
@@ -197,9 +197,9 @@ export interface AdminRole extends Struct.CollectionTypeSchema {
       Schema.Attribute.Private;
     users: Schema.Attribute.Relation<'manyToMany', 'admin::user'>;
   };
-}
+} & Struct.CollectionTypeSchema;
 
-export interface AdminTransferToken extends Struct.CollectionTypeSchema {
+export type AdminTransferToken = {
   collectionName: 'strapi_transfer_tokens';
   info: {
     description: '';
@@ -241,7 +241,7 @@ export interface AdminTransferToken extends Struct.CollectionTypeSchema {
       'oneToMany',
       'admin::transfer-token'
     > &
-      Schema.Attribute.Private;
+    Schema.Attribute.Private;
     name: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.Unique &
@@ -257,10 +257,9 @@ export interface AdminTransferToken extends Struct.CollectionTypeSchema {
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
   };
-}
+} & Struct.CollectionTypeSchema;
 
-export interface AdminTransferTokenPermission
-  extends Struct.CollectionTypeSchema {
+export type AdminTransferTokenPermission = {
   collectionName: 'strapi_transfer_token_permissions';
   info: {
     description: '';
@@ -294,16 +293,16 @@ export interface AdminTransferTokenPermission
       'oneToMany',
       'admin::transfer-token-permission'
     > &
-      Schema.Attribute.Private;
+    Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
     token: Schema.Attribute.Relation<'manyToOne', 'admin::transfer-token'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
   };
-}
+} & Struct.CollectionTypeSchema;
 
-export interface AdminUser extends Struct.CollectionTypeSchema {
+export type AdminUser = {
   collectionName: 'admin_users';
   info: {
     description: '';
@@ -367,9 +366,9 @@ export interface AdminUser extends Struct.CollectionTypeSchema {
       Schema.Attribute.Private;
     username: Schema.Attribute.String;
   };
-}
+} & Struct.CollectionTypeSchema;
 
-export interface ApiAccountAccount extends Struct.CollectionTypeSchema {
+export type ApiAccountAccount = {
   collectionName: 'accounts';
   info: {
     description: '';
@@ -385,7 +384,7 @@ export interface ApiAccountAccount extends Struct.CollectionTypeSchema {
       'oneToMany',
       'api::action.action'
     > &
-      Schema.Attribute.Private;
+    Schema.Attribute.Private;
     ban: Schema.Attribute.JSON;
     blueEssence: Schema.Attribute.Integer;
     createdAt: Schema.Attribute.DateTime;
@@ -402,7 +401,7 @@ export interface ApiAccountAccount extends Struct.CollectionTypeSchema {
       'oneToMany',
       'api::account.account'
     > &
-      Schema.Attribute.Private;
+    Schema.Attribute.Private;
     party_restrictions: Schema.Attribute.JSON;
     password: Schema.Attribute.String & Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
@@ -441,9 +440,9 @@ export interface ApiAccountAccount extends Struct.CollectionTypeSchema {
       Schema.Attribute.Private &
       Schema.Attribute.Unique;
   };
-}
+} & Struct.CollectionTypeSchema;
 
-export interface ApiActionAction extends Struct.CollectionTypeSchema {
+export type ApiActionAction = {
   collectionName: 'actions';
   info: {
     description: '';
@@ -464,7 +463,10 @@ export interface ApiActionAction extends Struct.CollectionTypeSchema {
       'oneToMany',
       'api::action.action'
     > &
-      Schema.Attribute.Private;
+    Schema.Attribute.Private;
+    notified1Hour: Schema.Attribute.Boolean;
+    notified30Minutes: Schema.Attribute.Boolean;
+    notified5Minutes: Schema.Attribute.Boolean;
     publishedAt: Schema.Attribute.DateTime;
     riotAccount: Schema.Attribute.Relation<'manyToOne', 'api::account.account'>;
     timeEnum: Schema.Attribute.Integer;
@@ -481,10 +483,9 @@ export interface ApiActionAction extends Struct.CollectionTypeSchema {
       'plugin::users-permissions.user'
     >;
   };
-}
+} & Struct.CollectionTypeSchema;
 
-export interface ApiFavoriteAccountFavoriteAccount
-  extends Struct.CollectionTypeSchema {
+export type ApiFavoriteAccountFavoriteAccount = {
   collectionName: 'favorite_accounts';
   info: {
     displayName: 'Favorite Account';
@@ -503,7 +504,7 @@ export interface ApiFavoriteAccountFavoriteAccount
       'oneToMany',
       'api::favorite-account.favorite-account'
     > &
-      Schema.Attribute.Private;
+    Schema.Attribute.Private;
     note: Schema.Attribute.Text;
     publishedAt: Schema.Attribute.DateTime;
     riot_account: Schema.Attribute.Relation<'oneToOne', 'api::account.account'>;
@@ -515,10 +516,9 @@ export interface ApiFavoriteAccountFavoriteAccount
       'plugin::users-permissions.user'
     >;
   };
-}
+} & Struct.CollectionTypeSchema;
 
-export interface ApiNotificationNotification
-  extends Struct.CollectionTypeSchema {
+export type ApiNotificationNotification = {
   collectionName: 'notifications';
   info: {
     description: '';
@@ -527,7 +527,7 @@ export interface ApiNotificationNotification
     singularName: 'notification';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -545,13 +545,13 @@ export interface ApiNotificationNotification
         'new_update',
       ]
     >;
-    isSeen: Schema.Attribute.Boolean;
+    isSeen: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::notification.notification'
     > &
-      Schema.Attribute.Private;
+    Schema.Attribute.Private;
     message: Schema.Attribute.Text;
     metadata: Schema.Attribute.JSON;
     publishedAt: Schema.Attribute.DateTime;
@@ -564,9 +564,42 @@ export interface ApiNotificationNotification
       'plugin::users-permissions.user'
     >;
   };
-}
+} & Struct.CollectionTypeSchema;
 
-export interface ApiPremiumPremium extends Struct.CollectionTypeSchema {
+export type ApiPaymentPayment = {
+  collectionName: 'payments';
+  info: {
+    displayName: 'Payment';
+    pluralName: 'payments';
+    singularName: 'payment';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    gateway: Schema.Attribute.Enumeration<
+      ['stripe', 'mercadoPago', 'boostRoyal']
+    >;
+    isPaid: Schema.Attribute.Boolean;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::payment.payment'
+    > &
+    Schema.Attribute.Private;
+    metadata: Schema.Attribute.JSON;
+    payment_id: Schema.Attribute.Integer;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+} & Struct.CollectionTypeSchema;
+
+export type ApiPremiumPremium = {
   collectionName: 'premiums';
   info: {
     description: '';
@@ -587,7 +620,7 @@ export interface ApiPremiumPremium extends Struct.CollectionTypeSchema {
       'oneToMany',
       'api::premium.premium'
     > &
-      Schema.Attribute.Private;
+    Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
     tier: Schema.Attribute.Enumeration<['basic', 'premium', 'pro', 'free']>;
     updatedAt: Schema.Attribute.DateTime;
@@ -598,9 +631,9 @@ export interface ApiPremiumPremium extends Struct.CollectionTypeSchema {
       'plugin::users-permissions.user'
     >;
   };
-}
+} & Struct.CollectionTypeSchema;
 
-export interface ApiPricePrice extends Struct.SingleTypeSchema {
+export type ApiPricePrice = {
   collectionName: 'prices';
   info: {
     description: '';
@@ -626,9 +659,9 @@ export interface ApiPricePrice extends Struct.SingleTypeSchema {
       Schema.Attribute.Private;
     valorant: Schema.Attribute.JSON;
   };
-}
+} & Struct.SingleTypeSchema;
 
-export interface ApiRankingRanking extends Struct.CollectionTypeSchema {
+export type ApiRankingRanking = {
   collectionName: 'rankings';
   info: {
     description: '';
@@ -652,7 +685,7 @@ export interface ApiRankingRanking extends Struct.CollectionTypeSchema {
       'oneToMany',
       'api::ranking.ranking'
     > &
-      Schema.Attribute.Private;
+    Schema.Attribute.Private;
     losses: Schema.Attribute.Integer;
     points: Schema.Attribute.Integer;
     publishedAt: Schema.Attribute.DateTime;
@@ -663,9 +696,9 @@ export interface ApiRankingRanking extends Struct.CollectionTypeSchema {
       Schema.Attribute.Private;
     wins: Schema.Attribute.Integer;
   };
-}
+} & Struct.CollectionTypeSchema;
 
-export interface ApiTransactionTransaction extends Struct.CollectionTypeSchema {
+export type ApiTransactionTransaction = {
   collectionName: 'transactions';
   info: {
     description: '';
@@ -686,7 +719,7 @@ export interface ApiTransactionTransaction extends Struct.CollectionTypeSchema {
       'oneToMany',
       'api::transaction.transaction'
     > &
-      Schema.Attribute.Private;
+    Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
     receiverDocumentID: Schema.Attribute.String;
     receiverType: Schema.Attribute.Enumeration<['user', 'website']>;
@@ -696,9 +729,9 @@ export interface ApiTransactionTransaction extends Struct.CollectionTypeSchema {
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
   };
-}
+} & Struct.CollectionTypeSchema;
 
-export interface ApiVersionVersion extends Struct.CollectionTypeSchema {
+export type ApiVersionVersion = {
   collectionName: 'versions';
   info: {
     description: '';
@@ -714,12 +747,13 @@ export interface ApiVersionVersion extends Struct.CollectionTypeSchema {
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     file: Schema.Attribute.Media<'files'> & Schema.Attribute.Required;
+    installer: Schema.Attribute.Media<'files'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::version.version'
     > &
-      Schema.Attribute.Private;
+    Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -728,10 +762,9 @@ export interface ApiVersionVersion extends Struct.CollectionTypeSchema {
       Schema.Attribute.Required &
       Schema.Attribute.Unique;
   };
-}
+} & Struct.CollectionTypeSchema;
 
-export interface PluginContentReleasesRelease
-  extends Struct.CollectionTypeSchema {
+export type PluginContentReleasesRelease = {
   collectionName: 'strapi_releases';
   info: {
     displayName: 'Release';
@@ -762,7 +795,7 @@ export interface PluginContentReleasesRelease
       'oneToMany',
       'plugin::content-releases.release'
     > &
-      Schema.Attribute.Private;
+    Schema.Attribute.Private;
     name: Schema.Attribute.String & Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
     releasedAt: Schema.Attribute.DateTime;
@@ -770,16 +803,15 @@ export interface PluginContentReleasesRelease
     status: Schema.Attribute.Enumeration<
       ['ready', 'blocked', 'failed', 'done', 'empty']
     > &
-      Schema.Attribute.Required;
+    Schema.Attribute.Required;
     timezone: Schema.Attribute.String;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
   };
-}
+} & Struct.CollectionTypeSchema;
 
-export interface PluginContentReleasesReleaseAction
-  extends Struct.CollectionTypeSchema {
+export type PluginContentReleasesReleaseAction = {
   collectionName: 'strapi_release_actions';
   info: {
     displayName: 'Release Action';
@@ -809,7 +841,7 @@ export interface PluginContentReleasesReleaseAction
       'oneToMany',
       'plugin::content-releases.release-action'
     > &
-      Schema.Attribute.Private;
+    Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
     release: Schema.Attribute.Relation<
       'manyToOne',
@@ -821,9 +853,9 @@ export interface PluginContentReleasesReleaseAction
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
   };
-}
+} & Struct.CollectionTypeSchema;
 
-export interface PluginI18NLocale extends Struct.CollectionTypeSchema {
+export type PluginI18NLocale = {
   collectionName: 'i18n_locale';
   info: {
     collectionName: 'locales';
@@ -853,7 +885,7 @@ export interface PluginI18NLocale extends Struct.CollectionTypeSchema {
       'oneToMany',
       'plugin::i18n.locale'
     > &
-      Schema.Attribute.Private;
+    Schema.Attribute.Private;
     name: Schema.Attribute.String &
       Schema.Attribute.SetMinMax<
         {
@@ -867,10 +899,9 @@ export interface PluginI18NLocale extends Struct.CollectionTypeSchema {
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
   };
-}
+} & Struct.CollectionTypeSchema;
 
-export interface PluginReviewWorkflowsWorkflow
-  extends Struct.CollectionTypeSchema {
+export type PluginReviewWorkflowsWorkflow = {
   collectionName: 'strapi_workflows';
   info: {
     description: '';
@@ -902,7 +933,7 @@ export interface PluginReviewWorkflowsWorkflow
       'oneToMany',
       'plugin::review-workflows.workflow'
     > &
-      Schema.Attribute.Private;
+    Schema.Attribute.Private;
     name: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.Unique;
@@ -919,10 +950,9 @@ export interface PluginReviewWorkflowsWorkflow
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
   };
-}
+} & Struct.CollectionTypeSchema;
 
-export interface PluginReviewWorkflowsWorkflowStage
-  extends Struct.CollectionTypeSchema {
+export type PluginReviewWorkflowsWorkflowStage = {
   collectionName: 'strapi_workflows_stages';
   info: {
     description: '';
@@ -953,7 +983,7 @@ export interface PluginReviewWorkflowsWorkflowStage
       'oneToMany',
       'plugin::review-workflows.workflow-stage'
     > &
-      Schema.Attribute.Private;
+    Schema.Attribute.Private;
     name: Schema.Attribute.String;
     permissions: Schema.Attribute.Relation<'manyToMany', 'admin::permission'>;
     publishedAt: Schema.Attribute.DateTime;
@@ -965,9 +995,9 @@ export interface PluginReviewWorkflowsWorkflowStage
       'plugin::review-workflows.workflow'
     >;
   };
-}
+} & Struct.CollectionTypeSchema;
 
-export interface PluginUploadFile extends Struct.CollectionTypeSchema {
+export type PluginUploadFile = {
   collectionName: 'files';
   info: {
     description: '';
@@ -1009,7 +1039,7 @@ export interface PluginUploadFile extends Struct.CollectionTypeSchema {
       'oneToMany',
       'plugin::upload.file'
     > &
-      Schema.Attribute.Private;
+    Schema.Attribute.Private;
     mime: Schema.Attribute.String & Schema.Attribute.Required;
     name: Schema.Attribute.String & Schema.Attribute.Required;
     previewUrl: Schema.Attribute.String;
@@ -1024,9 +1054,9 @@ export interface PluginUploadFile extends Struct.CollectionTypeSchema {
     url: Schema.Attribute.String & Schema.Attribute.Required;
     width: Schema.Attribute.Integer;
   };
-}
+} & Struct.CollectionTypeSchema;
 
-export interface PluginUploadFolder extends Struct.CollectionTypeSchema {
+export type PluginUploadFolder = {
   collectionName: 'upload_folders';
   info: {
     displayName: 'Folder';
@@ -1055,7 +1085,7 @@ export interface PluginUploadFolder extends Struct.CollectionTypeSchema {
       'oneToMany',
       'plugin::upload.folder'
     > &
-      Schema.Attribute.Private;
+    Schema.Attribute.Private;
     name: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.SetMinMaxLength<{
@@ -1075,10 +1105,9 @@ export interface PluginUploadFolder extends Struct.CollectionTypeSchema {
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
   };
-}
+} & Struct.CollectionTypeSchema;
 
-export interface PluginUsersPermissionsPermission
-  extends Struct.CollectionTypeSchema {
+export type PluginUsersPermissionsPermission = {
   collectionName: 'up_permissions';
   info: {
     description: '';
@@ -1108,7 +1137,7 @@ export interface PluginUsersPermissionsPermission
       'oneToMany',
       'plugin::users-permissions.permission'
     > &
-      Schema.Attribute.Private;
+    Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
     role: Schema.Attribute.Relation<
       'manyToOne',
@@ -1118,10 +1147,9 @@ export interface PluginUsersPermissionsPermission
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
   };
-}
+} & Struct.CollectionTypeSchema;
 
-export interface PluginUsersPermissionsRole
-  extends Struct.CollectionTypeSchema {
+export type PluginUsersPermissionsRole = {
   collectionName: 'up_roles';
   info: {
     description: '';
@@ -1151,7 +1179,7 @@ export interface PluginUsersPermissionsRole
       'oneToMany',
       'plugin::users-permissions.role'
     > &
-      Schema.Attribute.Private;
+    Schema.Attribute.Private;
     name: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.SetMinMaxLength<{
@@ -1171,10 +1199,9 @@ export interface PluginUsersPermissionsRole
       'plugin::users-permissions.user'
     >;
   };
-}
+} & Struct.CollectionTypeSchema;
 
-export interface PluginUsersPermissionsUser
-  extends Struct.CollectionTypeSchema {
+export type PluginUsersPermissionsUser = {
   collectionName: 'up_users';
   info: {
     description: '';
@@ -1197,6 +1224,7 @@ export interface PluginUsersPermissionsUser
     avatar: Schema.Attribute.Media<'images' | 'files'> &
       Schema.Attribute.Required;
     blocked: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    boostRoyalUserId: Schema.Attribute.Integer;
     coins: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
     confirmationToken: Schema.Attribute.String & Schema.Attribute.Private;
     confirmed: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
@@ -1219,7 +1247,7 @@ export interface PluginUsersPermissionsUser
       'oneToMany',
       'plugin::users-permissions.user'
     > &
-      Schema.Attribute.Private;
+    Schema.Attribute.Private;
     notifications: Schema.Attribute.Relation<
       'oneToMany',
       'api::notification.notification'
@@ -1251,11 +1279,11 @@ export interface PluginUsersPermissionsUser
         minLength: 3;
       }>;
   };
-}
+} & Struct.CollectionTypeSchema;
 
 declare module '@strapi/types' {
-  export module Public {
-    export interface ContentTypeSchemas {
+  export namespace Public {
+    export type ContentTypeSchemas = {
       'admin::api-token': AdminApiToken;
       'admin::api-token-permission': AdminApiTokenPermission;
       'admin::permission': AdminPermission;
@@ -1267,6 +1295,7 @@ declare module '@strapi/types' {
       'api::action.action': ApiActionAction;
       'api::favorite-account.favorite-account': ApiFavoriteAccountFavoriteAccount;
       'api::notification.notification': ApiNotificationNotification;
+      'api::payment.payment': ApiPaymentPayment;
       'api::premium.premium': ApiPremiumPremium;
       'api::price.price': ApiPricePrice;
       'api::ranking.ranking': ApiRankingRanking;
@@ -1282,6 +1311,6 @@ declare module '@strapi/types' {
       'plugin::users-permissions.permission': PluginUsersPermissionsPermission;
       'plugin::users-permissions.role': PluginUsersPermissionsRole;
       'plugin::users-permissions.user': PluginUsersPermissionsUser;
-    }
+    };
   }
 }

@@ -1,5 +1,6 @@
+import type { StrapiError } from '@/types/types';
 import type { UserType } from '@/types/types.ts';
-import type { StrapiError } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
+
 import { strapiClient } from '@/lib/strapi.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { HWID } from '@hwid';

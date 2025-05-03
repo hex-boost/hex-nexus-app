@@ -4,7 +4,6 @@ import type { Crop } from 'react-image-crop';
 import { DiscordSvg } from '@/assets/icons.tsx';
 import logoBoostRoyal from '@/assets/logo-boost-royal.svg';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
-import { Badge } from '@/components/ui/badge.tsx';
 import { RainbowButton } from '@/components/ui/rainbow-button.tsx';
 import { Separator } from '@/components/ui/separator.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
@@ -14,7 +13,7 @@ import { useProfileAvatar } from '@/hooks/useProfileAvatar.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { Browser } from '@wailsio/runtime';
-import { Check, Crown, ExternalLink, LogOut, Pencil, X } from 'lucide-react';
+import { Check, CheckCircle, Crown, ExternalLink, LogOut, Pencil, X } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import ReactCrop, { cls } from 'react-image-crop';
@@ -215,21 +214,6 @@ export function UserProfile({
                         </div>
                       )}
 
-                      {/* BoostRoyal badge */}
-                      {user?.permissions?.includes('boostroyal') && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="absolute -bottom-1 -right-1 bg-white dark:bg-zinc-900 rounded-full p-0.5 shadow-md">
-                              <Badge className="h-6 w-6 p-1 rounded-full flex items-center justify-center">
-                                <img src={logoBoostRoyal} alt="BoostRoyal" className="h-4 w-4" />
-                              </Badge>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent side="right" className="px-2 py-1 text-sm">
-                            BoostRoyal Verified
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
                     </div>
                     <div className="absolute -bottom-0 right-0 p-0.5  bg-background hover:opacity-95   rounded-full border shadow-sm flex gap-1">
                       {!previewAvatar
@@ -288,7 +272,29 @@ export function UserProfile({
               </div>
               <div className="flex-1">
                 <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">{user?.username}</h2>
-                <p className={cls(` capitalize`, textClass)}>{user?.premium?.tier || 'Free'}</p>
+                <div className="w-full flex justify-between gap-2">
+                  <p className={cls(` capitalize`, textClass)}>{user?.premium?.tier || 'Free'}</p>
+
+                  {user?.accountPermissions?.includes('boostroyal') && user.boostRoyalUserId && user.boostRoyalUserId !== '' && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex gap-2 items-center w-fit rounded-full py-0.5 px-3 bg-boostroyal-primary/10">
+                            <p className="text-xs font-bold text-boostroyal-primary"> Boost Royal</p>
+                            <img src={logoBoostRoyal} alt="BoostRoyal" className="h-4 w-4" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="px-2 py-1 items-center text-sm flex gap-2">
+                          <span>
+                            Boost Royal Verified
+                          </span>
+                          {' '}
+                          <CheckCircle className="text-green-400" size={16} />
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
               </div>
             </div>
             <Separator className="mb-6" />

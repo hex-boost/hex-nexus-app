@@ -85,6 +85,7 @@
     --color-sidebar-primary-foreground: hsl(0 0% 100%);
     --color-sidebar-accent: hsl(240 3.7% 15.9%);
     --color-sidebar-accent-foreground: hsl(240 4.8% 95.9%);
+    --color-boostroyal-primary:hsl(21 100% 67%);
     --color-sidebar-border: hsl(240 3.7% 15.9%);
     --color-sidebar-ring: hsl(217.2 91.2% 59.8%);
     --color-nav-bar: hsl(var(--hue) 20% 8%);

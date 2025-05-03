@@ -9,7 +9,7 @@ import { PriceDisplay } from '@/features/accounts-table/components/price-display
 import { useRiotAccount } from '@/hooks/useRiotAccount.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
 import { cn } from '@/lib/utils.ts';
-import { AlertCircle, AlertOctagon, AlertTriangle, Shield } from 'lucide-react';
+import { Shield } from 'lucide-react';
 import React from 'react';
 
 <img src={logoBoostRoyal} alt="BoostRoyal" className="w-5 h-5" />;
@@ -45,7 +45,7 @@ export function AccountRow({
   } as RankingType;
   const previousSoloqueueRank = account.rankings.find(ranking => ranking.queueType === 'soloqueue' && ranking.type === 'previous')!;
   const { getFormattedServer, getWinrateColorClass, getCompanyIcon } = useMapping();
-  const { getLeaverBusterInfo } = useRiotAccount({ account });
+  const { getLeaverBusterInfo, getSeverityObject } = useRiotAccount({ account });
   return (
     <tr
       className="border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/30 cursor-pointer"
@@ -88,25 +88,7 @@ export function AccountRow({
               </div>
             );
           }
-
-          const severityConfig = {
-            icon: leaverInfo.severity >= 3
-              ? AlertOctagon
-              : leaverInfo.severity >= 1
-                ? AlertTriangle
-                : AlertCircle,
-            badge: leaverInfo.severity >= 3
-              ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800'
-              : leaverInfo.severity >= 1
-                ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800'
-                : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-            label: leaverInfo.severity >= 3
-              ? 'High'
-              : leaverInfo.severity >= 1
-                ? 'Medium'
-                : 'Low',
-          };
-
+          const severityConfig = getSeverityObject(leaverInfo);
           const Icon = severityConfig.icon;
 
           return (
