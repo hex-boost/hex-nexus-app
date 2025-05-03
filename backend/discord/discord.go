@@ -64,7 +64,7 @@ func New(logger *logger.Logger, config *config.Config) *Discord {
 
 func (d *Discord) renderTemplate(w http.ResponseWriter, tmplName string) error {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	tmplPath := "templates/" + tmplName
+	tmplPath := "web/templates/" + tmplName
 	tmpl, err := template.ParseFS(backend.TemplatesFS, tmplPath)
 	if err != nil {
 		d.logger.Sugar().Infow("error parsing template", "template", tmplPath, "error", err)

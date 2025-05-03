@@ -1,14 +1,12 @@
-'use client';
-
-import type { PremiumTiers } from '@/types/types.ts';
-import { FlickeringGrid } from '@/components/magicui/flickering-grid.tsx';
-import { Badge } from '@/components/ui/badge.tsx';
-import { Button } from '@/components/ui/button';
-import { PaymentMethodDialog } from '@/features/payment/PaymentMethodDialog.tsx';
-import { useMembership } from '@/hooks/useMembership.ts';
-import { useUserStore } from '@/stores/useUserStore.ts';
-import { ArrowDownCircle, CircleCheckBig } from 'lucide-react';
-import { useRef } from 'react';
+import type {PremiumTiers} from '@/types/types.ts';
+import {FlickeringGrid} from '@/components/magicui/flickering-grid.tsx';
+import {Badge} from '@/components/ui/badge.tsx';
+import {Button} from '@/components/ui/button';
+import {PaymentMethodDialog} from '@/features/payment/PaymentMethodDialog.tsx';
+import {useMembership} from '@/hooks/useMembership.ts';
+import {useUserStore} from '@/stores/useUserStore.ts';
+import {ArrowDownCircle, CircleCheckBig} from 'lucide-react';
+import {useRef} from 'react';
 
 export default function PricingCards() {
   const pricingRef = useRef<HTMLDivElement>(null);

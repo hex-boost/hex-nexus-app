@@ -53,56 +53,36 @@ export function useFavoriteAccounts() {
     }
   };
 
-  // Add favorite account
   const addFavorite = useMutation({
     mutationFn: async ({ account }: AddFavoriteParams) => {
       if (!user?.id) {
         throw new Error('User not logged in');
       }
-      return await strapiClient.create<FavoriteAccounts>('favorite-accounts', {
+
+      // Step 1: Create the favorite account
+      const createdFavorite = await strapiClient.create<FavoriteAccounts>('favorite-accounts', {
         data: {
           riot_account: account.id,
           user: user.id,
         },
       });
-    },
-    onMutate: async ({ account }: AddFavoriteParams) => {
-      await queryClient.cancelQueries({ queryKey: ['users', 'me'] });
-      const previousUser = getCurrentUserData();
 
-      if (previousUser && account) {
-        const optimisticFavorite = {
-          documentId: `temp_${Date.now()}`,
-          id: `temp_${Date.now()}`,
-          user: previousUser.id,
-          riot_account: account,
-          note: '',
-        };
+      // if (createdFavorite && createdFavorite.data.documentId) {
+      //   // @ts-ignore
+      //   await strapiClient.update('favorite-accounts', createdFavorite.data.documentId, {
+      //   });
+      // }
 
-        const updatedUser: any = {
-          ...previousUser,
-          favoriteAccounts: [
-            optimisticFavorite,
-            ...(previousUser.favoriteAccounts || []),
-          ],
-        };
-        updateUserData(updatedUser);
-      }
-      return { previousUser };
+      return createdFavorite;
     },
     onSuccess: (_) => {
-      // Keep the optimistic update but also fetch the latest data
       queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
     },
-    onError: (error, _, context) => {
+    onError: (error, _) => {
       logger.error('Add favorite failed:', error?.message);
       toast.error('Failed to add to favorites');
-      if (context?.previousUser) {
-        updateUserData(context.previousUser);
-      }
     },
   });
-
   // Update favorite note
   const updateFavoriteNote = useMutation({
     mutationFn: async ({ favoriteId, note }: UpdateFavoriteNoteParams) => {

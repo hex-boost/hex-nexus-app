@@ -1,3 +1,4 @@
+import type { StrapiError } from '@/types/types';
 import { LoginForm } from '@/features/auth/login-form.tsx';
 import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
 import { useProfileAvatar } from '@/hooks/useProfileAvatar.ts';
@@ -33,9 +34,8 @@ export function LoginFormPage() {
       await refetchUser();
       router.navigate({ to: '/dashboard' });
     },
-    onError: (error) => {
-      // @ts-expect-error ts is dumb
-      toast.error(`${error.error.message}`);
+    onError: (error: StrapiError) => {
+      toast.error(`${error.data.error.message}`);
     },
   });
 
@@ -57,9 +57,8 @@ export function LoginFormPage() {
       await refetchUser();
       router.navigate({ to: '/dashboard' });
     },
-    onError: (error) => {
-      // @ts-expect-error ts is dumb
-      toast.error(`${error.error.message}`);
+    onError: (error: StrapiError) => {
+      toast.error(`${error.data.error.message}`);
     },
   });
 
