@@ -87,10 +87,16 @@ jobs:
       - name: Check build artifacts
         shell: bash
         run: |
+          
+          tree -Caf --dirsfirst --prune \
+          -I 'node_modules|.git|build|bin|dist|coverage' \
+          -L 3
           echo "Listing build directory contents:"
-          ls -la build/
+    
+          ls -la 
           echo "Listing bin directory contents:"
-          ls -la build/bin/ || echo "bin directory not found"
+          ls -la bin || echo "bin directory not found"
+          ls -la build || echo "build/bin directory not found"
           echo "Searching for executable:"
           find . -name "*.exe" -type f
       - name: Upload to Update Server
