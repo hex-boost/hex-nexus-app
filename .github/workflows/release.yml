@@ -41,6 +41,15 @@ jobs:
       # --- ADD THIS STEP ---
       - name: Install MinGW (GCC for CGO)
         run: choco install mingw --no-progress --params "/InstallDir:C:\mingw-w64"
+
+      - name: Verify GCC Path and Version
+        run: |
+          echo "--- PATH ---"
+          echo $env:PATH
+          echo "--- Checking GCC ---"
+          where.exe gcc
+          gcc --version
+        shell: pwsh # Use PowerShell to access environment variables easily
       # ---------------------
 
       - name: Install Mockery
