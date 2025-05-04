@@ -33,7 +33,7 @@ import { createFileRoute, Outlet, useRouter } from '@tanstack/react-router';
 import { Browser } from '@wailsio/runtime';
 import React, { useEffect } from 'react';
 import { cls } from 'react-image-crop';
-import { AppleStyleDock } from './_protected/tools';
+import { LobbyRevealerDock } from './_protected/tools';
 import 'non.geist';
 
 export const Route = createFileRoute('/_protected')({
@@ -47,15 +47,16 @@ function DashboardLayout() {
   const { gameflowPhase } = useGameflowPhase();
   const { refetch, chatMe } = useChatMeQuery();
 
+  const { getMultiSearchUrl, summonerCards, isPending } = useLobbyRevealer({ platformId: chatMe?.platformId || '' });
   useEffect(() => {
     console.log('[DashboardLayout] gameflowPhase changed:', gameflowPhase?.phase);
     if (gameflowPhase?.phase === LolChallengesGameflowPhase.ChampSelect) {
       console.log('[DashboardLayout] ChampSelect detected, triggering chatMe refetch');
       refetch();
+    } else {
+
     }
   }, [gameflowPhase, refetch]);
-
-  const { getMultiSearchUrl, summonerCards, isPending } = useLobbyRevealer({ platformId: chatMe?.platformId || '' });
 
   useEffect(() => {
     console.log('[DashboardLayout] AppleStyleDock render conditions:', {
@@ -78,18 +79,18 @@ function DashboardLayout() {
 
   return (
     <>
-      {
-        gameflowPhase?.phase === LolChallengesGameflowPhase.ChampSelect && !isPending && summonerCards
-        && (
-          <>
-            {console.log('[DashboardLayout] Rendering AppleStyleDock with:', {
-              summonerCards,
-              multiSearchUrl: getMultiSearchUrl(summonerCards),
-            })}
-            <AppleStyleDock onClickAction={() => Browser.OpenURL(getMultiSearchUrl(summonerCards))} />
-          </>
-        )
-      }
+      {/* { */}
+      {/*  gameflowPhase?.phase === LolChallengesGameflowPhase.ChampSelect && !isPending && summonerCards */}
+      {/*  && ( */}
+      {/*    <> */}
+      {/*      {console.log('[DashboardLayout] Rendering AppleStyleDock with:', { */}
+      {/*        summonerCards, */}
+      {/*        multiSearchUrl: getMultiSearchUrl(summonerCards), */}
+      {/*      })} */}
+      <LobbyRevealerDock onClickAction={() => Browser.OpenURL(getMultiSearchUrl(summonerCards))} />
+      {/*    </> */}
+      {/*  ) */}
+      {/* } */}
       <CloseConfirmationHandler />
 
       <NotificationProvider>

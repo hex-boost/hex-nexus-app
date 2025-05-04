@@ -136,7 +136,7 @@ export default function CharacterSelection({
 
   // Get page title
   const [showTutorial, setShowTutorial] = useState(false);
-  const pageTitle = selectedChampion ? selectedChampion.name : 'All Champions';
+  const pageTitle = selectedChampion ? selectedChampion.name : 'Skin Selector';
 
   return (
     <div className={cn('flex flex-col h-full w-full  bg-background')}>

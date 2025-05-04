@@ -39,7 +39,7 @@ export function getMenuList(): Group[] {
         },
         {
           href: '/tools',
-          label: 'Tools',
+          label: 'Skin Selector',
           icon: GamepadIcon,
         },
       ],

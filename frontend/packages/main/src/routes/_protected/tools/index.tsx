@@ -8,7 +8,6 @@ import { State as LolSkinState } from '@lolskin';
 
 import { createFileRoute } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
-import { Activity } from 'lucide-react';
 import {
   Handler,
 } from '../../../../bindings/github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket/handler/index.ts';
@@ -17,14 +16,14 @@ export const Route = createFileRoute('/_protected/tools/')({
   component: RouteComponent,
 });
 
-export function AppleStyleDock({ onClickAction }: { onClickAction?: () => void }) {
+export function LobbyRevealerDock({ onClickAction }: { onClickAction?: () => void }) {
   return (
-    <div className="absolute bottom-12 left-11/12 max-w-full -translate-x-1/2">
-      <Dock className="items-end pb-3 !bg-[#11101a] border">
+    <div className="fixed bottom-2 left-10/12 max-w-full -translate-x-1/2">
+      <Dock className="items-end pb-3 !bg-background/80 backdrop-blur-sm">
         <button onClick={onClickAction} type="button">
           <DockItem className="aspect-square flex rounded-full bg-gray-200 dark:bg-neutral-800 relative">
             <motion.div
-              className="absolute inset-0 w-full h-full rounded-full bg-gray-300 dark:bg-emerald-500/30"
+              className="absolute inset-0 w-full h-full rounded-full bg-gray-300 dark:bg-primary/30"
               animate={{
                 scale: [1, 1.05, 1],
                 opacity: [0.6, 0.8, 0.6],
@@ -35,9 +34,12 @@ export function AppleStyleDock({ onClickAction }: { onClickAction?: () => void }
                 ease: 'easeInOut',
               }}
             />
-            <DockLabel>Open Mu</DockLabel>
+            <DockLabel>Open Opgg</DockLabel>
             <DockIcon>
-              <Activity className="h-full w-full text-neutral-600 dark:text-neutral-300" />
+              <img
+                src="https://s-opgg-kit.op.gg/gnb/config/images/icon/bfa5abe2f78d6e9a55e81c9988c31442.svg?image=q_auto:good,f_webp,w_48,h_48"
+              />
+
             </DockIcon>
           </DockItem>
         </button>

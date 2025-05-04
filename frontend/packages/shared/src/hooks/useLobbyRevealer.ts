@@ -1,16 +1,16 @@
 import type { Server, TeamBuilderChampionSelect } from '@/types/types.ts';
-import { useAllDataDragon } from '@/hooks/useDataDragon/useDataDragon.ts';
+import { LolChallengesGameflowPhase, useGameflowPhase } from '@/hooks/useGameflowPhaseQuery.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Events } from '@wailsio/runtime';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 
 export function useLobbyRevealer({ platformId }: { platformId: string }) {
-  const { allChampions, version } = useAllDataDragon();
   const queryClient = useQueryClient();
+  const { gameflowPhase } = useGameflowPhase();
   const { getFormattedServer } = useMapping();
   // Query key for caching summoner cards
-  const summonerCardsKey = ['summonerCards', platformId];
+  const summonerCardsKey = useMemo(() => ['summonerCards'], []);
   // Helper functions for champion data
   // function getChampionData(championId: number) {
   //   if (!championId) {
@@ -109,6 +109,12 @@ export function useLobbyRevealer({ platformId }: { platformId: string }) {
       queryClient.setQueryData(summonerCardsKey, data);
     },
   });
+  useEffect(() => {
+    if (gameflowPhase && gameflowPhase.phase !== LolChallengesGameflowPhase.ChampSelect) {
+      console.log('[useLobbyRevealer] Gameflow phase changed to non-ChampSelect, clearing summoner cards');
+      queryClient.setQueryData(summonerCardsKey, null);
+    }
+  }, [gameflowPhase, queryClient, summonerCardsKey]);
   // Add this to useLobbyRevealer.ts
   function getMultiSearchUrl(summonerCards: string[]): string {
     const region = getFormattedServer(platformId as Server);
@@ -134,7 +140,7 @@ export function useLobbyRevealer({ platformId }: { platformId: string }) {
     });
 
     return () => cancel();
-  }, [platformId, allChampions, version, processSummonerCards]);
+  }, [processSummonerCards]);
 
   // Get the current summoner cards from cache
 
