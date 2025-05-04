@@ -1,28 +1,28 @@
-import type {ExtensionOption} from '../../../components/extend-rental.ts';
+import type { ExtensionOption } from '../../../components/extend-rental.ts';
 import logoHexBoost from '@/assets/logo-hex-boost.svg';
 
 import {
-    AnimatedCoinChange,
-    AnimatedCoins,
-    AnimatedTimeChange,
-    AnimatedTimeDisplay,
+  AnimatedCoinChange,
+  AnimatedCoins,
+  AnimatedTimeChange,
+  AnimatedTimeDisplay,
 } from '@/components/AnimatedNumber.tsx';
-import {CoinIcon} from '@/components/coin-icon.tsx';
-import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar.tsx';
-import {Badge} from '@/components/ui/badge.tsx';
-import {Button} from '@/components/ui/button.tsx';
-import {Skeleton} from '@/components/ui/skeleton.tsx';
-import {TooltipProvider} from '@/components/ui/tooltip.tsx';
-import {QuickExtendButtons} from '@/features/game-overlay/components/GameOverlayQuickExtend.tsx';
-import {GameOverlaySkeleton} from '@/features/game-overlay/components/GameOverlaySkeleton.tsx';
-import {useOverlayAccount} from '@/hooks/useOverlayAccount.ts';
-import {cn} from '@/lib/utils.ts';
-import {useUserStore} from '@/stores/useUserStore.ts';
-import {Monitor as AccountMonitor} from '@account';
-import {useQuery} from '@tanstack/react-query';
-import {motion} from 'framer-motion';
-import {Clock, XIcon} from 'lucide-react';
-import React, {useEffect, useState} from 'react';
+import { CoinIcon } from '@/components/coin-icon.tsx';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
+import { Badge } from '@/components/ui/badge.tsx';
+import { Button } from '@/components/ui/button.tsx';
+import { Skeleton } from '@/components/ui/skeleton.tsx';
+import { TooltipProvider } from '@/components/ui/tooltip.tsx';
+import { QuickExtendButtons } from '@/features/game-overlay/components/GameOverlayQuickExtend.tsx';
+import { GameOverlaySkeleton } from '@/features/game-overlay/components/GameOverlaySkeleton.tsx';
+import { useOverlayAccount } from '@/hooks/useOverlayAccount.ts';
+import { cn } from '@/lib/utils.ts';
+import { useUserStore } from '@/stores/useUserStore.ts';
+import { Monitor as AccountMonitor } from '@account';
+import { useQuery } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
+import { Clock, XIcon } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 
 type GameOverlayProps = {
   setShowOverlay: (show: boolean) => void;
@@ -38,7 +38,7 @@ export function GameOverlay({
   const { data: username, isLoading: isUsernameLoading } = useQuery({
     queryKey: ['loggedInUsername'],
     queryFn: async () => {
-      return AccountMonitor.GetLoggedInUsername("");
+      return AccountMonitor.GetLoggedInUsername('');
     },
   });
 
@@ -269,18 +269,6 @@ export function GameOverlay({
                 />
               )}
             </div>
-
-            {/* Refund information if available */}
-            {dropRefund && dropRefund.amount > 0 && (
-              <div className="flex justify-between items-center bg-green-950/30 p-2 rounded-md">
-                <span className="text-xs text-green-400">Refund on drop:</span>
-                <Badge variant="outline" className="text-xs bg-green-950/50 text-green-300 border-green-800">
-                  {dropRefund.amount}
-                  {' '}
-                  coins
-                </Badge>
-              </div>
-            )}
 
             {/* Account ID */}
             <div className="flex justify-between items-center">

@@ -79,18 +79,18 @@ function DashboardLayout() {
 
   return (
     <>
-      {/* { */}
-      {/*  gameflowPhase?.phase === LolChallengesGameflowPhase.ChampSelect && !isPending && summonerCards */}
-      {/*  && ( */}
-      {/*    <> */}
-      {/*      {console.log('[DashboardLayout] Rendering AppleStyleDock with:', { */}
-      {/*        summonerCards, */}
-      {/*        multiSearchUrl: getMultiSearchUrl(summonerCards), */}
-      {/*      })} */}
-      <LobbyRevealerDock onClickAction={() => Browser.OpenURL(getMultiSearchUrl(summonerCards))} />
-      {/*    </> */}
-      {/*  ) */}
-      {/* } */}
+      {
+        gameflowPhase?.phase === LolChallengesGameflowPhase.ChampSelect && !isPending && summonerCards
+        && (
+          <>
+            {console.log('[DashboardLayout] Rendering AppleStyleDock with:', {
+              summonerCards,
+              multiSearchUrl: getMultiSearchUrl(summonerCards),
+            })}
+            <LobbyRevealerDock onClickAction={() => Browser.OpenURL(getMultiSearchUrl(summonerCards))} />
+          </>
+        )
+      }
       <CloseConfirmationHandler />
 
       <NotificationProvider>
@@ -145,7 +145,7 @@ function DashboardLayout() {
                           : (
                               <Avatar className="h-8 w-8 rounded-full p-0">
                                 <AvatarImage src={userAvatar} alt={user?.username} />
-                                <AvatarFallback className="rounded-full">{user?.username.slice(0, 2)}</AvatarFallback>
+                                <AvatarFallback className="rounded-full">{user?.username?.slice(0, 2)}</AvatarFallback>
                               </Avatar>
                             )}
                       </div>

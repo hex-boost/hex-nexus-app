@@ -37,6 +37,7 @@ export function LobbyRevealerDock({ onClickAction }: { onClickAction?: () => voi
             <DockLabel>Open Opgg</DockLabel>
             <DockIcon>
               <img
+                alt="opgg icon"
                 src="https://s-opgg-kit.op.gg/gnb/config/images/icon/bfa5abe2f78d6e9a55e81c9988c31442.svg?image=q_auto:good,f_webp,w_48,h_48"
               />
 

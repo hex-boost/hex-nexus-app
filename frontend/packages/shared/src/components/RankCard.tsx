@@ -41,7 +41,7 @@ export function RankCard({
         <div className="flex flex-col w-full">
           <div className="flex items-center justify-between gap-3 mb-2">
             <div className={cn('font-medium', getRankColor(rank))}>
-              <span>{rank[0].toUpperCase() + rank.slice(1).toLowerCase()}</span>
+              <span>{rank[0].toUpperCase() + rank?.slice(1).toLowerCase()}</span>
               {' '}
               {['unranked', 'master', 'grandmaster', 'challenger'].includes(rank.toLowerCase()) ? null : division}
             </div>

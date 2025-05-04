@@ -435,7 +435,7 @@ export default function SkinsSelector() {
 
   // Pagination
   const totalPages = Math.ceil(sortedSkins.length / skinsPerPage);
-  const currentSkins = sortedSkins.slice((currentPage - 1) * skinsPerPage, currentPage * skinsPerPage);
+  const currentSkins = sortedSkins?.slice((currentPage - 1) * skinsPerPage, currentPage * skinsPerPage);
 
   // Handle skin selection
   const handleSelectSkin = (skinId: string) => {

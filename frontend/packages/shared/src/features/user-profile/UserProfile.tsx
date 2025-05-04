@@ -162,7 +162,7 @@ export function UserProfile({
     {
       label: 'Membership',
       value: user?.premium?.tier
-        ? user.premium.tier.slice(0, 1).toUpperCase() + user.premium.tier.slice(1)
+        ? user?.premium?.tier?.slice(0, 1).toUpperCase() + user?.premium?.tier?.slice(1)
         : 'Free',
       href: '/subscription',
       icon: <Crown className="w-4 h-4" />,

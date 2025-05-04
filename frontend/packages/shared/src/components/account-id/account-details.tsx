@@ -81,7 +81,7 @@ export default function AccountDetails({ account, onAccountChange }: {
                     <div className=" space-x-3">
                       <span className="">
 
-                        {account.documentId.slice(0, 10)}
+                        {account.documentId?.slice(0, 10)}
 
                       </span>
 

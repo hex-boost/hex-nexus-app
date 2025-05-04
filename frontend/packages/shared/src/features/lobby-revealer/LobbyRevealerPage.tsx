@@ -173,8 +173,8 @@ export function LobbyRevealerPage() {
     const skinIdStr = backgroundSkinId.toString();
 
     // Extract champion ID and skin number
-    const championId = skinIdStr.slice(0, -3);
-    const skinNum = skinIdStr.slice(-3).replace(/^0+/, '') || '0'; // Remove leading zeros
+    const championId = skinIdStr?.slice(0, -3);
+    const skinNum = skinIdStr?.slice(-3).replace(/^0+/, '') || '0'; // Remove leading zeros
 
     // Log skin ID parsing
     logger.info('SKIN_ID_PARSING', {

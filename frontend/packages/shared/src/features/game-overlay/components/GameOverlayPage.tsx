@@ -6,6 +6,7 @@ export function GameOverlayPage() {
     Overlay.Hide();
   }
   return (
+
     <GameOverlay setShowOverlay={setShowOverlay} />
   );
 }

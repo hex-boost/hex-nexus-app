@@ -14,7 +14,7 @@ export function usePrice() {
   const hours = [1, 3, 6];
   function getAccountPrice(price: Price, elo?: string) {
     const baseElo = elo && elo !== '' ? elo : 'Unranked';
-    const baseEloUpperCase = baseElo.charAt(0).toUpperCase() + baseElo.slice(1).toLowerCase();
+    const baseEloUpperCase = baseElo?.charAt(0)?.toUpperCase() + baseElo?.slice(1)?.toLowerCase();
     const basePrice = price.league[baseEloUpperCase] || 105; // Default to Unranked price instead of 666
 
     // Map the hours correctly to the multipliers

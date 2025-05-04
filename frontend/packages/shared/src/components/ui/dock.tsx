@@ -186,7 +186,7 @@ function DockIcon({ children, className, ...rest }: DockIconProps) {
   const restProps = rest as Record<string, unknown>;
   const width = restProps.width as MotionValue<number>;
 
-  const widthTransform = useTransform(width, val => val / 2);
+  const widthTransform = useTransform(width, val => val / 1.5);
 
   return (
     <motion.div

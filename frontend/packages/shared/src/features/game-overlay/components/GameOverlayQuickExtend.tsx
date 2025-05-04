@@ -24,7 +24,7 @@ export function QuickExtendButtons({
   const extensionOptions = getAccountPrice(priceData, rankElo);
 
   // Select only the first three options for quick extend
-  const quickOptions = extensionOptions.slice(0, 3).map((option, index) => ({
+  const quickOptions = extensionOptions?.slice(0, 3)?.map((option, index) => ({
     ...option,
     index,
     seconds: option.hours * 3600, // Convert hours to seconds

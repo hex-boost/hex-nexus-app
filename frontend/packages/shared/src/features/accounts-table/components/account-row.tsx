@@ -52,7 +52,7 @@ export function AccountRow({
       onClick={() => onViewDetails(account.documentId)}
     >
       <td className="p-3 text-sm font-medium text-zinc-900 dark:text-zinc-100">
-        {account.documentId.slice(0, 6).toUpperCase()}
+        {account.documentId?.slice(0, 6).toUpperCase()}
       </td>
       <td className="p-3">
         <AccountGameIcon game="lol" />

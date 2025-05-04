@@ -73,7 +73,7 @@ export function AccountCard({
           <div className="w-full flex justify-between items-center gap-4">
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-medium uppercase text-zinc-900 dark:text-zinc-100">
-                {riotAccount.documentId.slice(0, 6)}
+                {riotAccount.documentId?.slice(0, 6)}
               </h3>
 
               {isFavorite && showPrice && (

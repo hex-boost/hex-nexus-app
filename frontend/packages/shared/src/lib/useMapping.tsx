@@ -331,7 +331,7 @@ export function useMapping() {
       case 'EUN1':
         return 'EUNE';
       default:
-        return server ? server.slice(0, server.length - 1) : 'N/A';
+        return server ? server?.slice(0, server.length - 1) : 'N/A';
     }
   };
   function getWinrateColorClass(winRate: number) {
