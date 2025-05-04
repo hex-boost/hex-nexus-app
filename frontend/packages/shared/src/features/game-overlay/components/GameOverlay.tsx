@@ -53,7 +53,7 @@ export function GameOverlay({
     price,
     isPriceLoading,
     isAccountLoading,
-    dropRefund,
+    // dropRefund,
   } = useOverlayAccount(username);
 
   const [rentalTimeRemaining, setRentalTimeRemaining] = useState(0);

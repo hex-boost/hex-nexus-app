@@ -127,7 +127,7 @@ export function LobbyRevealerPage() {
   const tagLine = currentSummoner?.tagLine || chatMe?.gameTag || '';
   const region = chatMe?.platformId as Server || '';
 
-  const { isPending, summonerCards } = useLobbyRevealer({ platformId: region });
+  const { isPending } = useLobbyRevealer({ platformId: region });
   // Log derived properties
   useEffect(() => {
     logger.info('DERIVED_PROPS', {
@@ -406,7 +406,7 @@ export function LobbyRevealerPage() {
           }
 
           // For other positions, check if we have lobby data for this position
-          const lobbyPlayer = summonerCards[index < 2 ? index : index - 1];
+          // const lobbyPlayer = summonerCards[index < 2 ? index : index - 1];
 
           // If we're loading other players data, show skeleton
           if (isPending && index !== 2) {
@@ -416,18 +416,18 @@ export function LobbyRevealerPage() {
 
           // If we have lobby data for this position
           // In LobbyRevealerPage component
-          { lobbyPlayer
-            ? (
-                <LobbySummonerCard
-                  key={`lobby-${lobbyPlayer.summonerName}-${lobbyPlayer.summonerTag}`}
-                  {...lobbyPlayer}
-                />
-              )
-            : (
-                <div className="bg-neutral-900 rounded-lg p-4 text-center">
-                  <p className="text-neutral-400 text-sm">Waiting for pick...</p>
-                </div>
-              ); }
+          // { lobbyPlayer
+          //   ? (
+          //       <LobbySummonerCard
+          //         key={`lobby-${lobbyPlayer.summonerName}-${lobbyPlayer.summonerTag}`}
+          //         {...lobbyPlayer}
+          //       />
+          //     )
+          //   : (
+          //       <div className="bg-neutral-900 rounded-lg p-4 text-center">
+          //         <p className="text-neutral-400 text-sm">Waiting for pick...</p>
+          //       </div>
+          //     ); }
           // Otherwise show empty state
           logger.info('RENDERING_PLAYER', { index, type: 'empty', reason: 'no player data' });
           return <SummonerCardEmptyState key={`empty-${index}`} />;

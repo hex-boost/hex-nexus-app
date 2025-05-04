@@ -8,7 +8,7 @@ export function LeaverBusterDisplay({ account, compact = false }: {
 }) {
   const { getLeaverBusterInfo, getStatusConfig } = useRiotAccount({ account });
   const leaverInfo = getLeaverBusterInfo();
-  const statusConfig = getStatusConfig(leaverInfo);
+  const statusConfig = getStatusConfig(leaverInfo || undefined);
   // Define styling based on severity
 
   const LeaverIcon = statusConfig.Icon;
