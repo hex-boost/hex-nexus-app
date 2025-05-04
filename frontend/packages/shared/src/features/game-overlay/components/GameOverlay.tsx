@@ -135,25 +135,23 @@ export function GameOverlay({
 
   return (
     <div
-      className="fixed  z-50 flex flex-col items-end backdrop-blur-2xl"
+      className="w-full h-full flex flex-col items-end" // Ensure it fills space, align content
+      style={{ '--wails-draggable': 'drag' } as any} // Apply drag to the whole area initially
 
-      style={{
-        'opacity': opacity / 100,
-        'transform': `scale(${scale / 100})`,
-        'transformOrigin': 'top right',
-        '--wails-draggable': 'drag',
-      } as any}
     >
       <div
         className={cn(
-          'rounded-lg overflow-hidden transition-all duration-300',
+          'rounded-lg overflow-hidden transition-all duration-300 border border-blue-500/50 backdrop-blur-md', // Added border/blur here
         )}
         style={{
-          boxShadow: 'none',
+          opacity: opacity / 100,
+          transform: `scale(${scale / 100})`,
+          transformOrigin: 'top right',
+          // boxShadow: 'none', // You might want a subtle shadow for depth
         }}
       >
         {/* Header with Logo */}
-        <div className="flex items-center justify-between bg-gradient-to-r from-blue-900/95 to-blue-600/95 px-3 py-2 rounded-t-lg">
+        <div className="flex items-center justify-between bg-gradient-to-r from-blue-900/95 to-blue-600/95 px-3 py-2">
           <div className="flex items-center gap-3">
             <img src={logoHexBoost} alt="Logo Hex Boost" className="w-6 h-6" />
             <span className="text-sm font-bold text-white">Nexus</span>

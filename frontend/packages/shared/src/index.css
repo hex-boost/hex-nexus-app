@@ -143,12 +143,9 @@ body {
     color: var(--color-foreground);
     overflow-x: hidden; /* Prevent horizontal scrolling */
 }
-#root {
+#root,body,html {
     min-height: 100vh; /* Change height to min-height */
-}
-html {
-    min-height: 100%;
-    background-color: var(--color-background); /* Set background on html too */
+    background-color: transparent; /* Set background on html too */
 }
 [class*='after:absolute'],
 [class*='before:absolute'] {

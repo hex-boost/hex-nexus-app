@@ -75,8 +75,6 @@ jobs:
           API_URL: ${{ secrets.API_URL }}
           API_KEY: ${{ secrets.API_KEY }}
           PRODUCTION: true
-          BIN_DIR: "bin"
-          DIST_DIR: "dist"
           REFRESH_API_KEY: ${{ secrets.REFRESH_API_KEY }}
           CGO_ENABLED: "1"
 
