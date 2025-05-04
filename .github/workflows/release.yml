@@ -107,14 +107,14 @@ jobs:
         run: |
           # Find main executable
           # Corrected path assuming build output structure
-          EXE_PATH=$(find ./build/bin -name "Nexus.exe" -type f | head -1)
+          EXE_PATH=$(find . -name "Nexus.exe" -type f | head -1)
 
           # Find installer executable (Adjust path if wails3 task package outputs elsewhere)
           # Common NSIS output location for Wails might be build/windows/nsis
           INSTALLER_PATH=$(find ./build -name "Nexus-Setup-*.exe" -type f | head -1) # More specific pattern
 
           if [ -z "$EXE_PATH" ]; then
-            echo "❌ No main executable found in ./build/bin/"
+            echo "❌ No main executable found in ./bin"
             # Add more diagnostics if needed
             echo "Searching everywhere:"
             find . -name "Nexus.exe" -type f
