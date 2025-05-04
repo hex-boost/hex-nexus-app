@@ -190,6 +190,11 @@ func (m *Overlay) SetWindow(window *application.WebviewWindow) {
 		m.overlay.SetIgnoreMouseEvents(true) // Should ignore mouse when hidden
 	}
 }
+func (m *Overlay) Hide() {
+	m.overlay.Hide()
+	m.overlay.SetIgnoreMouseEvents(true) // Should ignore mouse when hidden
+	m.state = StateHidden
+}
 
 // --- Position Persistence ---
 
