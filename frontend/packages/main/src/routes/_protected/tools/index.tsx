@@ -18,8 +18,8 @@ export const Route = createFileRoute('/_protected/tools/')({
 
 export function LobbyRevealerDock({ onClickAction }: { onClickAction?: () => void }) {
   return (
-    <div className="fixed bottom-2 left-10/12 max-w-full -translate-x-1/2">
-      <Dock className="items-end pb-3 !bg-background/80 backdrop-blur-sm">
+    <div className="fixed bottom-2 left-10/12 max-w-full -translate-x-1/2 z-[50]">
+      <Dock className="items-end pb-3 !bg-card/60 backdrop-blur-sm">
         <button onClick={onClickAction} type="button">
           <DockItem className="aspect-square flex rounded-full bg-gray-200 dark:bg-neutral-800 relative">
             <motion.div
