@@ -6,7 +6,7 @@ import { useAllDataDragon } from '@/hooks/useDataDragon/useDataDragon.ts';
 import { saveSkinSelection } from '@/lib/champion-skin-store';
 import { State as LolSkinState } from '@lolskin';
 
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { Activity } from 'lucide-react';
 import {
@@ -17,11 +17,11 @@ export const Route = createFileRoute('/_protected/tools/')({
   component: RouteComponent,
 });
 
-export function AppleStyleDock() {
+export function AppleStyleDock({ onClickAction }: { onClickAction?: () => void }) {
   return (
     <div className="absolute bottom-12 left-11/12 max-w-full -translate-x-1/2">
-      <Link to="/active-game">
-        <Dock className="items-end pb-3 !bg-[#11101a] border">
+      <Dock className="items-end pb-3 !bg-[#11101a] border">
+        <button onClick={onClickAction} type="button">
           <DockItem className="aspect-square flex rounded-full bg-gray-200 dark:bg-neutral-800 relative">
             <motion.div
               className="absolute inset-0 w-full h-full rounded-full bg-gray-300 dark:bg-emerald-500/30"
@@ -35,13 +35,13 @@ export function AppleStyleDock() {
                 ease: 'easeInOut',
               }}
             />
-            <DockLabel>Active Game</DockLabel>
+            <DockLabel>Open Mu</DockLabel>
             <DockIcon>
               <Activity className="h-full w-full text-neutral-600 dark:text-neutral-300" />
             </DockIcon>
           </DockItem>
-        </Dock>
-      </Link>
+        </button>
+      </Dock>
     </div>
   );
 }

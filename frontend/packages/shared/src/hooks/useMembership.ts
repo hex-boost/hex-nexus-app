@@ -110,7 +110,7 @@ export function useMembership() {
       tier_enum: 'premium',
       benefits: [
         {
-          title: 'Instantly earns 10000 coins',
+          title: 'Instantly earns 5000 coins',
           icon: 'check',
 
         },
@@ -120,12 +120,12 @@ export function useMembership() {
           icon: 'check',
         },
         {
-          title: 'Exclusive support',
+          title: 'Secure Payment',
           icon: 'check',
 
         },
         {
-          title: 'Discord Role',
+          title: 'Ready to use in seconds',
           icon: 'check',
 
         },
@@ -141,7 +141,7 @@ export function useMembership() {
       price: 30,
       benefits: [
         {
-          title: 'Unlimited coins & accounts',
+          title: 'Unlimited coins',
           icon: 'check',
 
         },

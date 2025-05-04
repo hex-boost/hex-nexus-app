@@ -1,12 +1,12 @@
-import type {PremiumTiers} from '@/types/types.ts';
-import {FlickeringGrid} from '@/components/magicui/flickering-grid.tsx';
-import {Badge} from '@/components/ui/badge.tsx';
-import {Button} from '@/components/ui/button';
-import {PaymentMethodDialog} from '@/features/payment/PaymentMethodDialog.tsx';
-import {useMembership} from '@/hooks/useMembership.ts';
-import {useUserStore} from '@/stores/useUserStore.ts';
-import {ArrowDownCircle, CircleCheckBig} from 'lucide-react';
-import {useRef} from 'react';
+import type { PremiumTiers } from '@/types/types.ts';
+import { FlickeringGrid } from '@/components/magicui/flickering-grid.tsx';
+import { Badge } from '@/components/ui/badge.tsx';
+import { Button } from '@/components/ui/button';
+import { PaymentMethodDialog } from '@/features/payment/PaymentMethodDialog.tsx';
+import { useMembership } from '@/hooks/useMembership.ts';
+import { useUserStore } from '@/stores/useUserStore.ts';
+import { ArrowDownCircle, CircleCheckBig } from 'lucide-react';
+import { useRef } from 'react';
 
 export default function PricingCards() {
   const pricingRef = useRef<HTMLDivElement>(null);
@@ -22,6 +22,7 @@ export default function PricingCards() {
   };
 
   const currentPlan = pricingPlans.find(plan => plan.tier_enum === user?.premium?.tier?.toLowerCase());
+  const promotionEndDate = '2025-05-11T23:59:59Z';
 
   return (
     <div className="text-white flex flex-col items-center justify-center  w-full p-4">
@@ -90,10 +91,16 @@ export default function PricingCards() {
             </div>
           </div>
         )}
-
         <div className="mt-8 text-center" ref={pricingRef}>
           <h3 className="text-xl font-bold mb-2">Ready to go further?</h3>
           <p className="text-gray-400 mb-8">Upgrade and outship the competition</p>
+
+          <div className="inline-block mb-6">
+            <div className={`${`${getTierColorClass('pro').glow}`} text-white text-sm py-2 px-4 rounded-full font-medium `}>
+              🎉 First Week Promotion: 50% OFF ALL PLANS - Ends May 11th! 🎉
+
+            </div>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
             {pricingPlans
@@ -110,8 +117,19 @@ export default function PricingCards() {
 
                   <div className="flex items-baseline mb-2">
                     <span className={`${getTierColorClass(plan.tier_enum).text} text-2xl`}>$</span>
-                    <span className={`${getTierColorClass(plan.tier_enum).text} text-6xl font-bold mx-1`}>{plan.price}</span>
-                    <span className={`${getTierColorClass(plan.tier_enum).text} text-xl`}>{plan.period}</span>
+                    <span className={`${getTierColorClass(plan.tier_enum).text} text-6xl font-bold mx-1`}>
+                      {' '}
+                      {plan.price === 0 ? 0 : Math.floor(plan.price * 0.5)}
+                    </span>
+                    <div className="flex relative flex-col ml-1">
+                      {plan.price > 0 && (
+                        <span className="text-white/40 -top-7 absolute line-through text-lg font-medium">
+                          $
+                          {plan.price}
+                        </span>
+                      )}
+                      <span className={`${getTierColorClass(plan.tier_enum).text} text-xl`}>{plan.period}</span>
+                    </div>
                   </div>
 
                   <div className={`border-t ${getTierColorClass(plan.tier_enum).border} my-4`}></div>
@@ -145,6 +163,7 @@ export default function PricingCards() {
                 </div>
               ))}
           </div>
+
         </div>
       </div>
     </div>

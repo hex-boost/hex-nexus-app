@@ -1,35 +1,39 @@
 import AdminPanelLayout from '@/components/admin-panel/admin-panel-layout.tsx';
+
 // frontend/src/routes/_protected.tsx
-import {CloseConfirmationHandler} from '@/components/CloseConfirmation.tsx';
-import {CoinIcon} from '@/components/coin-icon.tsx';
-import {DefaultContextMenu} from '@/components/DefaultContextMenu.tsx';
-import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar.tsx';
-import {Button} from '@/components/ui/button.tsx';
+import { CloseConfirmationHandler } from '@/components/CloseConfirmation.tsx';
+import { CoinIcon } from '@/components/coin-icon.tsx';
+import { DefaultContextMenu } from '@/components/DefaultContextMenu.tsx';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
+import { Button } from '@/components/ui/button.tsx';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog.tsx';
-import {DropdownMenu, DropdownMenuContent, DropdownMenuTrigger} from '@/components/ui/dropdown-menu.tsx';
-import {Separator} from '@/components/ui/separator.tsx';
-import {Skeleton} from '@/components/ui/skeleton.tsx';
-import {Textarea} from '@/components/ui/textarea.tsx';
-import {WindowControls} from '@/components/WindowControls.tsx';
-import {ContextMenuProvider} from '@/contexts/ContextMenuContext.tsx';
-import {NotificationProvider} from '@/features/notification/notification-provider.tsx';
-import {NotificationBell} from '@/features/notification/NotificationBell.tsx';
-import {UserProfile} from '@/features/user-profile/UserProfile.tsx';
-import {useCommonFetch} from '@/hooks/useCommonFetch.ts';
-import {useFavoriteAccounts} from '@/hooks/useFavoriteAccounts.ts';
-import {useUserStore} from '@/stores/useUserStore';
-import {createFileRoute, Outlet, useRouter} from '@tanstack/react-router';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu.tsx';
+import { Separator } from '@/components/ui/separator.tsx';
+import { Skeleton } from '@/components/ui/skeleton.tsx';
+import { Textarea } from '@/components/ui/textarea.tsx';
+import { WindowControls } from '@/components/WindowControls.tsx';
+import { ContextMenuProvider } from '@/contexts/ContextMenuContext.tsx';
+import { NotificationProvider } from '@/features/notification/notification-provider.tsx';
+import { NotificationBell } from '@/features/notification/NotificationBell.tsx';
+import { UserProfile } from '@/features/user-profile/UserProfile.tsx';
+import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
+import { useFavoriteAccounts } from '@/hooks/useFavoriteAccounts.ts';
+import { LolChallengesGameflowPhase, useGameflowPhase } from '@/hooks/useGameflowPhaseQuery.ts';
+import { useLobbyRevealer } from '@/hooks/useLobbyRevealer.ts';
+import { useUserStore } from '@/stores/useUserStore';
+import { createFileRoute, Outlet, useRouter } from '@tanstack/react-router';
+import { Browser } from '@wailsio/runtime';
 import React from 'react';
-import {cls} from 'react-image-crop';
+import { cls } from 'react-image-crop';
+import { AppleStyleDock } from './_protected/tools';
 import 'non.geist';
-import {AppleStyleDock} from "./_protected/tools";
 
 export const Route = createFileRoute('/_protected')({
   component: DashboardLayout,
@@ -39,6 +43,8 @@ function DashboardLayout() {
   const router = useRouter();
   const { logout, user } = useUserStore();
   const { isUserLoading, refetchUser } = useCommonFetch();
+  const { gameflowPhase } = useGameflowPhase();
+  const { getMultiSearchUrl } = useLobbyRevealer();
 
   function handleLogout() {
     logout();
@@ -52,8 +58,10 @@ function DashboardLayout() {
 
   return (
     <>
-
-      <AppleStyleDock />
+      {
+        gameflowPhase?.phase === LolChallengesGameflowPhase.ChampSelect
+        && <AppleStyleDock onClickAction={Browser.OpenURL(getMultiSearchUrl())} />
+      }
       <CloseConfirmationHandler />
 
       <NotificationProvider>
@@ -69,16 +77,36 @@ function DashboardLayout() {
                   <div className="hidden sm:flex justify-center items-center gap-2 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-full">
                     <CoinIcon className="h-4 w-4 text-amber-500 dark:text-amber-400" />
                     {isLoading
-                      ? <Skeleton className="w-12 h-4.5"></Skeleton>
+                      ? (
+                          <Skeleton className="w-12 h-4.5"></Skeleton>
+                        )
                       : (
                           <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                            {user?.coins.toLocaleString()}
-                            {' '}
-                            coins
+                            {user?.premium?.tier === 'pro'
+                              ? (
+                                  <span className="flex items-center">
+                                    <svg
+                                      viewBox="0 0 24 24"
+                                      width="16"
+                                      height="16"
+                                      className="mr-1 fill-current"
+                                    >
+                                      <path d="M18.6,6.62C17.16,6.62 15.8,7.18 14.83,8.15L7.8,14.39C7.16,15.03 6.31,15.38 5.4,15.38C3.53,15.38 2,13.87 2,12C2,10.13 3.53,8.62 5.4,8.62C6.31,8.62 7.16,8.97 7.84,9.65L8.97,10.65L10.5,9.31L9.22,8.2C8.2,7.18 6.84,6.62 5.4,6.62C2.42,6.62 0,9.04 0,12C0,14.96 2.42,17.38 5.4,17.38C6.84,17.38 8.2,16.82 9.17,15.85L16.2,9.61C16.84,8.97 17.69,8.62 18.6,8.62C20.47,8.62 22,10.13 22,12C22,13.87 20.47,15.38 18.6,15.38C17.7,15.38 16.84,15.03 16.16,14.35L15,13.34L13.5,14.68L14.78,15.8C15.8,16.81 17.15,17.37 18.6,17.37C21.58,17.37 24,14.96 24,12C24,9.04 21.58,6.62 18.6,6.62Z" />
+                                    </svg>
+                                    coins
+                                  </span>
+                                )
+                              : (
+                                  <>
+                                    {user?.coins.toLocaleString()}
+                                    {' '}
+                                    coins
+                                  </>
+                                )}
                           </span>
                         )}
-
                   </div>
+                  {' '}
                   <NotificationBell />
                   <DropdownMenu>
                     <DropdownMenuTrigger className="focus:outline-none">

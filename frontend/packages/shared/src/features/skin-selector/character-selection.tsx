@@ -2,9 +2,10 @@ import type { FormattedChampion, FormattedSkin } from '@/hooks/useDataDragon/typ
 import { Button } from '@/components/ui/button.tsx';
 import { Input } from '@/components/ui/input.tsx';
 import CharacterCard from '@/features/skin-selector/components/character-card.tsx';
+import { SkinSelectorTutorial } from '@/features/skin-selector/skin-selector-tutorial.tsx';
 import { useLocalStorage } from '@/hooks/use-local-storage.tsx';
 import { cn } from '@/lib/utils.ts';
-import { ArrowLeft, Search, X } from 'lucide-react';
+import { ArrowLeft, HelpCircle, Search, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 // Type for user preferences
@@ -134,6 +135,7 @@ export default function CharacterSelection({
   };
 
   // Get page title
+  const [showTutorial, setShowTutorial] = useState(false);
   const pageTitle = selectedChampion ? selectedChampion.name : 'All Champions';
 
   return (
@@ -151,7 +153,13 @@ export default function CharacterSelection({
               Back
             </Button>
           )}
-          <h2 className="text-2xl font-bold text-foreground">{pageTitle}</h2>
+          <div className="flex justify-between items-center w-full">
+            <h2 className="text-2xl font-bold text-foreground">{pageTitle}</h2>
+            <Button variant="outline" onClick={() => setShowTutorial(true)}>
+              How It Works
+              <HelpCircle className="ml-2" size={16} />
+            </Button>
+          </div>
         </div>
 
         {/* Search bar */}
@@ -218,6 +226,8 @@ export default function CharacterSelection({
           </div>
         )}
       </div>
+      <SkinSelectorTutorial open={showTutorial} setOpen={setShowTutorial} />
     </div>
+
   );
 }

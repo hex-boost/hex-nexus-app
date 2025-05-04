@@ -1,5 +1,8 @@
+import { useGameflowEvents } from '@/hooks/useGameflowEvents.ts';
 import * as Summoner from '@summonerClient';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Events } from '@wailsio/runtime';
+import { useCallback, useEffect } from 'react';
 
 export const GAMEFLOW_PHASE_QUERY = ['gameflow-phase'];
 export enum LolChallengesGameflowPhase {
@@ -20,7 +23,7 @@ export enum LolChallengesGameflowPhase {
 }
 export function useGameflowPhase() {
   const queryClient = useQueryClient();
-
+  useGameflowEvents();
   // For initial fetch and refetching
   const { data: gameflowPhase, isLoading, error, refetch } = useQuery({
     queryKey: GAMEFLOW_PHASE_QUERY,
@@ -30,11 +33,23 @@ export function useGameflowPhase() {
   });
 
   // Function to update state from websocket
-  const update = (data: LolChallengesGameflowPhase) => {
+  const update = useCallback((data: LolChallengesGameflowPhase) => {
     queryClient.setQueryData(GAMEFLOW_PHASE_QUERY, data);
-  };
+  });
 
-  // Connect this to your websocket listener elsewhere
+  useEffect(() => {
+    const cancel = Events.On('OnJsonApiEvent_lol-gameflow_v1_session', (event) => {
+      console.log('lol-gameflow_v1_gameflow-phase', event.data[0]);
+      if (!event.data[0]) {
+        return;
+      }
+      update(event.data[0]);
+    });
+
+    return () => {
+      cancel();
+    };
+  }, [update]);
 
   return {
     gameflowPhase,
