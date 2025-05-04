@@ -35,7 +35,7 @@ export function useGameflowPhase() {
   // Function to update state from websocket
   const update = useCallback((data: LolChallengesGameflowPhase) => {
     queryClient.setQueryData(GAMEFLOW_PHASE_QUERY, data);
-  });
+  }, [queryClient]);
 
   useEffect(() => {
     const cancel = Events.On('OnJsonApiEvent_lol-gameflow_v1_session', (event) => {

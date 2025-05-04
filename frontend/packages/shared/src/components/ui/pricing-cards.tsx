@@ -22,7 +22,6 @@ export default function PricingCards() {
   };
 
   const currentPlan = pricingPlans.find(plan => plan.tier_enum === user?.premium?.tier?.toLowerCase());
-  const promotionEndDate = '2025-05-11T23:59:59Z';
 
   return (
     <div className="text-white flex flex-col items-center justify-center  w-full p-4">

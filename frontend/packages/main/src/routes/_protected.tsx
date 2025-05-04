@@ -44,7 +44,7 @@ function DashboardLayout() {
   const { logout, user } = useUserStore();
   const { isUserLoading, refetchUser } = useCommonFetch();
   const { gameflowPhase } = useGameflowPhase();
-  const { getMultiSearchUrl } = useLobbyRevealer();
+  const { getMultiSearchUrl, summonerCards, isPending } = useLobbyRevealer();
 
   function handleLogout() {
     logout();
@@ -59,8 +59,8 @@ function DashboardLayout() {
   return (
     <>
       {
-        gameflowPhase?.phase === LolChallengesGameflowPhase.ChampSelect
-        && <AppleStyleDock onClickAction={Browser.OpenURL(getMultiSearchUrl())} />
+        gameflowPhase?.phase === LolChallengesGameflowPhase.ChampSelect && !isPending
+        && <AppleStyleDock onClickAction={() => Browser.OpenURL(getMultiSearchUrl(summonerCards))} />
       }
       <CloseConfirmationHandler />
 

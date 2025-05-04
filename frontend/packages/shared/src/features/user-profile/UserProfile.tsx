@@ -275,7 +275,7 @@ export function UserProfile({
                 <div className="w-full flex justify-between gap-2">
                   <p className={cls(` capitalize`, textClass)}>{user?.premium?.tier || 'Free'}</p>
 
-                  {user?.accountPermissions?.includes('boostroyal') && user.boostRoyalUserId && user.boostRoyalUserId !== '' && (
+                  {user?.accountPermissions?.includes('boostroyal') && user?.boostRoyalUserId && (
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>

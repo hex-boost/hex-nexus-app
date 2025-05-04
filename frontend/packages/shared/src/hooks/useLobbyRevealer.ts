@@ -1,7 +1,6 @@
 import type { LobbySummonerCardProps } from '@/components/LobbySummonerCard.tsx';
 import type { Server, TeamBuilderChampionSelect } from '@/types/types.ts';
 import { useAllDataDragon } from '@/hooks/useDataDragon/useDataDragon.ts';
-import { useGameflowPhase } from '@/hooks/useGameflowPhaseQuery.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Events } from '@wailsio/runtime';
@@ -9,40 +8,39 @@ import { useEffect } from 'react';
 
 export function useLobbyRevealer({ platformId }: { platformId: string }) {
   const { allChampions, version } = useAllDataDragon();
-  const { gameflowPhase } = useGameflowPhase();
   const queryClient = useQueryClient();
   const { getFormattedServer } = useMapping();
   // Query key for caching summoner cards
   const summonerCardsKey = ['summonerCards', platformId];
   // Helper functions for champion data
-  function getChampionData(championId: number) {
-    if (!championId) {
-      return null;
-    }
-    return allChampions.find(champion => Number(champion.id) === Number(championId));
-  }
+  // function getChampionData(championId: number) {
+  //   if (!championId) {
+  //     return null;
+  //   }
+  //   return allChampions.find(champion => Number(champion.id) === Number(championId));
+  // }
 
-  function getChampionLoadingUrl(championId: number, skinId: number | null): string | null {
-    if (!championId) {
-      return null;
-    }
-    const champion = getChampionData(championId);
-    if (!champion) {
-      return null;
-    }
-    return `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${champion.name_id}_${skinId || 0}.jpg`;
-  }
+  // function getChampionLoadingUrl(championId: number, skinId: number | null): string | null {
+  //   if (!championId) {
+  //     return null;
+  //   }
+  //   const champion = getChampionData(championId);
+  //   if (!champion) {
+  //     return null;
+  //   }
+  //   return `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${champion.name_id}_${skinId || 0}.jpg`;
+  // }
 
-  function getChampionSquareImage(championId: number): string | null {
-    if (!championId || !version) {
-      return null;
-    }
-    const champion = getChampionData(championId);
-    if (!champion) {
-      return null;
-    }
-    return `https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${champion.name_id}.png`;
-  }
+  // function getChampionSquareImage(championId: number): string | null {
+  //   if (!championId || !version) {
+  //     return null;
+  //   }
+  //   const champion = getChampionData(championId);
+  //   if (!champion) {
+  //     return null;
+  //   }
+  //   return `https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${champion.name_id}.png`;
+  // }
 
   // Mutation for processing champion select data
   const { mutate: processSummonerCards, isPending } = useMutation({
@@ -50,8 +48,7 @@ export function useLobbyRevealer({ platformId }: { platformId: string }) {
       if (!champSelect || !champSelect.myTeam) {
         return;
       }
-      const summonerNamesList = champSelect.myTeam.map(myTeam => `${myTeam.gameName.trim()}#${myTeam.tagLine.trim()}`);
-      return summonerNamesList;
+      return champSelect.myTeam.map(myTeam => `${myTeam.gameName.trim()}#${myTeam.tagLine.trim()}`);
       // Process all players in my team
       // const playerDataPromises = champSelect.myTeam.map(async (summoner) => {
       //   // Get player data
@@ -110,7 +107,6 @@ export function useLobbyRevealer({ platformId }: { platformId: string }) {
 
       // const summonerCards = await Promise.all(playerDataPromises);
       // return summonerCards.filter(Boolean) as LobbySummonerCardProps[];
-      return [] as any;
     },
     onSuccess: (data) => {
       // Update the cache when successful
@@ -118,24 +114,20 @@ export function useLobbyRevealer({ platformId }: { platformId: string }) {
     },
   });
   // Add this to useLobbyRevealer.ts
-  function getMultiSearchUrl(summonerCards: LobbySummonerCardProps[], platformId: Server): string {
-    // Verify we have summoner cards and filter out any without names
-    const validSummoners = summonerCards.filter(card => card?.summonerName);
-
-    if (!validSummoners.length) {
-      return '';
-    }
-
+  function getMultiSearchUrl(summonerCards: string[], platformId: Server): string {
     const region = getFormattedServer(platformId as Server);
 
     // Create comma-separated list of summoner names
-    const summonerList = validSummoners
-      .map(card => `${encodeURIComponent(card.summonerName)}`)
-      .join('%2C');
+    const summonerList = summonerCards
+      .map((card) => {
+        // Extract just the gameName part (before the #)
+        const gameName = card.split('#')[0];
+        return encodeURIComponent(gameName);
+      })
+      .join('%2C'); // %2C is the encoded comma
 
     return `https://op.gg/lol/multisearch/${region.toLowerCase()}?summoners=${summonerList}`;
   }
-  // Register event listener
   useEffect(() => {
     const cancel = Events.On('OnJsonApiEvent_lol-lobby-team-builder_champ-select_v1', (event) => {
       console.log('lol-lobby-team-builder_champ-select_v1', event.data[0]);
