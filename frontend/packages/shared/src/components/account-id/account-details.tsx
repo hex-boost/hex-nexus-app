@@ -296,7 +296,7 @@ export default function AccountDetails({ account, onAccountChange }: {
               >
                 {filteredSkins.map(skin => (
                   <div
-                    key={skin.id}
+                    key={skin?.id}
                     className="bg-zinc-50 dark:bg-background rounded-md "
                   >
                     <div className="relative">
@@ -335,7 +335,7 @@ export default function AccountDetails({ account, onAccountChange }: {
 
       {/* Right column - Rental options */}
       <div className="space-y-6 col-span-2">
-        {account.user && account.user.id === user?.id
+        {account.user && account.user?.id === user?.id
           ? (
 
               <Card>

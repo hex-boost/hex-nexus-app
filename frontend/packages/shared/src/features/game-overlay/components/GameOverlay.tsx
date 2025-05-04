@@ -40,10 +40,8 @@ export function GameOverlay({
       return AccountMonitor.GetLoggedInUsername('');
     },
   });
-
   const { user } = useUserStore();
   const [userCoins, setUserCoins] = useState(user?.coins || 0);
-
   const {
     account,
     initialRentalTime,
@@ -96,31 +94,28 @@ export function GameOverlay({
     }
   }, [user?.coins]);
 
+  // Inside GameOverlay component
+
+  // First, modify the handleExtend function to properly coordinate animations
   const handleExtend = (option: ExtensionOption, cost: number, seconds: number) => {
-    // Set extending state to true to disable buttons during animation
-    setIsExtending(true);
-    setLastExtension({ seconds, cost });
+    // Prevent multiple clicks using the mutation's pending state
+    if (isExtendPending) {
+      return;
+    }
 
-    // Show the animated indicators
-    setShowTimeChange(true);
-    setShowCoinChange(true);
+    setIsExtending(true); // Start visual pulse/effect
+    setLastExtension({ seconds, cost }); // Keep track for time animation
 
-    // Immediately update the UI with the changes
+    // --- OPTIMISTIC TIME UPDATE (Kept as per original code, assuming time animation is desired) ---
     setRentalTimeRemaining(prev => prev + seconds);
+    setShowTimeChange(true); // Show "+time" indicator
 
-    // Call the optimistic update handler from the hook
-    // This will update the cache and make the API call in the background
     handleExtendAccount(option.index);
 
-    // Reset extending state after animation completes
     setTimeout(() => {
       setIsExtending(false);
-      setShowTimeChange(false);
-      setShowCoinChange(false);
     }, 1300);
   };
-
-  // Show skeleton loading state if any data is still loading
   const isLoading = isUsernameLoading || isAccountLoading || isPriceLoading;
   if (isLoading) {
     return <GameOverlaySkeleton setShowOverlay={setShowOverlay} opacity={opacity} scale={scale} />;
@@ -151,7 +146,7 @@ export function GameOverlay({
         }}
       >
         {/* Header with Logo */}
-        <div className="flex items-center justify-between bg-gradient-to-r from-blue-900/95 to-blue-600/95 px-3 py-2">
+        <div className="flex items-center justify-between bg-gradient-to-r from-blue-900/80 to-blue-600/80 px-3 py-2">
           <div className="flex items-center gap-3">
             <img src={logoHexBoost} alt="Logo Hex Boost" className="w-6 h-6" />
             <span className="text-sm font-bold text-white">Nexus</span>
@@ -174,7 +169,7 @@ export function GameOverlay({
         </div>
 
         {/* Content */}
-        <div className="p-3 space-y-3 bg-background/95 backdrop-blur-md rounded-b-lg border border-blue-500/50">
+        <div className="p-3 space-y-3 bg-background/80 backdrop-blur-md rounded-b-lg ">
           {/* User Info */}
           {user?.username && (
             <div className="flex gap-2 justify-start items-start">
@@ -267,9 +262,9 @@ export function GameOverlay({
 
           {/* Account ID */}
           <div className="flex justify-between items-center">
-            <span className="text-xs  text-muted-foreground font-medium">Account ID:</span>
+            <span className="text-xs  text-muted-foreground font-medium">Username</span>
             <Badge variant="outline" className="text-xs bg-blue-950/50 text-blue-300 border-blue-800">
-              {account?.documentId.slice(0, 6)}
+              {account?.username}
             </Badge>
           </div>
         </div>

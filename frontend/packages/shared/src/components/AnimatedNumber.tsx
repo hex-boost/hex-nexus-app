@@ -18,27 +18,27 @@ export function AnimatedNumber({
 }: AnimatedNumberProps) {
   const [displayValue, setDisplayValue] = useState(value);
 
+  // Update the useEffect in AnimatedNumber to have more precise control
   useEffect(() => {
-    // Don't animate if it's a simple decrement by 1 (likely from countdown timer)
-    if (displayValue - value === 1) {
-      setDisplayValue(value);
-      return;
-    }
-
-    // Animate when value changes significantly
+    // For countdown timers, we want smooth decrements too
+    // Remove the special case for decrements by 1
     if (value !== displayValue) {
       const startTime = Date.now();
       const startValue = displayValue;
       const endValue = value;
       const changeInValue = endValue - startValue;
 
+      // Use a more appropriate duration for small changes
+      // For time countdown, use faster animation
+      const animDuration = Math.abs(changeInValue) <= 1 ? 200 : duration;
+
       const animateValue = () => {
         const now = Date.now();
         const elapsed = now - startTime;
 
-        if (elapsed < duration) {
-          // Easing function: easeOutQuad
-          const progress = 1 - (1 - elapsed / duration) ** 2;
+        if (elapsed < animDuration) {
+          // Easing function: easeOutQuad for smoother animation
+          const progress = 1 - (1 - elapsed / animDuration) ** 2;
           const currentValue = startValue + changeInValue * progress;
           setDisplayValue(currentValue);
           requestAnimationFrame(animateValue);
@@ -50,7 +50,6 @@ export function AnimatedNumber({
       requestAnimationFrame(animateValue);
     }
   }, [value, duration]);
-
   return <span className={className}>{formatter(Math.floor(displayValue))}</span>;
 }
 
@@ -95,20 +94,24 @@ export function AnimatedTimeChange({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
-        transition={{ duration: 0.5 }}
+        transition={{
+          duration: 0.5,
+          // Add a slight delay before exiting animation
+          exit: { delay: 0.3 },
+        }}
         onAnimationComplete={onComplete}
         className="absolute top-0 right-0 text-xs font-bold text-green-400 px-2 py-1 bg-green-900/30 rounded-md"
       >
         +
         {Math.floor(seconds / 3600)}
         h
+        {' '}
         {Math.floor((seconds % 3600) / 60)}
         m
       </motion.div>
     </AnimatePresence>
   );
 }
-
 export function AnimatedCoinChange({
   coins,
   onComplete,
