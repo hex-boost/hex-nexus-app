@@ -48,11 +48,24 @@ function DashboardLayout() {
   const { refetch, chatMe } = useChatMeQuery();
 
   useEffect(() => {
+    console.log('[DashboardLayout] gameflowPhase changed:', gameflowPhase?.phase);
     if (gameflowPhase?.phase === LolChallengesGameflowPhase.ChampSelect) {
+      console.log('[DashboardLayout] ChampSelect detected, triggering chatMe refetch');
       refetch();
     }
   }, [gameflowPhase, refetch]);
+
   const { getMultiSearchUrl, summonerCards, isPending } = useLobbyRevealer({ platformId: chatMe?.platformId || '' });
+
+  useEffect(() => {
+    console.log('[DashboardLayout] AppleStyleDock render conditions:', {
+      isChampSelect: gameflowPhase?.phase === LolChallengesGameflowPhase.ChampSelect,
+      isPending,
+      hasSummonerCards: !!summonerCards,
+      chatMePlatformId: chatMe?.platformId,
+    });
+  }, [gameflowPhase, isPending, summonerCards, chatMe]);
+
   function handleLogout() {
     logout();
     router.navigate({ to: '/login' });
@@ -67,7 +80,15 @@ function DashboardLayout() {
     <>
       {
         gameflowPhase?.phase === LolChallengesGameflowPhase.ChampSelect && !isPending && summonerCards
-        && <AppleStyleDock onClickAction={() => Browser.OpenURL(getMultiSearchUrl(summonerCards))} />
+        && (
+          <>
+            {console.log('[DashboardLayout] Rendering AppleStyleDock with:', {
+              summonerCards,
+              multiSearchUrl: getMultiSearchUrl(summonerCards),
+            })}
+            <AppleStyleDock onClickAction={() => Browser.OpenURL(getMultiSearchUrl(summonerCards))} />
+          </>
+        )
       }
       <CloseConfirmationHandler />
 

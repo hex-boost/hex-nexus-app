@@ -44,9 +44,6 @@ export function useLobbyRevealer({ platformId }: { platformId: string }) {
   // Mutation for processing champion select data
   const { data, mutate: processSummonerCards, isPending } = useMutation({
     mutationFn: async (champSelect: TeamBuilderChampionSelect) => {
-      if (!champSelect || !champSelect.myTeam) {
-        return;
-      }
       return champSelect.myTeam.map(myTeam => `${myTeam.gameName.trim()}#${myTeam.tagLine.trim()}`);
       // Process all players in my team
       // const playerDataPromises = champSelect.myTeam.map(async (summoner) => {
@@ -116,12 +113,10 @@ export function useLobbyRevealer({ platformId }: { platformId: string }) {
   function getMultiSearchUrl(summonerCards: string[]): string {
     const region = getFormattedServer(platformId as Server);
 
-    // Create comma-separated list of summoner names
+    // Create comma-separated list of summoner names with their tags
     const summonerList = summonerCards
       .map((card) => {
-        // Extract just the gameName part (before the #)
-        const gameName = card.split('#')[0];
-        return encodeURIComponent(gameName);
+        return encodeURIComponent(card);
       })
       .join('%2C'); // %2C is the encoded comma
 
@@ -132,6 +127,9 @@ export function useLobbyRevealer({ platformId }: { platformId: string }) {
       console.log('lol-lobby-team-builder_champ-select_v1', event.data[0]);
       const champSelect = event.data[0] as TeamBuilderChampionSelect;
 
+      if (!champSelect || !champSelect.myTeam) {
+        return;
+      }
       processSummonerCards(champSelect);
     });
 
