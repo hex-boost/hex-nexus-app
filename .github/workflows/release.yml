@@ -88,9 +88,6 @@ jobs:
         shell: bash
         run: |
           
-          tree -Caf --dirsfirst --prune \
-          -I 'node_modules|.git|build|bin|dist|coverage' \
-          -L 3
           echo "Listing build directory contents:"
     
           ls -la 
@@ -114,10 +111,7 @@ jobs:
           INSTALLER_PATH=$(find ./build -name "Nexus-Setup-*.exe" -type f | head -1) # More specific pattern
 
           if [ -z "$EXE_PATH" ]; then
-            echo "❌ No main executable found in ./bin"
-            # Add more diagnostics if needed
-            echo "Searching everywhere:"
-            find . -name "Nexus.exe" -type f
+            echo "❌ No main executable found in root directory"
             exit 1
           fi
 
