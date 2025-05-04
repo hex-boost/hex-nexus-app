@@ -1,4 +1,3 @@
-import type { LobbySummonerCardProps } from '@/components/LobbySummonerCard.tsx';
 import type { Server, TeamBuilderChampionSelect } from '@/types/types.ts';
 import { useAllDataDragon } from '@/hooks/useDataDragon/useDataDragon.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
@@ -43,7 +42,7 @@ export function useLobbyRevealer({ platformId }: { platformId: string }) {
   // }
 
   // Mutation for processing champion select data
-  const { mutate: processSummonerCards, isPending } = useMutation({
+  const { data, mutate: processSummonerCards, isPending } = useMutation({
     mutationFn: async (champSelect: TeamBuilderChampionSelect) => {
       if (!champSelect || !champSelect.myTeam) {
         return;
@@ -114,7 +113,7 @@ export function useLobbyRevealer({ platformId }: { platformId: string }) {
     },
   });
   // Add this to useLobbyRevealer.ts
-  function getMultiSearchUrl(summonerCards: string[], platformId: Server): string {
+  function getMultiSearchUrl(summonerCards: string[]): string {
     const region = getFormattedServer(platformId as Server);
 
     // Create comma-separated list of summoner names
@@ -140,7 +139,6 @@ export function useLobbyRevealer({ platformId }: { platformId: string }) {
   }, [platformId, allChampions, version, processSummonerCards]);
 
   // Get the current summoner cards from cache
-  const summonerCards = queryClient.getQueryData<LobbySummonerCardProps[]>(summonerCardsKey) || [];
 
-  return { summonerCards, isPending, getMultiSearchUrl };
+  return { summonerCards: data, isPending, getMultiSearchUrl };
 }

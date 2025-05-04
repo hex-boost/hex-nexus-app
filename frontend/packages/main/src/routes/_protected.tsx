@@ -23,6 +23,7 @@ import { ContextMenuProvider } from '@/contexts/ContextMenuContext.tsx';
 import { NotificationProvider } from '@/features/notification/notification-provider.tsx';
 import { NotificationBell } from '@/features/notification/NotificationBell.tsx';
 import { UserProfile } from '@/features/user-profile/UserProfile.tsx';
+import { useChatMeQuery } from '@/hooks/useChatMeQuery.ts';
 import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
 import { useFavoriteAccounts } from '@/hooks/useFavoriteAccounts.ts';
 import { LolChallengesGameflowPhase, useGameflowPhase } from '@/hooks/useGameflowPhaseQuery.ts';
@@ -30,7 +31,7 @@ import { useLobbyRevealer } from '@/hooks/useLobbyRevealer.ts';
 import { useUserStore } from '@/stores/useUserStore';
 import { createFileRoute, Outlet, useRouter } from '@tanstack/react-router';
 import { Browser } from '@wailsio/runtime';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { cls } from 'react-image-crop';
 import { AppleStyleDock } from './_protected/tools';
 import 'non.geist';
@@ -44,8 +45,14 @@ function DashboardLayout() {
   const { logout, user } = useUserStore();
   const { isUserLoading, refetchUser } = useCommonFetch();
   const { gameflowPhase } = useGameflowPhase();
-  const { getMultiSearchUrl, summonerCards, isPending } = useLobbyRevealer();
+  const { refetch, chatMe } = useChatMeQuery();
 
+  useEffect(() => {
+    if (gameflowPhase?.phase === LolChallengesGameflowPhase.ChampSelect) {
+      refetch();
+    }
+  }, [gameflowPhase, refetch]);
+  const { getMultiSearchUrl, summonerCards, isPending } = useLobbyRevealer({ platformId: chatMe?.platformId || '' });
   function handleLogout() {
     logout();
     router.navigate({ to: '/login' });
@@ -59,7 +66,7 @@ function DashboardLayout() {
   return (
     <>
       {
-        gameflowPhase?.phase === LolChallengesGameflowPhase.ChampSelect && !isPending
+        gameflowPhase?.phase === LolChallengesGameflowPhase.ChampSelect && !isPending && summonerCards
         && <AppleStyleDock onClickAction={() => Browser.OpenURL(getMultiSearchUrl(summonerCards))} />
       }
       <CloseConfirmationHandler />
