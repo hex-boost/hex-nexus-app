@@ -9,13 +9,11 @@ tasks:
     summary: Cleans the build directory
     cmds:
       - cmd: cmd.exe /c "taskkill /F /IM dlv.exe /T 2>nul || exit /b 0"
+      - cmd: cmd.exe /c "if exist frontend\\node_modules rmdir /s /q frontend\\node_modules"
+
   build:
     summary: Builds the application for Windows
     deps:
-      - task: common:build:frontend
-        vars:
-          PRODUCTION: '{{.PRODUCTION}}'
-
       - task: common:build:frontend:updater
         vars:
           PRODUCTION: '{{.PRODUCTION}}'

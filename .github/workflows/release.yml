@@ -4,7 +4,9 @@ on:
   push:
     tags:
       - 'v*'  # Ativa quando uma tag com formato 'v*' é empurrada (ex: v1.0.1)
-
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   build-and-deploy:
     runs-on: windows-latest

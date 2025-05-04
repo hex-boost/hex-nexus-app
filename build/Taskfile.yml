@@ -32,10 +32,8 @@ tasks:
       - package.json
       - pnpm-lock.yaml
     generates:
-      - node_modules/*
+      - node_modules/.pnpm-lock.yaml # Be more specific if possible
     cmds:
-      - cmd: powershell -Command "if (Test-Path frontend/node_modules) { Remove-Item -Force -Recurse frontend/node_modules -ErrorAction SilentlyContinue }"
-        platforms: [windows]
       - pnpm store prune
       - pnpm install --frozen-lockfile
     method: checksum
@@ -49,6 +47,8 @@ tasks:
     deps:
       - task: install:frontend:deps
       - task: generate:bindings:updater
+      - task: common:build:frontend # Add dependency here
+
     cmds:
       - pnpm {{.BUILD_COMMAND}}
     env:
