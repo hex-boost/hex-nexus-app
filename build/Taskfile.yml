@@ -47,7 +47,7 @@ tasks:
     deps:
       - task: install:frontend:deps
       - task: generate:bindings:updater
-      - task: common:build:frontend # Add dependency here
+      - task: build:frontend # Add dependency here
 
     cmds:
       - pnpm {{.BUILD_COMMAND}}
