@@ -135,13 +135,13 @@ export function GameOverlay({
 
   return (
     <div
-      className="w-full h-full flex flex-col items-end" // Ensure it fills space, align content
+      className="w-full h-full flex flex-col items-end overflow-hidden" // Ensure it fills space, align content
       style={{ '--wails-draggable': 'drag' } as any} // Apply drag to the whole area initially
 
     >
       <div
         className={cn(
-          'rounded-lg overflow-hidden transition-all duration-300 border border-blue-500/50 backdrop-blur-md', // Added border/blur here
+          'rounded-lg overflow-hidden transition-all duration-300   backdrop-blur-md', // Added border/blur here
         )}
         style={{
           opacity: opacity / 100,

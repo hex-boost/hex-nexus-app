@@ -111,7 +111,7 @@ func (l *Service) UpdateFromLCU(username string) (*types.PartialSummonerRented, 
 		}
 	}
 	summoner := &types.PartialSummonerRented{
-		Username:     username,
+		Username:     userinfo.Username,
 		Tagline:      &userinfo.Acct.TagLine,
 		LCUchampions: &champions,
 
