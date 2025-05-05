@@ -14,7 +14,7 @@ export function useOverlayAccount(username: string | undefined) {
   const account = user?.rentedAccounts?.find(account => account.username.toLowerCase() === username?.toLowerCase());
   const { calculateTimeRemaining, getSecondsRemaining } = useDateTime();
   const initialRentalTime = account ? getSecondsRemaining(account) : 0;
-  // If not in store or we need to refresh, fetch directly
+  // If not in store, or we need to refresh, fetch directly
   const { isRentedLoading } = useAccountByID({
     username,
   });

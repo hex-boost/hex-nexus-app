@@ -1,7 +1,6 @@
 // --- START OF NEW FILE overlay_windows.h ---
 
 //go:build windows
-// +build windows
 
 package overlay
 
@@ -27,7 +26,6 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/process"
 )
 
-// Simplified Overlay State
 type OverlayState int
 
 const (
@@ -66,11 +64,8 @@ var (
 	procGetWindowRect       = user32.NewProc("GetWindowRect")
 	procIsWindowVisible     = user32.NewProc("IsWindowVisible")
 	procGetForegroundWindow = user32.NewProc("GetForegroundWindow")
-	procSetWindowLongPtr    = user32.NewProc("SetWindowLongPtrW")
-	procGetWindowLongPtr    = user32.NewProc("GetWindowLongPtrW")
 	procSetForegroundWindow = user32.NewProc("SetForegroundWindow")
 
-	GWL_EXSTYLE      = -20
 	WS_EX_LAYERED    = 0x00080000 // Needed for transparency/effects
 	WS_EX_TOPMOST    = 0x00000008 // Keep on top
 	WS_EX_TOOLWINDOW = 0x00000080 // Prevent Alt+Tab
@@ -103,7 +98,7 @@ func GetWindowRect(hwnd windows.HWND, rect *windows.Rect) error {
 	)
 	if ret == 0 {
 		// Use GetLastError if needed, but often the error return is sufficient
-		if err != nil && err != windows.ERROR_SUCCESS { // ERROR_SUCCESS is not a real error
+		if err != nil { // ERROR_SUCCESS is not a real error
 			return fmt.Errorf("GetWindowRect failed: %w", err)
 		}
 		// Sometimes ret is 0 but err is nil/ERROR_SUCCESS, check if hwnd is valid
@@ -645,17 +640,6 @@ func (m *Overlay) findAndTrackGameWindow() {
 // isWindowValid checks if the HWND is non-zero and the window is currently visible.
 func (m *Overlay) isWindowValid(hwnd windows.HWND) bool {
 	return hwnd != 0 && IsWindowVisible(hwnd)
-}
-
-// GetWindowExStyle and SetWindowExStyle helpers (can be removed if not used elsewhere)
-// Kept for potential future use or debugging, but not strictly needed for the current logic.
-func GetWindowExStyle(hwnd windows.HWND) uintptr {
-	style, _, _ := procGetWindowLongPtr.Call(uintptr(hwnd), uintptr(GWL_EXSTYLE))
-	return style
-}
-
-func SetWindowExStyle(hwnd windows.HWND, style uintptr) {
-	procSetWindowLongPtr.Call(uintptr(hwnd), uintptr(GWL_EXSTYLE), style)
 }
 
 // --- END OF NEW FILE overlay_windows.h ---
