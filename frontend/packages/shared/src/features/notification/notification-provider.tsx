@@ -241,7 +241,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       if (notification.event === NOTIFICATION_EVENTS.NEW_UPDATE && !notification.isSeen) {
         setValue(notification.metadata as Version);
         toast.info('New update available!', {
-          description: 'Update to the latest version to receive new features and improvements.',
+          description: 'Update to the latest version to receive new features',
           action: {
             type: 'button',
             label: 'Update now',
