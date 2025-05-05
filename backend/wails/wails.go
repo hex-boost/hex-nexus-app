@@ -203,7 +203,6 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 				}
 			},
 		},
-
 		SingleInstance: &application.SingleInstanceOptions{
 			UniqueID: "com.hexboost.nexus.app",
 			OnSecondInstanceLaunch: func(data application.SecondInstanceData) {

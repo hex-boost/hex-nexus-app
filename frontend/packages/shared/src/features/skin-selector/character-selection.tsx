@@ -154,7 +154,7 @@ export default function CharacterSelection({
             </Button>
           )}
           <div className="flex justify-between items-center w-full">
-            <h2 className="text-2xl font-bold text-foreground">{pageTitle}</h2>
+            <h2 className="text-3xl font-semibold text-foreground">{pageTitle}</h2>
             <Button variant="outline" onClick={() => setShowTutorial(true)}>
               How It Works
               <HelpCircle className="ml-2" size={16} />

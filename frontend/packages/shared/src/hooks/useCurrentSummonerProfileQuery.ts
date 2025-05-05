@@ -14,7 +14,7 @@ export function useCurrentSummonerProfileQuery() {
   const { data: currentSummonerProfile, isLoading, error, refetch } = useQuery({
     queryKey: CURRENT_SUMMONER_PROFILE_KEY,
     queryFn: Summoner.Client.GetCurrentSummonerProfile,
-    retry: true,
+    retry: 1,
   });
 
   // Function to update state from websocket

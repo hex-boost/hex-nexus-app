@@ -26,7 +26,7 @@ export function useGameflowPhase() {
   const { data: gameflowPhase, isLoading, error, refetch } = useQuery({
     queryKey: GAMEFLOW_PHASE_QUERY,
     queryFn: Summoner.Client.GetGameflowSession,
-    retry: true,
+    retry: 1,
 
   });
 

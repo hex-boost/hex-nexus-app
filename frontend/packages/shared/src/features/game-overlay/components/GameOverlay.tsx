@@ -1,12 +1,7 @@
 import type { ExtensionOption } from '@/components/extend-rental.ts';
 import logoHexBoost from '@/assets/logo-hex-boost.svg';
 
-import {
-  AnimatedCoinChange,
-  AnimatedCoins,
-  AnimatedTimeChange,
-  AnimatedTimeDisplay,
-} from '@/components/AnimatedNumber.tsx';
+import { AnimatedCoinChange, AnimatedCoins, AnimatedTimeDisplay } from '@/components/AnimatedNumber.tsx';
 import { CoinIcon } from '@/components/coin-icon.tsx';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
@@ -14,6 +9,7 @@ import { Button } from '@/components/ui/button.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { QuickExtendButtons } from '@/features/game-overlay/components/GameOverlayQuickExtend.tsx';
 import { GameOverlaySkeleton } from '@/features/game-overlay/components/GameOverlaySkeleton.tsx';
+import { useContextMenu } from '@/hooks/useContextMenu.ts';
 import { useOverlayAccount } from '@/hooks/useOverlayAccount.ts';
 import { cn } from '@/lib/utils.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
@@ -21,7 +17,7 @@ import { Monitor as AccountMonitor } from '@account';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Clock, XIcon } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 type GameOverlayProps = {
   setShowOverlay: (show: boolean) => void;
@@ -34,6 +30,22 @@ export function GameOverlay({
   opacity = 100,
   scale = 100,
 }: GameOverlayProps) {
+  const { handleReload } = useContextMenu();
+  const overlayRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    // Add context menu event listener
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault(); // Prevent default browser context menu
+      handleReload();
+    };
+
+    const element = overlayRef.current;
+    element?.addEventListener('contextmenu', handleContextMenu);
+
+    return () => {
+      element?.removeEventListener('contextmenu', handleContextMenu);
+    };
+  }, [handleReload]);
   const { data: username, isLoading: isUsernameLoading } = useQuery({
     queryKey: ['loggedInUsername'],
     queryFn: async () => {
@@ -52,40 +64,10 @@ export function GameOverlay({
     isAccountLoading,
   } = useOverlayAccount(username);
 
-  const [rentalTimeRemaining, setRentalTimeRemaining] = useState(0);
-  const [isExtending, setIsExtending] = useState(false);
-  const [showTimeChange, setShowTimeChange] = useState(false);
   const [showCoinChange, setShowCoinChange] = useState(false);
   const [lastExtension, setLastExtension] = useState({ seconds: 0, cost: 0 });
 
-  // Set initial time when data is loaded
-  useEffect(() => {
-    if (initialRentalTime > 0) {
-      setRentalTimeRemaining(initialRentalTime);
-    }
-  }, [initialRentalTime]);
-
   // Countdown timer effect
-  useEffect(() => {
-    // Only start the countdown if we have time remaining
-    if (rentalTimeRemaining <= 0) {
-      return;
-    }
-
-    const interval = setInterval(() => {
-      setRentalTimeRemaining((prevTime) => {
-        // Stop at zero to prevent negative values
-        if (prevTime <= 0) {
-          clearInterval(interval);
-          return 0;
-        }
-        return prevTime - 1;
-      });
-    }, 1000);
-
-    // Cleanup the interval when component unmounts or dependencies change
-    return () => clearInterval(interval);
-  }, [rentalTimeRemaining]); // Only reset the timer when we go from 0 to positive or vice versa
 
   // Update user coins from store when they change
   useEffect(() => {
@@ -103,18 +85,9 @@ export function GameOverlay({
       return;
     }
 
-    setIsExtending(true); // Start visual pulse/effect
     setLastExtension({ seconds, cost }); // Keep track for time animation
 
-    // --- OPTIMISTIC TIME UPDATE (Kept as per original code, assuming time animation is desired) ---
-    setRentalTimeRemaining(prev => prev + seconds);
-    setShowTimeChange(true); // Show "+time" indicator
-
     handleExtendAccount(option.index);
-
-    setTimeout(() => {
-      setIsExtending(false);
-    }, 1300);
   };
   const isLoading = isUsernameLoading || isAccountLoading || isPriceLoading;
   if (isLoading) {
@@ -130,6 +103,7 @@ export function GameOverlay({
 
   return (
     <div
+      ref={overlayRef}
       className="w-full h-full flex flex-col items-end overflow-hidden" // Ensure it fills space, align content
       style={{ '--wails-draggable': 'drag' } as any} // Apply drag to the whole area initially
 
@@ -203,9 +177,9 @@ export function GameOverlay({
             className="flex items-center gap-3 bg-blue-950/50 p-2 rounded-md relative"
             initial={{ opacity: 1 }}
             animate={{
-              opacity: isExtending ? 1 : 1,
-              scale: isExtending ? [1, 1.02, 1] : 1,
-              boxShadow: isExtending
+              opacity: isExtendPending ? 1 : 1,
+              scale: isExtendPending ? [1, 1.02, 1] : 1,
+              boxShadow: isExtendPending
                 ? ['0 0 0 rgba(59, 130, 246, 0)', '0 0 15px rgba(59, 130, 246, 0.5)', '0 0 0 rgba(59, 130, 246, 0)']
                 : '0 0 0 rgba(59, 130, 246, 0)',
             }}
@@ -220,15 +194,12 @@ export function GameOverlay({
 
               </div>
               <div className="text-xs text-zinc-400 relative">
-                <AnimatedTimeDisplay seconds={rentalTimeRemaining} />
-                {showTimeChange && (
-                  <AnimatedTimeChange seconds={lastExtension.seconds} onComplete={() => setShowTimeChange(false)} />
-                )}
+                <AnimatedTimeDisplay seconds={initialRentalTime} />
               </div>
             </div>
 
             {/* Pulse animation when extending */}
-            {isExtending && (
+            {isExtendPending && (
               <motion.div
                 className="absolute inset-0 rounded-md pointer-events-none border border-green-500"
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -253,7 +224,7 @@ export function GameOverlay({
               <QuickExtendButtons
                 userCoins={userCoins}
                 onExtend={handleExtend}
-                isExtending={isExtending || isExtendPending}
+                isExtending={isExtendPending}
                 rankElo={rankInfo.elo}
                 priceData={price}
               />

@@ -126,27 +126,28 @@ func IsWindowVisible(hwnd windows.HWND) bool {
 func CreateGameOverlay(app *application.App) *application.WebviewWindow {
 	overlay := app.NewWebviewWindowWithOptions(
 		application.WebviewWindowOptions{
-			Name:           "Overlay",
-			Title:          "Nexus Overlay",
-			Width:          260, // Keep original size or adjust as needed
-			Height:         296,
-			DisableResize:  true,
-			AlwaysOnTop:    true, // Use WS_EX_TOPMOST instead? Wails handles this mapping.
-			BackgroundType: application.BackgroundTypeTransparent,
+			Name:                       "Overlay",
+			Title:                      "Nexus Overlay",
+			Width:                      260, // Keep original size or adjust as needed
+			Height:                     296,
+			DisableResize:              true,
+			AlwaysOnTop:                true, // Use WS_EX_TOPMOST instead? Wails handles this mapping.
+			BackgroundType:             application.BackgroundTypeTransparent,
+			DefaultContextMenuDisabled: true,
 			BackgroundColour: application.RGBA{
 				Red: 0, Green: 0, Blue: 0, Alpha: 0, // Fully transparent background
 			},
-			Hidden:    true, // Start hidden
-			Frameless: true,
-			URL:       "/?target=overlay", // Ensure your overlay frontend has a draggable region
-
+			Hidden:                 true, // Start hidden
+			Frameless:              true,
+			URL:                    "/?target=overlay", // Ensure your overlay frontend has a draggable region
+			DevToolsEnabled:        true,
+			OpenInspectorOnStartup: true,
 			Windows: application.WindowsWindow{
 				Theme:                             1, // Dark theme
 				DisableFramelessWindowDecorations: true,
 				BackdropType:                      application.Acrylic, // Or Mica, None etc.
-				// Removed WS_EX_TRANSPARENT, added WS_EX_NOACTIVATE
-				ExStyle:         WS_EX_LAYERED | WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
-				HiddenOnTaskbar: true,
+				ExStyle:                           WS_EX_LAYERED | WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
+				HiddenOnTaskbar:                   true,
 			},
 		},
 	)

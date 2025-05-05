@@ -5,8 +5,10 @@ export function GameOverlayPage() {
   function setShowOverlay() {
     Overlay.Hide();
   }
-  return (
 
-    <GameOverlay setShowOverlay={setShowOverlay} />
+  return (
+    <GameOverlay
+      setShowOverlay={setShowOverlay}
+    />
   );
 }
