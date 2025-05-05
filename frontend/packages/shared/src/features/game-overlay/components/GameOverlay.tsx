@@ -50,7 +50,7 @@ export function GameOverlay({
     return () => {
       element?.removeEventListener('contextmenu', handleContextMenu);
     };
-  }, [handleReload]);
+  }, [handleReload, refetchUser]);
   const { data: username, isLoading: isUsernameLoading } = useQuery({
     queryKey: ['loggedInUsername'],
     queryFn: async () => {
@@ -71,8 +71,23 @@ export function GameOverlay({
   const [showCoinChange, setShowCoinChange] = useState(false);
   const [lastExtension, setLastExtension] = useState({ seconds: 0, cost: 0 });
   const [remainingTime, setRemainingTime] = useState(initialRentalTime);
+  const [playAnimation, setPlayAnimation] = useState(false);
 
   // Set up a countdown effect
+
+  useEffect(() => {
+    // When extension completes (isExtendPending changes from true to false)
+    if (!isExtendPending && lastExtension.seconds > 0) {
+      setPlayAnimation(true);
+
+      // Reset the animation flag after animation completes
+      const timer = setTimeout(() => {
+        setPlayAnimation(false);
+      }, 2000); // Duration slightly longer than animation
+
+      return () => clearTimeout(timer);
+    }
+  }, [isExtendPending, lastExtension.seconds]);
   useEffect(() => {
     // Initialize with account's initial time
     setRemainingTime(initialRentalTime);
@@ -118,7 +133,6 @@ export function GameOverlay({
   if (!account) {
     return null;
   }
-
   const rankInfo = account.rankings?.find(rank => rank.queueType === 'soloqueue');
 
   return (
@@ -197,13 +211,13 @@ export function GameOverlay({
             className="flex items-center gap-3 bg-blue-950/50 p-2 rounded-md relative"
             initial={{ opacity: 1 }}
             animate={{
-              opacity: isExtendPending ? 1 : 1,
-              scale: isExtendPending ? [1, 1.02, 1] : 1,
-              boxShadow: isExtendPending
+              opacity: 1,
+              scale: playAnimation ? [1, 1.02, 1] : 1,
+              boxShadow: playAnimation
                 ? ['0 0 0 rgba(59, 130, 246, 0)', '0 0 15px rgba(59, 130, 246, 0.5)', '0 0 0 rgba(59, 130, 246, 0)']
                 : '0 0 0 rgba(59, 130, 246, 0)',
             }}
-            transition={{ duration: 1.5, delay: 1.5 }}
+            transition={{ duration: 1.5, delay: 0 }}
           >
             <div className="w-10 h-10 rounded-full bg-blue-900/50 flex items-center justify-center">
               <Clock className="h-5 w-5 text-blue-400" />
@@ -219,7 +233,7 @@ export function GameOverlay({
             </div>
 
             {/* Pulse animation when extending */}
-            {isExtendPending && (
+            {playAnimation && (
               <motion.div
                 className="absolute inset-0 rounded-md pointer-events-none border border-green-500"
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -229,7 +243,7 @@ export function GameOverlay({
                 }}
                 transition={{
                   duration: 1,
-                  delay: 1.5,
+                  delay: 0,
                   ease: 'easeOut',
                 }}
               />
