@@ -146,7 +146,7 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 	}
 	var mainWindow *application.WebviewWindow
 	accountState := account.NewState()
-	gameOverlayManager := gameOverlay.NewGameOverlayManager(appInstance.Log().League())
+	gameOverlayManager := gameOverlay.NewGameOverlayManager(appInstance.Log().League(),cfg)
 	stripeService := stripe.New(appInstance.Log().Stripe())
 	cmd := command.New()
 	procs := process.New(cmd)
