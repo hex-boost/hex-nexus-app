@@ -2,6 +2,7 @@ import type { UserType } from '@/types/types';
 import { Separator } from '@/components/ui/separator.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import FavoriteAccounts from '@/features/favorite-account/components/FavoriteAccounts.tsx';
+import { Link } from '@tanstack/react-router';
 import { Activity, Shield, Star } from 'lucide-react';
 import CurrentlyRentedAccounts from './currently-rented-accounts';
 import SubscriptionStatus from './subscription-status';
@@ -64,8 +65,15 @@ const CurrentlyRentedAccountsSkeleton = () => (
 );
 
 export default function Dashboard({ user }: { user: UserType | null }) {
+  console.log('mode', import.meta.env.MODE);
   return (
     <div className="space-y-6">
+
+      {
+        import.meta.env.MODE === 'development' && (
+          <Link to="/overlay">FOASDKOASKDOASK</Link>
+        )
+      }
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-black/20 rounded-xl border border-gray-200 dark:border-[#1F1F23]">
           <h2 className="text-xl px-6 pt-6   font-bold text-gray-900 dark:text-white mb-4 text-left flex items-center gap-2 ">

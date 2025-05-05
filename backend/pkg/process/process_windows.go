@@ -11,6 +11,41 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+var (
+	modKernel32 = windows.NewLazySystemDLL("kernel32.dll")
+	modUser32   = windows.NewLazySystemDLL("user32.dll")
+
+	procCreateToolhelp32Snapshot = modKernel32.NewProc("CreateToolhelp32Snapshot")
+	procProcess32FirstW          = modKernel32.NewProc("Process32FirstW")
+	procProcess32NextW           = modKernel32.NewProc("Process32NextW")
+	procCloseHandle              = modKernel32.NewProc("CloseHandle")
+
+	procEnumWindows              = modUser32.NewProc("EnumWindows")
+	procGetWindowThreadProcessId = modUser32.NewProc("GetWindowThreadProcessId")
+	procIsWindowVisible          = modUser32.NewProc("IsWindowVisible")
+	// Optional: GetWindowText if needed for debugging/logging
+	// procGetWindowTextW = modUser32.NewProc("GetWindowTextW")
+	// procGetWindowTextLengthW = modUser32.NewProc("GetWindowTextLengthW")
+)
+
+// Constants needed for process snapshot
+const (
+	TH32CS_SNAPPROCESS = 0x00000002
+)
+
+type PROCESSENTRY32 struct {
+	DwSize              uint32
+	CntUsage            uint32
+	Th32ProcessID       uint32
+	Th32DefaultHeapID   uintptr
+	Th32ModuleID        uint32
+	CntThreads          uint32
+	Th32ParentProcessID uint32
+	PcPriClassBase      int32
+	DwFlags             uint32
+	SzExeFile           [windows.MAX_PATH]uint16 // Use windows.MAX_PATH
+}
+
 func MonitorProcesses(leagueOnly bool, interval time.Duration) (<-chan ProcessInfo, func()) {
 	processChan := make(chan ProcessInfo, 100) // Buffered channel to reduce blocking
 	done := make(chan struct{})
@@ -90,8 +125,3 @@ func MonitorProcesses(leagueOnly bool, interval time.Duration) (<-chan ProcessIn
 
 	return processChan, stopFunc
 }
-
-// Move all Windows-specific code here, including:
-// - MonitorProcesses with windows.CreateToolhelp32Snapshot
-// - Functions using windows package
-// - Any other Windows-specific functionality

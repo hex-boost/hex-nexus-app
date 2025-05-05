@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { QuickExtendButtons } from '@/features/game-overlay/components/GameOverlayQuickExtend.tsx';
 import { GameOverlaySkeleton } from '@/features/game-overlay/components/GameOverlaySkeleton.tsx';
+import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
 import { useContextMenu } from '@/hooks/useContextMenu.ts';
 import { useOverlayAccount } from '@/hooks/useOverlayAccount.ts';
 import { cn } from '@/lib/utils.ts';
@@ -32,10 +33,14 @@ export function GameOverlay({
 }: GameOverlayProps) {
   const { handleReload } = useContextMenu();
   const overlayRef = useRef<HTMLDivElement>(null);
+  const { refetchUser } = useCommonFetch();
+
   useEffect(() => {
     // Add context menu event listener
     const handleContextMenu = (e: MouseEvent) => {
       e.preventDefault(); // Prevent default browser context menu
+
+      refetchUser();
       handleReload();
     };
 
@@ -53,7 +58,6 @@ export function GameOverlay({
     },
   });
   const { user } = useUserStore();
-  const [userCoins, setUserCoins] = useState(user?.coins || 0);
   const {
     account,
     initialRentalTime,
@@ -66,17 +70,33 @@ export function GameOverlay({
 
   const [showCoinChange, setShowCoinChange] = useState(false);
   const [lastExtension, setLastExtension] = useState({ seconds: 0, cost: 0 });
+  const [remainingTime, setRemainingTime] = useState(initialRentalTime);
 
-  // Countdown timer effect
-
-  // Update user coins from store when they change
+  // Set up a countdown effect
   useEffect(() => {
-    if (user?.coins !== undefined) {
-      setUserCoins(user.coins);
-    }
-  }, [user?.coins]);
+    // Initialize with account's initial time
+    setRemainingTime(initialRentalTime);
 
-  // Inside GameOverlay component
+    // Only start the timer if there is time remaining
+    if (initialRentalTime <= 0) {
+      return;
+    }
+
+    // Create interval to decrease time every second
+    const interval = setInterval(() => {
+      setRemainingTime((prevTime) => {
+        if (prevTime <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prevTime - 1;
+      });
+    }, 1000);
+
+    // Clean up interval on unmount or when account changes
+    return () => clearInterval(interval);
+  }, [initialRentalTime, account?.documentId]);
+  // Countdown timer effect
 
   // First, modify the handleExtend function to properly coordinate animations
   const handleExtend = (option: ExtensionOption, cost: number, seconds: number) => {
@@ -163,7 +183,7 @@ export function GameOverlay({
                 <div className="flex items-center gap-1 text-xs">
                   <CoinIcon className="h-3 w-3 text-amber-400" />
                   <div className="relative">
-                    <AnimatedCoins coins={userCoins} className="text-amber-400 font-medium" />
+                    <AnimatedCoins coins={user.coins} className="text-amber-400 font-medium" />
                     {showCoinChange && (
                       <AnimatedCoinChange coins={lastExtension.cost} onComplete={() => setShowCoinChange(false)} />
                     )}
@@ -183,7 +203,7 @@ export function GameOverlay({
                 ? ['0 0 0 rgba(59, 130, 246, 0)', '0 0 15px rgba(59, 130, 246, 0.5)', '0 0 0 rgba(59, 130, 246, 0)']
                 : '0 0 0 rgba(59, 130, 246, 0)',
             }}
-            transition={{ duration: 1.5 }}
+            transition={{ duration: 1.5, delay: 1.5 }}
           >
             <div className="w-10 h-10 rounded-full bg-blue-900/50 flex items-center justify-center">
               <Clock className="h-5 w-5 text-blue-400" />
@@ -194,7 +214,7 @@ export function GameOverlay({
 
               </div>
               <div className="text-xs text-zinc-400 relative">
-                <AnimatedTimeDisplay seconds={initialRentalTime} />
+                <AnimatedTimeDisplay seconds={remainingTime} />
               </div>
             </div>
 
@@ -209,6 +229,7 @@ export function GameOverlay({
                 }}
                 transition={{
                   duration: 1,
+                  delay: 1.5,
                   ease: 'easeOut',
                 }}
               />
@@ -222,7 +243,7 @@ export function GameOverlay({
             </div>
             {price && rankInfo && (
               <QuickExtendButtons
-                userCoins={userCoins}
+                userCoins={user?.coins}
                 onExtend={handleExtend}
                 isExtending={isExtendPending}
                 rankElo={rankInfo.elo}

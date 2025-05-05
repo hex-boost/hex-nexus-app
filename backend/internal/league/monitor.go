@@ -178,7 +178,6 @@ func (cm *Monitor) checkClientState() {
 	var authState *types.RiotIdentityResponse
 	var authStateErr error
 	var isRiotClientInitialized bool
-	var isAuthStateValidErr error
 	authType := "unknown" // Default
 
 	if isRiotClientRunning {
@@ -208,7 +207,6 @@ func (cm *Monitor) checkClientState() {
 				cm.logger.Warn("GetAuthenticationState returned nil response and nil error")
 				// authType remains "unknown"
 			}
-			isAuthStateValidErr = cm.riotAuth.IsAuthStateValid()
 		} else {
 			cm.logger.Debug("Riot client not initialized, skipping auth state checks")
 		}
@@ -216,18 +214,6 @@ func (cm *Monitor) checkClientState() {
 	isLoggedIn := isPlayingLeague || isLeagueClientRunning || authType == "success"
 	isLoginReady := isRiotClientRunning && cm.riotAuth.IsAuthStateValid() == nil && !isLoggedIn
 
-	cm.logger.Debug("Inputs for determineClientState",
-		zap.Any("previousState", previousState.ClientState),
-		zap.Bool("isRiotClientRunning", isRiotClientRunning),
-		zap.Bool("isLeagueClientRunning", isLeagueClientRunning),
-		zap.Bool("isPlayingLeague", isPlayingLeague),
-		zap.Bool("isRiotClientInitialized", isRiotClientInitialized),
-		zap.String("authState.Type", string(authType)),
-		zap.Bool("authStateErr", authStateErr != nil),
-		zap.Bool("isAuthStateValidErr", isAuthStateValidErr != nil),
-		zap.Bool("calculated_isLoggedIn", isLoggedIn),
-		zap.Bool("calculated_isLoginReady", isLoginReady),
-	)
 	// Determine client state
 	newState := cm.determineClientState(
 		isRiotClientRunning,
@@ -330,11 +316,8 @@ func (cm *Monitor) calculateClientState(
 	if isLoggedIn || isPlayingLeague || isLeagueClientRunning {
 		return ClientStateLoggedIn
 	}
-	if isLoginReady && previousState.ClientState == ClientStateClosed {
-		return ClientStateLoginReady
-	} else if isLoginReady && previousState.ClientState == ClientStateLoggedIn {
-		return ClientStateLoginReady
-	} else if isLoginReady {
+
+	if isLoginReady {
 		return ClientStateLoginReady
 	}
 	return ClientStateClosed

@@ -13,16 +13,12 @@ var (
 	procFindWindowW = user32.NewProc("FindWindowW")
 )
 
-func findWindow(className, windowName string) uintptr {
-	var classNamePtr, windowNamePtr *uint16
-	if className != "" {
-		classNamePtr = syscall.StringToUTF16Ptr(className)
-	}
+func findWindow(windowName string) uintptr {
+	var windowNamePtr *uint16
 	if windowName != "" {
-		windowNamePtr = syscall.StringToUTF16Ptr(windowName)
+		windowNamePtr, _ = syscall.UTF16PtrFromString(windowName)
 	}
 	ret, _, _ := procFindWindowW.Call(
-		uintptr(unsafe.Pointer(classNamePtr)),
 		uintptr(unsafe.Pointer(windowNamePtr)),
 	)
 	return ret

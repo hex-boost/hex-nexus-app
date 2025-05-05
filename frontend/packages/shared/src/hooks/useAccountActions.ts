@@ -13,7 +13,6 @@ export function useAccountActions({
 }: {
   account?: AccountType;
   user: UserType | null;
-  onAccountChange: () => Promise<void>;
 }) {
   const queryClient = useQueryClient();
   const { isNexusAccount } = useAccountStore();
@@ -23,12 +22,8 @@ export function useAccountActions({
   const router = useRouter();
 
   const invalidateRelatedQueries = async () => {
-    await queryClient.invalidateQueries({ queryKey: ['accounts'] });
-
-    // Add a delay before invalidating users/me to give backend time to update
-    setTimeout(async () => {
-      await queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
-    }, 2000); // 1 second delay, adjust as needed
+    await queryClient.invalidateQueries({ queryKey: ['accounts', 'rented'] });
+    await queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
   };
   const {
     data: dropRefund,
@@ -76,13 +71,10 @@ export function useAccountActions({
           time: timeIndex,
         },
       });
-
-      if (router.state.location.pathname === '/overlay') {
-        return requestPromise;
-      }
+      const isOverlayPage = router.state.location.pathname === '/overlay';
 
       // Criar um ID de loading para gerenciar manualmente o toast
-      const toastId = toast.loading('Extending account...');
+      const toastId = isOverlayPage ? null : toast.loading('Extending account...');
 
       try {
         const response = await requestPromise;
@@ -96,13 +88,15 @@ export function useAccountActions({
         });
 
         // Após timeout e invalidação, atualizar o toast
-        toast.success(response.message || 'Account time extended successfully', {
-          id: toastId,
-        });
+        if (!isOverlayPage) {
+          toast.success(response.message || 'Account time extended successfully', {
+            id: toastId as any,
+          });
+        }
 
         return response;
       } catch (error) {
-        toast.error(error.error?.message, { id: toastId });
+        toast.error(error.error?.message, { id: toastId as any });
         throw error;
       }
     },

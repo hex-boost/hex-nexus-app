@@ -48,7 +48,7 @@ export default function AccountDetails({ account, onAccountChange }: {
     setSelectedRentalOptionIndex,
     isRentPending,
     handleRentAccount,
-  } = useAccountActions({ account, onAccountChange, user });
+  } = useAccountActions({ account, user });
   const [activeTab, setActiveTab] = useState(0);
   const { getCompanyIcon, getGameIcon, getFormattedServer } = useMapping();
   const soloQueueRank = account.rankings?.find(lc => lc.queueType === 'soloqueue');

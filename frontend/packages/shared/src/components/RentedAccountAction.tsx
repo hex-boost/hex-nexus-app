@@ -49,12 +49,22 @@ export function RentedAccountButton({ account }: RentedAccountButtonProps) {
 
   // Then handle client state
   const renderButton = () => {
+    if (isLaunchRiotClientPending) {
+      return (
+        <Button
+          loading={isLaunchRiotClientPending}
+          disabled={isLaunchRiotClientPending}
+          className="flex-1 !w-full bg-blue-600 hover:bg-blue-700 text-white"
+        >
+          Opening League...
+        </Button>
+      );
+    }
+
     switch (clientState) {
       case LeagueClientStateType.ClientStateClosed:
         return (
           <Button
-            loading={isLaunchRiotClientPending}
-            disabled={isLaunchRiotClientPending}
             className="flex-1 !w-full bg-blue-600 hover:bg-blue-700 text-white"
             onClick={() => handleLaunchRiotClient()}
           >
@@ -107,7 +117,8 @@ export function RentedAccountButton({ account }: RentedAccountButtonProps) {
           </Button>
         );
     }
-  };
+  }
+    ;
 
   return (
     <>
