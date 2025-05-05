@@ -135,6 +135,7 @@ export function useLeagueManager({
 
       logger.info(logContext, 'Waiting for authentication to be ready (timeout: 20s)');
       await LeagueMonitor.WaitUntilAuthenticationIsReady(Duration.Second * 15);
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       logger.info(logContext, 'Riot Client successfully launched and ready');
     },

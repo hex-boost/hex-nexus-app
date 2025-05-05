@@ -192,7 +192,7 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 		},
 		KeyBindings: map[string]func(window *application.WebviewWindow){
 			"ctrl+shift+i": func(window *application.WebviewWindow) {
-				if window != nil && debugMode {
+				if window != nil {
 					window.OpenDevTools()
 				}
 			},

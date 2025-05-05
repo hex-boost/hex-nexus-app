@@ -53,8 +53,6 @@ function DashboardLayout() {
     if (gameflowPhase?.phase === LolChallengesGameflowPhase.ChampSelect) {
       console.log('[DashboardLayout] ChampSelect detected, triggering chatMe refetch');
       refetch();
-    } else {
-
     }
   }, [gameflowPhase, refetch]);
 

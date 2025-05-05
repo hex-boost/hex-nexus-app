@@ -287,10 +287,8 @@ func (cm *Monitor) calculateClientState(
 		return ClientStateLoggedIn
 	}
 	if isLoginReady && previousState.ClientState == ClientStateClosed {
-		time.Sleep(4 * time.Second)
 		return ClientStateLoginReady
 	} else if isLoginReady && previousState.ClientState == ClientStateLoggedIn {
-		time.Sleep(1 * time.Second)
 		return ClientStateLoginReady
 	} else if isLoginReady {
 		return ClientStateLoginReady
