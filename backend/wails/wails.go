@@ -293,7 +293,7 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 				Alpha: 80,
 			},
 
-			DevToolsEnabled:        debugMode,
+			DevToolsEnabled:        true,
 			OpenInspectorOnStartup: debugMode,
 		},
 	)
