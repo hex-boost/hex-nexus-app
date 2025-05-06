@@ -54,7 +54,7 @@ export function useMembership() {
       benefits: [
 
         {
-          title: 'Earns 300 coins',
+          title: 'Monthly 300 coins budget',
         },
         {
           title: 'Accounts up to Platinum',
@@ -79,7 +79,7 @@ export function useMembership() {
 
       benefits: [
         {
-          title: 'Instantly earns 3000 coins',
+          title: 'Monthly 3000 coins budget',
           icon: 'check',
         },
 
@@ -110,7 +110,7 @@ export function useMembership() {
       tier_enum: 'premium',
       benefits: [
         {
-          title: 'Instantly earns 5000 coins',
+          title: 'Monthly 5000 coins budget',
           icon: 'check',
 
         },
