@@ -66,7 +66,7 @@ func (c *Captcha) StartServer() error {
 	mux := http.NewServeMux()
 
 	captchaServer := &http.Server{
-		Addr:    ":6969",
+		Addr:    ":6970",
 		Handler: mux,
 	}
 	c.captchaServer = captchaServer
@@ -175,7 +175,7 @@ func (c *Captcha) StartServer() error {
 		}
 	})
 	go func() {
-		c.logger.Info("Starting captcha server on http://127.0.0.1:6969")
+		c.logger.Info("Starting captcha server on http://127.0.0.1:6970")
 		c.isServerRunning = true
 		if err := captchaServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			c.logger.Error("Failed to start captcha server", zap.Error(err))

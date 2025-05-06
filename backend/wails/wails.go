@@ -146,7 +146,7 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 	}
 	var mainWindow *application.WebviewWindow
 	accountState := account.NewState()
-	gameOverlayManager := gameOverlay.NewGameOverlayManager(appInstance.Log().League(),cfg)
+	gameOverlayManager := gameOverlay.NewGameOverlayManager(appInstance.Log().League(), cfg)
 	stripeService := stripe.New(appInstance.Log().Stripe())
 	cmd := command.New()
 	procs := process.New(cmd)
@@ -255,7 +255,7 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 	captchaWindow := mainApp.NewWebviewWindowWithOptions(
 		application.WebviewWindowOptions{
 			Hidden:        true,
-			URL:           "http://127.0.0.1:6969/index.html",
+			URL:           "http://127.0.0.1:6970/index.html",
 			Name:          "Captcha",
 			DisableResize: true,
 			Title:         "Nexus Captcha",
