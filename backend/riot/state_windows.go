@@ -19,7 +19,8 @@ func findWindow(windowName string) uintptr {
 		windowNamePtr, _ = syscall.UTF16PtrFromString(windowName)
 	}
 	ret, _, _ := procFindWindowW.Call(
-		uintptr(unsafe.Pointer(windowNamePtr)),
+		0,                                      // NULL for class name (first parameter)
+		uintptr(unsafe.Pointer(windowNamePtr)), // Window title (second parameter)
 	)
 	return ret
 }

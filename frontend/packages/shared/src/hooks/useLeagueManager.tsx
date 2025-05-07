@@ -144,6 +144,7 @@ export function useLeagueManager({
       toast.info('Riot Client launched successfully');
     },
     onError: (error) => {
+      console.log('error', error);
       if (error instanceof Call.RuntimeError) {
         logger.error(logContext, 'Failed to launch Riot Client', error.message);
 

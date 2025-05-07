@@ -301,7 +301,6 @@ func (am *Monitor) checkCurrentAccount() {
 			zap.String("errorType", fmt.Sprintf("%T", err)))
 		am.SetNexusAccount(false)
 
-		return
 	}
 
 	isNexusAccount := false

@@ -1,19 +1,11 @@
 package riot
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/hex-boost/hex-nexus-app/backend/pkg/sysquery"
-	"golang.org/x/sys/windows"
-	"regexp"
-	"strings"
-	"syscall"
-	"time"
-	"unsafe"
-
 	"go.uber.org/zap"
+	"time"
 
 	"github.com/hex-boost/hex-nexus-app/backend/types"
 )
@@ -28,111 +20,17 @@ type ProcessCredentials struct {
 	AuthToken string // This will be the Base64 encoded "riot:<token>" string
 }
 
-func getProcessCommandLine(pid uint32) (string, error) {
-	sq := sysquery.New()
-	cmdLine, err := sq.GetProcessCommandLineByPID(pid)
-	if err != nil {
-		return "", fmt.Errorf("failed to get command line for PID %d: %w", pid, err)
-	}
-
-	// sysquery.GetProcessCommandLineByPID already formats the output as "CommandLine=..."
-	return cmdLine, nil
-}
-
-func FindRiotClientWithCredentials() (*ProcessCredentials, error) {
-	// Pre-compile regexes for efficiency
-	portRegex := regexp.MustCompile(`--app-port=(\d+)`)
-	authRegex := regexp.MustCompile(`--remoting-auth-token=([\w-]+)`)
-
-	// Get a snapshot of all running processes
-	snapshot, err := windows.CreateToolhelp32Snapshot(windows.TH32CS_SNAPPROCESS, 0)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create process snapshot: %w", err)
-	}
-	// Ensure the snapshot handle is closed eventually
-	defer windows.CloseHandle(snapshot)
-
-	var pe32 windows.ProcessEntry32
-	pe32.Size = uint32(unsafe.Sizeof(pe32))
-
-	// Iterate through the processes
-	if err := windows.Process32First(snapshot, &pe32); err != nil {
-		// Check for ERROR_NO_MORE_FILES specifically, although it shouldn't happen on First call
-		if err == syscall.ERROR_NO_MORE_FILES {
-			return nil, fmt.Errorf("no processes found")
-		}
-		return nil, fmt.Errorf("failed to get first process: %w", err)
-	}
-
-	for {
-		// Extract process name
-		procName := windows.UTF16ToString(pe32.ExeFile[:])
-		procNameLower := strings.ToLower(procName)
-
-		// Check if it's the target process
-		if procNameLower == targetProcessName {
-			// Found a potential candidate, now get its command line
-			cmdLine, err := getProcessCommandLine(pe32.ProcessID)
-			if err != nil {
-				// Log the error but continue searching, as this might be a zombie process
-				// or one we don't have permission for, or it exited quickly.
-				fmt.Printf("Skipping PID %d (%s): failed to get command line: %v\n", pe32.ProcessID, procName, err)
-				// Continue to the next process
-				if err := windows.Process32Next(snapshot, &pe32); err != nil {
-					if err == syscall.ERROR_NO_MORE_FILES {
-						break // End of list
-					}
-					return nil, fmt.Errorf("failed to get next process after error: %w", err)
-				}
-				continue // Skip to the next iteration
-			}
-
-			// Check if the command line contains the required arguments
-			portMatch := portRegex.FindStringSubmatch(cmdLine)
-			authMatch := authRegex.FindStringSubmatch(cmdLine)
-
-			// We need both matches to succeed
-			if len(portMatch) > 1 && len(authMatch) > 1 {
-				// Found the correct process!
-				port := portMatch[1]
-				token := authMatch[1]
-				// Encode the auth token as required (e.g., for HTTP Basic Auth)
-				authHeader := base64.StdEncoding.EncodeToString([]byte("riot:" + token))
-
-				return &ProcessCredentials{
-					PID:       pe32.ProcessID,
-					Port:      port,
-					AuthToken: authHeader, // Store the encoded header
-				}, nil
-			}
-			// If it's Riot Client.exe but doesn't have the args, keep searching
-		}
-
-		// Move to the next process
-		if err := windows.Process32Next(snapshot, &pe32); err != nil {
-			// Check if we've reached the end of the list
-			if err == syscall.ERROR_NO_MORE_FILES {
-				break // Normal loop termination
-			}
-			// An unexpected error occurred
-			return nil, fmt.Errorf("failed to get next process: %w", err)
-		}
-	}
-
-	// If the loop finishes without finding the process
-	return nil, fmt.Errorf("'%s' process with --app-port and --remoting-auth-token not found", targetProcessName)
-}
-
 func (s *Service) IsRunning() bool {
 	hwnd := findWindow("Riot Client")
 	if hwnd != 0 {
 		return true
 	}
-	credentials, err := FindRiotClientWithCredentials()
-	if err != nil {
-		return false
-	}
-	return credentials.PID != 0
+	return false
+	//credentials, err := FindRiotClientWithCredentials()
+	//if err != nil {
+	//	return false
+	//}
+	//return credentials.PID != 0
 }
 
 func (s *Service) WaitUntilIsRunning(timeout time.Duration) error {

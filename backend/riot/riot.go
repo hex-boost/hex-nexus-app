@@ -192,7 +192,6 @@ func (s *Service) Launch() error {
 		zap.String("path", clientInstalls.RcDefault),
 		zap.Strings("args", args))
 
-	s.logger.Info("Starting Riot client process")
 	_, err = s.cmd.Start(clientInstalls.RcDefault, args...)
 	if err != nil {
 		s.logger.Error("Failed to start Riot client", zap.Error(err))
