@@ -52,8 +52,6 @@ func (s *Service) getProcess() (pid int, err error) {
 		return 0, fmt.Errorf("failed to list processes: %w", err)
 	}
 	riotProcessNames := []string{
-		"Service.exe",
-		"Service",
 		"Riot Client",
 		"Riot Client.exe",
 	}

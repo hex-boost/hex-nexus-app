@@ -283,6 +283,7 @@ func (am *Monitor) checkCurrentAccount() {
 
 	currentUsername := am.GetLoggedInUsername(currentAccount.Username)
 	if currentUsername == "" {
+		am.SetNexusAccount(false)
 		return
 	}
 
