@@ -1,27 +1,30 @@
 package process
 
 import (
-	"fmt"
 	"strings"
 	"sync"
 
 	"github.com/shirou/gopsutil/v3/process"
 
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/command"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/sysquery"
 )
 
 type Process struct {
-	command *command.Command
+	command  *command.Command
+	sysquery *sysquery.SysQuery
 }
 
 func New(command *command.Command) *Process {
 	return &Process{
-		command: command,
+		command:  command,
+		sysquery: sysquery.New(),
 	}
 }
 
 func (p *Process) GetCommandLineByName(processName string) ([]byte, error) {
-	return p.command.Execute("wmic", "process", "where", fmt.Sprintf("name='%s'", processName), "get", "commandline")
+	// Use sysquery instead of raw wmic command
+	return p.sysquery.GetProcessCommandLineByName(processName)
 }
 
 type ProcessInfo struct {
@@ -29,6 +32,10 @@ type ProcessInfo struct {
 	Name           string
 	CommandLine    string
 	IsLeagueClient bool
+	Path           string   // Added for additional information
+	MemoryUsage    uint64   // Added for monitoring resources
+	CPUUsage       float64  // Added for monitoring resources
+	Arguments      []string // Parsed command line arguments
 }
 
 // Cache for command lines to avoid repeated expensive lookups
@@ -47,8 +54,6 @@ var leagueProcessNames = []string{
 	"league of legends",
 	"riotclientservices",
 }
-
-// MonitorProcesses monitors for processes and sends information through the returned channel
 
 // Fast check if process is League-related using pre-defined list
 func isLeagueProcess(name string) bool {
@@ -70,15 +75,33 @@ func getProcessCommandLine(pid uint32) string {
 	}
 	cmdCache.RUnlock()
 
-	// Not in cache, get command line
-	p, err := process.NewProcess(int32(pid))
+	// Not in cache, use sysquery to get command line
+	sq := sysquery.New()
+	cmdline, err := sq.GetProcessCommandLineByPID(pid)
 	if err != nil {
-		return ""
+		// Fall back to gopsutil if sysquery fails
+		p, err := process.NewProcess(int32(pid))
+		if err != nil {
+			return ""
+		}
+
+		cmdline, err := p.Cmdline()
+		if err != nil {
+			return ""
+		}
+
+		// Cache the result
+		cmdCache.Lock()
+		cmdCache.data[pid] = cmdline
+		cmdCache.Unlock()
+
+		return cmdline
 	}
 
-	cmdline, err := p.Cmdline()
-	if err != nil {
-		return ""
+	// Extract just the command line from the formatted output
+	parts := strings.SplitN(cmdline, "=", 2)
+	if len(parts) > 1 {
+		cmdline = parts[1]
 	}
 
 	// Cache the result
@@ -99,4 +122,31 @@ func CleanupCache() {
 			delete(cmdCache.data, pid)
 		}
 	}
+}
+
+// GetProcessDetails returns detailed information about a process
+func GetProcessDetails(pid uint32) (*ProcessInfo, error) {
+	p, err := process.NewProcess(int32(pid))
+	if err != nil {
+		return nil, err
+	}
+
+	name, _ := p.Name()
+	cmdline := getProcessCommandLine(pid)
+	path, _ := p.Exe()
+	memInfo, _ := p.MemoryInfo()
+	cpuPercent, _ := p.CPUPercent()
+
+	args := strings.Fields(cmdline)
+
+	return &ProcessInfo{
+		PID:            pid,
+		Name:           name,
+		CommandLine:    cmdline,
+		IsLeagueClient: isLeagueProcess(strings.ToLower(name)),
+		Path:           path,
+		MemoryUsage:    memInfo.RSS,
+		CPUUsage:       cpuPercent,
+		Arguments:      args,
+	}, nil
 }

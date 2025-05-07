@@ -15,6 +15,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/command"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/sysquery"
 	"github.com/hex-boost/hex-nexus-app/backend/riot/captcha"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"github.com/mitchellh/go-ps"
@@ -22,20 +23,22 @@ import (
 )
 
 type Service struct {
-	client  *resty.Client
-	logger  *logger.Logger
-	captcha *captcha.Captcha
-	ctx     context.Context
-	cmd     *command.Command
+	client   *resty.Client
+	logger   *logger.Logger
+	captcha  *captcha.Captcha
+	ctx      context.Context
+	cmd      *command.Command
+	sysquery *sysquery.SysQuery
 }
 
 func NewService(logger *logger.Logger, captcha *captcha.Captcha) *Service {
 	return &Service{
-		client:  nil,
-		cmd:     command.New(),
-		logger:  logger,
-		captcha: captcha,
-		ctx:     context.Background(),
+		client:   nil,
+		cmd:      command.New(),
+		sysquery: sysquery.New(),
+		logger:   logger,
+		captcha:  captcha,
+		ctx:      context.Background(),
 	}
 }
 
@@ -69,11 +72,14 @@ func (s *Service) getProcess() (pid int, err error) {
 func (s *Service) getCredentials(riotClientPid int) (port string, authToken string, err error) {
 	var cmdLine string
 
-	output, err := s.cmd.Execute("wmic", "process", "where", fmt.Sprintf("ProcessId=%d", riotClientPid), "get", "CommandLine", "/format:list")
+	// Use sysquery instead of wmic
+	cmdlineOutput, err := s.sysquery.GetProcessCommandLineByPID(uint32(riotClientPid))
 	if err != nil {
 		return "", "", fmt.Errorf("failed to get command line: %w", err)
 	}
-	cmdLine = string(output)
+	cmdLine = cmdlineOutput
+
+	// Keep the existing parsing logic
 	cmdLineParts := strings.SplitN(cmdLine, "=", 2)
 	if len(cmdLineParts) > 1 {
 		cmdLine = strings.TrimSpace(cmdLineParts[1])
