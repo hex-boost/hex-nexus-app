@@ -259,8 +259,8 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 			Name:          "Captcha",
 			DisableResize: false,
 
-			Width:  1280,
-			Height: 1024,
+			Width:  1024,
+			Height: 768,
 			Title:  "Nexus Captcha",
 		},
 	)
