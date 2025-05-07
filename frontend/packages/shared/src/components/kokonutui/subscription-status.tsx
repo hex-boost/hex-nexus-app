@@ -14,10 +14,6 @@ export default function SubscriptionStatus({ className, subscription }: Subscrip
   const { user } = useUserStore();
   const hasValidExpiry = subscription?.expiresAt !== undefined;
   const expiryDate = hasValidExpiry ? new Date(subscription.expiresAt) : new Date();
-  const today = new Date();
-  const daysRemaining = hasValidExpiry
-    ? Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-    : 0;
 
   const formattedExpiryDate = hasValidExpiry
     ? expiryDate.toLocaleDateString('pt-BR', {
@@ -82,10 +78,6 @@ export default function SubscriptionStatus({ className, subscription }: Subscrip
                 ? (
                     <>
                       {formattedExpiryDate}
-                      {' '}
-                      {daysRemaining}
-                      {' '}
-                      days
                     </>
                   )
                 : 'N/A'}

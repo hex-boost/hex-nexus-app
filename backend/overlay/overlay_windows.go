@@ -7,6 +7,7 @@ package overlay
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
 	hook "github.com/robotn/gohook"
 	"math" // Import math package for Min/Max
 
@@ -50,6 +51,7 @@ type Overlay struct {
 	gameHwnd      windows.HWND
 	mutex         sync.Mutex
 	stopChan      chan struct{}
+	cfg           *config.Config
 	// Position stores the last known *absolute* screen coordinates
 	// Use pointers to distinguish between zero position and not loaded yet
 	lastPosition *Position
@@ -135,8 +137,8 @@ func CreateGameOverlay(app *application.App) *application.WebviewWindow {
 			Hidden:                 true, // Start hidden
 			Frameless:              true,
 			URL:                    "/?target=overlay", // Ensure your overlay frontend has a draggable region
-			DevToolsEnabled:        true,
-			OpenInspectorOnStartup: true,
+			DevToolsEnabled:        false,
+			OpenInspectorOnStartup: false,
 			Windows: application.WindowsWindow{
 				Theme:                             1, // Dark theme
 				DisableFramelessWindowDecorations: true,
@@ -151,7 +153,7 @@ func CreateGameOverlay(app *application.App) *application.WebviewWindow {
 
 // --- Overlay Manager ---
 
-func NewGameOverlayManager(logger *logger.Logger) *Overlay {
+func NewGameOverlayManager(logger *logger.Logger, cfg *config.Config) *Overlay {
 	configDir, err := os.UserConfigDir()
 	if err != nil {
 		logger.Warn("Failed to get user config dir, using current directory", zap.Error(err))
@@ -172,6 +174,7 @@ func NewGameOverlayManager(logger *logger.Logger) *Overlay {
 		lastPosition: nil, // Initialize as nil, loadPosition will populate if file exists
 		configPath:   configPath,
 		state:        StateHidden, // Start hidden
+		cfg:          cfg,
 	}
 
 	manager.loadPosition() // Load saved position if exists
@@ -567,6 +570,9 @@ func (m *Overlay) maintainZOrder(overlayHwnd windows.HWND) {
 // --- Hotkey Registration (Modified Call) ---
 
 func (m *Overlay) registerGlobalHotkey() {
+	if m.cfg.Debug {
+		return
+	}
 	m.logger.Info("Registering global hotkey: Ctrl+Shift+B")
 
 	hook.Register(hook.KeyDown, []string{"ctrl", "shift", "b"}, func(e hook.Event) {
