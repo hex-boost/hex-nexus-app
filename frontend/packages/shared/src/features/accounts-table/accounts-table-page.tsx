@@ -183,7 +183,7 @@ export function AccountsTablePage() {
               </div>
               <div className="flex h-full flex-col gap-4">
 
-                <div>
+                <div className="space-y-2">
                   <Label className="text-sm font-medium mb-1.5 block">Specific Champions</Label>
                   <MultiSelectCombobox
                     label=" champions"
@@ -378,74 +378,74 @@ export function AccountsTablePage() {
                   </RadioGroup>
                 </div>
               </div>
-              <div className="space-y-6 flex flex-col justify-between h-full">
+              <div className="space-y-4 flex flex-col h-full">
+                <div>
+                  <Label className="text-sm font-medium mb-1.5 block">Account Restrictions</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    {[
+                      {
+                        value: 'none',
+                        label: 'None',
+                        icon: Shield,
+                        className: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
+                      },
+                      {
+                        value: 'low',
+                        label: 'Low',
+                        icon: AlertCircle,
+                        className: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+                      },
+                      {
+                        value: 'medium',
+                        label: 'Medium',
+                        icon: AlertTriangle,
+                        className: 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800',
+                      },
+                      {
+                        value: 'high',
+                        label: 'High',
+                        icon: AlertOctagon,
+                        className: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800',
+                      },
+                    ].map((status) => {
+                      const Icon = status.icon;
+                      const isSelected = filters.leaverStatus?.includes(status.value);
 
-                <Label className="text-sm font-medium mb-1.5 block">Account Restrictions</Label>
-                <div className="grid grid-cols-2 gap-4">
-                  {[
-                    {
-                      value: 'none',
-                      label: 'None',
-                      icon: Shield,
-                      className: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
-                    },
-                    {
-                      value: 'low',
-                      label: 'Low',
-                      icon: AlertCircle,
-                      className: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-                    },
-                    {
-                      value: 'medium',
-                      label: 'Medium',
-                      icon: AlertTriangle,
-                      className: 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800',
-                    },
-                    {
-                      value: 'high',
-                      label: 'High',
-                      icon: AlertOctagon,
-                      className: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800',
-                    },
-                  ].map((status) => {
-                    const Icon = status.icon;
-                    const isSelected = filters.leaverStatus?.includes(status.value);
+                      return (
+                        <div key={status.value} className="w-full min-h-[40px] flex">
+                          <Badge
 
-                    return (
-                      <div key={status.value} className="w-full min-h-[40px] flex">
-                        <Badge
+                            key={status.value}
+                            variant="outline"
+                            className={cn(
+                              status.className,
+                              'cursor-pointer w-full h-full transition-all',
+                              isSelected ? 'ring-2 ring-offset-1 ring-blue-500' : '',
+                            )}
+                            onClick={() => {
+                              const currentStatuses = filters.leaverStatus || [];
+                              const newStatuses = isSelected
+                                ? currentStatuses.filter(s => s !== status.value)
+                                : [...currentStatuses, status.value];
 
-                          key={status.value}
-                          variant="outline"
-                          className={cn(
-                            status.className,
-                            'cursor-pointer w-full h-full transition-all',
-                            isSelected ? 'ring-2 ring-offset-1 ring-blue-500' : '',
-                          )}
-                          onClick={() => {
-                            const currentStatuses = filters.leaverStatus || [];
-                            const newStatuses = isSelected
-                              ? currentStatuses.filter(s => s !== status.value)
-                              : [...currentStatuses, status.value];
+                              setFilters({
+                                ...filters,
+                                leaverStatus: newStatuses,
+                              });
+                            }}
+                          >
+                            <Icon className="h-6 w-6 mr-1" />
+                            <span className="">{status.label}</span>
+                            {isSelected && (
+                              <Check className="ml-1 h-3 w-3" />
+                            )}
+                          </Badge>
+                        </div>
+                      );
+                    })}
 
-                            setFilters({
-                              ...filters,
-                              leaverStatus: newStatuses,
-                            });
-                          }}
-                        >
-                          <Icon className="h-6 w-6 mr-1" />
-                          <span className="">{status.label}</span>
-                          {isSelected && (
-                            <Check className="ml-1 h-3 w-3" />
-                          )}
-                        </Badge>
-                      </div>
-                    );
-                  })}
-
+                  </div>
                 </div>
-
                 <div className="w-full">
                   <Label className="text-sm font-medium mb-1.5 block">
                     Blue Essence (
