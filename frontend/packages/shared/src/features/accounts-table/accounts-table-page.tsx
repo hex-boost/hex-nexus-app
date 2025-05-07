@@ -99,9 +99,8 @@ export function AccountsTablePage() {
             className="bg-white dark:bg-black/20 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 space-y-6"
           >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="grid ">
-
-                <div>
+              <div className="grid gap-4 ">
+                <div className="space-y-2">
                   <div className="flex justify-between items-center mb-1">
 
                     <Label className="text-sm font-medium mb-1.5 block">
@@ -125,8 +124,7 @@ export function AccountsTablePage() {
                     }}
                   />
                 </div>
-
-                <div>
+                <div className="space-y-2">
                   <div className="flex justify-between items-center mb-1">
 
                     <Label className="text-sm font-medium mb-1.5 block">
@@ -151,9 +149,38 @@ export function AccountsTablePage() {
                     disabled={filters.ranks.length === 1 && filters.ranks[0] === 'master'}
                   />
                 </div>
-
+                <div className="flex flex-col gap-2">
+                  <Label className="text-sm font-medium pb-1 block">
+                    Queue Type
+                  </Label>
+                  <div className="flex space-x-2 w-full ">
+                    <RadioGroup
+                      value={filters.queueType || 'soloqueue'}
+                      onValueChange={value => setFilters({ ...filters, queueType: value })}
+                      className="flex w-full space-x-4"
+                    >
+                      <div className="flex w-full items-center space-x-2">
+                        <RadioGroupItem value="soloqueue" id="soloqueue" className="peer" />
+                        <Label
+                          htmlFor="soloqueue"
+                          className="cursor-pointer peer-data-[state=checked]:text-primary"
+                        >
+                          Solo Queue
+                        </Label>
+                      </div>
+                      <div className="flex w-full items-center space-x-2">
+                        <RadioGroupItem value="flexqueue" id="flexqueue" className="peer" />
+                        <Label
+                          htmlFor="flexqueue"
+                          className="cursor-pointer peer-data-[state=checked]:text-primary"
+                        >
+                          Flex Queue
+                        </Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+                </div>
               </div>
-
               <div className="flex h-full flex-col gap-4">
 
                 <div>
