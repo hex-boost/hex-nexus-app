@@ -434,7 +434,7 @@ func TestOpenWebviewAndGetToken(t *testing.T) {
 		// Set up mock behaviors
 		mockRiotAuth.On("SetupCaptchaVerification").Return(nil)
 		mockCaptcha.On("GetWebView").Return(mockWebview, nil)
-		mockCaptcha.On("WaitAndGetCaptchaResponse", mock.Anything, 15*time.Second).Return("captcha-token", nil)
+		mockCaptcha.On("WaitAndGetCaptchaResponse", mock.Anything, 25*time.Second).Return("captcha-token", nil)
 
 		// Set expectations for the webview - add appropriate return value for Hide
 		mockWebview.On("OnWindowEvent", appEvents.Windows.WebViewNavigationCompleted, mock.Anything).
@@ -469,7 +469,7 @@ func TestOpenWebviewAndGetToken(t *testing.T) {
 
 		mockRiotAuth.AssertCalled(t, "SetupCaptchaVerification")
 		mockCaptcha.AssertCalled(t, "GetWebView")
-		mockCaptcha.AssertCalled(t, "WaitAndGetCaptchaResponse", mock.Anything, 15*time.Second)
+		mockCaptcha.AssertCalled(t, "WaitAndGetCaptchaResponse", mock.Anything, 25*time.Second)
 		mockWebview.AssertCalled(t, "OnWindowEvent", appEvents.Windows.WebViewNavigationCompleted, mock.Anything)
 		mockWebview.AssertCalled(t, "Reload")
 	})
