@@ -169,7 +169,7 @@ export function AccountsTablePage() {
                         </Label>
                       </div>
                       <div className="flex w-full items-center space-x-2">
-                        <RadioGroupItem value="flexqueue" id="flexqueue" className="peer" />
+                        <RadioGroupItem value="flex" id="flexqueue" className="peer" />
                         <Label
                           htmlFor="flexqueue"
                           className="cursor-pointer peer-data-[state=checked]:text-primary"
