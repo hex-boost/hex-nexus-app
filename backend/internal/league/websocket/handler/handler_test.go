@@ -7,11 +7,8 @@ import (
 
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket/handler/mocks"
 
-	"go.uber.org/zap/zaptest"
-
 	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
 
-	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
@@ -21,13 +18,15 @@ import (
 
 func TestWalletEventWithValidData(t *testing.T) {
 	mockState := mocks.NewAccountState(t)
-	mockApp := mocks.NewApp(t)
 	mockAccountClient := mocks.NewAccountClient(t)
 	mockSummonerClient := mocks.NewSummonerClient(t)
+	mockLolSkinState := mocks.NewLolSkinState(t)
+	mockLolSkin := mocks.NewLolSkin(t)
+	mockApp := mocks.NewApp(t) // Create mock App
 
 	testLogger := logger.New("test", &config.Config{})
-
-	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
+	// Pass mockApp to the constructor
+	handler := New(testLogger, mockState, mockAccountClient, mockSummonerClient, mockLolSkin, mockLolSkinState, mockApp)
 
 	blueEssence := 1000
 	currentAccount := &types.PartialSummonerRented{
@@ -35,7 +34,7 @@ func TestWalletEventWithValidData(t *testing.T) {
 			LolBlueEssence: new(int),
 		},
 	}
-	*currentAccount.Currencies.LolBlueEssence = 500 // Different value to trigger update
+	*currentAccount.Currencies.LolBlueEssence = 500
 
 	updatedAccount := &types.PartialSummonerRented{
 		Currencies: &types.CurrenciesPointer{
@@ -48,76 +47,77 @@ func TestWalletEventWithValidData(t *testing.T) {
 		return s.Currencies != nil && *s.Currencies.LolBlueEssence == blueEssence
 	})).Return(updatedAccount, nil)
 
-	// Mock the accountClient.Save call
 	savedResponse := &types.SummonerResponse{}
 	mockAccountClient.On("Save", mock.Anything).Return(savedResponse, nil)
 
-	// Mock the app.EmitEvent call
-	mockApp.On("EmitEvent", mock.Anything, mock.Anything).Return()
+	// Fix: Use mock.AnythingOfType to match the actual argument type
+	mockApp.On("EmitEvent", events.AccountStateChanged, mock.AnythingOfType("*types.SummonerResponse")).Return()
 
-	// Create wallet data
 	wallet := types.Wallet{LolBlueEssence: blueEssence}
 	walletData, _ := json.Marshal(wallet)
-
-	// Create event
 	event := websocket.LCUWebSocketEvent{
 		URI:  "lol-inventory_v1_wallet",
 		Data: walletData,
 	}
 
-	// Execute
 	handler.Wallet(event)
 
-	// Verify
 	mockState.AssertExpectations(t)
 	mockAccountClient.AssertExpectations(t)
-	mockApp.AssertExpectations(t)
+	mockApp.AssertExpectations(t) // Verify mockApp calls
 }
-
 func TestWalletEventWithUnchangedBlueEssence(t *testing.T) {
-	mockState := new(mocks.AccountState)
-	testLogger := logger.New("test", &config.Config{})
+	mockState := mocks.NewAccountState(t) // Changed from new(mocks.AccountState) to use constructor
+	mockAccountClient := mocks.NewAccountClient(t)
+	mockSummonerClient := mocks.NewSummonerClient(t)
+	mockLolSkinState := mocks.NewLolSkinState(t)
+	mockLolSkin := mocks.NewLolSkin(t)
+	mockApp := mocks.NewApp(t)
 
-	handler := &Handler{
-		logger:       testLogger,
-		accountState: mockState,
-	}
+	testLogger := logger.New("test", &config.Config{})
+	// Pass mockApp to the constructor
+	handler := New(testLogger, mockState, mockAccountClient, mockSummonerClient, mockLolSkin, mockLolSkinState, mockApp)
+	// Original test initialized handler directly, now using New
+	// handler := &Handler{
+	// 	logger:       testLogger,
+	// 	accountState: mockState,
+	//  app: mockApp, // if initialized directly
+	// }
 
 	blueEssence := 1000
 	currentAccount := &types.PartialSummonerRented{
 		Currencies: &types.CurrenciesPointer{
-			LolBlueEssence: &blueEssence, // Same value, no update needed
+			LolBlueEssence: &blueEssence,
 		},
 	}
 
 	mockState.On("Get").Return(currentAccount)
-	// Update should not be called
+	// Update and Save should not be called, so EmitEvent for AccountStateChanged should not be called.
 
-	// Create wallet data
 	wallet := types.Wallet{LolBlueEssence: blueEssence}
 	walletData, _ := json.Marshal(wallet)
-
-	// Create event
 	event := websocket.LCUWebSocketEvent{
 		URI:  "lol-inventory_v1_wallet",
 		Data: walletData,
 	}
 
-	// Execute
 	handler.Wallet(event)
 
-	// Verify
 	mockState.AssertExpectations(t)
+	mockAccountClient.AssertNotCalled(t, "Save", mock.Anything)
+	mockApp.AssertNotCalled(t, "EmitEvent", events.AccountStateChanged, mock.Anything)
 }
 
 func TestWalletEventWithNilAccount(t *testing.T) {
 	mockState := mocks.NewAccountState(t)
-	mockApp := mocks.NewApp(t)
 	mockAccountClient := mocks.NewAccountClient(t)
 	mockSummonerClient := mocks.NewSummonerClient(t)
-	testLogger := logger.New("test", &config.Config{})
+	mockLolSkinState := mocks.NewLolSkinState(t)
+	mockLolSkin := mocks.NewLolSkin(t)
+	mockApp := mocks.NewApp(t)
 
-	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
+	testLogger := logger.New("test", &config.Config{})
+	handler := New(testLogger, mockState, mockAccountClient, mockSummonerClient, mockLolSkin, mockLolSkinState, mockApp)
 
 	blueEssence := 1000
 	updatedAccount := &types.PartialSummonerRented{
@@ -131,67 +131,70 @@ func TestWalletEventWithNilAccount(t *testing.T) {
 		return s.Currencies != nil && *s.Currencies.LolBlueEssence == blueEssence
 	})).Return(updatedAccount, nil)
 
-	// Mock the accountClient.Save call
 	savedResponse := &types.SummonerResponse{}
 	mockAccountClient.On("Save", mock.Anything).Return(savedResponse, nil)
+	mockApp.On("EmitEvent", events.AccountStateChanged, mock.AnythingOfType("*types.SummonerResponse")).Return()
 
-	// Mock the app.EmitEvent call
-	mockApp.On("EmitEvent", mock.Anything, mock.Anything).Return()
-
-	// Create wallet data
 	wallet := types.Wallet{LolBlueEssence: blueEssence}
 	walletData, _ := json.Marshal(wallet)
-
-	// Create event
 	event := websocket.LCUWebSocketEvent{
 		URI:  "lol-inventory_v1_wallet",
 		Data: walletData,
 	}
 
-	// Execute
 	handler.Wallet(event)
 
-	// Verify
 	mockState.AssertExpectations(t)
 	mockAccountClient.AssertExpectations(t)
 	mockApp.AssertExpectations(t)
 }
 
 func TestWalletEventWithInvalidData(t *testing.T) {
-	mockState := new(mocks.AccountState)
+	mockState := mocks.NewAccountState(t) // Changed from new(mocks.AccountState)
+	mockAccountClient := mocks.NewAccountClient(t)
+	mockSummonerClient := mocks.NewSummonerClient(t)
+	mockLolSkinState := mocks.NewLolSkinState(t)
+	mockLolSkin := mocks.NewLolSkin(t)
+	mockApp := mocks.NewApp(t)
+
 	testLogger := logger.New("test", &config.Config{})
+	handler := New(testLogger, mockState, mockAccountClient, mockSummonerClient, mockLolSkin, mockLolSkinState, mockApp)
+	// Original test initialized handler directly
+	// handler := &Handler{
+	// 	logger:       testLogger,
+	// 	accountState: mockState,
+	//  app: mockApp,
+	// }
 
-	handler := &Handler{
-		logger:       testLogger,
-		accountState: mockState,
-	}
-
-	// Create invalid JSON data
 	invalidData := []byte(`{"invalid json`)
-
-	// Create event
 	event := websocket.LCUWebSocketEvent{
 		URI:  "lol-inventory_v1_wallet",
 		Data: invalidData,
 	}
 
-	// Execute
 	handler.Wallet(event)
 
-	// No specific assertions needed as we're just checking it doesn't panic
+	mockState.AssertNotCalled(t, "Get") // As parsing fails early
+	mockAccountClient.AssertNotCalled(t, "Save", mock.Anything)
+	mockApp.AssertNotCalled(t, "EmitEvent", mock.Anything, mock.Anything)
 }
 
 func TestWalletEventWithNilCurrencies(t *testing.T) {
 	mockState := mocks.NewAccountState(t)
-	mockLogger := zaptest.NewLogger(t)
-	mockApp := mocks.NewApp(t)
 	mockAccountClient := mocks.NewAccountClient(t)
 	mockSummonerClient := mocks.NewSummonerClient(t)
-	handler := New(mockLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
+	mockLolSkinState := mocks.NewLolSkinState(t)
+	mockLolSkin := mocks.NewLolSkin(t)
+	mockApp := mocks.NewApp(t)
+
+	mockLogger := logger.New("test", &config.Config{}) // Using consistent logger init
+	// mockLogger := zaptest.NewLogger(t) // Original, ensure it implements logger.Loggerer
+
+	handler := New(mockLogger, mockState, mockAccountClient, mockSummonerClient, mockLolSkin, mockLolSkinState, mockApp)
 
 	blueEssence := 1000
 	currentAccount := &types.PartialSummonerRented{
-		Currencies: nil, // No currencies
+		Currencies: nil,
 	}
 
 	updatedAccount := &types.PartialSummonerRented{
@@ -199,32 +202,24 @@ func TestWalletEventWithNilCurrencies(t *testing.T) {
 			LolBlueEssence: &blueEssence,
 		},
 	}
+	savedResponse := &types.SummonerResponse{}
 
 	mockState.On("Get").Return(currentAccount)
 	mockState.On("Update", mock.MatchedBy(func(s *types.PartialSummonerRented) bool {
 		return s.Currencies != nil && *s.Currencies.LolBlueEssence == blueEssence
 	})).Return(updatedAccount, nil)
+	mockAccountClient.On("Save", mock.Anything).Return(savedResponse, nil)
+	mockApp.On("EmitEvent", events.AccountStateChanged, mock.AnythingOfType("*types.SummonerResponse")).Return()
 
-	// Mock the accountClient.Save call
-	mockAccountClient.On("Save", mock.Anything).Return(&types.SummonerResponse{}, nil)
-
-	// Mock the app.EmitEvent call
-	mockApp.On("EmitEvent", mock.Anything, mock.Anything).Return()
-
-	// Create wallet data
 	wallet := types.Wallet{LolBlueEssence: blueEssence}
 	walletData, _ := json.Marshal(wallet)
-
-	// Create event
 	event := websocket.LCUWebSocketEvent{
 		URI:  "lol-inventory_v1_wallet",
 		Data: walletData,
 	}
 
-	// Execute
 	handler.Wallet(event)
 
-	// Verify
 	mockState.AssertExpectations(t)
 	mockAccountClient.AssertExpectations(t)
 	mockApp.AssertExpectations(t)
@@ -232,41 +227,45 @@ func TestWalletEventWithNilCurrencies(t *testing.T) {
 
 func TestNewHandlerCreation(t *testing.T) {
 	testLogger := logger.New("test", &config.Config{})
-	mockState := &account.State{}
+	// If account.State is an interface, use mock. Otherwise, concrete is fine if not interacted with.
+	var mockAccState AccountState = mocks.NewAccountState(t) // Using interface type
+	// mockState := &account.State{} // Original, if account.State is a struct and not interface for the handler
+	mockAccountClient := mocks.NewAccountClient(t)
 	mockSummonerClient := mocks.NewSummonerClient(t)
+	mockLolSkinState := mocks.NewLolSkinState(t)
+	mockLolSkin := mocks.NewLolSkin(t)
+	mockApp := mocks.NewApp(t) // Create mock App
 
-	handler := New(testLogger, mocks.NewApp(t), mockState, mocks.NewAccountClient(t), mockSummonerClient)
+	// Pass mockApp to constructor
+	handler := New(testLogger, mockAccState, mockAccountClient, mockSummonerClient, mockLolSkin, mockLolSkinState, mockApp)
 
 	assert.NotNil(t, handler)
 	assert.Equal(t, testLogger, handler.logger)
-	assert.Equal(t, mockState, handler.accountState)
+	assert.Equal(t, mockAccState, handler.accountState)
+	assert.Equal(t, mockApp, handler.app) // Assert that app is set
 }
+
 func TestProcessAccountUpdateSuccess(t *testing.T) {
 	mockState := mocks.NewAccountState(t)
-	mockApp := mocks.NewApp(t)
 	mockAccountClient := mocks.NewAccountClient(t)
 	mockSummonerClient := mocks.NewSummonerClient(t)
+	mockLolSkinState := mocks.NewLolSkinState(t)
+	mockLolSkin := mocks.NewLolSkin(t)
+	mockApp := mocks.NewApp(t)
+
 	testLogger := logger.New("test", &config.Config{})
+	handler := New(testLogger, mockState, mockAccountClient, mockSummonerClient, mockLolSkin, mockLolSkinState, mockApp)
 
-	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
-
-	update := &types.PartialSummonerRented{
-		Username: "testUser",
-	}
-
-	updatedAccount := &types.PartialSummonerRented{
-		Username: "testUser",
-	}
+	update := &types.PartialSummonerRented{Username: "testUser"}
+	updatedAccount := &types.PartialSummonerRented{Username: "testUser"}
 	thirty := 30
 	updatedAccount.AccountLevel = &thirty
-
-	savedResponse := &types.SummonerResponse{
-		Username: "testUser",
-	}
+	savedResponse := &types.SummonerResponse{Username: "testUser"}
 
 	mockState.On("Update", update).Return(updatedAccount, nil)
 	mockAccountClient.On("Save", *updatedAccount).Return(savedResponse, nil)
-	mockApp.On("EmitEvent", events.AccountStateChanged, savedResponse).Return()
+	// Expect EmitEvent
+	mockApp.On("EmitEvent", events.AccountStateChanged, mock.AnythingOfType("*types.SummonerResponse")).Return()
 
 	err := handler.ProcessAccountUpdate(update)
 
@@ -278,44 +277,42 @@ func TestProcessAccountUpdateSuccess(t *testing.T) {
 
 func TestProcessAccountUpdateFailedUpdate(t *testing.T) {
 	mockState := mocks.NewAccountState(t)
-	mockApp := mocks.NewApp(t)
 	mockAccountClient := mocks.NewAccountClient(t)
 	mockSummonerClient := mocks.NewSummonerClient(t)
+	mockLolSkinState := mocks.NewLolSkinState(t)
+	mockLolSkin := mocks.NewLolSkin(t)
+	mockApp := mocks.NewApp(t)
+
 	testLogger := logger.New("test", &config.Config{})
+	handler := New(testLogger, mockState, mockAccountClient, mockSummonerClient, mockLolSkin, mockLolSkinState, mockApp)
 
-	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
-
-	update := &types.PartialSummonerRented{
-		Username: "testUser",
-	}
+	update := &types.PartialSummonerRented{Username: "testUser"}
 
 	mockState.On("Update", update).Return(nil, assert.AnError)
-	// accountClient.Save should not be called
+	// Save and EmitEvent should not be called
 
 	err := handler.ProcessAccountUpdate(update)
 
 	assert.Error(t, err)
 	assert.Equal(t, assert.AnError, err)
 	mockState.AssertExpectations(t)
-	mockAccountClient.AssertNotCalled(t, "Save")
+	mockAccountClient.AssertNotCalled(t, "Save", mock.Anything)
+	mockApp.AssertNotCalled(t, "EmitEvent", mock.Anything, mock.Anything)
 }
 
 func TestProcessAccountUpdateFailedSave(t *testing.T) {
 	mockState := mocks.NewAccountState(t)
-	mockApp := mocks.NewApp(t)
 	mockAccountClient := mocks.NewAccountClient(t)
 	mockSummonerClient := mocks.NewSummonerClient(t)
+	mockLolSkinState := mocks.NewLolSkinState(t)
+	mockLolSkin := mocks.NewLolSkin(t)
+	mockApp := mocks.NewApp(t)
+
 	testLogger := logger.New("test", &config.Config{})
+	handler := New(testLogger, mockState, mockAccountClient, mockSummonerClient, mockLolSkin, mockLolSkinState, mockApp)
 
-	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
-
-	update := &types.PartialSummonerRented{
-		Username: "testUser",
-	}
-
-	updatedAccount := &types.PartialSummonerRented{
-		Username: "testUser",
-	}
+	update := &types.PartialSummonerRented{Username: "testUser"}
+	updatedAccount := &types.PartialSummonerRented{Username: "testUser"}
 	thirty := 30
 	updatedAccount.AccountLevel = &thirty
 
@@ -329,52 +326,118 @@ func TestProcessAccountUpdateFailedSave(t *testing.T) {
 	assert.Equal(t, assert.AnError, err)
 	mockState.AssertExpectations(t)
 	mockAccountClient.AssertExpectations(t)
-	mockApp.AssertNotCalled(t, "EmitEvent")
+	mockApp.AssertNotCalled(t, "EmitEvent", mock.Anything, mock.Anything)
 }
 
 func TestChampionWithMoreChampions(t *testing.T) {
 	mockState := mocks.NewAccountState(t)
-	mockApp := mocks.NewApp(t)
 	mockAccountClient := mocks.NewAccountClient(t)
 	mockSummonerClient := mocks.NewSummonerClient(t)
+	mockLolSkinState := mocks.NewLolSkinState(t)
+	mockLolSkin := mocks.NewLolSkin(t)
+	mockApp := mocks.NewApp(t)
+
 	testLogger := logger.New("test", &config.Config{})
+	handler := New(testLogger, mockState, mockAccountClient, mockSummonerClient, mockLolSkin, mockLolSkinState, mockApp)
 
-	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
-
-	// Current account has 2 champions
 	currentChampions := []int{1, 2}
-	currentAccount := &types.PartialSummonerRented{
-		LCUchampions: &currentChampions,
-	}
-
-	// New data has 3 champions
+	currentAccount := &types.PartialSummonerRented{LCUchampions: &currentChampions}
 	championsData := []types.LolInventoryItem{
 		{InventoryType: "CHAMPION", ItemId: 1, Owned: true},
 		{InventoryType: "CHAMPION", ItemId: 2, Owned: true},
 		{InventoryType: "CHAMPION", ItemId: 3, Owned: true},
 		{InventoryType: "SKIN", ItemId: 4, Owned: true},
 	}
-
 	expectedChampionIds := []int{1, 2, 3}
-
-	updatedAccount := &types.PartialSummonerRented{
-		LCUchampions: &expectedChampionIds,
-	}
-
+	updatedAccount := &types.PartialSummonerRented{LCUchampions: &expectedChampionIds}
 	savedResponse := &types.SummonerResponse{}
-
 	dataBytes, _ := json.Marshal(championsData)
-	event := websocket.LCUWebSocketEvent{
-		URI:  "lol-champions",
-		Data: dataBytes,
-	}
+	event := websocket.LCUWebSocketEvent{URI: "lol-champions", Data: dataBytes}
 
 	mockState.On("Get").Return(currentAccount)
 	mockState.On("Update", mock.MatchedBy(func(s *types.PartialSummonerRented) bool {
 		return s.LCUchampions != nil && len(*s.LCUchampions) == 3
 	})).Return(updatedAccount, nil)
 	mockAccountClient.On("Save", *updatedAccount).Return(savedResponse, nil)
-	mockApp.On("EmitEvent", events.AccountStateChanged, savedResponse).Return()
+	mockApp.On("EmitEvent", events.AccountStateChanged, mock.AnythingOfType("*types.SummonerResponse")).Return()
+
+	handler.ChampionPurchase(event)
+
+	mockState.AssertExpectations(t)
+	mockAccountClient.AssertExpectations(t)
+	mockApp.AssertExpectations(t)
+}
+func TestChampionWithFewerChampions(t *testing.T) {
+	mockState := mocks.NewAccountState(t)
+	mockAccountClient := mocks.NewAccountClient(t)
+	mockSummonerClient := mocks.NewSummonerClient(t)
+	mockLolSkinState := mocks.NewLolSkinState(t)
+	mockLolSkin := mocks.NewLolSkin(t)
+	mockApp := mocks.NewApp(t)
+
+	testLogger := logger.New("test", &config.Config{})
+	handler := New(testLogger, mockState, mockAccountClient, mockSummonerClient, mockLolSkin, mockLolSkinState, mockApp)
+
+	// Current account has 3 champions
+	currentChampions := []int{1, 2, 3}
+	currentAccount := &types.PartialSummonerRented{
+		LCUchampions: &currentChampions,
+	}
+
+	// New data from LCU has only 2 champions
+	championsData := []types.LolInventoryItem{
+		{InventoryType: "CHAMPION", ItemId: 1, Owned: true},
+		{InventoryType: "CHAMPION", ItemId: 2, Owned: true},
+		// Champion with ItemId 3 is missing
+	}
+	dataBytes, _ := json.Marshal(championsData)
+	event := websocket.LCUWebSocketEvent{
+		URI:  "lol-champions", // Assuming this is the correct URI for champion updates
+		Data: dataBytes,
+	}
+
+	// Mock Get to return the current account state
+	mockState.On("Get").Return(currentAccount)
+	// Update, Save, and EmitEvent for AccountStateChanged should NOT be called
+	// because the number of owned champions has not increased.
+
+	handler.ChampionPurchase(event)
+
+	// Verify expectations
+	mockState.AssertExpectations(t) // Ensures Get was called
+	// Verify that Update, Save, and EmitEvent (for AccountStateChanged) were not called
+	mockState.AssertNotCalled(t, "Update", mock.Anything)
+	mockAccountClient.AssertNotCalled(t, "Save", mock.Anything)
+	mockApp.AssertNotCalled(t, "EmitEvent", events.AccountStateChanged, mock.Anything)
+}
+
+func TestChampionWithNilCurrentAccount(t *testing.T) {
+	mockState := mocks.NewAccountState(t)
+	mockAccountClient := mocks.NewAccountClient(t)
+	mockSummonerClient := mocks.NewSummonerClient(t)
+	mockLolSkinState := mocks.NewLolSkinState(t)
+	mockLolSkin := mocks.NewLolSkin(t)
+	mockApp := mocks.NewApp(t)
+
+	testLogger := logger.New("test", &config.Config{})
+	handler := New(testLogger, mockState, mockAccountClient, mockSummonerClient, mockLolSkin, mockLolSkinState, mockApp)
+
+	championsData := []types.LolInventoryItem{
+		{InventoryType: "CHAMPION", ItemId: 1, Owned: true},
+		{InventoryType: "CHAMPION", ItemId: 2, Owned: true},
+	}
+	expectedChampionIds := []int{1, 2}
+	updatedAccount := &types.PartialSummonerRented{LCUchampions: &expectedChampionIds}
+	savedResponse := &types.SummonerResponse{}
+	dataBytes, _ := json.Marshal(championsData)
+	event := websocket.LCUWebSocketEvent{URI: "lol-champions", Data: dataBytes}
+
+	mockState.On("Get").Return(nil)
+	mockState.On("Update", mock.MatchedBy(func(s *types.PartialSummonerRented) bool {
+		return s.LCUchampions != nil && len(*s.LCUchampions) == 2
+	})).Return(updatedAccount, nil)
+	mockAccountClient.On("Save", *updatedAccount).Return(savedResponse, nil)
+	mockApp.On("EmitEvent", events.AccountStateChanged, mock.AnythingOfType("*types.SummonerResponse")).Return()
 
 	handler.ChampionPurchase(event)
 
@@ -383,50 +446,53 @@ func TestChampionWithMoreChampions(t *testing.T) {
 	mockApp.AssertExpectations(t)
 }
 
-func TestChampionWithFewerChampions(t *testing.T) {
+func TestGameflowPhaseNonEndGamePhase(t *testing.T) {
 	mockState := mocks.NewAccountState(t)
-	mockApp := mocks.NewApp(t)
 	mockAccountClient := mocks.NewAccountClient(t)
 	mockSummonerClient := mocks.NewSummonerClient(t)
+	mockLolSkinState := mocks.NewLolSkinState(t)
+	mockLolSkin := mocks.NewLolSkin(t)
+	mockApp := mocks.NewApp(t)
+
 	testLogger := logger.New("test", &config.Config{})
+	handler := New(testLogger, mockState, mockAccountClient, mockSummonerClient, mockLolSkin, mockLolSkinState, mockApp)
 
-	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
+	phaseString := "ChampSelect"
+	// This is the actual data type expected by EmitEvent in GameflowPhase
+	var gameflowPhaseData = types.LolChallengesGameflowPhase(phaseString)
+	phaseDataBytes, _ := json.Marshal(phaseString) // LCU sends a JSON string
 
-	// Current account has 3 champions
-	currentChampions := []int{1, 2, 3}
-	currentAccount := &types.PartialSummonerRented{
-		LCUchampions: &currentChampions,
-	}
-
-	// New data has 2 champions
-	championsData := []types.LolInventoryItem{
-		{InventoryType: "CHAMPION", ItemId: 1, Owned: true},
-		{InventoryType: "CHAMPION", ItemId: 2, Owned: true},
-	}
-
-	dataBytes, _ := json.Marshal(championsData)
 	event := websocket.LCUWebSocketEvent{
-		URI:  "lol-champions",
-		Data: dataBytes,
+		URI:        "lol-gameflow-v1-gameflow-phase",
+		Data:       phaseDataBytes,
+		EventTopic: "OnJsonApiEvent_lol-gameflow_v1_gameflow-phase", // Example topic
 	}
 
-	mockState.On("Get").Return(currentAccount)
-	// Update should not be called
+	// Expect EmitEvent for the gameflow phase itself
+	mockApp.On("EmitEvent", event.EventTopic, gameflowPhaseData).Return()
 
-	handler.ChampionPurchase(event)
+	handler.GameflowPhase(event)
 
-	mockState.AssertExpectations(t)
-	mockAccountClient.AssertNotCalled(t, "Save")
+	mockSummonerClient.AssertNotCalled(t, "GetRanking")
+	mockState.AssertNotCalled(t, "Update") // Update for ranking not called
+	mockApp.AssertExpectations(t)          // Verifies the gameflow phase event
+	// Ensure AccountStateChanged was not emitted
+	// AssertNumberOfCalls can be more specific if other events might be emitted by mockApp in other contexts
+	// For this test, we can check it wasn't called with AccountStateChanged
+	// This is implicitly covered if AssertExpectations only has the one On("EmitEvent", event.EventTopic, ...)
 }
 
 func TestChampionWithInvalidData(t *testing.T) {
 	mockState := mocks.NewAccountState(t)
-	mockApp := mocks.NewApp(t)
+
 	mockAccountClient := mocks.NewAccountClient(t)
 	mockSummonerClient := mocks.NewSummonerClient(t)
+	mockLolSkinState := mocks.NewLolSkinState(t)
+	mockLolSkin := mocks.NewLolSkin(t)
+	mockApp := mocks.NewApp(t)
 	testLogger := logger.New("test", &config.Config{})
 
-	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
+	handler := New(testLogger, mockState, mockAccountClient, mockSummonerClient, mockLolSkin, mockLolSkinState, mockApp)
 
 	invalidData := []byte(`{"invalid json`)
 	event := websocket.LCUWebSocketEvent{
@@ -443,12 +509,16 @@ func TestChampionWithInvalidData(t *testing.T) {
 
 func TestChampionWithEmptyData(t *testing.T) {
 	mockState := mocks.NewAccountState(t)
-	mockApp := mocks.NewApp(t)
+
 	mockAccountClient := mocks.NewAccountClient(t)
 	mockSummonerClient := mocks.NewSummonerClient(t)
+	mockLolSkinState := mocks.NewLolSkinState(t)
+	mockLolSkin := mocks.NewLolSkin(t)
+	mockApp := mocks.NewApp(t)
+
 	testLogger := logger.New("test", &config.Config{})
 
-	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
+	handler := New(testLogger, mockState, mockAccountClient, mockSummonerClient, mockLolSkin, mockLolSkinState, mockApp)
 
 	emptyData := []types.LolInventoryItem{}
 	dataBytes, _ := json.Marshal(emptyData)
@@ -467,12 +537,15 @@ func TestChampionWithEmptyData(t *testing.T) {
 
 func TestChampionWithNonChampionInventoryType(t *testing.T) {
 	mockState := mocks.NewAccountState(t)
-	mockApp := mocks.NewApp(t)
+
 	mockAccountClient := mocks.NewAccountClient(t)
 	mockSummonerClient := mocks.NewSummonerClient(t)
+	mockLolSkinState := mocks.NewLolSkinState(t)
+	mockLolSkin := mocks.NewLolSkin(t)
+	mockApp := mocks.NewApp(t)
 	testLogger := logger.New("test", &config.Config{})
 
-	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
+	handler := New(testLogger, mockState, mockAccountClient, mockSummonerClient, mockLolSkin, mockLolSkinState, mockApp)
 
 	// Data has only skins, no champions
 	skinsData := []types.LolInventoryItem{
@@ -493,116 +566,37 @@ func TestChampionWithNonChampionInventoryType(t *testing.T) {
 	mockAccountClient.AssertNotCalled(t, "Save")
 }
 
-func TestChampionWithNilCurrentAccount(t *testing.T) {
-	mockState := mocks.NewAccountState(t)
-	mockApp := mocks.NewApp(t)
-	mockAccountClient := mocks.NewAccountClient(t)
-	mockSummonerClient := mocks.NewSummonerClient(t)
-	testLogger := logger.New("test", &config.Config{})
-
-	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
-
-	// New data has 2 champions
-	championsData := []types.LolInventoryItem{
-		{InventoryType: "CHAMPION", ItemId: 1, Owned: true},
-		{InventoryType: "CHAMPION", ItemId: 2, Owned: true},
-	}
-
-	expectedChampionIds := []int{1, 2}
-
-	updatedAccount := &types.PartialSummonerRented{
-		LCUchampions: &expectedChampionIds,
-	}
-
-	savedResponse := &types.SummonerResponse{}
-
-	dataBytes, _ := json.Marshal(championsData)
-	event := websocket.LCUWebSocketEvent{
-		URI:  "lol-champions",
-		Data: dataBytes,
-	}
-
-	mockState.On("Get").Return(nil)
-	mockState.On("Update", mock.MatchedBy(func(s *types.PartialSummonerRented) bool {
-		return s.LCUchampions != nil && len(*s.LCUchampions) == 2
-	})).Return(updatedAccount, nil)
-	mockAccountClient.On("Save", *updatedAccount).Return(savedResponse, nil)
-	mockApp.On("EmitEvent", events.AccountStateChanged, savedResponse).Return()
-
-	handler.ChampionPurchase(event)
-
-	mockState.AssertExpectations(t)
-	mockAccountClient.AssertExpectations(t)
-	mockApp.AssertExpectations(t)
-}
-func TestGameflowPhaseNonEndGamePhase(t *testing.T) {
-	mockState := mocks.NewAccountState(t)
-	mockApp := mocks.NewApp(t)
-	mockAccountClient := mocks.NewAccountClient(t)
-	mockSummonerClient := mocks.NewSummonerClient(t)
-	testLogger := logger.New("test", &config.Config{})
-
-	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
-
-	// Non-end game phase like "ChampSelect" or "InProgress"
-	phase := "ChampSelect"
-	phaseData, _ := json.Marshal(phase)
-	event := websocket.LCUWebSocketEvent{
-		URI:  "lol-gameflow-v1-gameflow-phase",
-		Data: phaseData,
-	}
-
-	handler.GameflowPhase(event)
-
-	// Since it's not an end game phase, summonerClient should not be called
-	mockSummonerClient.AssertNotCalled(t, "GetRanking")
-	mockState.AssertNotCalled(t, "Update")
-}
-
 func TestGameflowPhaseEndGameWithChangedRanking(t *testing.T) {
 	mockState := mocks.NewAccountState(t)
-	mockApp := mocks.NewApp(t)
 	mockAccountClient := mocks.NewAccountClient(t)
 	mockSummonerClient := mocks.NewSummonerClient(t)
+	mockLolSkinState := mocks.NewLolSkinState(t)
+	mockLolSkin := mocks.NewLolSkin(t)
+	mockApp := mocks.NewApp(t)
+
 	testLogger := logger.New("test", &config.Config{})
+	handler := New(testLogger, mockState, mockAccountClient, mockSummonerClient, mockLolSkin, mockLolSkinState, mockApp)
 
-	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
-
-	// End game phase
-	phase := "EndOfGame"
-	phaseData, _ := json.Marshal(phase)
+	phaseString := "EndOfGame"
+	var gameflowPhaseData = types.LolChallengesGameflowPhase(phaseString)
+	phaseDataBytes, _ := json.Marshal(phaseString)
+	eventTopic := "OnJsonApiEvent_lol-gameflow_v1_gameflow-phase"
 	event := websocket.LCUWebSocketEvent{
-		URI:  "lol-gameflow-v1-gameflow-phase",
-		Data: phaseData,
+		URI:        "lol-gameflow-v1-gameflow-phase",
+		Data:       phaseDataBytes,
+		EventTopic: eventTopic,
 	}
 
-	// Current ranking in account state
-	currentRanking := &types.RankedStatsRefresh{
-		RankedSolo5x5: types.RankedDetails{
-			Tier:         "GOLD",
-			Division:     "II",
-			LeaguePoints: 50,
-		},
-	}
-
-	currentAccount := &types.PartialSummonerRented{
-		Rankings: currentRanking,
-	}
-
-	// New ranking from API
-	newRanking := &types.RankedStatsRefresh{
-		RankedSolo5x5: types.RankedDetails{
-			Tier:         "GOLD",
-			Division:     "I", // Division changed
-			LeaguePoints: 0,
-		},
-	}
-
-	updatedAccount := &types.PartialSummonerRented{
-		Rankings: newRanking,
-	}
-
+	currentRanking := &types.RankedStatsRefresh{RankedSolo5x5: types.RankedDetails{Tier: "GOLD", Division: "II", LeaguePoints: 50}}
+	currentAccount := &types.PartialSummonerRented{Rankings: currentRanking}
+	newRanking := &types.RankedStatsRefresh{RankedSolo5x5: types.RankedDetails{Tier: "GOLD", Division: "I", LeaguePoints: 0}}
+	updatedAccount := &types.PartialSummonerRented{Rankings: newRanking}
 	savedResponse := &types.SummonerResponse{}
+
+	// 1. EmitEvent for gameflow phase
+	mockApp.On("EmitEvent", eventTopic, gameflowPhaseData).Return()
+	// 2. EmitEvent for account state changed (due to ranking update)
+	mockApp.On("EmitEvent", events.AccountStateChanged, savedResponse).Return()
 
 	mockSummonerClient.On("GetRanking").Return(newRanking, nil)
 	mockState.On("Get").Return(currentAccount)
@@ -610,7 +604,6 @@ func TestGameflowPhaseEndGameWithChangedRanking(t *testing.T) {
 		return s.Rankings == newRanking
 	})).Return(updatedAccount, nil)
 	mockAccountClient.On("Save", *updatedAccount).Return(savedResponse, nil)
-	mockApp.On("EmitEvent", events.AccountStateChanged, savedResponse).Return()
 
 	handler.GameflowPhase(event)
 
@@ -619,105 +612,99 @@ func TestGameflowPhaseEndGameWithChangedRanking(t *testing.T) {
 	mockAccountClient.AssertExpectations(t)
 	mockApp.AssertExpectations(t)
 }
-
 func TestGameflowPhaseEndGameWithUnchangedRanking(t *testing.T) {
 	mockState := mocks.NewAccountState(t)
-	mockApp := mocks.NewApp(t)
 	mockAccountClient := mocks.NewAccountClient(t)
 	mockSummonerClient := mocks.NewSummonerClient(t)
+	mockLolSkinState := mocks.NewLolSkinState(t)
+	mockLolSkin := mocks.NewLolSkin(t)
+	mockApp := mocks.NewApp(t)
+
 	testLogger := logger.New("test", &config.Config{})
+	handler := New(testLogger, mockState, mockAccountClient, mockSummonerClient, mockLolSkin, mockLolSkinState, mockApp)
 
-	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
-
-	// End game phase - let's use another valid phase
-	phase := "WaitingForStats"
-	phaseData, _ := json.Marshal(phase)
+	phaseString := "WaitingForStats"
+	var gameflowPhaseData = types.LolChallengesGameflowPhase(phaseString)
+	phaseDataBytes, _ := json.Marshal(phaseString)
+	eventTopic := "OnJsonApiEvent_lol-gameflow_v1_gameflow-phase"
 	event := websocket.LCUWebSocketEvent{
-		URI:  "lol-gameflow-v1-gameflow-phase",
-		Data: phaseData,
+		URI:        "lol-gameflow-v1-gameflow-phase",
+		Data:       phaseDataBytes,
+		EventTopic: eventTopic,
 	}
 
-	// Ranking that will be the same in current account and in API response
-	sameRanking := types.RankedDetails{
-		Tier:                      "PLATINUM",
-		Division:                  "IV",
-		Rank:                      "IV",
-		LeaguePoints:              25,
-		Wins:                      10,
-		Losses:                    5,
-		IsProvisional:             false,
-		ProvisionalGameThreshold:  0,
-		ProvisionalGamesRemaining: 0,
-	}
+	sameRankingDetails := types.RankedDetails{Tier: "PLATINUM", Division: "IV", Rank: "IV", LeaguePoints: 25, Wins: 10, Losses: 5}
+	currentRanking := &types.RankedStatsRefresh{RankedSolo5x5: sameRankingDetails, RankedFlexSR: sameRankingDetails}
+	currentAccount := &types.PartialSummonerRented{Rankings: currentRanking}
+	newRanking := &types.RankedStatsRefresh{RankedSolo5x5: sameRankingDetails, RankedFlexSR: sameRankingDetails} // Same values
 
-	currentRanking := &types.RankedStatsRefresh{
-		RankedSolo5x5: sameRanking,
-		RankedFlexSR:  sameRanking,
-	}
-
-	currentAccount := &types.PartialSummonerRented{
-		Rankings: currentRanking,
-	}
-
-	// New ranking with same values
-	newRanking := &types.RankedStatsRefresh{
-		RankedSolo5x5: sameRanking,
-		RankedFlexSR:  sameRanking,
-	}
+	// Expect EmitEvent for the gameflow phase itself
+	mockApp.On("EmitEvent", eventTopic, gameflowPhaseData).Return()
+	// AccountStateChanged should NOT be emitted
 
 	mockSummonerClient.On("GetRanking").Return(newRanking, nil)
 	mockState.On("Get").Return(currentAccount)
-	// No update should be called since rankings are the same
 
 	handler.GameflowPhase(event)
 
 	mockSummonerClient.AssertExpectations(t)
-	mockState.AssertExpectations(t)
-	mockAccountClient.AssertNotCalled(t, "Save")
+	mockState.AssertExpectations(t) // Get is called
+	mockAccountClient.AssertNotCalled(t, "Save", mock.Anything)
+	mockApp.AssertExpectations(t) // Verifies the gameflow phase event
+	// To be very sure AccountStateChanged was not called:
+	mockApp.AssertCalled(t, "EmitEvent", eventTopic, gameflowPhaseData)
+	mockApp.AssertNotCalled(t, "EmitEvent", events.AccountStateChanged, mock.Anything)
 }
 
 func TestGameflowPhaseWithInvalidData(t *testing.T) {
 	mockState := mocks.NewAccountState(t)
-	mockApp := mocks.NewApp(t)
 	mockAccountClient := mocks.NewAccountClient(t)
 	mockSummonerClient := mocks.NewSummonerClient(t)
+	mockLolSkinState := mocks.NewLolSkinState(t)
+	mockLolSkin := mocks.NewLolSkin(t)
+	mockApp := mocks.NewApp(t)
+
 	testLogger := logger.New("test", &config.Config{})
+	handler := New(testLogger, mockState, mockAccountClient, mockSummonerClient, mockLolSkin, mockLolSkinState, mockApp)
 
-	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
-
-	// Invalid JSON data
 	invalidData := []byte(`{"invalid json`)
 	event := websocket.LCUWebSocketEvent{
-		URI:  "lol-gameflow-v1-gameflow-phase",
-		Data: invalidData,
+		URI:        "lol-gameflow-v1-gameflow-phase",
+		Data:       invalidData,
+		EventTopic: "OnJsonApiEvent_lol-gameflow_v1_gameflow-phase",
 	}
 
-	handler.GameflowPhase(event)
+	handler.GameflowPhase(event) // Parsing fails early
 
 	mockSummonerClient.AssertNotCalled(t, "GetRanking")
 	mockState.AssertNotCalled(t, "Get")
 	mockState.AssertNotCalled(t, "Update")
+	mockApp.AssertNotCalled(t, "EmitEvent", mock.Anything, mock.Anything) // No event should be emitted
 }
-
 func TestGameflowPhaseEndGameWithGetRankingError(t *testing.T) {
 	mockState := mocks.NewAccountState(t)
-	mockApp := mocks.NewApp(t)
 	mockAccountClient := mocks.NewAccountClient(t)
 	mockSummonerClient := mocks.NewSummonerClient(t)
+	mockLolSkinState := mocks.NewLolSkinState(t)
+	mockLolSkin := mocks.NewLolSkin(t)
+	mockApp := mocks.NewApp(t)
+
 	testLogger := logger.New("test", &config.Config{})
+	handler := New(testLogger, mockState, mockAccountClient, mockSummonerClient, mockLolSkin, mockLolSkinState, mockApp)
 
-	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
-
-	// End game phase
-	phase := "PreEndOfGame"
-	phaseData, _ := json.Marshal(phase)
+	phaseString := "PreEndOfGame"
+	var gameflowPhaseData = types.LolChallengesGameflowPhase(phaseString)
+	phaseDataBytes, _ := json.Marshal(phaseString)
+	eventTopic := "OnJsonApiEvent_lol-gameflow_v1_gameflow-phase"
 	event := websocket.LCUWebSocketEvent{
-		URI:  "lol-gameflow-v1-gameflow-phase",
-		Data: phaseData,
+		URI:        "lol-gameflow-v1-gameflow-phase",
+		Data:       phaseDataBytes,
+		EventTopic: eventTopic,
 	}
 
+	// The first EmitEvent for the phase itself WILL be called
+	mockApp.On("EmitEvent", eventTopic, gameflowPhaseData).Return()
 	mockSummonerClient.On("GetRanking").Return(nil, assert.AnError)
-	// No further calls should happen
 
 	handler.GameflowPhase(event)
 
@@ -725,47 +712,46 @@ func TestGameflowPhaseEndGameWithGetRankingError(t *testing.T) {
 	mockState.AssertNotCalled(t, "Get")
 	mockState.AssertNotCalled(t, "Update")
 	mockAccountClient.AssertNotCalled(t, "Save")
+	mockApp.AssertExpectations(t) // Verifies the gameflow phase event was called
+	// And AccountStateChanged was not (as it's not in expectations)
 }
 
 func TestGameflowPhaseEndGameWithNilCurrentAccount(t *testing.T) {
 	mockState := mocks.NewAccountState(t)
-	mockApp := mocks.NewApp(t)
 	mockAccountClient := mocks.NewAccountClient(t)
 	mockSummonerClient := mocks.NewSummonerClient(t)
+	mockLolSkinState := mocks.NewLolSkinState(t)
+	mockLolSkin := mocks.NewLolSkin(t)
+	mockApp := mocks.NewApp(t)
+
 	testLogger := logger.New("test", &config.Config{})
+	handler := New(testLogger, mockState, mockAccountClient, mockSummonerClient, mockLolSkin, mockLolSkinState, mockApp)
 
-	handler := New(testLogger, mockApp, mockState, mockAccountClient, mockSummonerClient)
-
-	// End game phase
-	phase := "EndOfGame"
-	phaseData, _ := json.Marshal(phase)
+	phaseString := "EndOfGame"
+	var gameflowPhaseData = types.LolChallengesGameflowPhase(phaseString)
+	phaseDataBytes, _ := json.Marshal(phaseString)
+	eventTopic := "OnJsonApiEvent_lol-gameflow_v1_gameflow-phase"
 	event := websocket.LCUWebSocketEvent{
-		URI:  "lol-gameflow-v1-gameflow-phase",
-		Data: phaseData,
+		URI:        "lol-gameflow-v1-gameflow-phase",
+		Data:       phaseDataBytes,
+		EventTopic: eventTopic,
 	}
 
-	// New ranking from API
-	newRanking := &types.RankedStatsRefresh{
-		RankedSolo5x5: types.RankedDetails{
-			Tier:         "GOLD",
-			Division:     "I",
-			LeaguePoints: 0,
-		},
-	}
-
-	updatedAccount := &types.PartialSummonerRented{
-		Rankings: newRanking,
-	}
-
+	newRanking := &types.RankedStatsRefresh{RankedSolo5x5: types.RankedDetails{Tier: "GOLD", Division: "I", LeaguePoints: 0}}
+	updatedAccount := &types.PartialSummonerRented{Rankings: newRanking}
 	savedResponse := &types.SummonerResponse{}
 
+	// 1. EmitEvent for gameflow phase
+	mockApp.On("EmitEvent", eventTopic, gameflowPhaseData).Return()
+	// 2. EmitEvent for account state changed
+	mockApp.On("EmitEvent", events.AccountStateChanged, savedResponse).Return()
+
 	mockSummonerClient.On("GetRanking").Return(newRanking, nil)
-	mockState.On("Get").Return(nil) // Return nil to simulate no current account
+	mockState.On("Get").Return(nil) // Current account is nil
 	mockState.On("Update", mock.MatchedBy(func(s *types.PartialSummonerRented) bool {
 		return s.Rankings == newRanking
 	})).Return(updatedAccount, nil)
 	mockAccountClient.On("Save", *updatedAccount).Return(savedResponse, nil)
-	mockApp.On("EmitEvent", events.AccountStateChanged, savedResponse).Return()
 
 	handler.GameflowPhase(event)
 
@@ -952,4 +938,30 @@ func TestIsRankingSame(t *testing.T) {
 			assert.Equal(t, test.expected, result)
 		})
 	}
+}
+func TestReemitEventCorrectly(t *testing.T) {
+	mockState := mocks.NewAccountState(t)
+	mockAccountClient := mocks.NewAccountClient(t)
+	mockSummonerClient := mocks.NewSummonerClient(t)
+	mockLolSkinState := mocks.NewLolSkinState(t)
+	mockLolSkin := mocks.NewLolSkin(t)
+	mockApp := mocks.NewApp(t)
+	testLogger := logger.New("test", &config.Config{})
+
+	handler := New(testLogger, mockState, mockAccountClient, mockSummonerClient, mockLolSkin, mockLolSkinState, mockApp)
+
+	eventData := []byte(`{"key":"value"}`)
+	event := websocket.LCUWebSocketEvent{
+		URI:        "/some/uri",
+		Data:       eventData,
+		EventTopic: "CustomEventTopicForReemit",
+	}
+
+	// Expect EmitEvent to be called with the event's topic and data
+	// Note: event.Data is []byte, so it's passed as []interface{}{[]byte{...}}
+	mockApp.On("EmitEvent", event.EventTopic, event.Data).Return()
+
+	handler.ReemitEvent(event)
+
+	mockApp.AssertExpectations(t)
 }

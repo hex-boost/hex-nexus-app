@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account/events"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/tools/lolskin"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket"
@@ -45,10 +47,11 @@ type Handler struct {
 	lolSkin                  LolSkin
 	lolSkinState             LolSkinState
 	previousChampionInjected int
+	app                      App
 }
 
 // New creates a new WebSocket event handler
-func New(logger logger.Loggerer, accountState AccountState, accountClient AccountClient, summonerClient SummonerClient, lolSkin LolSkin, lolSkinState LolSkinState) *Handler {
+func New(logger logger.Loggerer, accountState AccountState, accountClient AccountClient, summonerClient SummonerClient, lolSkin LolSkin, lolSkinState LolSkinState, app App) *Handler {
 	return &Handler{
 		accountState:   accountState,
 		summonerClient: summonerClient,
@@ -56,8 +59,14 @@ func New(logger logger.Loggerer, accountState AccountState, accountClient Accoun
 		lolSkin:        lolSkin,
 		lolSkinState:   lolSkinState,
 		accountClient:  accountClient,
+		app:            app,
 	}
 
+}
+func (h *Handler) OnStartup(ctx context.Context, options application.ServiceOptions) error {
+
+	fmt.Println("fodase")
+	return nil
 }
 
 // processAccountUpdate handles the common pattern of updating account state and saving it
@@ -73,8 +82,7 @@ func (h *Handler) ProcessAccountUpdate(update *types.PartialSummonerRented) erro
 		h.logger.Error("Failed to save account data", zap.Error(err))
 		return err
 	}
-	app := application.Get()
-	app.EmitEvent(events.AccountStateChanged, accountSaved)
+	h.app.EmitEvent(events.AccountStateChanged, accountSaved)
 	return nil
 }
 
@@ -173,9 +181,8 @@ func (h *Handler) GameflowPhase(event websocket.LCUWebSocketEvent) {
 		h.logger.Error("Failed to parse gameflow phase data", zap.Error(err))
 		return
 	}
-	app := application.Get()
 
-	app.EmitEvent(event.EventTopic, gameflowPhase)
+	h.app.EmitEvent(event.EventTopic, gameflowPhase)
 
 	h.logger.Info("Gameflow phase changed", zap.String("phase", string(gameflowPhase)))
 
@@ -271,8 +278,7 @@ func (h *Handler) ChampionPicked(event websocket.LCUWebSocketEvent) {
 }
 func (h *Handler) ReemitEvent(event websocket.LCUWebSocketEvent) {
 	h.logger.Info("Re-emitting event", zap.String("event", event.EventTopic), zap.String("uri", event.URI))
-	app := application.Get()
-	app.EmitEvent(event.EventTopic, event.Data)
+	h.app.EmitEvent(event.EventTopic, event.Data)
 }
 
 // IsRankingSame compares two RankedDetails objects to determine if they are identical
