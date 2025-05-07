@@ -3,6 +3,7 @@ package websocket_test
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket/mocks"
 	"testing"
 	"time"
 

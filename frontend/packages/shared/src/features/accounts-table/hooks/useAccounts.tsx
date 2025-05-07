@@ -1,8 +1,8 @@
-import type { AccountType, Server } from '@/types/types';
+import type { AccountType, Server } from '@/types/types.ts';
 
 import type { StrapiResponse } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
 import { strapiClient } from '@/lib/strapi.ts';
-import { useMapping } from '@/lib/useMapping';
+import { useMapping } from '@/lib/useMapping.tsx';
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
@@ -29,11 +29,12 @@ export const availableRegions: Server[] = [
 
 type SortKey = keyof AccountType | 'coin_price' | 'price' | 'winrate' | 'blueEssence' | 'LCUchampions' | 'LCUskins';
 
-type FilterState = {
+export type FilterState = {
   leaverStatus: string[];
   game: string;
   divisions: string[];
   ranks: string[];
+  queueType: string; // Add queueType property
   region: string;
   company: string;
   status: string;
@@ -72,6 +73,7 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
       divisions: [],
       ranks: [],
       region: '',
+      queueType: 'soloqueue', // Add default queue type
       company: user?.accountPermissions.includes('boostroyal') ? 'boostroyal' : 'nexus',
       status: '',
       selectedChampions: [],
@@ -282,8 +284,11 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
 
       strapiFilters.rankings = {
         $and: [
-          { queueType: { $eq: 'soloqueue' } },
-          { type: { $eq: 'current' } },
+          { queueType: { $eq: filters.queueType || 'soloqueue' } },
+          { $or: [
+            { type: { $eq: 'current' } },
+            { type: { $eq: 'previous' } }, // Add fallback to previous season
+          ] },
           { $or: combinationFilters },
         ],
       };
@@ -291,21 +296,26 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
       // Only ranks selected
       strapiFilters.rankings = {
         $and: [
-          { queueType: { $eqi: 'soloqueue' } },
-          { type: { $eqi: 'current' } },
+          { queueType: { $eqi: filters.queueType || 'soloqueue' } },
+          { $or: [
+            { type: { $eqi: 'current' } },
+            { type: { $eqi: 'previous' } }, // Add fallback to previous season
+          ] },
           { elo: { $in: filters.ranks.map(rank => rank.toUpperCase()) } },
         ],
       };
     } else if (filters.divisions?.length > 0) {
       strapiFilters.rankings = {
         $and: [
-          { queueType: { $eq: 'soloqueue' } },
-          { type: { $eq: 'current' } },
+          { queueType: { $eq: filters.queueType || 'soloqueue' } },
+          { $or: [
+            { type: { $eq: 'current' } },
+            { type: { $eq: 'previous' } }, // Add fallback to previous season
+          ] },
           { division: { $in: filters.divisions } },
         ],
       };
     }
-
     const queryParams: any = {
       pagination: {
         page,

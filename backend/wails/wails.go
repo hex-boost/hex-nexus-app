@@ -178,7 +178,7 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 
 	lolSkinState := lolskin.NewState()
 
-	websocketHandler := handler.New(appInstance.Log().League(), accountState, accountClient, summonerClient, lolSkinService, lolSkinState)
+	websocketHandler := handler.New(appInstance.Log().League(), accountState, accountClient, summonerClient, lolSkinService, lolSkinState, application.Get())
 	mainApp := application.New(application.Options{
 		Name:        "Nexus",
 		Description: "Nexus",

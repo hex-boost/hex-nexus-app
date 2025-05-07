@@ -5,23 +5,24 @@ import (
 	"encoding/hex"
 
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/command"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/sysquery"
 )
 
 type HWID struct {
-	command *command.Command
+	command  *command.Command
+	sysquery *sysquery.SysQuery
 }
 
 func New() *HWID {
 	return &HWID{
-		command: command.New(),
+		command:  command.New(),
+		sysquery: sysquery.New(),
 	}
 }
 
 func (u *HWID) Get() (string, error) {
-	// Execute the command using command.Command
-	output, err := u.command.Execute("cmd.exe", "/c", "wmic csproduct get uuid")
+	output, err := u.sysquery.GetHardwareUUID()
 	if err != nil {
-		// Handle error - return empty string or some default value
 		return "", err
 	}
 

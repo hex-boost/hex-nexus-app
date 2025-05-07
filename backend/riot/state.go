@@ -5,9 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/hex-boost/hex-nexus-app/backend/pkg/command"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/sysquery"
 	"golang.org/x/sys/windows"
-	"os/exec"
 	"regexp"
 	"strings"
 	"syscall"
@@ -29,35 +28,17 @@ type ProcessCredentials struct {
 	AuthToken string // This will be the Base64 encoded "riot:<token>" string
 }
 
-// FindRiotClientWithCredentials scans running processes to find the Riot Client
 func getProcessCommandLine(pid uint32) (string, error) {
-	// Use wmic to get the command line for the specific process ID
-	// Using "path" instead of "process" and "CommandLine" property can sometimes be more reliable or require fewer privileges
-	// cmd := exec.Command("wmic", "process", "where", fmt.Sprintf("ProcessId=%d", pid), "get", "CommandLine", "/format:list")
-
-	commander := command.New()
-	cmd := commander.Exec("wmic", "path", "win32_process", "where", fmt.Sprintf("ProcessId=%d", pid), "get", "CommandLine", "/format:list")
-
-	output, err := cmd.Output() // Use Output instead of Execute for simplicity here
+	sq := sysquery.New()
+	cmdLine, err := sq.GetProcessCommandLineByPID(pid)
 	if err != nil {
-		// Handle cases where the process might have exited between listing and querying
-		var exitErr *exec.ExitError
-		if errors.As(err, &exitErr) {
-			return "", fmt.Errorf("wmic failed for PID %d (process likely exited or access denied): %v, stderr: %s", pid, exitErr, string(exitErr.Stderr))
-		}
-		return "", fmt.Errorf("failed to execute wmic for PID %d: %w", pid, err)
+		return "", fmt.Errorf("failed to get command line for PID %d: %w", pid, err)
 	}
 
-	cmdLine := string(output)
-	// Parse the "CommandLine=..." output format from wmic /format:list
-	parts := strings.SplitN(cmdLine, "=", 2)
-	if len(parts) < 2 {
-		// It's possible wmic returns empty output if command line is inaccessible or empty
-		return "", fmt.Errorf("unexpected wmic output format for PID %d: %q", pid, cmdLine)
-	}
-	// Trim whitespace (like carriage returns/newlines from wmic)
-	return strings.TrimSpace(parts[1]), nil
+	// sysquery.GetProcessCommandLineByPID already formats the output as "CommandLine=..."
+	return cmdLine, nil
 }
+
 func FindRiotClientWithCredentials() (*ProcessCredentials, error) {
 	// Pre-compile regexes for efficiency
 	portRegex := regexp.MustCompile(`--app-port=(\d+)`)
