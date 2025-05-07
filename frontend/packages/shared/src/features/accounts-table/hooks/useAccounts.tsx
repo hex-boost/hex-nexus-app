@@ -1,8 +1,8 @@
-import type { AccountType, Server } from '@/types/types';
+import type { AccountType, Server } from '@/types/types.ts';
 
 import type { StrapiResponse } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
 import { strapiClient } from '@/lib/strapi.ts';
-import { useMapping } from '@/lib/useMapping';
+import { useMapping } from '@/lib/useMapping.tsx';
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
@@ -29,7 +29,7 @@ export const availableRegions: Server[] = [
 
 type SortKey = keyof AccountType | 'coin_price' | 'price' | 'winrate' | 'blueEssence' | 'LCUchampions' | 'LCUskins';
 
-type FilterState = {
+export type FilterState = {
   leaverStatus: string[];
   game: string;
   divisions: string[];

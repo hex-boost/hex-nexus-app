@@ -17,7 +17,7 @@ import { FilterButton } from '@/features/accounts-table/components/filter-button
 import { ItemsPerPageSelector } from '@/features/accounts-table/components/items-per-page-selector.tsx';
 import { ResultsCount } from '@/features/accounts-table/components/results-count.tsx';
 import { SearchBar } from '@/features/accounts-table/components/search-query.tsx';
-import { useAccounts } from '@/hooks/useAccounts.tsx';
+import { useAccounts } from '@/features/accounts-table/hooks/useAccounts.tsx';
 import { useAllDataDragon } from '@/hooks/useDataDragon/useDataDragon.ts';
 import { usePrice } from '@/hooks/usePrice.ts';
 import { useMapping } from '@/lib/useMapping.tsx';

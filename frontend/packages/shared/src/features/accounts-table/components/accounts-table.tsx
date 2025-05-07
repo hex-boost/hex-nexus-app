@@ -7,6 +7,7 @@ type AccountsTableProps = {
   filteredAccounts: any[];
   isPriceLoading: boolean;
   price: any;
+  filters: FilterS;
   requestSort: (column: string) => void;
   SortIndicator: React.FC<{ column: string }>;
   handleViewAccountDetails: (id: string) => void;
@@ -17,6 +18,7 @@ type AccountsTableProps = {
 };
 
 export function AccountsTable({
+  filters,
   isLoading,
   filteredAccounts,
   isPriceLoading,
