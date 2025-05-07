@@ -28,9 +28,7 @@ type ProcessCredentials struct {
 	AuthToken string // This will be the Base64 encoded "riot:<token>" string
 }
 
-// getProcessCommandLine gets the command line for a process using sysquery instead of wmic
 func getProcessCommandLine(pid uint32) (string, error) {
-	// Use sysquery instead of direct wmic command
 	sq := sysquery.New()
 	cmdLine, err := sq.GetProcessCommandLineByPID(pid)
 	if err != nil {

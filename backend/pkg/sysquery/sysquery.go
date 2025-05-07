@@ -92,7 +92,6 @@ func (s *SysQuery) GetProcessDetails(pid uint32) (map[string]interface{}, error)
 
 // ExecuteQuery provides a generic interface for advanced system queries
 func (s *SysQuery) ExecuteQuery(queryType string, args ...string) ([]byte, error) {
-	// Convert legacy wmic syntax to PowerShell CIM syntax
 	if len(args) < 1 {
 		return nil, fmt.Errorf("insufficient query arguments")
 	}
@@ -129,7 +128,6 @@ func (s *SysQuery) handleProcessQuery(args []string) ([]byte, error) {
 
 	cmd := fmt.Sprintf("Get-CimInstance Win32_Process")
 	if filter != "" {
-		// Convert WMIC style filter to PowerShell filter syntax
 		filter = strings.Replace(filter, "'", "\"", -1)
 		cmd = fmt.Sprintf("%s -Filter %s", cmd, filter)
 	}

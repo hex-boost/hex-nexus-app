@@ -23,7 +23,6 @@ func New(command *command.Command) *Process {
 }
 
 func (p *Process) GetCommandLineByName(processName string) ([]byte, error) {
-	// Use sysquery instead of raw wmic command
 	return p.sysquery.GetProcessCommandLineByName(processName)
 }
 

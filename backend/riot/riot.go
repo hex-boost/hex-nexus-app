@@ -72,7 +72,6 @@ func (s *Service) getProcess() (pid int, err error) {
 func (s *Service) getCredentials(riotClientPid int) (port string, authToken string, err error) {
 	var cmdLine string
 
-	// Use sysquery instead of wmic
 	cmdlineOutput, err := s.sysquery.GetProcessCommandLineByPID(uint32(riotClientPid))
 	if err != nil {
 		return "", "", fmt.Errorf("failed to get command line: %w", err)

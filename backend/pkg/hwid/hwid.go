@@ -21,7 +21,6 @@ func New() *HWID {
 }
 
 func (u *HWID) Get() (string, error) {
-	// Use sysquery instead of direct wmic command
 	output, err := u.sysquery.GetHardwareUUID()
 	if err != nil {
 		return "", err
