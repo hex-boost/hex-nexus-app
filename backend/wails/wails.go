@@ -257,8 +257,11 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 			Hidden:        true,
 			URL:           "http://127.0.0.1:6969/index.html",
 			Name:          "Captcha",
-			DisableResize: true,
-			Title:         "Nexus Captcha",
+			DisableResize: false,
+
+			Width:  1280,
+			Height: 1024,
+			Title:  "Nexus Captcha",
 		},
 	)
 	mainWindow = mainApp.NewWebviewWindowWithOptions(

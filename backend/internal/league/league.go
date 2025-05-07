@@ -1,6 +1,8 @@
 package league
 
 import (
+	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account/events"
+	"github.com/wailsapp/wails/v3/pkg/application"
 	"time"
 
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account"
@@ -183,10 +185,12 @@ func (s *Service) UpdateFromLCU(username string) error {
 		return err
 	}
 
-	_, err = s.Api.Save(*summonerRented) // You may need to update the repository to accept the new format
+	summonerResponse, err := s.Api.Save(*summonerRented) // You may need to update the repository to accept the new format
 	if err != nil {
 		s.logger.Error("failed to save account to database", zap.Error(err))
 		return err
 	}
+	app := application.Get()
+	app.EmitEvent(events.AccountStateChanged, summonerResponse)
 	return nil
 }
