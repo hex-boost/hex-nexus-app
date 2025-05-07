@@ -103,7 +103,7 @@ func TestCheckAndUpdateAccount(t *testing.T) {
 		// Two update calls happen - one for initial update, one after UpdateFromLCU
 		mockAccountState.On("Update", mock.MatchedBy(func(update *types.PartialSummonerRented) bool {
 			return update.Username == "testuser"
-		})).Return(currentAccount, nil).Twice()
+		})).Return(currentAccount, nil)
 
 		cm := NewMonitor(
 			newLogger,
