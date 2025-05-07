@@ -504,6 +504,7 @@ export function AccountsTablePage() {
         )}
 
         <AccountsTable
+          filters={filters}
           isLoading={isLoading}
           filteredAccounts={filteredAccounts}
           isPriceLoading={isPriceLoading}

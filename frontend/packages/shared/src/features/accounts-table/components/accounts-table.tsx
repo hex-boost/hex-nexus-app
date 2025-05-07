@@ -1,3 +1,4 @@
+import type { FilterState } from '@/features/accounts-table/hooks/useAccounts.tsx';
 import { AccountRow } from '@/features/accounts-table/components/account-row.tsx';
 import { AccountTableSkeleton } from '@/features/accounts-table/components/account-table-skeleton.tsx';
 import React from 'react';
@@ -7,7 +8,7 @@ type AccountsTableProps = {
   filteredAccounts: any[];
   isPriceLoading: boolean;
   price: any;
-  filters: FilterS;
+  filters: FilterState;
   requestSort: (column: string) => void;
   SortIndicator: React.FC<{ column: string }>;
   handleViewAccountDetails: (id: string) => void;
@@ -105,6 +106,7 @@ export function AccountsTable({
             : (
                 filteredAccounts.map(account => (
                   <AccountRow
+                    filters={filters}
                     key={account.id}
                     account={account}
                     isPriceLoading={isPriceLoading}

@@ -1,5 +1,5 @@
+import type { FilterState } from '@/features/accounts-table/hooks/useAccounts.tsx';
 import type { AccountType, RankingType } from '@/types/types.ts';
-import logoBoostRoyal from '@/assets/logo-boost-royal.svg';
 import { AccountGameIcon } from '@/components/GameComponents.tsx';
 import { GameRankDisplay } from '@/components/GameRankDisplay.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
@@ -12,8 +12,6 @@ import { cn } from '@/lib/utils.ts';
 import { Shield } from 'lucide-react';
 import React from 'react';
 
-<img src={logoBoostRoyal} alt="BoostRoyal" className="w-5 h-5" />;
-
 type AccountRowProps = {
   account: AccountType;
   isPriceLoading: boolean;
@@ -23,16 +21,19 @@ type AccountRowProps = {
   getRegionIcon: (region: string) => React.ReactNode;
   getCompanyIcon: (company: string) => string;
   getRankColor: (elo: string) => string;
+  filters: FilterState;
+
 };
 
 export function AccountRow({
+  filters,
   account,
   isPriceLoading,
   price,
   onViewDetails,
   getRegionIcon,
 }: AccountRowProps) {
-  const currentSoloqueueRank = account.rankings.find(
+  const currentRankPrice = account.rankings.find(
     ranking => ranking.queueType === 'soloqueue' && ranking.type === 'current' && ranking.elo !== '',
   ) || account.rankings.find(
     ranking => ranking.queueType === 'soloqueue' && ranking.type === 'provisory',
@@ -43,7 +44,24 @@ export function AccountRow({
     wins: 0,
     losses: 0,
   } as RankingType;
-  const previousSoloqueueRank = account.rankings.find(ranking => ranking.queueType === 'soloqueue' && ranking.type === 'previous')!;
+  const currentRank = account.rankings.find(
+    ranking => ranking.queueType === filters.queueType && ranking.type === 'current' && ranking.elo !== '',
+  ) || account.rankings.find(
+    ranking => ranking.queueType === filters.queueType && ranking.type === 'provisory',
+  ) || {
+    elo: 'unranked',
+    division: '',
+    points: 0,
+    wins: 0,
+    losses: 0,
+  } as RankingType;
+  const previousRank = account.rankings.find(ranking => ranking.queueType === filters.queueType && ranking.type === 'previous') || {
+    elo: 'unranked',
+    division: '',
+    points: 0,
+    wins: 0,
+    losses: 0,
+  } as RankingType;
   const { getFormattedServer, getWinrateColorClass, getCompanyIcon } = useMapping();
   const { getLeaverBusterInfo, getSeverityObject } = useRiotAccount({ account });
   return (
@@ -187,26 +205,26 @@ export function AccountRow({
       <td className="p-3">
         <GameRankDisplay
 
-          ranking={currentSoloqueueRank}
+          ranking={currentRank}
         />
       </td>
       <td className="p-3">
         <GameRankDisplay
           showLP={false}
-          ranking={previousSoloqueueRank}
+          ranking={previousRank}
         />
       </td>
 
       <td className="p-3">
         {(() => {
-          const totalGames = (currentSoloqueueRank?.wins || 0) + (currentSoloqueueRank?.losses || 0);
-          const winRate = totalGames > 0 ? Math.round(((currentSoloqueueRank?.wins || 0) / totalGames) * 100) : 0;
+          const totalGames = (currentRank?.wins || 0) + (currentRank?.losses || 0);
+          const winRate = totalGames > 0 ? Math.round(((currentRank?.wins || 0) / totalGames) * 100) : 0;
           const winRateColorClass = getWinrateColorClass(winRate);
           return (
             <span className="text-sm text-muted-foreground">
-              {currentSoloqueueRank?.wins || 0}
+              {currentRank?.wins || 0}
               W/
-              {currentSoloqueueRank?.losses || 0}
+              {currentRank?.losses || 0}
               L
               {' '}
               <span className={`font-medium text-xs ${winRateColorClass}`}>
@@ -249,7 +267,7 @@ export function AccountRow({
         </span>
       </td>
       <td className="p-3">
-        <PriceDisplay isPriceLoading={isPriceLoading} price={price} ranking={currentSoloqueueRank} />
+        <PriceDisplay isPriceLoading={isPriceLoading} price={price} ranking={currentRankPrice} />
       </td>
       <td className="p-3 text-center" onClick={e => e.stopPropagation()}>
         <AccountActionsMenu accountId={account.documentId} onViewDetails={onViewDetails} />
