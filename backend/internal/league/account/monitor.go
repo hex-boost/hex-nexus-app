@@ -275,7 +275,6 @@ func (am *Monitor) checkCurrentAccount() {
 	if !am.leagueService.IsPlaying() && !am.leagueService.IsRunning() && !am.riotAuth.IsRunning() {
 		am.cachedAccounts = []types.SummonerRented{}
 		am.lastAccountsFetch = time.Now() // Reset the timer
-		am.SetNexusAccount(false)
 		return
 	}
 	var currentAccount *types.PartialSummonerRented
@@ -283,7 +282,6 @@ func (am *Monitor) checkCurrentAccount() {
 
 	currentUsername := am.GetLoggedInUsername(currentAccount.Username)
 	if currentUsername == "" {
-		am.SetNexusAccount(false)
 		return
 	}
 
@@ -300,8 +298,6 @@ func (am *Monitor) checkCurrentAccount() {
 		am.logger.Error("Failed to retrieve Nexus-managed accounts",
 			zap.Error(err),
 			zap.String("errorType", fmt.Sprintf("%T", err)))
-		am.SetNexusAccount(false)
-
 	}
 
 	isNexusAccount := false

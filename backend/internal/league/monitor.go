@@ -52,6 +52,7 @@ type LeagueServicer interface {
 type AccountMonitorer interface {
 	GetLoggedInUsername(lastUsername string) string
 	IsNexusAccount() bool
+	SetNexusAccount(bool)
 }
 type AppEmitter interface {
 	EmitEvent(name string, data ...any)
@@ -152,11 +153,13 @@ func (cm *Monitor) updateState(newState *LeagueClientState) {
 		)
 
 		cm.currentState = newState
-
-		// Emit event to frontend
-		if cm.app != nil {
-			cm.emitEvent(EventLeagueStateChanged, newState)
+		if newState.ClientState == ClientStateClosed || newState.ClientState == ClientStateLoginReady {
+			cm.logger.Debug("Resetting isNexusAccount to false due to client state",
+				zap.String("clientState", string(newState.ClientState)))
+			cm.accountMonitor.SetNexusAccount(false)
 		}
+
+		cm.emitEvent(EventLeagueStateChanged, newState)
 	}
 
 }
