@@ -21,12 +21,13 @@ func New() *HWID {
 }
 
 func (u *HWID) Get() (string, error) {
-	output, err := u.sysquery.GetHardwareUUID()
+	output, err := u.command.Execute("cmd.exe", "/c", "wmic csproduct get uuid")
+
+	//output, err := u.sysquery.GetHardwareUUID()
 	if err != nil {
 		return "", err
 	}
 
-	// Convert output bytes to string
 	out := string(output)
 
 	// Hash the output
