@@ -25,12 +25,8 @@ func (s *Service) IsRunning() bool {
 	if hwnd != 0 {
 		return true
 	}
-	return false
-	//credentials, err := FindRiotClientWithCredentials()
-	//if err != nil {
-	//	return false
-	//}
-	//return credentials.PID != 0
+	err := s.InitializeClient()
+	return err != nil
 }
 
 func (s *Service) WaitUntilIsRunning(timeout time.Duration) error {

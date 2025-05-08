@@ -90,6 +90,9 @@ func TestAccountMonitor_CheckCurrentAccount(t *testing.T) {
 
 		mockRiot.On("IsRunning").Return(true)
 		mockRiot.On("IsClientInitialized").Return(true)
+
+		mockAccountState.On("SetNexusAccount", false).Return(false)
+		mockAccountState.On("IsNexusAccount").Return(false)
 		mockRiot.On("GetAuthenticationState").Return(&types.RiotIdentityResponse{Type: "error"}, nil)
 		mockAccountState.On("Get").Return(&types.PartialSummonerRented{Username: ""})
 
