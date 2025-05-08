@@ -205,7 +205,7 @@ func (am *Monitor) monitorLoop() {
 }
 
 func (am *Monitor) getSummonerNameByRiotClient() string {
-	if !am.riotAuth.IsClientInitialized() {
+	if !am.riotAuth.IsClientInitialized() && am.riotAuth.IsRunning() {
 		if err := am.riotAuth.InitializeClient(); err != nil {
 			am.logger.Error("Failed to initialize Riot client",
 				zap.Error(err),
@@ -340,9 +340,9 @@ func (am *Monitor) IsNexusAccount() bool {
 
 func (am *Monitor) SetNexusAccount(isNexusAccount bool) {
 	am.mutex.Lock()
+	defer am.mutex.Unlock()
 	stateChanged := am.accountState.SetNexusAccount(isNexusAccount)
 	currentStatus := am.accountState.IsNexusAccount()
-	am.mutex.Unlock()
 
 	// Update watchdog if state changed
 	if stateChanged {

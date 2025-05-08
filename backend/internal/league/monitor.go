@@ -101,7 +101,7 @@ type Monitor struct {
 	riotService           *riot.Service
 }
 
-func NewMonitor(logger *logger.Logger, accountMonitor AccountMonitorer, leagueService LeagueServicer, riotAuth Authenticator, captcha Captcha, accountState AccountState) *Monitor {
+func NewMonitor(logger *logger.Logger, accountMonitor AccountMonitorer, leagueService LeagueServicer, riotAuth Authenticator, captcha Captcha, accountState AccountState, riotService *riot.Service) *Monitor {
 	logger.Info("Creating new client monitor")
 	initialState := &LeagueClientState{
 		ClientState: ClientStateNone,
@@ -117,6 +117,7 @@ func NewMonitor(logger *logger.Logger, accountMonitor AccountMonitorer, leagueSe
 		leagueService:  leagueService,
 		riotAuth:       riotAuth,
 		isRunning:      false,
+		riotService:    riotService,
 		currentState:   initialState,
 		stateMutex:     sync.RWMutex{},
 		eventMutex:     sync.Mutex{},

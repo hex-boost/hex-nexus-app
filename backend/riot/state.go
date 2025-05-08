@@ -26,7 +26,7 @@ func (s *Service) IsRunning() bool {
 		return true
 	}
 	err := s.InitializeClient()
-	return err != nil
+	return err == nil
 }
 
 func (s *Service) WaitUntilIsRunning(timeout time.Duration) error {
