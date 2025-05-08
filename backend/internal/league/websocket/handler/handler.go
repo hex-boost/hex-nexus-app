@@ -51,7 +51,7 @@ type Handler struct {
 }
 
 // New creates a new WebSocket event handler
-func New(logger logger.Loggerer, accountState AccountState, accountClient AccountClient, summonerClient SummonerClient, lolSkin LolSkin, lolSkinState LolSkinState, app App) *Handler {
+func New(logger logger.Loggerer, accountState AccountState, accountClient AccountClient, summonerClient SummonerClient, lolSkin LolSkin, lolSkinState LolSkinState) *Handler {
 	return &Handler{
 		accountState:   accountState,
 		summonerClient: summonerClient,
@@ -59,17 +59,17 @@ func New(logger logger.Loggerer, accountState AccountState, accountClient Accoun
 		lolSkin:        lolSkin,
 		lolSkinState:   lolSkinState,
 		accountClient:  accountClient,
-		app:            app,
 	}
 
 }
 func (h *Handler) OnStartup(ctx context.Context, options application.ServiceOptions) error {
-
 	fmt.Println("fodase")
 	return nil
 }
 
-// processAccountUpdate handles the common pattern of updating account state and saving it
+func (h *Handler) SetApp(app App) {
+	h.app = app
+}
 func (h *Handler) ProcessAccountUpdate(update *types.PartialSummonerRented) error {
 	accountUpdated, err := h.accountState.Update(update)
 	if err != nil {
@@ -278,7 +278,11 @@ func (h *Handler) ChampionPicked(event websocket.LCUWebSocketEvent) {
 }
 func (h *Handler) ReemitEvent(event websocket.LCUWebSocketEvent) {
 	h.logger.Info("Re-emitting event", zap.String("event", event.EventTopic), zap.String("uri", event.URI))
+
 	h.app.EmitEvent(event.EventTopic, event.Data)
+}
+func (h *Handler) EmitEventChan() {
+
 }
 
 // IsRankingSame compares two RankedDetails objects to determine if they are identical

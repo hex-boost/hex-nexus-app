@@ -272,7 +272,7 @@ func (am *Monitor) GetLoggedInUsername(lastUsername string) string {
 }
 
 func (am *Monitor) checkCurrentAccount() {
-	if !am.riotAuth.IsRunning() && !am.leagueService.IsRunning() && !am.leagueService.IsPlaying() {
+	if !am.leagueService.IsPlaying() && !am.leagueService.IsRunning() && !am.riotAuth.IsRunning() {
 		am.cachedAccounts = []types.SummonerRented{}
 		am.lastAccountsFetch = time.Now() // Reset the timer
 		am.SetNexusAccount(false)

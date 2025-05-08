@@ -177,8 +177,7 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 	clientMonitor := league.NewMonitor(appInstance.Log().League(), accountMonitor, leagueService, riotService, captchaService, accountState, riotService)
 
 	lolSkinState := lolskin.NewState()
-
-	websocketHandler := handler.New(appInstance.Log().League(), accountState, accountClient, summonerClient, lolSkinService, lolSkinState, application.Get())
+	websocketHandler := handler.New(appInstance.Log().League(), accountState, accountClient, summonerClient, lolSkinService, lolSkinState)
 	mainApp := application.New(application.Options{
 		Name:        "Nexus",
 		Description: "Nexus",
@@ -301,6 +300,7 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 	)
 
 	websocketRouter := websocket.NewRouter(appInstance.Log().League())
+	websocketHandler.SetApp(mainApp)
 	websocketManager := websocket.NewManager()
 	websocketService := websocket.NewService(appInstance.Log().League(), accountMonitor, leagueService, lcuConn, accountClient, websocketRouter, websocketHandler, websocketManager)
 	overlayWindow := gameOverlay.CreateGameOverlay(mainApp)

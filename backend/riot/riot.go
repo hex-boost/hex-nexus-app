@@ -197,7 +197,14 @@ func (s *Service) Launch() error {
 	}
 	return nil
 }
+func (s *Service) isProcessRunning() bool {
+	_, err := s.getProcess()
+	if err != nil {
+		return false
+	}
+	return true
 
+}
 func (s *Service) InitializeClient() error {
 	riotClientPid, err := s.getProcess()
 	if err != nil {

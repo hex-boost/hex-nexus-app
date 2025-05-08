@@ -169,8 +169,6 @@ func (cm *Monitor) checkClientState() {
 	defer cm.isCheckingState.Store(false)
 	previousState := cm.GetCurrentState()
 
-	cm.logger.Debug("Starting checkClientState cycle")
-	start := time.Now() // For timing
 	// Get system state
 	isRiotClientRunning := cm.riotService.IsRunning()
 	isLeagueClientRunning := cm.leagueService.IsRunning()
@@ -235,8 +233,6 @@ func (cm *Monitor) checkClientState() {
 		// Reset when logged out
 		cm.resetAccountUpdateStatus()
 	}
-	duration := time.Since(start)
-	cm.logger.Debug("Finished checkClientState cycle", zap.Any("duration", duration))
 }
 
 func (cm *Monitor) WaitUntilAuthenticationIsReady(timeout time.Duration) error {
@@ -337,7 +333,6 @@ func (cm *Monitor) initializeRiotClient() {
 
 // checkAndUpdateAccount checks and updates account information if needed
 func (cm *Monitor) checkAndUpdateAccount() {
-	cm.logger.Debug("Entering checkAndUpdateAccount") // Log entry
 
 	// Only proceed if League client connection is ready
 	if !cm.leagueService.IsLCUConnectionReady() {

@@ -25,6 +25,9 @@ func (s *Service) IsRunning() bool {
 	if hwnd != 0 {
 		return true
 	}
+	if !s.isProcessRunning() {
+		return false
+	}
 	err := s.InitializeClient()
 	return err == nil
 }

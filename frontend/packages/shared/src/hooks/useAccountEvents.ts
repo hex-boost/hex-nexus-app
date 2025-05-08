@@ -7,7 +7,6 @@ import { useEventListener } from './useEventListener';
 export function useAccountEvents() {
   const queryClient = useQueryClient();
   const { setIsNexusAccount } = useAccountStore();
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const processingAccountsRef = useRef<Set<string>>(new Set());
 
   // Handle Nexus account state
@@ -16,7 +15,7 @@ export function useAccountEvents() {
   });
 
   // Handler for account state changes with debouncing
-  const handleAccountStateChange = useCallback((account: AccountType) => {
+  const handleAccountStateChange = useCallback(async (account: AccountType) => {
     if (!account) {
       console.error('account:state:changed event data is null or undefined');
       return;
@@ -34,9 +33,6 @@ export function useAccountEvents() {
     processingAccounts.add(account.documentId);
 
     // Clear any existing timeout
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
 
     queryClient.setQueryData(['accounts', 'rented'], (oldData: any) => {
       if (!oldData) {
@@ -46,35 +42,23 @@ export function useAccountEvents() {
       return oldData.map((oldAccount: AccountType) => {
         if (oldAccount.documentId === account.documentId) {
           return {
-            ...oldAccount,
-            blueEssence: account.blueEssence,
-            LCUskins: account.LCUskins,
-            LCUchampions: account.LCUchampions,
-            rankings: account.rankings,
-            riotPoints: account.riotPoints,
+            ...account,
           };
         }
         return oldAccount;
       });
     });
 
-    // Schedule a full refresh after a delay
-    console.log(`Waiting for 1 second to refresh queries for ${account.documentId}`);
-    timeoutRef.current = setTimeout(() => {
-      queryClient.refetchQueries({ queryKey: ['accounts', 'rented'] });
-      console.log(`Queries refreshed for ${account.documentId}`);
-      // Remove from processing set after refresh
-      processingAccounts.delete(account.documentId);
-    }, 1000);
-  }, [queryClient, setIsNexusAccount]);
+    await queryClient.refetchQueries({ queryKey: ['accounts', 'rented'] });
+    console.log(`Queries refreshed for ${account.documentId}`);
+    // Remove from processing set after refresh
+    processingAccounts.delete(account.documentId);
+  }, [queryClient]);
 
   useEventListener<AccountType>('account:state:changed', handleAccountStateChange);
 
   // Cleanup function to be called when needed
   const cleanup = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
     processingAccountsRef.current.clear();
   }, []);
 
