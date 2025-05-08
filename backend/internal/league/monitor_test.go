@@ -25,6 +25,7 @@ func TestCheckAndUpdateAccount(t *testing.T) {
 		mockRiotAuth := mocks.NewAuthenticator(t)
 		mockCaptcha := mocks.NewCaptcha(t)
 		mockAccountState := mocks.NewAccountState(t)
+		mockRiotServicer := mocks.NewRiotServicer(t)
 
 		mockLeagueService.On("IsLCUConnectionReady").Return(false)
 
@@ -35,6 +36,7 @@ func TestCheckAndUpdateAccount(t *testing.T) {
 			mockRiotAuth,
 			mockCaptcha,
 			mockAccountState,
+			mockRiotServicer,
 		)
 
 		cm.checkAndUpdateAccount()
@@ -52,6 +54,7 @@ func TestCheckAndUpdateAccount(t *testing.T) {
 		mockCaptcha := mocks.NewCaptcha(t)
 		mockAccountState := mocks.NewAccountState(t)
 		mockApp := mocks.NewAppEmitter(t)
+		mockRiotServicer := mocks.NewRiotServicer(t)
 
 		// Add this line to mock the Get method
 		currentAccount := &types.PartialSummonerRented{Username: ""}
@@ -68,6 +71,7 @@ func TestCheckAndUpdateAccount(t *testing.T) {
 			mockRiotAuth,
 			mockCaptcha,
 			mockAccountState,
+			mockRiotServicer,
 		)
 		cm.app = mockApp
 
@@ -85,6 +89,7 @@ func TestCheckAndUpdateAccount(t *testing.T) {
 		mockCaptcha := mocks.NewCaptcha(t)
 		mockAccountState := mocks.NewAccountState(t)
 		mockApp := mocks.NewAppEmitter(t)
+		mockRiotServicer := mocks.NewRiotServicer(t)
 
 		mockLeagueService.On("IsLCUConnectionReady").Return(true)
 
@@ -112,6 +117,7 @@ func TestCheckAndUpdateAccount(t *testing.T) {
 			mockRiotAuth,
 			mockCaptcha,
 			mockAccountState,
+			mockRiotServicer,
 		)
 		cm.app = mockApp
 
@@ -147,6 +153,7 @@ func TestCheckAndUpdateAccount(t *testing.T) {
 		mockAccountState.On("Update", mock.MatchedBy(func(update *types.PartialSummonerRented) bool {
 			return update.Username == "testuser"
 		})).Return(currentAccount, nil).Once()
+		mockRiotServicer := mocks.NewRiotServicer(t)
 
 		cm := NewMonitor(
 			newLogger,
@@ -155,6 +162,7 @@ func TestCheckAndUpdateAccount(t *testing.T) {
 			mockRiotAuth,
 			mockCaptcha,
 			mockAccountState,
+			mockRiotServicer,
 		)
 		cm.app = mockApp
 
@@ -175,6 +183,7 @@ func TestUpdateState(t *testing.T) {
 	mockCaptcha := mocks.NewCaptcha(t)
 	mockAccountState := mocks.NewAccountState(t)
 	mockApp := mocks.NewAppEmitter(t)
+	mockRiotServicer := mocks.NewRiotServicer(t)
 
 	cm := NewMonitor(
 		newLogger,
@@ -183,6 +192,7 @@ func TestUpdateState(t *testing.T) {
 		mockRiotAuth,
 		mockCaptcha,
 		mockAccountState,
+		mockRiotServicer,
 	)
 	cm.app = mockApp
 
@@ -212,6 +222,7 @@ func TestDetermineClientState(t *testing.T) {
 	mockRiotAuth := mocks.NewAuthenticator(t)
 	mockCaptcha := mocks.NewCaptcha(t)
 	mockAccountState := mocks.NewAccountState(t)
+	mockRiotServicer := mocks.NewRiotServicer(t)
 
 	cm := NewMonitor(
 		newLogger,
@@ -220,6 +231,7 @@ func TestDetermineClientState(t *testing.T) {
 		mockRiotAuth,
 		mockCaptcha,
 		mockAccountState,
+		mockRiotServicer,
 	)
 
 	testCases := []struct {
@@ -302,6 +314,7 @@ func TestHandleLogin(t *testing.T) {
 		mockCaptcha := mocks.NewCaptcha(t)
 		mockAccountState := mocks.NewAccountState(t)
 		mockApp := mocks.NewAppEmitter(t)
+		mockRiotServicer := mocks.NewRiotServicer(t)
 
 		mockRiotAuth.On("LoginWithCaptcha", mock.Anything, "testuser", "password", "captcha-token").
 			Return("auth-token", nil)
@@ -314,6 +327,7 @@ func TestHandleLogin(t *testing.T) {
 			mockRiotAuth,
 			mockCaptcha,
 			mockAccountState,
+			mockRiotServicer,
 		)
 		cm.app = mockApp
 
@@ -332,11 +346,13 @@ func TestHandleLogin(t *testing.T) {
 		mockCaptcha := mocks.NewCaptcha(t)
 		mockAccountState := mocks.NewAccountState(t)
 		mockApp := mocks.NewAppEmitter(t)
+		mockRiotServicer := mocks.NewRiotServicer(t)
 
 		loginError := errors.New("invalid credentials")
 		mockRiotAuth.On("LoginWithCaptcha", mock.Anything, "testuser", "password", "captcha-token").
 			Return("", loginError)
 		mockApp.On("EmitEvent", EventLeagueStateChanged, mock.Anything).Return()
+		mockAccountMonitor.On("SetNexusAccount")
 
 		cm := NewMonitor(
 			newLogger,
@@ -345,6 +361,7 @@ func TestHandleLogin(t *testing.T) {
 			mockRiotAuth,
 			mockCaptcha,
 			mockAccountState,
+			mockRiotServicer,
 		)
 		cm.app = mockApp
 
@@ -368,6 +385,7 @@ func TestWaitUntilAuthenticationIsReady(t *testing.T) {
 		mockRiotAuth := mocks.NewAuthenticator(t)
 		mockCaptcha := mocks.NewCaptcha(t)
 		mockAccountState := mocks.NewAccountState(t)
+		mockRiotServicer := mocks.NewRiotServicer(t)
 
 		cm := NewMonitor(
 			newLogger,
@@ -376,6 +394,7 @@ func TestWaitUntilAuthenticationIsReady(t *testing.T) {
 			mockRiotAuth,
 			mockCaptcha,
 			mockAccountState,
+			mockRiotServicer,
 		)
 
 		// Set initial state
@@ -394,6 +413,7 @@ func TestWaitUntilAuthenticationIsReady(t *testing.T) {
 		mockRiotAuth := mocks.NewAuthenticator(t)
 		mockCaptcha := mocks.NewCaptcha(t)
 		mockAccountState := mocks.NewAccountState(t)
+		mockRiotServicer := mocks.NewRiotServicer(t)
 
 		cm := NewMonitor(
 			newLogger,
@@ -402,6 +422,7 @@ func TestWaitUntilAuthenticationIsReady(t *testing.T) {
 			mockRiotAuth,
 			mockCaptcha,
 			mockAccountState,
+			mockRiotServicer,
 		)
 
 		// Set initial state to something other than LOGIN_READY
@@ -427,6 +448,7 @@ func TestOpenWebviewAndGetToken(t *testing.T) {
 		mockCaptcha := mocks.NewCaptcha(t)
 		mockAccountState := mocks.NewAccountState(t)
 		mockApp := mocks.NewAppEmitter(t)
+		mockRiotServicer := mocks.NewRiotServicer(t)
 
 		// Create a mock webview
 		mockWebview := mocks.NewWebviewWindower(t)
@@ -454,6 +476,7 @@ func TestOpenWebviewAndGetToken(t *testing.T) {
 			mockRiotAuth,
 			mockCaptcha,
 			mockAccountState,
+			mockRiotServicer,
 		)
 		cm.app = mockApp
 
@@ -481,6 +504,7 @@ func TestOpenWebviewAndGetToken(t *testing.T) {
 		mockCaptcha := mocks.NewCaptcha(t)
 		mockAccountState := mocks.NewAccountState(t)
 
+		mockRiotServicer := mocks.NewRiotServicer(t)
 		setupErr := errors.New("captcha setup error")
 		mockRiotAuth.On("SetupCaptchaVerification").Return(setupErr)
 
@@ -491,6 +515,7 @@ func TestOpenWebviewAndGetToken(t *testing.T) {
 			mockRiotAuth,
 			mockCaptcha,
 			mockAccountState,
+			mockRiotServicer,
 		)
 
 		_, err := cm.OpenWebviewAndGetToken()
@@ -514,7 +539,7 @@ func TestEmitEventUnpacksParameters(t *testing.T) {
 	mockCaptcha := mocks.NewCaptcha(t)
 	mockAccountState := mocks.NewAccountState(t)
 	mockApp := mocks.NewAppEmitter(t)
-
+	mockRiotServicer := mocks.NewRiotServicer(t)
 	// Create a test event and data
 	eventName := "test:event"
 	testData := &LeagueClientState{ClientState: ClientStateLoggedIn}
@@ -530,6 +555,7 @@ func TestEmitEventUnpacksParameters(t *testing.T) {
 		mockRiotAuth,
 		mockCaptcha,
 		mockAccountState,
+		mockRiotServicer,
 	)
 	cm.app = mockApp
 

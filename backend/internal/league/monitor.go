@@ -12,7 +12,6 @@ import (
 
 	websocketEvents "github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket/event"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
-	"github.com/hex-boost/hex-nexus-app/backend/riot"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
 	"go.uber.org/zap"
@@ -82,6 +81,9 @@ type Captcha interface {
 	WaitAndGetCaptchaResponse(ctx context.Context, timeout time.Duration) (string, error)
 	Reset()
 }
+type RiotServicer interface {
+	IsRunning() bool
+}
 type Monitor struct {
 	isFirstUpdated        bool
 	app                   AppEmitter
@@ -99,10 +101,10 @@ type Monitor struct {
 	currentState          *LeagueClientState
 	eventMutex            sync.Mutex
 	isCheckingState       atomic.Bool
-	riotService           *riot.Service
+	riotService           RiotServicer
 }
 
-func NewMonitor(logger *logger.Logger, accountMonitor AccountMonitorer, leagueService LeagueServicer, riotAuth Authenticator, captcha Captcha, accountState AccountState, riotService *riot.Service) *Monitor {
+func NewMonitor(logger *logger.Logger, accountMonitor AccountMonitorer, leagueService LeagueServicer, riotAuth Authenticator, captcha Captcha, accountState AccountState, riotService RiotServicer) *Monitor {
 	logger.Info("Creating new client monitor")
 	initialState := &LeagueClientState{
 		ClientState: ClientStateNone,
