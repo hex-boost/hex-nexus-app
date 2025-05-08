@@ -1,46 +1,53 @@
 name: Release e Deploy de Atualização
 
 on:
-  push:
-    tags:
-      - 'v*'  # Ativa quando uma tag com formato 'v*' é empurrada (ex: v1.0.1)
+  workflow_dispatch:
+    inputs:
+      version_increment_type:
+        description: 'Tipo de incremento de versão (major, minor, patch)'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+  # Removed 'push: tags: - v*' to prevent the workflow from triggering itself
+  # after it successfully creates and pushes a tag.
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
 jobs:
   build-and-deploy:
     runs-on: windows-latest
+    permissions:
+      contents: write # Required to push tags
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-          # set-safe-directory: false # Usually not needed with actions/checkout@v4
+          fetch-depth: 0 # Fetches all history and tags
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10.8.1 # Consider using a more recent version if compatible, e.g., 9.x
+          version: 10.8.1 # Or your preferred pnpm version
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3 # Consider using v4
+        uses: actions/setup-node@v4 # Using v4
         with:
-          node-version: '22' # Use LTS or your required version
-          cache: 'pnpm' # Add caching for pnpm
-          cache-dependency-path: 'frontend/pnpm-lock.yaml' # Adjust path if needed
-
-      - name: Get Tag Version
-        id: get_version
-        shell: bash
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+          node-version: '22' # Or your required Node.js version
+          cache: 'pnpm'
+          cache-dependency-path: 'frontend/pnpm-lock.yaml' # Adjust if necessary
 
       - name: Set up Go
-        uses: actions/setup-go@v4 # Consider using v5
+        uses: actions/setup-go@v5 # Using v5
         with:
-          go-version: '1.22.3' # Use your required Go version
-          cache: true # Enable Go build/module caching
+          go-version: '1.22.3' # Or your required Go version
+          cache: true
 
-      # --- ADD THIS STEP ---
       - name: Install MinGW (GCC for CGO)
         run: choco install mingw --no-progress --params "/InstallDir:C:\mingw-w64"
 
@@ -51,8 +58,7 @@ jobs:
           echo "--- Checking GCC ---"
           where.exe gcc
           gcc --version
-        shell: pwsh # Use PowerShell to access environment variables easily
-      # ---------------------
+        shell: pwsh
 
       - name: Install Mockery
         run: go install github.com/vektra/mockery/v2@v2.53.3 # Ensure this version is correct
@@ -60,65 +66,94 @@ jobs:
       - name: Install Wails
         run: go install -v github.com/wailsapp/wails/v3/cmd/wails3@latest
 
-      # Optional: Verify GCC is in PATH (for debugging)
-      # - name: Verify GCC Path
-      #   run: |
-      #     echo $env:PATH
-      #     gcc --version
-      #   shell: pwsh
+      - name: Determine Next Version
+        id: versioner # Give an id to access outputs
+        shell: bash
+        run: |
+          increment_type="${{ github.event.inputs.version_increment_type || 'patch' }}"
+          # Fetch the latest tag according to semantic versioning order
+          ultima_tag=$(git tag -l "v*.*.*" --sort=-v:refname | head -n1)
+
+          if [ -z "$ultima_tag" ]; then
+            echo "Nenhuma tag encontrada. Iniciando com v0.0.1"
+            major=0
+            minor=0
+            patch_num=1 # Renamed from 'patch' to avoid conflict with increment_type 'patch'
+          else
+            echo "Última tag: $ultima_tag"
+            versao=${ultima_tag#v}
+            IFS='.' read -r major minor patch_num <<< "$versao"
+
+            case $increment_type in
+              major)
+                major=$((major + 1))
+                minor=0
+                patch_num=0
+                echo "Incrementando versão major."
+                ;;
+              minor)
+                minor=$((minor + 1))
+                patch_num=0
+                echo "Incrementando versão minor."
+                ;;
+              patch|*) # Default to patch
+                patch_num=$((patch_num + 1))
+                echo "Incrementando versão patch."
+                ;;
+            esac
+          fi
+          nova_versao_sem_v="$major.$minor.$patch_num"
+          nova_tag="v$nova_versao_sem_v"
+          
+          echo "Próxima versão calculada: $nova_tag"
+          echo "NEXT_VERSION_FULL=$nova_tag" >> $GITHUB_ENV
+          echo "NEXT_VERSION_NO_V=$nova_versao_sem_v" >> $GITHUB_ENV
+          
+          # For use in subsequent steps via outputs context
+          echo "next_version_full_output=$nova_tag" >> $GITHUB_OUTPUT
+          echo "next_version_no_v_output=$nova_versao_sem_v" >> $GITHUB_OUTPUT
+
 
       - name: Build with Wails task (includes go build)
-        run: wails3 task package # This command runs the go build internally
+        run: wails3 task package
         env:
           APP_NAME: Nexus
-          VERSION: ${{ env.VERSION }}
+          VERSION: ${{ env.NEXT_VERSION_NO_V }} # Use the calculated next version without 'v'
           API_URL: ${{ secrets.API_URL }}
           API_KEY: ${{ secrets.API_KEY }}
           PRODUCTION: true
           REFRESH_API_KEY: ${{ secrets.REFRESH_API_KEY }}
           CGO_ENABLED: "1"
 
-
-          # GOOS: windows # Usually not needed when runs-on is windows-latest
-          # GOARCH: amd64 # Usually default
-
-      # (Rest of your workflow: Check artifacts, Upload, etc.)
-      # ...
       - name: Check build artifacts
         shell: bash
         run: |
-          
           echo "Listing build directory contents:"
-    
           ls -la 
           echo "Listing bin directory contents:"
           ls -la bin || echo "bin directory not found"
-          ls -la build || echo "build/bin directory not found"
+          ls -la build || echo "build/bin directory not found" # Corrected path for consistency
           echo "Searching for executable:"
           find . -name "*.exe" -type f
+
       - name: Upload to Update Server
         shell: bash
         env:
           API_KEY: ${{ secrets.API_KEY }}
           API_URL: ${{ secrets.API_URL }}
+          # NEXT_VERSION_NO_V is already in the environment from the 'Determine Next Version' step
         run: |
-          # Find main executable
-          # Corrected path assuming build output structure
           EXE_PATH=$(find . -name "Nexus.exe" -type f | head -1)
-
-          # Find installer executable (Adjust path if wails3 task package outputs elsewhere)
-          # Common NSIS output location for Wails might be build/windows/nsis
-          INSTALLER_PATH=$(find ./build -name "Nexus-Setup-*.exe" -type f | head -1) # More specific pattern
+          INSTALLER_PATH=$(find ./build -name "Nexus-Setup-*.exe" -type f | head -1)
 
           if [ -z "$EXE_PATH" ]; then
-            echo "❌ No main executable found in root directory"
+            echo "❌ No main executable found (Nexus.exe)"
             exit 1
           fi
 
           if [ -z "$INSTALLER_PATH" ]; then
-            echo "❌ No installer executable found starting in ./build/"
-            # Add more diagnostics if needed
-            echo "Searching everywhere:"
+            echo "❌ No installer executable found (Nexus-Setup-*.exe in ./build/)"
+            echo "Searching everywhere for installer as a fallback:"
             find . -name "Nexus-Setup-*.exe" -type f
             exit 1
           fi
@@ -126,26 +161,23 @@ jobs:
           echo "Found main executable at: $EXE_PATH"
           echo "Found installer at: $INSTALLER_PATH"
 
-          # Create version record with verbose output
-          echo "Creating version record for ${{ env.VERSION }}..."
+          echo "Creating version record for ${{ env.NEXT_VERSION_NO_V }}..."
           VERSION_RESPONSE=$(curl -v -s -X POST "${{env.API_URL}}/api/versions" \
           -H "Authorization: Bearer ${{ env.API_KEY }}" \
           -H "Content-Type: application/json" \
-          -d "{\"data\":{\"version\":\"${{ env.VERSION }}\"}}")
+          -d "{\"data\":{\"version\":\"${{ env.NEXT_VERSION_NO_V }}\"}}")
 
           echo "API Response for version creation:"
           echo "$VERSION_RESPONSE"
 
-          # Extract version ID (Improved robustness)
           VERSION_ID=$(echo "$VERSION_RESPONSE" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
           echo "Extracted Version ID: $VERSION_ID"
 
           if [ -z "$VERSION_ID" ] || ! [[ "$VERSION_ID" =~ ^[0-9]+$ ]]; then
-            echo "Failed to extract a valid numeric version ID"
+            echo "Failed to extract a valid numeric version ID from response: $VERSION_RESPONSE"
             exit 1
           fi
 
-          # Upload main executable
           echo "Uploading main application binary..."
           UPLOAD_RESULT=$(curl -v -X POST "${{env.API_URL}}/api/upload" \
           -H "Authorization: Bearer ${{ env.API_KEY }}" \
@@ -158,33 +190,44 @@ jobs:
 
           echo "Main Upload Result:"
           echo "$UPLOAD_RESULT"
-
-          # Check if main upload was successful
-          if echo "$UPLOAD_RESULT" | grep -q "Status code: 2[0-9][0-9]"; then
-            echo "✅ Main executable upload completed successfully"
-
-            # Upload installer executable
-            echo "Uploading installer binary..."
-            INSTALLER_UPLOAD_RESULT=$(curl -v -X POST "${{env.API_URL}}/api/upload" \
-            -H "Authorization: Bearer ${{ env.API_KEY }}" \
-            -F "files=@$INSTALLER_PATH" \
-            -F "refId=$VERSION_ID" \
-            -F "ref=api::version.version" \
-            -F "field=installer" \
-            -w "\nStatus code: %{http_code}" \
-            -L)
-
-            echo "Installer Upload Result:"
-            echo "$INSTALLER_UPLOAD_RESULT"
-
-            # Check if installer upload was successful
-            if echo "$INSTALLER_UPLOAD_RESULT" | grep -q "Status code: 2[0-9][0-9]"; then
-              echo "✅ Installer upload completed successfully"
-            else
-              echo "❌ Installer upload failed"
-              exit 1
-            fi
-          else
+          if ! echo "$UPLOAD_RESULT" | grep -q "Status code: 2[0-9][0-9]"; then
             echo "❌ Main executable upload failed"
             exit 1
           fi
+          echo "✅ Main executable upload completed successfully"
+
+          echo "Uploading installer binary..."
+          INSTALLER_UPLOAD_RESULT=$(curl -v -X POST "${{env.API_URL}}/api/upload" \
+          -H "Authorization: Bearer ${{ env.API_KEY }}" \
+          -F "files=@$INSTALLER_PATH" \
+          -F "refId=$VERSION_ID" \
+          -F "ref=api::version.version" \
+          -F "field=installer" \
+          -w "\nStatus code: %{http_code}" \
+          -L)
+
+          echo "Installer Upload Result:"
+          echo "$INSTALLER_UPLOAD_RESULT"
+          if ! echo "$INSTALLER_UPLOAD_RESULT" | grep -q "Status code: 2[0-9][0-9]"; then
+            echo "❌ Installer upload failed"
+            exit 1
+          fi
+          echo "✅ Installer upload completed successfully"
+
+      - name: Configure Git User
+        run: |
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create and Push Tag
+        shell: bash
+        run: |
+          echo "Creating new tag: ${{ env.NEXT_VERSION_FULL }} on commit ${{ github.sha }}"
+          # Tag the commit that this workflow was run against
+          git tag ${{ env.NEXT_VERSION_FULL }} ${{ github.sha }}
+          git push origin ${{ env.NEXT_VERSION_FULL }}
+          echo "Tag ${{ env.NEXT_VERSION_FULL }} created and pushed to the repository."
+          # The 'git push origin main' from your original script is generally not needed here,
+          # as workflow_dispatch usually runs on the latest commit of the specified branch (e.g., main).
+          # If you need to ensure changes are on main, that should be part of your development workflow
+          # before triggering this release action.
