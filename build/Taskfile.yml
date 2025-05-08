@@ -32,10 +32,35 @@ tasks:
       - package.json
       - pnpm-lock.yaml
     generates:
-      - node_modules/.pnpm-lock.yaml # Be more specific if possible
+      - node_modules/.pnpm-lock.yaml
     cmds:
       - pnpm store prune
-      - pnpm install --frozen-lockfile
+      # Retry logic for pnpm install (using shell commands compatible with Task execution)
+      # This example assumes cmd.exe context on Windows if not overridden by shell spec in GHA
+      # For GHA, it often defaults to pwsh or bash for 'run' steps.
+      # Taskfile itself might use cmd.exe by default on Windows for 'cmd'.
+      # Let's make a cmd.exe compatible retry:
+      - cmd: |
+          @echo off
+          setlocal
+          set MAX_RETRIES=3
+          set RETRY_COUNT=0
+          :retry_loop
+          pnpm install --frozen-lockfile
+          if errorlevel 1 (
+            set /a RETRY_COUNT+=1
+            if %RETRY_COUNT% LSS %MAX_RETRIES% (
+              echo Retrying pnpm install (%RETRY_COUNT%/%MAX_RETRIES%)...
+              timeout /t 10 /nobreak >nul
+              goto retry_loop
+            ) else (
+              echo pnpm install failed after %MAX_RETRIES% retries.
+              exit /b 1
+            )
+          ) else (
+            echo pnpm install successful.
+            exit /b 0
+          )
     method: checksum
   build:frontend:updater:
     summary: Build the frontend project
