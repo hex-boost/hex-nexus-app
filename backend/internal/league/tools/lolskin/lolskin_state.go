@@ -2,7 +2,6 @@ package lolskin
 
 import (
 	"encoding/json"
-	"github.com/wailsapp/wails/v3/pkg/application"
 	"os"
 	"sync"
 )
@@ -93,10 +92,6 @@ func (s *State) SetChampionSkin(championID, skinID int32, chromaID *int32) {
 		(previousSkin.ChromaID != nil && chromaID == nil) ||
 		(previousSkin.ChromaID != nil && chromaID != nil && *previousSkin.ChromaID != *chromaID) {
 
-		app := application.Get()
-		app.EmitEvent("")
-		// Emit an event via app.EmitEvent if we have access to the app instance
-		// We'll need to modify the struct to store a reference to the app
 	}
 }
 

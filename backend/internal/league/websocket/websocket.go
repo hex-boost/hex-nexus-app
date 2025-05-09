@@ -98,6 +98,7 @@ type Service struct {
 	logger         *logger.Logger
 	mutex          sync.Mutex
 	isRunning      bool
+	isSubscribed   bool
 	stopChan       chan struct{}
 	subscriptions  map[string]bool
 	router         RouterService
@@ -452,6 +453,11 @@ func (s *Service) GetHandlers() []EventHandler {
 }
 func (s *Service) SubscribeToLeagueEvents() {
 	s.app.OnEvent(websocketEvent.LeagueWebsocketStart, func(event *application.CustomEvent) {
+
+		if s.isSubscribed {
+			return
+		}
+		s.isSubscribed = true
 		s.logger.Debug("Starting WebSocket service handlers")
 		if event.Cancelled {
 			s.logger.Info("WebSocket service already started")
@@ -478,6 +484,7 @@ func (s *Service) SubscribeToLeagueEvents() {
 			s.logger.Info("WebSocket service already stopped")
 			return
 		}
+		s.isSubscribed = false
 
 		// Unsubscribe from all subscriptions
 		s.mutex.Lock()
