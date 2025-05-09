@@ -1,15 +1,16 @@
 package league
 
 import (
-	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account/events"
-	"github.com/wailsapp/wails/v3/pkg/application"
 	"time"
 
+	"fmt" // Added for error wrapping
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account/events"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/lcu"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/summoner"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/mitchellh/go-ps"
+	"github.com/wailsapp/wails/v3/pkg/application"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 	"os"
@@ -18,29 +19,33 @@ import (
 
 type Service struct {
 	LCUconnection   *lcu.Connection
-	Api             *account.Client // Changed from api to Api for public access
-	summonerService *summoner.Service
+	Api             *account.Client   // Changed from api to Api for public access
+	summonerService *summoner.Service // Assuming summoner.Service and its methods are thread-safe
 	logger          *logger.Logger
 }
 
 func NewService(logger *logger.Logger, api *account.Client, summonerService *summoner.Service, lcuConnection *lcu.Connection) *Service {
 	return &Service{
 		LCUconnection:   lcuConnection,
-		Api:             api, // Updated field name
+		Api:             api,
 		logger:          logger,
 		summonerService: summonerService,
 	}
 }
+
+// GetPath reads configuration files and environment variables. These operations are generally thread-safe.
 func (s *Service) GetPath() string {
 	programData := os.Getenv("PROGRAMDATA")
 	if programData == "" {
+		// Defaulting, though on Windows PROGRAMDATA should usually be set.
+		// Consider if a more robust default or error handling is needed if it's critical.
 		programData = "C:\\ProgramData"
 	}
 
 	leaguePath := filepath.Join(programData, "Riot Games", "Metadata", "league_of_legends.live", "league_of_legends.live.product_settings.yaml")
 	fileContent, err := os.ReadFile(leaguePath)
 	if err != nil {
-		s.logger.Error("Failed to read League settings file", zap.Error(err))
+		s.logger.Error("Failed to read League settings file", zap.Error(err), zap.String("path", leaguePath))
 		return ""
 	}
 
@@ -49,27 +54,29 @@ func (s *Service) GetPath() string {
 	}
 
 	if err := yaml.Unmarshal(fileContent, &settings); err != nil {
-		s.logger.Error("Failed to parse League settings file", zap.Error(err))
+		s.logger.Error("Failed to parse League settings file", zap.Error(err), zap.String("path", leaguePath))
 		return ""
 	}
 
 	if settings.ProductInstallFullPath == "" {
-		s.logger.Error("Could not find League installation path in settings file")
+		s.logger.Error("Could not find League installation path in settings file", zap.String("path", leaguePath))
 		return ""
 	}
 
+	// The path constructed is for "League of Legends.exe" in the "Game" subfolder.
 	return filepath.Join(settings.ProductInstallFullPath, "Game", "League of Legends.exe")
 }
 
+// IsPlaying uses ps.Processes(). The go-ps library is generally safe for concurrent reads.
 func (s *Service) IsPlaying() bool {
 	processes, err := ps.Processes()
 	if err != nil {
-		s.logger.Error("Failed to list processes", zap.Error(err))
+		s.logger.Error("Failed to list processes for IsPlaying check", zap.Error(err))
 		return false
 	}
 
 	leagueProcessNames := []string{
-		"League of Legends.exe",
+		"League of Legends.exe", // Game client process
 	}
 
 	for _, process := range processes {
@@ -80,117 +87,168 @@ func (s *Service) IsPlaying() bool {
 			}
 		}
 	}
-
 	return false
 }
 
+// IsRunning uses ps.Processes(). Similar to IsPlaying, this should be thread-safe.
 func (s *Service) IsRunning() bool {
 	processes, err := ps.Processes()
 	if err != nil {
-		s.logger.Error("Failed to list processes", zap.Error(err))
+		s.logger.Error("Failed to list processes for IsRunning check", zap.Error(err))
 		return false
 	}
 
 	leagueProcessNames := []string{
-		"LeagueClient.exe",
-		"LeagueClientUx.exe",
+		"LeagueClient.exe",   // Main client process
+		"LeagueClientUx.exe", // Client UX process
+		// "RiotClientServices.exe", // Optional: Riot Client, might be running even if League isn't fully up.
 	}
 
 	for _, process := range processes {
 		exe := process.Executable()
 		for _, name := range leagueProcessNames {
 			if exe == name {
+				// Found one of the core League Client processes
 				return true
 			}
 		}
 	}
-
 	return false
 }
 
 func (s *Service) Logout() {
 	s.logger.Info("Attempting to logout from League client")
 
-	if !s.LCUconnection.IsClientInitialized() {
-		err := s.LCUconnection.Initialize()
-		if err != nil {
-			s.logger.Error("Failed to initialize LCU connection", zap.Error(err))
-			return
-		}
+	// Get the LCU client in a thread-safe way
+	lcuAPIClient, err := s.LCUconnection.GetClient()
+	if err != nil {
+		s.logger.Error("Failed to get LCU client for logout", zap.Error(err))
+		// If GetClient fails, it means initialization failed or the client is otherwise unavailable.
+		// No need to call IsClientInitialized or Initialize separately here, GetClient handles it.
+		return
 	}
 
-	resp, err := s.LCUconnection.Client.R().Delete("/lol-login/v1/session")
+	// Use the obtained client for the request
+	resp, err := lcuAPIClient.R().Delete("/lol-login/v1/session")
 	if err != nil {
 		s.logger.Error("Failed to send logout request", zap.Error(err))
 		return
 	}
 
-	if resp.StatusCode() == 204 {
+	if resp.StatusCode() == 204 { // HTTP 204 No Content is typical for successful DELETE operations like logout
 		s.logger.Info("Successfully logged out from League client")
 	} else {
 		s.logger.Error("Unexpected response from logout request",
 			zap.Int("statusCode", resp.StatusCode()),
-			zap.String("body", string(resp.Body())))
+			zap.String("body", resp.String())) // Log body for more details
 	}
 }
 
 func (s *Service) WaitInventoryIsReady() {
 	s.logger.Info("Waiting for inventory system to be ready")
+	// Consider adding a timeout to this loop to prevent indefinite waiting.
+	// For example: ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	// And then check ctx.Done() in the loop.
 
 	attempts := 0
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+
+	// Example timeout:
+	// timeout := time.After(60 * time.Second)
+
 	for {
+		// select {
+		// case <-timeout:
+		// 	s.logger.Error("Timeout waiting for inventory system to be ready")
+		// 	return
+		// case <-ticker.C:
+		attempts++
 		if s.IsInventoryReady() {
 			s.logger.Info("Inventory system is ready", zap.Int("attempts", attempts))
 			return
 		}
-
-		attempts++
-		if attempts%10 == 0 {
+		if attempts%10 == 0 { // Log progress less frequently
 			s.logger.Debug("Still waiting for inventory system to be ready", zap.Int("attempts", attempts))
 		}
-
-		time.Sleep(1 * time.Second)
+		// }
+		time.Sleep(1 * time.Second) // If not using ticker with select
 	}
 }
 
 func (s *Service) IsInventoryReady() bool {
-	if s.LCUconnection.Client == nil {
-		err := s.LCUconnection.Initialize()
-		if err != nil {
-			s.logger.Debug("LCU client not initialized")
-			return false
-		}
-	}
-
-	var result bool
-	resp, err := s.LCUconnection.Client.R().SetResult(&result).Get("/lol-inventory/v1/initial-configuration-complete")
+	// Get the LCU client in a thread-safe way
+	lcuAPIClient, err := s.LCUconnection.GetClient()
 	if err != nil {
-		s.logger.Debug("LCU client connection test failed", zap.Error(err))
+		// If GetClient fails, it means initialization failed or the client is otherwise unavailable.
+		s.logger.Debug("LCU client not available for IsInventoryReady check", zap.Error(err))
 		return false
 	}
 
-	if resp.IsError() {
-		s.logger.Debug("LCU client ready and accepting API requests")
+	var result bool // The endpoint returns a boolean directly
+	resp, err := lcuAPIClient.R().
+		SetResult(&result).
+		Get("/lol-inventory/v1/initial-configuration-complete")
+
+	if err != nil {
+		// This could be a network error, LCU not fully up, etc.
+		s.logger.Debug("LCU client connection test for inventory failed", zap.Error(err))
 		return false
 	}
-	s.logger.Debug("LCU client not ready", zap.Int("statusCode", resp.StatusCode()))
-	return result
+
+	if resp.IsError() { // Checks for non-2xx status codes
+		s.logger.Debug("LCU inventory endpoint returned an error status",
+			zap.Int("statusCode", resp.StatusCode()),
+			zap.String("body", resp.String()))
+		return false // Or interpret specific status codes if needed
+	}
+
+	// If we got a 2xx response and the request was successful, `result` should be populated.
+	if resp.IsSuccess() {
+		if result {
+			s.logger.Debug("LCU inventory is ready and configuration is complete.")
+		} else {
+			s.logger.Debug("LCU inventory API accessible, but initial configuration not yet complete.")
+		}
+		return result
+	}
+
+	// Fallback, though IsError or IsSuccess should cover most cases.
+	s.logger.Debug("LCU inventory check returned non-success and non-error, or unexpected state", zap.Int("statusCode", resp.StatusCode()))
+	return false
 }
 
-func (s *Service) UpdateFromLCU(username string) error {
-	s.logger.Debug("Updating account from LCU", zap.String("username", username))
-	summonerRented, err := s.summonerService.UpdateFromLCU(username)
+func (s *Service) UpdateFromLCU() error {
+	// Assuming s.summonerService.UpdateFromLCU() is thread-safe
+	// and correctly uses its own LCU client (obtained via GetClient) if it makes LCU calls.
+	summonerRented, err := s.summonerService.UpdateFromLCU()
 	if err != nil {
-		s.logger.Error("Failed to update account from LCU", zap.Error(err))
-		return err
+		s.logger.Error("Failed to update account from LCU via summonerService", zap.Error(err))
+		return fmt.Errorf("summonerService.UpdateFromLCU failed: %w", err)
 	}
 
-	summonerResponse, err := s.Api.Save(*summonerRented) // You may need to update the repository to accept the new format
-	if err != nil {
-		s.logger.Error("failed to save account to database", zap.Error(err))
-		return err
+	// Assuming s.Api (account.Client) and its Save method are thread-safe.
+	// If s.Api.Save involves database operations or other shared resources,
+	// its own thread safety must be ensured.
+	if summonerRented == nil {
+		s.logger.Warn("summonerService.UpdateFromLCU returned nil data, cannot save to database.")
+		// Decide if this is an error or an acceptable state.
+		// For now, returning nil, implying no update was performed or needed.
+		return nil // Or an error like: errors.New("no summoner data to save")
 	}
+
+	summonerResponse, err := s.Api.Save(*summonerRented)
+	if err != nil {
+		s.logger.Error("Failed to save account to database via Api.Save", zap.Error(err))
+		return fmt.Errorf("Api.Save failed: %w", err)
+	}
+
+	// Wails event emission is generally thread-safe.
 	app := application.Get()
-	app.EmitEvent(events.AccountStateChanged, summonerResponse)
+	if app != nil { // Good practice to check if app is available
+		app.EmitEvent(events.AccountStateChanged, summonerResponse)
+	} else {
+		s.logger.Warn("Wails application instance is nil, cannot emit AccountStateChanged event.")
+	}
 	return nil
 }

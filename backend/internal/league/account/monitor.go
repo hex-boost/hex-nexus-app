@@ -37,6 +37,7 @@ type LeagueService interface {
 // SummonerClientInterface defines methods needed from SummonerClient
 type SummonerClient interface {
 	GetLoginSession() (*types.LoginSession, error)
+	GetCurrentSummoner() (*types.CurrentSummoner, error)
 }
 
 // LCUConnectionInterface defines methods needed from LCUConnection
@@ -47,7 +48,9 @@ type LCUConnection interface {
 
 // AccountsRepositoryInterface defines methods needed from AccountsRepository
 type AccountClient interface {
-	GetAllRented() ([]types.SummonerRented, error)
+	GetAll() ([]types.SummonerBase, error)
+
+	UsernameExistsInDatabase(username string) (bool, error)
 }
 
 // WindowEmitter defines methods needed from window
@@ -67,7 +70,6 @@ type (
 		running           bool
 		accountState      AccountState
 		checkInterval     time.Duration
-		cachedAccounts    []types.SummonerRented
 		lastAccountsFetch time.Time
 		accountCacheTTL   time.Duration
 		window            WindowEmitter
@@ -75,9 +77,8 @@ type (
 		leagueService     LeagueServicer
 		mutex             sync.Mutex
 		watchdogState     WatchdogUpdater
-
-		summonerClient SummonerClient
-		LCUConnection  LCUConnection
+		summonerClient    SummonerClient
+		LCUConnection     LCUConnection
 	}
 )
 
@@ -108,52 +109,11 @@ func NewMonitor(
 		accountState:    accountState,
 		checkInterval:   1 * time.Second,
 		stopChan:        make(chan struct{}),
-	}
-}
-
-func (am *Monitor) refreshAccountCache() error {
-	am.mutex.Lock()
-	defer am.mutex.Unlock()
-
-	accounts, err := am.accountClient.GetAllRented()
-	if err != nil {
-		return err
+		mutex:           sync.Mutex{}, // Initialize main mutex
 	}
 
-	am.cachedAccounts = accounts
-	am.lastAccountsFetch = time.Now()
-	am.logger.Debug("Forcibly refreshed account cache",
-		zap.Int("accountCount", len(accounts)),
-		zap.Time("cacheTimestamp", am.lastAccountsFetch))
-
-	return nil
 }
 
-func (am *Monitor) getAccountsWithCache() ([]types.SummonerRented, error) {
-	am.mutex.Lock()
-	defer am.mutex.Unlock()
-
-	// Check if we need to refresh the cache
-	needsRefresh := len(am.cachedAccounts) == 0 ||
-		time.Since(am.lastAccountsFetch) > am.accountCacheTTL
-
-	// If cache is empty or expired, fetch fresh data
-	if needsRefresh {
-		am.logger.Debug("Fetching fresh account data from repository")
-		accounts, err := am.accountClient.GetAllRented()
-		if err != nil {
-			return nil, err
-		}
-
-		am.cachedAccounts = accounts
-		am.lastAccountsFetch = time.Now()
-		am.logger.Debug("Updated account cache",
-			zap.Int("accountCount", len(accounts)),
-			zap.Time("cacheTimestamp", am.lastAccountsFetch))
-	}
-
-	return am.cachedAccounts, nil
-}
 func (am *Monitor) SetWindow(window WindowEmitter) {
 	am.window = window
 }
@@ -273,58 +233,30 @@ func (am *Monitor) GetLoggedInUsername(lastUsername string) string {
 
 func (am *Monitor) checkCurrentAccount() {
 	if !am.leagueService.IsPlaying() && !am.leagueService.IsRunning() && !am.riotAuth.IsRunning() {
-		am.cachedAccounts = []types.SummonerRented{}
-		am.lastAccountsFetch = time.Now() // Reset the timer
 		return
 	}
-	var currentAccount *types.PartialSummonerRented
-	currentAccount = am.accountState.Get()
+	currentAccount := am.accountState.Get()
 
-	currentUsername := am.GetLoggedInUsername(currentAccount.Username)
-	if currentUsername == "" {
+	loggedInUsername := am.GetLoggedInUsername(currentAccount.Username)
+	if loggedInUsername == "" || currentAccount.Username == loggedInUsername {
 		return
+	} else {
+		_, _ = am.accountState.Update(&types.PartialSummonerRented{})
 	}
 
-	if currentAccount.Username != currentUsername {
-		am.logger.Debug("Username changed, refreshing account cache",
-			zap.String("previous", currentAccount.Username),
-			zap.String("current", currentUsername))
-		currentAccount, _ = am.accountState.Update(&types.PartialSummonerRented{Username: currentUsername})
-		_ = am.refreshAccountCache()
-	}
+	am.logger.Debug("Username changed, refreshing account cache",
+		zap.String("previous", currentAccount.Username),
+		zap.String("current", loggedInUsername))
+	currentAccount, _ = am.accountState.Update(&types.PartialSummonerRented{Username: loggedInUsername})
 
-	accounts, err := am.getAccountsWithCache()
+	am.accountState.SetNexusAccount(false)
+
+	isNexusAccount, err := am.accountClient.UsernameExistsInDatabase(strings.ToLower(currentAccount.Username))
 	if err != nil {
-		am.logger.Error("Failed to retrieve Nexus-managed accounts",
-			zap.Error(err),
-			zap.String("errorType", fmt.Sprintf("%T", err)))
+		am.logger.Error("Failed to check if username exists in database", zap.Error(err))
+		return
 	}
 
-	isNexusAccount := false
-	for _, account := range accounts {
-		if strings.ToLower(account.Username) == currentAccount.Username {
-			isNexusAccount = true
-			break
-		}
-	}
-
-	// Only attempt a refresh if we didn't find a match and the cache might be stale
-	if !isNexusAccount && time.Since(am.lastAccountsFetch) > am.accountCacheTTL/2 {
-		am.logger.Debug("State not found in cache, refreshing account data")
-		if err := am.refreshAccountCache(); err != nil {
-			am.logger.Error("Failed to refresh account cache", zap.Error(err))
-		} else {
-			// Check again with fresh data
-			for _, account := range am.cachedAccounts {
-				if strings.ToLower(account.Username) == currentUsername {
-					isNexusAccount = true
-					am.logger.Info("Match found after cache refresh! Current account is a Nexus-managed account",
-						zap.String("summonerName", currentUsername))
-					break
-				}
-			}
-		}
-	}
 	am.SetNexusAccount(isNexusAccount)
 }
 

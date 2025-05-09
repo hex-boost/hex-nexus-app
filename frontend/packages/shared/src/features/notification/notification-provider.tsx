@@ -256,7 +256,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         markAsRead(notification.documentId);
       }
       if (notification.event === NOTIFICATION_EVENTS.ACCOUNT_EXPIRED) {
-        if (isNexusAccount) {
+        if (isNexusAccount && false) {
           Manager.ForceCloseAllClients().then(() => {
             toast.info('Your account has expired, and the league has been closed.');
           });

@@ -43,7 +43,7 @@ const (
 
 type LeagueServicer interface {
 	IsLCUConnectionReady() bool
-	UpdateFromLCU(username string) error
+	UpdateFromLCU() error
 	IsRunning() bool
 	IsPlaying() bool
 }
@@ -60,6 +60,7 @@ type AppEmitter interface {
 type AccountState interface {
 	Get() *types.PartialSummonerRented
 	Update(update *types.PartialSummonerRented) (*types.PartialSummonerRented, error)
+	IsNexusAccount() bool
 }
 
 type Authenticator interface {
@@ -232,7 +233,6 @@ func (cm *Monitor) checkClientState() {
 
 	// Handle account state updates based on client state changes
 	if newState.ClientState == ClientStateLoggedIn && isLeagueClientRunning && !cm.isFirstUpdated {
-		// Only update account once when logged in
 		cm.checkAndUpdateAccount()
 	} else if newState.ClientState != ClientStateLoggedIn && cm.isFirstUpdated {
 		// Reset when logged out
@@ -344,6 +344,7 @@ func (cm *Monitor) checkAndUpdateAccount() {
 		cm.logger.Warn("League client connection not ready, skipping account update")
 		return
 	}
+	cm.emitEvent(websocketEvents.LeagueWebsocketStart)
 	accountState := cm.accountState.Get()
 
 	loggedInUsername := cm.accountMonitor.GetLoggedInUsername(accountState.Username)
@@ -374,8 +375,7 @@ func (cm *Monitor) checkAndUpdateAccount() {
 		// return // Maybe return here to prevent further actions on failed state update
 	}
 
-	// Update from LCU (might fetch more details)
-	err = cm.leagueService.UpdateFromLCU(loggedInUsername)
+	err = cm.leagueService.UpdateFromLCU()
 	if err != nil {
 		cm.logger.Error("Error updating account from LCU", zap.Error(err), zap.String("username", loggedInUsername))
 		// Don't set isFirstUpdated if LCU update fails? Or maybe allow it? Depends on requirements.
@@ -406,7 +406,6 @@ func (cm *Monitor) checkAndUpdateAccount() {
 
 	// Only emit start event if we actually marked as updated
 	if updated {
-		cm.emitEvent(websocketEvents.LeagueWebsocketStart)
 	}
 
 	cm.logger.Info("Account successfully updated", zap.String("username", loggedInUsername))

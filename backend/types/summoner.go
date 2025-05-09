@@ -23,6 +23,7 @@ type PartialSummonerRented struct {
 	Server          *string             `json:"server,omitempty"`
 	LCUchampions    *[]int              `json:"champions,omitempty"`
 	LCUskins        *[]int              `json:"championSkins,omitempty"`
+	PUUID           *string             `json:"PUUID,omitempty"`
 	Currencies      *CurrenciesPointer  `json:"currencies,omitempty"`
 	Ban             *Ban                `json:"ban,omitempty"`
 	IsPhoneVerified *bool               `json:"isPhoneVerified,omitempty"`
@@ -30,11 +31,11 @@ type PartialSummonerRented struct {
 	Rankings        *RankedStatsRefresh `json:"rankedStats,omitempty"`
 	AccountLevel    *int                `json:"accountLevel,omitempty"`
 }
-
 type SummonerBase struct {
 	ID              int                `json:"id,omitempty"`
 	DocumentID      string             `json:"documentId,omitempty"`
 	LCUchampions    interface{}        `json:"LCUchampions,omitempty"`
+	PUUID           string             `json:"PUUID,omitempty"`
 	LCUskins        interface{}        `json:"LCUskins,omitempty"`
 	Type            string             `json:"type,omitempty"`
 	LeaverBuster    interface{}        `json:"leaverBuster,omitempty"`

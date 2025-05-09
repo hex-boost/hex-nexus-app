@@ -22,14 +22,15 @@ func NewService(logger *logger.Logger, client *Client) *Service {
 	}
 }
 
-func (l *Service) UpdateFromLCU(username string) (*types.PartialSummonerRented, error) {
+func (l *Service) UpdateFromLCU() (*types.PartialSummonerRented, error) {
 	var (
-		champions   []int
-		skins       []int
-		currencyMap map[string]interface{}
-		rankingMap  *types.RankedStatsRefresh
-		userinfo    types.UserInfo
-		mu          sync.Mutex
+		champions       []int
+		skins           []int
+		currencyMap     map[string]interface{}
+		rankingMap      *types.RankedStatsRefresh
+		userinfo        types.UserInfo
+		mu              sync.Mutex
+		currentSummoner types.CurrentSummoner
 	)
 
 	eg, _ := errgroup.WithContext(context.Background())
@@ -92,6 +93,17 @@ func (l *Service) UpdateFromLCU(username string) (*types.PartialSummonerRented, 
 		mu.Unlock()
 		return nil
 	})
+	eg.Go(func() error {
+		currentSummonerResult, err := l.client.GetCurrentSummoner()
+		if err != nil {
+			l.logger.Error("Failed to get ranking")
+			return err
+		}
+		mu.Lock()
+		currentSummoner = *currentSummonerResult
+		mu.Unlock()
+		return nil
+	})
 
 	if err := eg.Wait(); err != nil {
 		return nil, err
@@ -111,11 +123,14 @@ func (l *Service) UpdateFromLCU(username string) (*types.PartialSummonerRented, 
 		}
 	}
 	summoner := &types.PartialSummonerRented{
-		Username:     userinfo.Username,
-		Tagline:      &userinfo.Acct.TagLine,
-		LCUchampions: &champions,
+		Username:        userinfo.Username,
+		GameName:        &userinfo.Acct.GameName,
+		Tagline:         &userinfo.Acct.TagLine,
+		LCUchampions:    &champions,
+		PUUID:           &currentSummoner.Puuid,
+		LCUskins:        &skins,
+		IsEmailVerified: &userinfo.EmailVerified,
 
-		LCUskins:   &skins,
 		Currencies: &currencies,
 		Rankings:   rankingMap,
 		Server:     &userinfo.LOL.CPID,

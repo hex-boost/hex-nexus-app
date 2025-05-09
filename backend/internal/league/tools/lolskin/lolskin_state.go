@@ -73,7 +73,6 @@ func (s *State) GetAllSelections() []ChampionSkin {
 }
 
 // SetChampionSkin updates or adds a skin selection for a champion
-// SetChampionSkin updates or adds a skin selection for a champion
 func (s *State) SetChampionSkin(championID, skinID int32, chromaID *int32) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()

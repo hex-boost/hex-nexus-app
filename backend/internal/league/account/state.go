@@ -15,7 +15,8 @@ type State struct {
 
 func NewState() *State {
 	return &State{
-		account: &types.PartialSummonerRented{},
+		account:        &types.PartialSummonerRented{},
+		isNexusAccount: false,
 	}
 }
 
@@ -102,6 +103,10 @@ func (s *State) Update(update *types.PartialSummonerRented) (*types.PartialSummo
 	}
 	if update.AccountLevel != nil {
 		s.account.AccountLevel = update.AccountLevel
+	}
+
+	if update.PUUID != nil {
+		s.account.PUUID = update.PUUID
 	}
 
 	// Handle currencies separately to retain existing values if not provided

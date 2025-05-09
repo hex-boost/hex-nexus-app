@@ -17,6 +17,7 @@ import (
 type AccountState interface {
 	Get() *types.PartialSummonerRented
 	Update(update *types.PartialSummonerRented) (*types.PartialSummonerRented, error)
+	IsNexusAccount() bool
 }
 
 type AccountClient interface {
@@ -71,6 +72,11 @@ func (h *Handler) SetApp(app App) {
 	h.app = app
 }
 func (h *Handler) ProcessAccountUpdate(update *types.PartialSummonerRented) error {
+	if !h.accountState.IsNexusAccount() {
+		h.logger.Info("Logged in account is not Nexus skipping update from websocket")
+		return nil
+	}
+
 	accountUpdated, err := h.accountState.Update(update)
 	if err != nil {
 		h.logger.Error("Failed to update account state", zap.Error(err))

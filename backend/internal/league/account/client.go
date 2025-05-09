@@ -24,18 +24,23 @@ func NewClient(logger *logger.Logger, cfg *config.Config, api *client.HTTPClient
 		cfg:    cfg,
 	}
 }
+func (s *Client) GetApiTokenClient() *resty.Client {
 
+	apiTokenClient := resty.New()
+	apiTokenClient.SetBaseURL(s.cfg.BackendURL)
+	apiTokenClient.SetHeader("Content-Type", "application/json")
+	apiTokenClient.SetHeader("Accept", "application/json")
+	apiTokenClient.SetHeader("Authorization", "Bearer "+s.cfg.RefreshApiKey)
+
+	return apiTokenClient
+}
 func (s *Client) Save(summoner types.PartialSummonerRented) (*types.SummonerResponse, error) {
 	if summoner.Username == "" {
 		return nil, fmt.Errorf("username is required")
 	}
-	client := resty.New()
-	client.SetBaseURL(s.cfg.BackendURL)
-	client.SetHeader("Content-Type", "application/json")
-	client.SetHeader("Accept", "application/json")
-	client.SetHeader("Authorization", "Bearer "+s.cfg.RefreshApiKey)
+	apiTokenClient := s.GetApiTokenClient()
 	var refreshResponseData types.RefreshResponseData
-	req := client.R().SetBody(summoner).SetResult(&refreshResponseData)
+	req := apiTokenClient.R().SetBody(summoner).SetResult(&refreshResponseData)
 	// Make the request manually instead of using s.api.Put
 	resp, err := req.Put("/api/accounts/refresh")
 	if err != nil {
@@ -60,10 +65,28 @@ func (s *Client) GetAllRented() ([]types.SummonerRented, error) {
 }
 
 func (s *Client) GetAll() ([]types.SummonerBase, error) {
-	var summoners []types.SummonerBase
-	_, err := s.api.Get("/api/accounts/available", &summoners)
+	var response types.AccountsResponse
+	_, err := s.api.Get("/api/accounts/available", &response)
 	if err != nil {
 		return nil, err
 	}
-	return summoners, nil
+	return response.Data, nil
+}
+func (s *Client) UsernameExistsInDatabase(username string) (bool, error) {
+	var result bool
+	apiTokenClient := s.GetApiTokenClient()
+	endpoint := fmt.Sprintf("/api/accounts/usernames/%s", username)
+	response, err := apiTokenClient.R().SetResult(&result).Post(endpoint)
+	if err != nil {
+		return false, err
+	}
+	if response.IsError() {
+
+		if response.StatusCode() == 404 {
+			return false, nil
+		}
+		s.logger.Error("error checking if username exists in database", zap.Int("statusCode", response.StatusCode()), zap.Any("body", response.String()))
+		return false, fmt.Errorf("error checking if username exists in database: %d - %s", response.StatusCode(), response.String())
+	}
+	return result, nil
 }
