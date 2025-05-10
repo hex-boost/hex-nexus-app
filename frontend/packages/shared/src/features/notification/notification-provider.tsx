@@ -1,26 +1,28 @@
-import type { NotificationPreferences, NotificationPriority } from '@/features/notification/types/notification.ts';
-import type { ServerNotification, ServerNotificationEvents, UserType, Version } from '@/types/types.ts';
-import type { ReactNode } from 'react';
-import notificationSound from '@/assets/sounds/notification.ogg';
+import type {NotificationPreferences, NotificationPriority} from '@/features/notification/types/notification.ts';
 import {
-  DEFAULT_PREFERENCES,
-  NOTIFICATION_EVENTS,
-  NotificationContext,
+    DEFAULT_PREFERENCES,
+    NOTIFICATION_EVENTS,
+    NotificationContext,
 } from '@/features/notification/types/notification.ts';
-import { useLocalStorage } from '@/hooks/use-local-storage.tsx';
-import { useWebSocket } from '@/hooks/use-websocket.tsx';
-import { useMembership } from '@/hooks/useMembership.ts';
-import { strapiClient } from '@/lib/strapi.ts';
-import { useAccountStore } from '@/stores/useAccountStore.ts';
-import { usePremiumPaymentModalStore } from '@/stores/usePremiumPaymentModalStore.ts';
-import { useUserStore } from '@/stores/useUserStore.ts';
-import { Manager } from '@leagueManager';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Howl } from 'howler';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { toast } from 'sonner';
+import type {ServerNotification, ServerNotificationEvents, UserType, Version} from '@/types/types.ts';
+import type {ReactNode} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
+import notificationSound from '@/assets/sounds/notification.ogg';
+import {useLocalStorage} from '@/hooks/use-local-storage.tsx';
+import {useWebSocket} from '@/hooks/use-websocket.tsx';
+import {useMembership} from '@/hooks/useMembership.ts';
+import {useUpdate} from '@/hooks/useUpdate/useUpdate.tsx';
+import {strapiClient} from '@/lib/strapi.ts';
+import {useAccountStore} from '@/stores/useAccountStore.ts';
+import {usePremiumPaymentModalStore} from '@/stores/usePremiumPaymentModalStore.ts';
+import {useUserStore} from '@/stores/useUserStore.ts';
+import {Manager} from '@leagueManager';
+import {useMutation, useQueryClient} from '@tanstack/react-query';
+import {Howl} from 'howler';
+import {toast} from 'sonner';
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
+  const { setUpdateInfo, handleStartUpdate } = useUpdate();
   const { isNexusAccount } = useAccountStore();
   const { user } = useUserStore();
   const premiumModalStore = usePremiumPaymentModalStore();
@@ -28,7 +30,6 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [filterType, setFilterType] = useState<'all' | 'unread' | 'read'>('all');
   const [initialized, setInitialized] = useState(false);
-  const [_, setValue] = useLocalStorage<Version | null>('last-update', null);
 
   const queryClient = useQueryClient();
 
@@ -239,13 +240,14 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       addNotification(newNotification);
 
       if (notification.event === NOTIFICATION_EVENTS.NEW_UPDATE && !notification.isSeen) {
-        setValue(notification.metadata as Version);
+        setUpdateInfo(notification.metadata as Version);
+
         toast.info('New update available!', {
-          description: 'Update to the latest version to receive new features',
+          description: 'We hope is getting better :v',
           action: {
             type: 'button',
             label: 'Update now',
-            onClick: () => void 0,
+            onClick: () => handleStartUpdate(),
           },
         });
         markAsRead(notification.documentId);
@@ -256,7 +258,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         markAsRead(notification.documentId);
       }
       if (notification.event === NOTIFICATION_EVENTS.ACCOUNT_EXPIRED) {
-        if (isNexusAccount && false) {
+        if (isNexusAccount) {
           Manager.ForceCloseAllClients().then(() => {
             toast.info('Your account has expired, and the league has been closed.');
           });
@@ -264,7 +266,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       }
       queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
     },
-    [addNotification, queryClient, setValue, markAsRead, premiumModalStore, pricingPlans, isNexusAccount],
+    [addNotification, queryClient, markAsRead, premiumModalStore, pricingPlans, isNexusAccount],
   );
   // Initialize notifications from the user object
   useEffect(() => {

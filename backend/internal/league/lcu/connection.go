@@ -166,11 +166,14 @@ func (c *Connection) IsClientInitialized() bool {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
+	type Response struct {
+		Ready bool `json:"ready"`
+	}
+	var response Response
 	// Use the snapshot of the client
 	resp, err := currentClient.R().
-		SetContext(ctx).
-		Get("/lol-settings/v1/local/lol.gameplay") // A very lightweight, stable endpoint
-
+		SetContext(ctx).SetResult(&response).
+		Get("/lol-summoner/v1/status") // A very lightweight, stable endpoint
 	if err != nil {
 		// Log specific errors that might indicate a stale connection (port changed, client closed)
 		var urlErr *url.Error
@@ -193,6 +196,10 @@ func (c *Connection) IsClientInitialized() bool {
 			zap.Int("status_code", resp.StatusCode()),
 			zap.String("body", resp.String()))
 		return false
+	}
+
+	if response.Ready {
+		return true
 	}
 	return true
 }
