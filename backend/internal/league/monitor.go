@@ -694,7 +694,6 @@ func (cm *Monitor) HandleLogin(username string, password string, captchaToken st
 	}
 	cm.updateState(newState)
 	_, err := cm.riotAuth.LoginWithCaptcha(ctx, username, password, captchaToken)
-	// Reset authentication state if there's any error (including timeout)
 	if err != nil {
 		cm.logger.Error("Login failed", zap.Error(err))
 

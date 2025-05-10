@@ -424,10 +424,6 @@ func (s *Service) CheckAccountBanned(username string) error {
 
 				for _, restriction := range userInfo.Ban.Restrictions {
 					if restriction.Type == "PERMANENT_BAN" && (restriction.Scope == "riot" || restriction.Scope == "lol" || restriction.Scope == "") {
-						err := s.Logout()
-						if err != nil {
-							return err
-						}
 						_, saveErr := s.accountClient.Save(types.PartialSummonerRented{
 							Username: username,
 							Ban:      &userInfo.Ban,
