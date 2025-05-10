@@ -43,9 +43,28 @@ export function useLeagueManager({
       await RiotService.WaitUntilUserinfoIsReady(Duration.Second * 10);
       logger.info(logContext, 'User info ready, login process completed');
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       logger.info(logContext, 'Login with captcha successful');
+
       toast.success('Authenticated successfully');
+      try {
+        await RiotService.CheckAccountBanned();
+      } catch (error: any) {
+        logger.error(logContext, 'Error checking account ban', error);
+        if (error.message.includes('permanent_banned')) {
+          toast.error('Account Perma Banned', {
+            description: 'Sorry for the inconvenience, account is removed',
+            duration: 10000,
+          });
+          handleDropAccount({ silently: true });
+          queryClient.invalidateQueries({ queryKey: ['accounts'], exact: false });
+
+          Manager.ForceCloseAllClients();
+          setTimeout(() => {
+            router.navigate({ to: '/accounts' });
+          }, 1500);
+        }
+      }
     },
     onError: async (error: any) => {
       setIsNexusAccount(false);

@@ -7,10 +7,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/command"
@@ -23,22 +25,24 @@ import (
 )
 
 type Service struct {
-	client   *resty.Client
-	logger   *logger.Logger
-	captcha  *captcha.Captcha
-	ctx      context.Context
-	cmd      *command.Command
-	sysquery *sysquery.SysQuery
+	client        *resty.Client
+	logger        *logger.Logger
+	captcha       *captcha.Captcha
+	ctx           context.Context
+	cmd           *command.Command
+	sysquery      *sysquery.SysQuery
+	accountClient *account.Client
 }
 
-func NewService(logger *logger.Logger, captcha *captcha.Captcha) *Service {
+func NewService(logger *logger.Logger, captcha *captcha.Captcha, accountClient *account.Client) *Service {
 	return &Service{
-		client:   nil,
-		cmd:      command.New(),
-		sysquery: sysquery.New(),
-		logger:   logger,
-		captcha:  captcha,
-		ctx:      context.Background(),
+		client:        nil,
+		cmd:           command.New(),
+		sysquery:      sysquery.New(),
+		logger:        logger,
+		captcha:       captcha,
+		ctx:           context.Background(),
+		accountClient: accountClient,
 	}
 }
 
@@ -387,4 +391,59 @@ func (s *Service) getCaptchaData() (string, error) {
 		return "", errors.New("no captcha data")
 	}
 	return startAuthResult.Captcha.Hcaptcha.Data, nil
+}
+
+func (s *Service) CheckAccountBanned(username string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	if !s.IsClientInitialized() {
+		err := s.InitializeClient()
+		if err != nil {
+			s.logger.Error("Failed to initialize client", zap.Error(err))
+			return err
+		}
+	}
+	ticker := time.NewTicker(500 * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+			userInfo, err := s.GetUserinfo()
+			if err != nil {
+				s.logger.Error("Failed to get user info for ban check", zap.Error(err))
+				return err
+			}
+
+			// Check if the user has restrictions
+			if len(userInfo.Ban.Restrictions) > 0 {
+				s.logger.Warn("Account has restrictions",
+					zap.Int("count", len(userInfo.Ban.Restrictions)),
+					zap.Any("restrictions", userInfo.Ban.Restrictions))
+
+				for _, restriction := range userInfo.Ban.Restrictions {
+					if restriction.Type == "PERMANENT_BAN" && (restriction.Scope == "riot" || restriction.Scope == "lol" || restriction.Scope == "") {
+						err := s.Logout()
+						if err != nil {
+							return err
+						}
+						_, saveErr := s.accountClient.Save(types.PartialSummonerRented{
+							Username: username,
+							Ban:      &userInfo.Ban,
+						})
+						if saveErr != nil {
+							s.logger.Error("Error saving summoner with multifactor restriction", zap.Error(err))
+							return saveErr
+						}
+						return fmt.Errorf("permanent_banned")
+					}
+				}
+				return nil
+			}
+
+			s.logger.Debug("No account restrictions found")
+			return nil
+		}
+	}
 }
