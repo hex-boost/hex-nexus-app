@@ -39,25 +39,31 @@ export function useAccountActions({
     enabled: account?.user?.documentId === user?.documentId,
   });
 
-  const { mutate: handleDropAccount, isPending: isDropPending } = useMutation<{ message: string }, StrapiError>({
+  const { mutate: handleDropAccount, isPending: isDropPending } = useMutation<
+    { message: string },
+    StrapiError,
+    { silently?: boolean }
+  >({
     mutationKey: ['accounts', 'drop', account?.documentId],
-    mutationFn: async () => {
+    mutationFn: async (_variables) => {
       setIsDropDialogOpen(false);
 
       return await strapiClient.request<{
         message: string;
       }>('post', `accounts/${account?.documentId}/drop`);
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       invalidateRelatedQueries();
       Manager.ForceCloseAllClients();
+      if (variables.silently) {
+        return;
+      }
       toast.success(data.message);
     },
     onError: (error) => {
       toast.error(error.data.error.message);
     },
   });
-
   const { mutate: handleExtendAccount, isPending: isExtendPending } = useMutation({
     mutationKey: ['accounts', 'extend', account?.documentId],
     mutationFn: async (timeIndex: number) => {

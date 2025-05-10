@@ -140,7 +140,7 @@ func (s *Service) LoginWithCaptcha(ctx context.Context, username, password, capt
 
 	if loginResult.Type == "multifactor" {
 		s.logger.Info("multifactor required for authentication")
-		return "", errors.New("captcha required")
+		return "", errors.New("multifactor")
 	}
 	if loginResult.Type == "success" {
 		s.logger.Info("Authentication with captcha successful")
@@ -153,6 +153,9 @@ func (s *Service) LoginWithCaptcha(ctx context.Context, username, password, capt
 			return "", err
 		}
 		return "", nil
+	}
+	if loginResult.Type == "auth" && loginResult.Error == "auth_failure" {
+		return "", errors.New(loginResult.Error)
 	}
 	if loginResult.Error == "captcha_not_allowed" {
 		return loginResult.Captcha.Hcaptcha.Data, errors.New(loginResult.Error)

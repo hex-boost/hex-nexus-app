@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"strings"
 	"sync"
@@ -103,9 +104,11 @@ type Monitor struct {
 	eventMutex            sync.Mutex
 	isCheckingState       atomic.Bool
 	riotService           RiotServicer
+	accountClient         *account.Client
 }
 
-func NewMonitor(logger *logger.Logger, accountMonitor AccountMonitorer, leagueService LeagueServicer, riotAuth Authenticator, captcha Captcha, accountState AccountState, riotService RiotServicer) *Monitor {
+func NewMonitor(logger *logger.Logger, accountMonitor AccountMonitorer, leagueService LeagueServicer, riotAuth Authenticator, captcha Captcha, accountState AccountState, riotService RiotServicer, accountClient *account.Client) *Monitor {
+
 	logger.Info("Creating new client monitor")
 	initialState := &LeagueClientState{
 		ClientState: ClientStateNone,
@@ -125,6 +128,7 @@ func NewMonitor(logger *logger.Logger, accountMonitor AccountMonitorer, leagueSe
 		currentState:   initialState,
 		stateMutex:     sync.RWMutex{},
 		eventMutex:     sync.Mutex{},
+		accountClient:  accountClient,
 	}
 	monitor.isCheckingState.Store(false)
 
@@ -702,6 +706,37 @@ func (cm *Monitor) HandleLogin(username string, password string, captchaToken st
 
 		if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
 			return fmt.Errorf("login operation timed out: %w", err)
+		}
+
+		if err.Error() == "multifactor" {
+			_, saveErr := cm.accountClient.Save(types.PartialSummonerRented{
+				Username: username,
+				Ban: &types.Ban{
+					Restrictions: []types.Restriction{
+						{Type: "MFA_REQUIRED"},
+					},
+				},
+			})
+			if saveErr != nil {
+				cm.logger.Error("Error saving summoner with multifactor restriction", zap.Error(err))
+				return saveErr
+			}
+
+		}
+		if err.Error() == "auth_failure" {
+			_, saveErr := cm.accountClient.Save(types.PartialSummonerRented{
+				Username: username,
+				Ban: &types.Ban{
+					Restrictions: []types.Restriction{
+						{Type: "INVALID_CREDENTIALS"},
+					},
+				},
+			})
+			if saveErr != nil {
+				cm.logger.Error("Error saving summoner with multifactor restriction", zap.Error(err))
+				return saveErr
+			}
+
 		}
 
 		return err

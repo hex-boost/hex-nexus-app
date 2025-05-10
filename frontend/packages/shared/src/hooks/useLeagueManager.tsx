@@ -1,11 +1,14 @@
 import type { AccountType } from '@/types/types';
+import { useAccountActions } from '@/hooks/useAccountActions.ts';
 import { useLeagueState } from '@/hooks/useLeagueState.tsx';
 import { logger } from '@/lib/logger';
 import { useAccountStore } from '@/stores/useAccountStore.ts';
+import { useUserStore } from '@/stores/useUserStore.ts';
 import { Monitor as LeagueMonitor } from '@league';
 import { Manager } from '@leagueManager';
 import { Service as RiotService } from '@riot';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from '@tanstack/react-router';
 import { Duration } from '@time';
 import { Call } from '@wailsio/runtime';
 import { toast } from 'sonner';
@@ -15,8 +18,12 @@ export function useLeagueManager({
 }: {
   account: AccountType;
 }) {
+  const router = useRouter();
   const { setIsNexusAccount } = useAccountStore();
   const { state, isLoading } = useLeagueState();
+  const { user } = useUserStore();
+  const { handleDropAccount } = useAccountActions({ account, user });
+  const queryClient = useQueryClient();
   const logContext = `useLeagueManager:${account.id}`;
 
   const { mutate: handleOpenCaptchaWebview, isPending: isCaptchaProcessing } = useMutation({
@@ -26,28 +33,23 @@ export function useLeagueManager({
 
       logger.info(logContext, 'Opening captcha web view and waiting for token');
 
-      try {
-        const captchaToken = await LeagueMonitor.OpenWebviewAndGetToken();
+      const captchaToken = await LeagueMonitor.OpenWebviewAndGetToken();
 
-        logger.info(logContext, 'Captcha token received, proceeding with login');
+      logger.info(logContext, 'Captcha token received, proceeding with login');
 
-        await LeagueMonitor.HandleLogin(account.username, account.password, captchaToken);
+      await LeagueMonitor.HandleLogin(account.username, account.password, captchaToken);
 
-        logger.info(logContext, 'Waiting for user info (timeout: 10s)');
-        await RiotService.WaitUntilUserinfoIsReady(Duration.Second * 10);
-        logger.info(logContext, 'User info ready, login process completed');
-      } catch (error) {
-        logger.error(logContext, 'Error during captcha flow', { error });
-        throw error;
-      }
+      logger.info(logContext, 'Waiting for user info (timeout: 10s)');
+      await RiotService.WaitUntilUserinfoIsReady(Duration.Second * 10);
+      logger.info(logContext, 'User info ready, login process completed');
     },
     onSuccess: () => {
       logger.info(logContext, 'Login with captcha successful');
       toast.success('Authenticated successfully');
     },
-    onError: (error) => {
+    onError: async (error: any) => {
       setIsNexusAccount(false);
-      if (error instanceof Call.RuntimeError) {
+      if (error) {
         logger.error(logContext, 'Login with captcha failed', error);
 
         if (error.message.includes('captcha_already_in_progress')) {
@@ -111,17 +113,33 @@ export function useLeagueManager({
 
       // Generic error handler
       logger.error(logContext, 'Authentication error', error);
-      toast.warning('Error authenticating', {
-        action: {
-          label: 'Try again',
-          onClick: () => {
-            logger.info(logContext, 'User requested to retry authentication');
-            // Short delay before retry to ensure resources are cleaned up
-            setTimeout(() => handleOpenCaptchaWebview(), 1000);
+      if (error.message.includes('multifactor') || error.message.includes('auth_failure')) {
+        toast.error('Invalid Account', {
+          description: 'Sorry for the inconvenience, account is removed',
+          duration: 10000,
+        });
+        handleDropAccount({ silently: true });
+        await queryClient.invalidateQueries({ queryKey: ['accounts'], exact: false });
+
+        setTimeout(() => {
+          router.navigate({ to: '/accounts' });
+        }, 1500);
+
+        return;
+      }
+      if (error) {
+        toast.warning('Error authenticating', {
+          action: {
+            label: 'Try again',
+            onClick: () => {
+              logger.info(logContext, 'User requested to retry authentication');
+              // Short delay before retry to ensure resources are cleaned up
+              setTimeout(() => handleOpenCaptchaWebview(), 1000);
+            },
           },
-        },
-        duration: 10000,
-      });
+          duration: 10000,
+        });
+      }
     },
   });
 
@@ -143,8 +161,8 @@ export function useLeagueManager({
       logger.info(logContext, 'Riot Client launch completed successfully');
       toast.info('Riot Client launched successfully');
     },
-    onError: (error) => {
-      console.log('error', error);
+    onError: (error: any) => {
+      console.log('error', error.message);
       if (error instanceof Call.RuntimeError) {
         logger.error(logContext, 'Failed to launch Riot Client', error.message);
 

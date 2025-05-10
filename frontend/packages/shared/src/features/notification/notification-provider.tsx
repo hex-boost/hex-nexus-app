@@ -1,28 +1,28 @@
-import type {NotificationPreferences, NotificationPriority} from '@/features/notification/types/notification.ts';
-import {
-    DEFAULT_PREFERENCES,
-    NOTIFICATION_EVENTS,
-    NotificationContext,
-} from '@/features/notification/types/notification.ts';
-import type {ServerNotification, ServerNotificationEvents, UserType, Version} from '@/types/types.ts';
-import type {ReactNode} from 'react';
-import {useCallback, useEffect, useRef, useState} from 'react';
+import type { NotificationPreferences, NotificationPriority } from '@/features/notification/types/notification.ts';
+import type { ServerNotification, ServerNotificationEvents, UserType } from '@/types/types.ts';
+import type { ReactNode } from 'react';
 import notificationSound from '@/assets/sounds/notification.ogg';
-import {useLocalStorage} from '@/hooks/use-local-storage.tsx';
-import {useWebSocket} from '@/hooks/use-websocket.tsx';
-import {useMembership} from '@/hooks/useMembership.ts';
-import {useUpdate} from '@/hooks/useUpdate/useUpdate.tsx';
-import {strapiClient} from '@/lib/strapi.ts';
-import {useAccountStore} from '@/stores/useAccountStore.ts';
-import {usePremiumPaymentModalStore} from '@/stores/usePremiumPaymentModalStore.ts';
-import {useUserStore} from '@/stores/useUserStore.ts';
-import {Manager} from '@leagueManager';
-import {useMutation, useQueryClient} from '@tanstack/react-query';
-import {Howl} from 'howler';
-import {toast} from 'sonner';
+import {
+  DEFAULT_PREFERENCES,
+  NOTIFICATION_EVENTS,
+  NotificationContext,
+} from '@/features/notification/types/notification.ts';
+import { useLocalStorage } from '@/hooks/use-local-storage.tsx';
+import { useWebSocket } from '@/hooks/use-websocket.tsx';
+import { useMembership } from '@/hooks/useMembership.ts';
+import { useUpdate } from '@/hooks/useUpdate/useUpdate.tsx';
+import { strapiClient } from '@/lib/strapi.ts';
+import { useAccountStore } from '@/stores/useAccountStore.ts';
+import { usePremiumPaymentModalStore } from '@/stores/usePremiumPaymentModalStore.ts';
+import { useUserStore } from '@/stores/useUserStore.ts';
+import { Manager } from '@leagueManager';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Howl } from 'howler';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
-  const { setUpdateInfo, handleStartUpdate } = useUpdate();
+  const { refetchVersion, handleStartUpdate } = useUpdate();
   const { isNexusAccount } = useAccountStore();
   const { user } = useUserStore();
   const premiumModalStore = usePremiumPaymentModalStore();
@@ -240,10 +240,10 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       addNotification(newNotification);
 
       if (notification.event === NOTIFICATION_EVENTS.NEW_UPDATE && !notification.isSeen) {
-        setUpdateInfo(notification.metadata as Version);
+        refetchVersion();
 
         toast.info('New update available!', {
-          description: 'We hope is getting better :v',
+          description: 'Update to the latest version to enjoy new features',
           action: {
             type: 'button',
             label: 'Update now',
