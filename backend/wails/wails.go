@@ -159,7 +159,7 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 	captchaService := captcha.New(appInstance.Log().Riot())
 	leagueService := league.NewService(appInstance.Log().Riot(), accountClient, summonerService, lcuConn)
 	lolSkinService := lolskin.New(appInstance.Log().League(), leagueService.GetPath(), catalog, csLolDLL, modToolsExe)
-	riotService := riot.NewService(appInstance.Log().Riot(), captchaService)
+	riotService := riot.NewService(appInstance.Log().Riot(), captchaService, accountClient)
 	newUpdaterUtils := updaterUtils.New(appInstance.Log().Wails())
 	updateManager := updater.NewUpdateManager(cfg, newUpdaterUtils, appInstance.Log().League())
 	accountMonitor := account.NewMonitor(

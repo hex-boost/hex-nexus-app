@@ -1,4 +1,7 @@
 import type { CurrentSummoner } from '@types';
+import { useLeagueState } from '@/hooks/useLeagueState.tsx';
+import { LeagueClientStateType } from '@league';
+
 import * as Summoner from '@summonerClient';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -7,6 +10,7 @@ export const CHAT_ME_QUERY = ['CHAT', 'ME'];
 export function useChatMeQuery() {
   console.log('[useChatMeQuery] Hook initialized');
   const queryClient = useQueryClient();
+  const { state } = useLeagueState();
 
   // For initial fetch and refetching
   const { data: chatMe, isLoading, error, refetch } = useQuery({
@@ -22,6 +26,7 @@ export function useChatMeQuery() {
         throw error;
       }
     },
+    enabled: state?.clientState === LeagueClientStateType.ClientStateLoggedIn,
   });
 
   console.log('[useChatMeQuery] Current state:', {

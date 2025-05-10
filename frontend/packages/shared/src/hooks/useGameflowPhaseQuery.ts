@@ -1,3 +1,5 @@
+import { useLeagueState } from '@/hooks/useLeagueState.tsx';
+import { LeagueClientStateType } from '@league';
 import * as Summoner from '@summonerClient';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Events } from '@wailsio/runtime';
@@ -22,11 +24,12 @@ export enum LolChallengesGameflowPhase {
 }
 export function useGameflowPhase() {
   const queryClient = useQueryClient();
+  const { state } = useLeagueState();
   // For initial fetch and refetching
   const { data: gameflowPhase, isLoading, error, refetch } = useQuery({
     queryKey: GAMEFLOW_PHASE_QUERY,
     queryFn: Summoner.Client.GetGameflowSession,
-    retry: 1,
+    enabled: state?.clientState === LeagueClientStateType.ClientStateLoggedIn,
 
   });
 

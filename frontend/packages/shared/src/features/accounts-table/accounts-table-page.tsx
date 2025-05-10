@@ -58,6 +58,8 @@ export function AccountsTablePage() {
     totalItems,
     sortConfig,
     pagination,
+    sliderValue,
+    handleBlueEssenceChange,
   } = useAccounts(currentPage);
 
   const { getCompanyIcon, getFormattedServer } = useMapping();
@@ -449,7 +451,7 @@ export function AccountsTablePage() {
                 <div className="w-full">
                   <Label className="text-sm font-medium mb-1.5 block">
                     Blue Essence (
-                    {filters.minBlueEssence?.toLocaleString() || '0'}
+                    {sliderValue.toLocaleString() || '0'}
                     )
                   </Label>
                   <div className="grid grid-cols-4 gap-2">
@@ -485,15 +487,13 @@ export function AccountsTablePage() {
                     </Button>
                   </div>
                   <Slider
+                    value={[sliderValue]} // For controlled component
+                    onValueChange={value => handleBlueEssenceChange(value[0])}
+
                     defaultValue={[filters.minBlueEssence]}
                     min={0}
                     max={30000}
                     step={100}
-                    onValueChange={value =>
-                      setFilters({
-                        ...filters,
-                        minBlueEssence: value[0],
-                      })}
                     className="my-4"
                   />
                 </div>

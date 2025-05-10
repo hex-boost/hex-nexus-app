@@ -1,11 +1,12 @@
 import type { AccountType, Server } from '@/types/types.ts';
-
 import type { StrapiResponse } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
+
 import { strapiClient } from '@/lib/strapi.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
+import debounce from 'lodash/debounce';
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -118,7 +119,11 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
   })();
 
   const [state, setState] = useState<AccountsState>(persistedState);
+  const [sliderValue, setSliderValue] = useState<number>(
+    persistedState.filters.minBlueEssence || 0,
+  );
 
+  // Create a debounced filter update function
   // Update persisted state when any part changes
   const updatePersistedState = useCallback(() => {
     queryClient.setQueryData(['accounts-filter-state'], state);
@@ -344,6 +349,27 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
     },
   });
 
+  const debouncedSetBlueEssence = useCallback(
+    debounce((value: number) => {
+      setFilters({
+        ...state.filters,
+        minBlueEssence: value,
+      });
+    }, 200),
+    [setFilters, state.filters],
+  );
+  // Function to update slider value immediately (for UI) but debounce the actual filter
+  const handleBlueEssenceChange = useCallback((value: number) => {
+    setSliderValue(value);
+    debouncedSetBlueEssence(value);
+  }, [debouncedSetBlueEssence]);
+
+  // Clean up the debounce on unmount
+  useEffect(() => {
+    return () => {
+      debouncedSetBlueEssence.cancel();
+    };
+  }, [debouncedSetBlueEssence]);
   // Prefetch next page
   useEffect(() => {
     if (data) {
@@ -413,5 +439,7 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
     totalItems: data?.meta.pagination.total || 0,
     setSearchQuery,
     setSelectedSkinIds,
+    sliderValue,
+    handleBlueEssenceChange,
   };
 }
