@@ -10,22 +10,25 @@ tasks:
 
   build:
     summary: Builds the application for Windows
-    deps:
+    cmds:
+      # Execute frontend tasks sequentially
+      - task: install:frontend:deps
+      - task: prepare:frontend:dist
+      - task: generate:bindings
+      - task: generate:bindings:updater
+      - task: build:frontend
       - task: build:frontend:updater
         vars:
           PRODUCTION: '{{.PRODUCTION}}'
+      # Continue with remaining build steps
       - task: mock
       - task: go:mod:tidy
       - task: clean
-        vars:
-          PRODUCTION: '{{.PRODUCTION}}'
       - task: generate:icons
-    cmds:
       - task: generate:syso
       - cmd: go build -tags production -trimpath -buildvcs=false -ldflags="-X github.com/hex-boost/hex-nexus-app/backend/internal/config.Version={{.VERSION}} -X github.com/hex-boost/hex-nexus-app/backend/internal/config.LogLevel=debug -X github.com/hex-boost/hex-nexus-app/backend/internal/config.BackendURL={{.API_URL}} -X github.com/hex-boost/hex-nexus-app/backend/internal/config.RefreshApiKey={{.REFRESH_API_KEY}} -w -s -H windowsgui" -o bin/Nexus.exe .
       - cmd: go build -tags production -trimpath -buildvcs=false -ldflags="-X github.com/hex-boost/hex-nexus-app/backend/internal/config.Version={{.VERSION}} -X github.com/hex-boost/hex-nexus-app/backend/internal/config.LogLevel=debug -X github.com/hex-boost/hex-nexus-app/backend/internal/config.BackendURL={{.API_URL}} -w -s -H windowsgui" -o bin/updater.exe ./backend/cmd/updater
       - cmd: powershell Remove-item *.syso
-
     vars:
       BUILD_FLAGS: '{{if eq .PRODUCTION "true"}}-tags production -trimpath -buildvcs=false -ldflags="-w -s -H windowsgui"{{else}}-buildvcs=false -gcflags=all="-l"{{end}}'
     env:
@@ -83,6 +86,7 @@ tasks:
       - task: prepare:frontend:dist
     cmds:
       - cmd: mockery
+    once: true
 
   prepare:frontend:dist:
     summary: Ensure frontend dist directory exists
@@ -92,6 +96,7 @@ tasks:
       - touch packages/main/dist/index.html
       - mkdir -p ../backend/cmd/updater/dist
       - touch ../backend/cmd/updater/dist/index.html
+    once: true
 
   install:frontend:deps:
     summary: Install frontend dependencies
@@ -107,6 +112,7 @@ tasks:
     method: checksum
 
 
+
   build:frontend:updater:
     summary: Build the frontend project
     dir: frontend
@@ -114,11 +120,6 @@ tasks:
       - "**/*"
     generates:
       - ../backend/cmd/updater/dist/*
-    deps:
-      - task: install:frontend:deps
-      - task: generate:bindings:updater
-      - task: build:frontend # Add dependency here
-
     cmds:
       - pnpm {{.BUILD_COMMAND}}
     env:
@@ -135,9 +136,6 @@ tasks:
       - "**/*"
     generates:
       - packages/main/dist/*
-    deps:
-      - task: install:frontend:deps
-      - task: generate:bindings
     cmds:
       - pnpm {{.BUILD_COMMAND}}
     env:
@@ -150,8 +148,6 @@ tasks:
 
   generate:bindings:updater:
     summary: Generates bindings for the frontend
-    deps:
-      - task: go:mod:tidy
     sources:
       - "**/*.go"
       - go.mod
@@ -162,8 +158,6 @@ tasks:
       - wails3 generate bindings -names -i -v -ts -f '{{.BUILD_FLAGS}}' -clean=true ./backend/cmd/updater -d frontend/packages/updater/bindings
   generate:bindings:
     summary: Generates bindings for the frontend
-    deps:
-      - task: go:mod:tidy
     sources:
       - "**/*.go"
       - go.mod
