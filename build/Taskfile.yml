@@ -10,13 +10,20 @@ tasks:
 
   build:
     summary: Builds the application for Windows
+    vars:
+      PRODUCTION: '{{.PRODUCTION}}'
+      BUILD_FLAGS: '{{if eq .PRODUCTION "true"}}-tags production -trimpath -buildvcs=false -ldflags="-w -s -H windowsgui"{{else}}-buildvcs=false -gcflags=all="-l"{{end}}'
     cmds:
       # Execute frontend tasks sequentially
       - task: install:frontend:deps
       - task: prepare:frontend:dist
+        vars:
+          PRODUCTION: '{{.PRODUCTION}}'
       - task: generate:bindings
       - task: generate:bindings:updater
       - task: build:frontend
+        vars:
+          PRODUCTION: '{{.PRODUCTION}}'
       - task: build:frontend:updater
         vars:
           PRODUCTION: '{{.PRODUCTION}}'
@@ -29,14 +36,11 @@ tasks:
       - cmd: go build -tags production -trimpath -buildvcs=false -ldflags="-X github.com/hex-boost/hex-nexus-app/backend/internal/config.Version={{.VERSION}} -X github.com/hex-boost/hex-nexus-app/backend/internal/config.LogLevel=debug -X github.com/hex-boost/hex-nexus-app/backend/internal/config.BackendURL={{.API_URL}} -X github.com/hex-boost/hex-nexus-app/backend/internal/config.RefreshApiKey={{.REFRESH_API_KEY}} -w -s -H windowsgui" -o bin/Nexus.exe .
       - cmd: go build -tags production -trimpath -buildvcs=false -ldflags="-X github.com/hex-boost/hex-nexus-app/backend/internal/config.Version={{.VERSION}} -X github.com/hex-boost/hex-nexus-app/backend/internal/config.LogLevel=debug -X github.com/hex-boost/hex-nexus-app/backend/internal/config.BackendURL={{.API_URL}} -w -s -H windowsgui" -o bin/updater.exe ./backend/cmd/updater
       - cmd: powershell Remove-item *.syso
-    vars:
-      BUILD_FLAGS: '{{if eq .PRODUCTION "true"}}-tags production -trimpath -buildvcs=false -ldflags="-w -s -H windowsgui"{{else}}-buildvcs=false -gcflags=all="-l"{{end}}'
     env:
       GOOS: windows
       CGO_ENABLED: 0
       GOARCH: '{{.ARCH | default ARCH}}'
       PRODUCTION: '{{.PRODUCTION | default "false"}}'
-
 
   package:
     summary: Packages a production build of the application into a `.exe` bundle
