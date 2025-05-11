@@ -43,7 +43,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5 # Using v5
         with:
-          go-version: '1.24.1' # Or your required Go version
+          go-version: '1.22.3' # Or your required Go version
           cache: true
 
       - name: Install MinGW (GCC for CGO)
