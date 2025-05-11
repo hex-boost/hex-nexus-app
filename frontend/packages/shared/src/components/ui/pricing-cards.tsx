@@ -116,10 +116,18 @@ export default function PricingCards() {
 
                   <div className="flex items-baseline mb-2">
                     <span className={`${getTierColorClass(plan.tier_enum).text} text-2xl`}>$</span>
-                    <span className={`${getTierColorClass(plan.tier_enum).text} text-6xl font-bold mx-1`}>
-                      {' '}
-                      {plan.price === 0 ? 0 : Math.floor(plan.price * 0.5)}
-                    </span>
+                    {plan.price === 0
+                      ? (
+                          <span className={`${getTierColorClass(plan.tier_enum).text} text-6xl font-bold mx-1`}>0</span>
+                        )
+                      : (
+                          <>
+                            <span className={`${getTierColorClass(plan.tier_enum).text} text-6xl font-bold mx-1`}>
+                              {Math.floor(plan.price * 0.5) - 1}
+                            </span>
+                            <span className={`${getTierColorClass(plan.tier_enum).text} text-4xl font-bold -ml-1`}>.99</span>
+                          </>
+                        )}
                     <div className="flex relative flex-col ml-1">
                       {plan.price > 0 && (
                         <span className="text-white/40 -top-7 absolute line-through text-lg font-medium">
@@ -130,7 +138,6 @@ export default function PricingCards() {
                       <span className={`${getTierColorClass(plan.tier_enum).text} text-xl`}>{plan.period}</span>
                     </div>
                   </div>
-
                   <div className={`border-t ${getTierColorClass(plan.tier_enum).border} my-4`}></div>
 
                   <ul className="space-y-4">

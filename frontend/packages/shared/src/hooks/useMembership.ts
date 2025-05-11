@@ -54,7 +54,7 @@ export function useMembership() {
       benefits: [
 
         {
-          title: 'Monthly 300 coins budget',
+          title: 'Monthly 500 coins budget',
         },
         {
           title: 'Accounts up to Platinum',
