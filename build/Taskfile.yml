@@ -76,9 +76,12 @@ tasks:
     summary: Runs `go mod tidy`
     deps:
       - task: mock
+      - task: generate:bindings
+      - task: generate:bindings:updater
     internal: true
     cmds:
       - go mod tidy
+    method: checksum
 
   mock:
     summary: Generate Mocks
@@ -86,6 +89,9 @@ tasks:
       - task: prepare:frontend:dist
     cmds:
       - cmd: mockery
+    generates:
+      - backend/**/mocks/*.go
+    method: timestamp  # Use timestamp to better track dependencies
     once: true
 
   prepare:frontend:dist:
