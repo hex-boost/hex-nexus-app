@@ -2,9 +2,6 @@ version: '3'
 
 includes:
   common: ./build/Taskfile.yml
-  windows: ./build/windows/Taskfile.yml
-
-
 
 dotenv: [ '.env' ]
 vars:
@@ -21,15 +18,16 @@ tasks:
   build:
     summary: Builds the application
     cmds:
-      - task: "{{OS}}:build"
+      - task: common:build
         vars:
-          VERSION: "{{.VERSION}}"
+          PRODUCTION: '{{.PRODUCTION | default "false"}}'
+          VERSION: '{{.VERSION}}'
+          API_URL: '{{.API_URL}}'
+          REFRESH_API_KEY: '{{.REFRESH_API_KEY}}'
+
   go:build:
     deps:
-      - task: windows:clean
-#      - task: common:build:frontend
-        vars:
-          PRODUCTION: '{{.PRODUCTION}}'
+      - task: common:clean
       - task: common:generate:icons
     cmds:
       - go build -race -tags development -gcflags="all=-N -l" -ldflags="-X github.com/hex-boost/hex-nexus-app/backend/internal/config.Version={{.VERSION}} -X github.com/hex-boost/hex-nexus-app/backend/internal/config.LogLevel=debug -X github.com/hex-boost/hex-nexus-app/backend/internal/config.Debug=true -X github.com/hex-boost/hex-nexus-app/backend/internal/config.BackendURL={{.API_URL}} -X github.com/hex-boost/hex-nexus-app/backend/internal/config.RefreshApiKey={{.REFRESH_API_KEY}}" -o bin/Nexus.exe .
@@ -38,14 +36,20 @@ tasks:
   package:
     summary: Packages a production build of the application
     cmds:
-      - task: "{{OS}}:package"
-    method: checksum  # Add this to ensure single execution
-
+      - task: common:package
+        vars:
+          PRODUCTION: "true"
+          VERSION: '{{.VERSION}}'
+          API_URL: '{{.API_URL}}'
+          REFRESH_API_KEY: '{{.REFRESH_API_KEY}}'
+    method: checksum
 
   run:
     summary: Runs the application
     cmds:
-      - task: "{{OS}}:run"
+      - task: common:run
+        vars:
+          VERSION: '{{.VERSION}}'
 
   dev:
     summary: Runs the application in development mode
