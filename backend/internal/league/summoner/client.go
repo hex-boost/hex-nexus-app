@@ -432,6 +432,30 @@ func (s *Client) GetGameflowSession() (*types.LolGameflowV1Session, error) {
 	return &lolGameflowSession, nil
 }
 
+func (s *Client) GetLeaverBuster() (*types.CurrentSummonerProfile, error) {
+	s.logger.Debug("Fetching current summoner profile")
+	lcuClient, err := s.conn.GetClient()
+	if err != nil {
+		s.logger.Error("Failed to get LCU client for GetCurrentSummonerProfile", zap.Error(err))
+		return nil, fmt.Errorf("LCU client unavailable for GetCurrentSummonerProfile: %w", err)
+	}
+
+	var currentSummonerProfile types.CurrentSummonerProfile
+	resp, err := lcuClient.R().SetResult(&currentSummonerProfile).Get("/lol-summoner/v1/current-summoner/summoner-profile")
+	if err != nil {
+		s.logger.Error("Error fetching current summoner profile data", zap.Error(err))
+		return nil, err
+	}
+
+	if resp.IsError() {
+		errMsg := fmt.Sprintf("Failed to get current summoner profile status: %d, body: %s", resp.StatusCode(), resp.String())
+		s.logger.Warn(errMsg)
+		return nil, errors.New(errMsg)
+	}
+
+	return &currentSummonerProfile, nil
+}
+
 func (s *Client) GetCurrentSummonerProfile() (*types.CurrentSummonerProfile, error) {
 	s.logger.Debug("Fetching current summoner profile")
 	lcuClient, err := s.conn.GetClient()

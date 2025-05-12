@@ -48,7 +48,7 @@ export default function UpdateOverlay({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.3 }}
-        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-opacity-95 backdrop-blur-sm"
+        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background bg-opacity-95 backdrop-blur-sm"
       >
         <div className="flex flex-col items-center justify-center max-w-md w-full px-6">
           <UpdateLogo status={status} />

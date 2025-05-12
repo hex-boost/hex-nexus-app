@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @source "../**/*.{ts,tsx}"; /* Current app */
 @source "../../../packages/ui/**/*.{ts,tsx}"; /* Components in ui package */
+@source "../../../packages/updater/**/*.{ts,tsx}"; /* Components in ui package */
 @source "../../../packages/shared/**/*.{ts,tsx}"; /* Components in shared package */
 @plugin 'tailwindcss-animate';
 

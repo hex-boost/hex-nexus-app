@@ -649,3 +649,7 @@ type LocalPlayerChampionMastery struct {
 	Puuid        string `json:"puuid"`
 	TokensEarned int    `json:"tokensEarned"`
 }
+type LeaverBusterGamesRemaining struct {
+	NeedsAck               bool `json:"needsAck"`
+	PunishedGamesRemaining int  `json:"punishedGamesRemaining"`
+}
