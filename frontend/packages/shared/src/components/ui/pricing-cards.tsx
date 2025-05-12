@@ -96,8 +96,7 @@ export default function PricingCards() {
 
           <div className="inline-block mb-6">
             <div className={`${`${getTierColorClass('pro').glow}`} text-white text-sm py-2 px-4 rounded-full font-medium `}>
-              🎉 First Week Promotion: 50% OFF ALL PLANS - Ends May 11th! 🎉
-
+              🎉 Promotion Extended: 50% OFF ALL PLANS - Ends May 31th! 🎉
             </div>
           </div>
 
