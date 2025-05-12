@@ -14,8 +14,8 @@ type PremiumPaymentModalState = {
 export const usePremiumPaymentModalStore = create<PremiumPaymentModalState>(set => ({
   isOpen: false,
   tier: 'premium',
-  paymentMethod: 'Stripe',
-  amount: 0,
+  paymentMethod: 'BR Balance',
+  amount: 5000,
   open: data => set({ isOpen: true, ...data }),
   close: () => set({ isOpen: false }),
 }));

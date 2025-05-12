@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card.tsx';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog.tsx';
 import { useMembership } from '@/hooks/useMembership.ts';
 import { motion } from 'framer-motion';
-import { Check, CreditCard } from 'lucide-react';
+import { CreditCard, CrownIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 type PremiumPaymentModalProps = {
@@ -54,11 +54,11 @@ export function PremiumPaymentModal({
 
   // Color mapping based on the premium tier
 
-  const colors = getTierColorClass(tier);
+  const colors = getTierColorClass(tier.toLowerCase() as PremiumTiers);
 
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-      <DialogContent className="sm:max-w-md md:max-w-lg bg-zinc-900 border-zinc-800 backdrop-blur-sm p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-md md:max-w-lg bg-background border-zinc-800 backdrop-blur-sm p-0 overflow-hidden">
 
         <div className="p-6">
           <Card className="w-full bg-transparent border-none shadow-none">
@@ -176,7 +176,7 @@ export function PremiumPaymentModal({
                 </motion.p>
 
                 <motion.div
-                  className={`flex-1 bg-zinc-800/50 rounded-xl p-4 border ${colors.border} backdrop-blur-md`}
+                  className={`flex-1 bg-card-darker rounded-xl p-4 border ${colors.border} backdrop-blur-md`}
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{
@@ -194,8 +194,10 @@ export function PremiumPaymentModal({
                       <div className="flex items-center gap-2.5 group transition-all">
                         <span
                           className={`inline-flex items-center justify-center w-8 h-8 rounded-lg  shadow-lg ${colors.border} text-sm font-medium ${colors.text} group-hover:scale-105 transition-transform`}
+                          /* eslint-disable-next-line react-dom/no-dangerously-set-innerhtml */
+                          dangerouslySetInnerHTML={{ __html: paymentMethods.find(paymentMethodAccepted => paymentMethodAccepted.title.toLowerCase() === paymentMethod.toLowerCase())?.icon as any }}
+
                         >
-                          {paymentMethods.find(paymentMethod => paymentMethod.title.toLowerCase() === paymentMethod.title)?.icon }
                         </span>
                         <span className="font-medium text-zinc-100 tracking-tight">{paymentMethod}</span>
                       </div>
@@ -205,7 +207,7 @@ export function PremiumPaymentModal({
 
                     <div className="space-y-1.5 w-full">
                       <span className="text-xs font-medium text-zinc-500 flex items-center gap-1.5">
-                        <Check className="w-3 h-3" />
+                        <CrownIcon className="w-3 h-3" />
                         Premium Tier
                       </span>
                       <div className="flex items-center justify-between w-full">
