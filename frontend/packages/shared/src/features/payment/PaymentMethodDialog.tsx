@@ -52,7 +52,7 @@ export function PaymentMethodDialog({ children, selectedTier }: { selectedTier: 
               <div
                 key={method.title}
                 className={`flex cursor-pointer items-center justify-between rounded-lg border p-4 hover:bg-primary/10 ${
-                  selectedPaymentMethod === method.title ? 'bg-primary/20  border-blue-500' : method.title === 'BR Balance' ? 'opacity-60 pointer-events-none' : ''
+                  selectedPaymentMethod === method.title ? 'bg-primary/20  border-blue-500' : ''
                 }`}
                 onClick={() => setSelectedPaymentMethod(method.title)}
                 onKeyDown={(e) => {
@@ -76,7 +76,7 @@ export function PaymentMethodDialog({ children, selectedTier }: { selectedTier: 
 
                       {method.title.includes('BR') && (
                         <Badge className="rounded-full ">
-                          Coming Soon
+                          Best Option
                         </Badge>
                       )}
                     </div>
@@ -115,7 +115,6 @@ export function PaymentMethodDialog({ children, selectedTier }: { selectedTier: 
               : (
                   <BoostRoyalInnerDialog>
                     <Button
-                      disabled
                       loading={isPending}
                       className="w-full sm:w-auto relative"
                       onClick={handleContinue}

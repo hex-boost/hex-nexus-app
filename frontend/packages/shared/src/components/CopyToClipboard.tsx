@@ -1,17 +1,18 @@
-import {Button} from '@/components/ui/button.tsx';
-import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from '@/components/ui/tooltip';
-import {cn} from '@/lib/utils';
-import {Clipboard} from '@wailsio/runtime';
-import {Check, Copy} from 'lucide-react';
-import {useState} from 'react';
+import { Button } from '@/components/ui/button.tsx';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import { Clipboard } from '@wailsio/runtime';
+import { Check, Copy } from 'lucide-react';
+import { useState } from 'react';
 
-export function CopyToClipboard({ className, text }: { className: string; text: string }) {
+export function CopyToClipboard({ className, text, onCopied }: { onCopied?: () => void; className: string; text: string }) {
   const [copied, setCopied] = useState<boolean>(false);
 
   const handleCopy = async () => {
     try {
       setCopied(true);
       await Clipboard.SetText(text);
+      onCopied && onCopied();
       setTimeout(() => setCopied(false), 1500);
     } catch (err) {
       console.error('Failed to copy text: ', err);

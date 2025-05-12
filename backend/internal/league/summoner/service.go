@@ -31,6 +31,7 @@ func (l *Service) UpdateFromLCU() (*types.PartialSummonerRented, error) {
 		userinfo        types.UserInfo
 		mu              sync.Mutex
 		currentSummoner types.CurrentSummoner
+		//leaverBuster    types.LeaverBuster
 	)
 
 	eg, _ := errgroup.WithContext(context.Background())
@@ -45,6 +46,17 @@ func (l *Service) UpdateFromLCU() (*types.PartialSummonerRented, error) {
 		mu.Unlock()
 		return nil
 	})
+	//eg.Go(func() error {
+	//	leaverBusterResponse, err := l.client.GetLeaverBuster()
+	//	if err != nil {
+	//		l.logger.Error("Failed to get current summoner")
+	//		return err
+	//	}
+	//	mu.Lock()
+	//	userinfo = *leaverBusterResponse
+	//	mu.Unlock()
+	//	return nil
+	//})
 
 	eg.Go(func() error {
 		champs, err := l.client.GetChampions()

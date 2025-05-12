@@ -26,7 +26,7 @@ func TestWalletEventWithValidData(t *testing.T) {
 
 	testLogger := logger.New("test", &config.Config{})
 	// Pass mockApp to the constructor
-	handler := New(testLogger, mockState, mockAccountClient, mockSummonerClient, mockLolSkin, mockLolSkinState, mockApp)
+	handler := New(testLogger, mockState, mockAccountClient, mockSummonerClient, mockLolSkin, mockLolSkinState)
 
 	blueEssence := 1000
 	currentAccount := &types.PartialSummonerRented{

@@ -1,12 +1,14 @@
 import type { FormattedChampion, FormattedSkin } from '@/hooks/useDataDragon/types/useDataDragonHook.ts';
+import PremiumContentWrapper from '@/components/paywall/premium-content-wrapper.tsx';
 import { Dock, DockIcon, DockItem, DockLabel } from '@/components/ui/dock';
-import CharacterSelection from '@/features/skin-selector/character-selection.tsx';
 
+import CharacterSelection from '@/features/skin-selector/character-selection.tsx';
 import { useAllDataDragon } from '@/hooks/useDataDragon/useDataDragon.ts';
 import { saveSkinSelection } from '@/lib/champion-skin-store';
-import { State as LolSkinState } from '@lolskin';
 
-import { createFileRoute } from '@tanstack/react-router';
+import { useUserStore } from '@/stores/useUserStore.ts';
+import { State as LolSkinState } from '@lolskin';
+import { createFileRoute, useRouter } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import {
   Handler,
@@ -50,7 +52,8 @@ export function LobbyRevealerDock({ onClickAction }: { onClickAction?: () => voi
 }
 function RouteComponent() {
   const { allChampions, allSkins, isLoading } = useAllDataDragon();
-
+  const { user } = useUserStore();
+  const router = useRouter();
   const handleSelectSkin = async (champion: FormattedChampion, skin: FormattedSkin, chroma: any | null = null) => {
     // Apply skin change
     LolSkinState.SetChampionSkin(Number(champion.id), skin.num, chroma?.id || null);
@@ -72,12 +75,14 @@ function RouteComponent() {
   };
   return (
     <>
-      <CharacterSelection
-        isLoading={isLoading}
-        skins={allSkins}
-        champions={allChampions}
-        onSelectSkin={handleSelectSkin}
-      />
+      <PremiumContentWrapper isPremiumUser={user?.premium?.tier === 'pro'} onPurchase={() => router.navigate({ to: '/subscription' })}>
+        <CharacterSelection
+          isLoading={isLoading}
+          skins={allSkins}
+          champions={allChampions}
+          onSelectSkin={handleSelectSkin}
+        />
+      </PremiumContentWrapper>
     </>
   );
 }
