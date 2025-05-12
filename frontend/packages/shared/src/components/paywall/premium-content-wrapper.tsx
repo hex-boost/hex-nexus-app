@@ -29,9 +29,9 @@ export default function PremiumContentWrapper({
         <PremiumPaywall
           onPurchase={onPurchase}
           features={pricingPlans.find(plan => plan.tier_enum === 'pro')?.benefits.map(item => item.title)}
-          title="Unlock Pro Skin Changer"
+          title="Unlock Skin Changer"
           description="Get unlimited access to our complete collection of skins, and exclusive features."
-          ctaText="Upgrade to PRO"
+          ctaText="Upgrade Now"
         />
       )}
     </div>

@@ -1,11 +1,14 @@
 import { CollapseMenuButton } from '@/components/admin-panel/collapse-menu-button';
+import { Badge } from '@/components/ui/badge.tsx';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useMembership } from '@/hooks/useMembership.ts';
 import { getMenuList } from '@/lib/menu-list';
 import { cn } from '@/lib/utils';
 import { Link, useLocation } from '@tanstack/react-router';
 import clsx from 'clsx';
+import { cls } from 'react-image-crop';
 
 type MenuProps = {
   isOpen: boolean | undefined;
@@ -14,7 +17,7 @@ type MenuProps = {
 export function Menu({ isOpen }: MenuProps) {
   const { pathname } = useLocation();
   const menuList = getMenuList();
-
+  const { getTierColorClass } = useMembership();
   return (
     <nav className="mt-8 h-full w-full">
       <ul className="flex flex-col min-h-[calc(100vh-48px-36px-16px-32px)] lg:min-h-[calc(100vh-32px-40px-32px)] items-start space-y-1 px-2">
@@ -25,7 +28,15 @@ export function Menu({ isOpen }: MenuProps) {
               ({ href, label, icon: Icon, submenus }, index) =>
                 !submenus || submenus.length === 0
                   ? (
-                      <div className="w-full" key={index}>
+                      <div className="w-full relative" key={index}>
+                        {
+                          label === 'Skin Selector'
+                          && (
+                            <Badge className={cls('absolute text-xs top-0 right-0 translate-x-1/2 -translate-y-1/2', getTierColorClass('pro').glow, getTierColorClass('pro').text)}>
+                              Pro
+                            </Badge>
+                          )
+                        }
                         <TooltipProvider disableHoverableContent>
                           <Tooltip delayDuration={100}>
                             <TooltipTrigger asChild>

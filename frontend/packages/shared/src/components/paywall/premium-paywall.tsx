@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { useMembership } from '@/hooks/useMembership.ts';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { CheckCircle2, Crown, Lock, Sparkles, Star } from 'lucide-react';
@@ -28,11 +29,11 @@ export default function PremiumPaywall({
     'Early access to new releases',
   ],
   className,
-  blurContent = true,
+  // blurContent = true,
   onPurchase,
 }: PremiumPaywallProps) {
   const [mounted, setMounted] = useState(false);
-
+  const { getTierColorClass } = useMembership();
   useEffect(() => {
     setMounted(true);
     // Prevent scrolling when paywall is active
@@ -114,7 +115,13 @@ export default function PremiumPaywall({
             </motion.div>
           </div>
 
-          <p className="mt-4 text-xs text-muted-foreground">Unlock now for unlimited access to all premium features</p>
+          <p className="mt-4 text-xs text-muted-foreground">
+            Unlock now for unlimited access to all
+            {' '}
+            <span className={getTierColorClass('pro')?.text}>pro</span>
+            {' '}
+            features
+          </p>
         </div>
       </motion.div>
 

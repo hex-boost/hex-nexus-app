@@ -5,6 +5,7 @@ import { LobbySummonerCard } from '@/components/LobbySummonerCard.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
+import { useLobbyRevealer } from '@/features/lobby-revealer/hooks/useLobbyRevealer.ts';
 import { SummonerCardEmptyState } from '@/features/lobby-revealer/SummonerCardEmptyState.tsx';
 import { SummonerCardSkeleton } from '@/features/lobby-revealer/SummonerCardSkeleton.tsx';
 import { useBlitzPlayerChampion } from '@/hooks/blitz/useBlitzPlayerChampion.ts';
@@ -14,7 +15,6 @@ import { useCurrentSummonerProfileQuery } from '@/hooks/useCurrentSummonerProfil
 import { useCurrentSummonerQuery } from '@/hooks/useCurrentSummonerQuery.ts';
 import { useAllDataDragon } from '@/hooks/useDataDragon/useDataDragon.ts';
 import { useGameflowPhase } from '@/hooks/useGameflowPhaseQuery.ts';
-import { useLobbyRevealer } from '@/hooks/useLobbyRevealer.ts';
 import { useSummonerRankQuery } from '@/hooks/useSummonerRankQuery.ts';
 import { logger } from '@/lib/logger.ts';
 import { useQuery } from '@tanstack/react-query';

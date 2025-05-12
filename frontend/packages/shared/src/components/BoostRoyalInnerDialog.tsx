@@ -29,9 +29,9 @@ export function BoostRoyalInnerDialog({ children }: { children: React.ReactNode 
       </InnerDialogTrigger>
       <InnerDialogContent className="p-0">
         <InnerDialogHeader className="border-b p-4">
-          <InnerDialogTitle>BR Balance Payment</InnerDialogTitle>
+          <InnerDialogTitle>Boost Royal Balance Payment</InnerDialogTitle>
           <InnerDialogDescription>
-            Follow these steps to pay using your Boost Royal balance
+            Follow these steps to pay using your BR balance
           </InnerDialogDescription>
         </InnerDialogHeader>
 

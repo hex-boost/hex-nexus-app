@@ -4,6 +4,7 @@ import AdminPanelLayout from '@/components/admin-panel/admin-panel-layout.tsx';
 import { CloseConfirmationHandler } from '@/components/CloseConfirmation.tsx';
 import { CoinIcon } from '@/components/coin-icon.tsx';
 import { DefaultContextMenu } from '@/components/DefaultContextMenu.tsx';
+import { PremiumContentDialog } from '@/components/paywall/premium-content-dialog.tsx';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import {
@@ -20,6 +21,8 @@ import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { Textarea } from '@/components/ui/textarea.tsx';
 import { WindowControls } from '@/components/WindowControls.tsx';
 import { ContextMenuProvider } from '@/contexts/ContextMenuContext.tsx';
+import { useLobbyRevealer } from '@/features/lobby-revealer/hooks/useLobbyRevealer.ts';
+import { LobbyRevealerDock } from '@/features/lobby-revealer/lobby-revealer-dock.tsx';
 import { NotificationProvider } from '@/features/notification/notification-provider.tsx';
 import { NotificationBell } from '@/features/notification/NotificationBell.tsx';
 import { UserProfile } from '@/features/user-profile/UserProfile.tsx';
@@ -27,13 +30,12 @@ import { useChatMeQuery } from '@/hooks/useChatMeQuery.ts';
 import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
 import { useFavoriteAccounts } from '@/hooks/useFavoriteAccounts.ts';
 import { LolChallengesGameflowPhase, useGameflowPhase } from '@/hooks/useGameflowPhaseQuery.ts';
-import { useLobbyRevealer } from '@/hooks/useLobbyRevealer.ts';
+import { useMembership } from '@/hooks/useMembership.ts';
 import { useUserStore } from '@/stores/useUserStore';
 import { createFileRoute, Outlet, useRouter } from '@tanstack/react-router';
 import { Browser } from '@wailsio/runtime';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { cls } from 'react-image-crop';
-import { LobbyRevealerDock } from './_protected/tools';
 import 'non.geist';
 
 export const Route = createFileRoute('/_protected')({
@@ -46,8 +48,9 @@ function DashboardLayout() {
   const { isUserLoading, refetchUser } = useCommonFetch();
   const { gameflowPhase } = useGameflowPhase();
   const { refetch, chatMe } = useChatMeQuery();
-
+  const [openPremiumDialog, setOpenPremiumDialog] = useState(false);
   const { getMultiSearchUrl, summonerCards, isPending } = useLobbyRevealer({ platformId: chatMe?.platformId || '' });
+  const { pricingPlans } = useMembership();
   useEffect(() => {
     console.log('[DashboardLayout] gameflowPhase changed:', gameflowPhase?.phase);
     if (gameflowPhase?.phase === LolChallengesGameflowPhase.ChampSelect) {
@@ -75,6 +78,13 @@ function DashboardLayout() {
 
   const { updateFavoriteNote, isNoteDialogOpen, setIsNoteDialogOpen, noteText, setNoteText, handleSaveNote } = useFavoriteAccounts();
 
+  async function handleOpenOpgg(summonerCards: string[]) {
+    if (user?.premium?.tier !== 'pro') {
+      setOpenPremiumDialog(true);
+      return;
+    }
+    await Browser.OpenURL(getMultiSearchUrl(summonerCards));
+  }
   return (
     <>
       {
@@ -85,10 +95,19 @@ function DashboardLayout() {
               summonerCards,
               multiSearchUrl: getMultiSearchUrl(summonerCards),
             })}
-            <LobbyRevealerDock onClickAction={() => Browser.OpenURL(getMultiSearchUrl(summonerCards))} />
+            <LobbyRevealerDock onClickAction={() => handleOpenOpgg(summonerCards)} />
           </>
         )
       }
+      <PremiumContentDialog
+        title="Unlock Lobby Revealer"
+        description="Get instant insights on players in your lobby and gain a strategic advantage before the match even starts."
+        ctaText="Upgrade Now"
+        features={pricingPlans.find(plan => plan.tier_enum === 'pro')?.benefits.map(item => item.title) || []}
+        onAction={() => router.navigate({ to: '/subscription' })}
+        open={openPremiumDialog}
+        onOpenChange={() => setOpenPremiumDialog(false)}
+      />
       <CloseConfirmationHandler />
 
       <NotificationProvider>
