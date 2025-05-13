@@ -29,6 +29,7 @@ type App interface {
 }
 type SummonerClient interface {
 	GetRanking() (*types.RankedStatsRefresh, error)
+	GetLeaverBuster() (*types.LeaverBusterResponse, error)
 }
 type LolSkin interface {
 	DownloadFantome(championId int32, skinId int32) (string, error)
@@ -282,13 +283,64 @@ func (h *Handler) ChampionPicked(event websocket.LCUWebSocketEvent) {
 		}()
 	}
 }
+
+func (h *Handler) Restriction(event websocket.LCUWebSocketEvent) {
+	var restriction types.LeaverBusterRemaining
+	if err := json.Unmarshal(event.Data, &restriction); err != nil {
+		h.logger.Error("Failed to parse gameflow phase data", zap.Error(err))
+		return
+	}
+
+	// Extract the current punished games count from existing account data
+	currentLeaverBusterPunishedGames := 0
+	account := h.accountState.Get()
+
+	// Extract current leaver buster info if available
+	if account.LeaverBuster != nil {
+		currentLeaverBusterPunishedGames = account.LeaverBuster.LeaverBusterEntryDto.PunishedGamesRemaining
+	}
+	// Fetch the latest leaver buster information
+	leaverBusterInfo, err := h.summonerClient.GetLeaverBuster()
+	if err != nil {
+		h.logger.Info("Failed to get leaver buster data", zap.Error(err))
+		// Continue with other updates - don't return error here
+		return
+	}
+
+	// Compare the punished games count to determine if an update is needed
+	newPunishedGamesRemaining := 0
+	if leaverBusterInfo != nil && leaverBusterInfo.LeaverBusterEntryDto.PunishedGamesRemaining > 0 {
+		newPunishedGamesRemaining = leaverBusterInfo.LeaverBusterEntryDto.PunishedGamesRemaining
+	}
+
+	// Only update if there's a change in the punished games count
+	if currentLeaverBusterPunishedGames != newPunishedGamesRemaining {
+		h.logger.Info("Updating leaver buster information",
+			zap.Int("oldPunishedGames", currentLeaverBusterPunishedGames),
+			zap.Int("newPunishedGames", newPunishedGamesRemaining))
+
+		// Create a partial summoner with the updated information
+		partialSummoner := types.PartialSummonerRented{
+			Username:     account.Username,
+			LeaverBuster: leaverBusterInfo,
+		}
+
+		// Process the update
+		_, saveErr := h.accountClient.Save(partialSummoner)
+		if saveErr != nil {
+			h.logger.Error("Failed to update leaver buster information", zap.Error(saveErr))
+			return
+		}
+
+		h.logger.Info("Successfully updated leaver buster information")
+	} else {
+		h.logger.Debug("No change in leaver buster information, skipping update")
+	}
+}
 func (h *Handler) ReemitEvent(event websocket.LCUWebSocketEvent) {
 	h.logger.Info("Re-emitting event", zap.String("event", event.EventTopic), zap.String("uri", event.URI))
 
 	h.app.EmitEvent(event.EventTopic, event.Data)
-}
-func (h *Handler) EmitEventChan() {
-
 }
 
 // IsRankingSame compares two RankedDetails objects to determine if they are identical

@@ -31,7 +31,7 @@ func (l *Service) UpdateFromLCU() (*types.PartialSummonerRented, error) {
 		userinfo        types.UserInfo
 		mu              sync.Mutex
 		currentSummoner types.CurrentSummoner
-		//leaverBuster    types.LeaverBuster
+		leaverBuster    types.LeaverBusterResponse
 	)
 
 	eg, _ := errgroup.WithContext(context.Background())
@@ -46,17 +46,17 @@ func (l *Service) UpdateFromLCU() (*types.PartialSummonerRented, error) {
 		mu.Unlock()
 		return nil
 	})
-	//eg.Go(func() error {
-	//	leaverBusterResponse, err := l.client.GetLeaverBuster()
-	//	if err != nil {
-	//		l.logger.Error("Failed to get current summoner")
-	//		return err
-	//	}
-	//	mu.Lock()
-	//	userinfo = *leaverBusterResponse
-	//	mu.Unlock()
-	//	return nil
-	//})
+	eg.Go(func() error {
+		leaverBusterResponse, err := l.client.GetLeaverBuster()
+		if err != nil {
+			l.logger.Error("Failed to get leaver buster")
+			return err
+		}
+		mu.Lock()
+		leaverBuster = *leaverBusterResponse
+		mu.Unlock()
+		return nil
+	})
 
 	eg.Go(func() error {
 		champs, err := l.client.GetChampions()
@@ -142,11 +142,11 @@ func (l *Service) UpdateFromLCU() (*types.PartialSummonerRented, error) {
 		PUUID:           &currentSummoner.Puuid,
 		LCUskins:        &skins,
 		IsEmailVerified: &userinfo.EmailVerified,
-
-		Currencies: &currencies,
-		Rankings:   rankingMap,
-		Server:     &userinfo.LOL.CPID,
-		Ban:        &userinfo.Ban,
+		LeaverBuster:    &leaverBuster,
+		Currencies:      &currencies,
+		Rankings:        rankingMap,
+		Server:          &userinfo.LOL.CPID,
+		Ban:             &userinfo.Ban,
 	}
 
 	return summoner, nil

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/go-resty/resty/v2"
 	"net/http"
 	"strconv"
 
@@ -432,30 +433,49 @@ func (s *Client) GetGameflowSession() (*types.LolGameflowV1Session, error) {
 	return &lolGameflowSession, nil
 }
 
-func (s *Client) GetLeaverBuster() (*types.CurrentSummonerProfile, error) {
-	s.logger.Debug("Fetching current summoner profile")
+func (s *Client) GetLeaverBuster() (*types.LeaverBusterResponse, error) {
+	s.logger.Debug("Fetching current leaver buster")
 	lcuClient, err := s.conn.GetClient()
 	if err != nil {
-		s.logger.Error("Failed to get LCU client for GetCurrentSummonerProfile", zap.Error(err))
-		return nil, fmt.Errorf("LCU client unavailable for GetCurrentSummonerProfile: %w", err)
+		s.logger.Error("Failed to get LCU client for leaver buster", zap.Error(err))
+		return nil, fmt.Errorf("LCU client unavailable for leaver buster: %w", err)
 	}
 
-	var currentSummonerProfile types.CurrentSummonerProfile
-	resp, err := lcuClient.R().SetResult(&currentSummonerProfile).Get("/lol-summoner/v1/current-summoner/summoner-profile")
+	var leaverBusterToken string
+	resp, err := lcuClient.R().SetResult(&leaverBusterToken).Get("/lol-league-session/v1/league-session-token")
 	if err != nil {
-		s.logger.Error("Error fetching current summoner profile data", zap.Error(err))
+		s.logger.Error("Error fetching current leaver buster data", zap.Error(err))
 		return nil, err
 	}
 
 	if resp.IsError() {
-		errMsg := fmt.Sprintf("Failed to get current summoner profile status: %d, body: %s", resp.StatusCode(), resp.String())
+		errMsg := fmt.Sprintf("Failed to get current leaver buster status: %d, body: %s", resp.StatusCode(), resp.String())
 		s.logger.Warn(errMsg)
 		return nil, errors.New(errMsg)
 	}
 
-	return &currentSummonerProfile, nil
-}
+	var leaverBuster types.LeaverBusterResponse
+	riotGamesClient := resty.New()
+	leaverBusterResp, err := riotGamesClient.R().
+		SetResult(&leaverBuster).
+		SetAuthScheme("Bearer").
+		SetAuthToken(leaverBusterToken).
+		Get("https://euw-red.lol.sgp.pvp.net/leaverbuster-ledge/restrictionInfo")
 
+	if err != nil {
+		s.logger.Error("Error fetching current leaver buster data", zap.Error(err))
+		return nil, err
+	}
+
+	if leaverBusterResp.IsError() {
+		errMsg := fmt.Sprintf("Failed to get current leaver buster status: %d, body: %s",
+			leaverBusterResp.StatusCode(), leaverBusterResp.String())
+		s.logger.Warn(errMsg)
+		return nil, errors.New(errMsg)
+	}
+
+	return &leaverBuster, nil
+}
 func (s *Client) GetCurrentSummonerProfile() (*types.CurrentSummonerProfile, error) {
 	s.logger.Debug("Fetching current summoner profile")
 	lcuClient, err := s.conn.GetClient()

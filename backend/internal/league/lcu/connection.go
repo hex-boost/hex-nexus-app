@@ -6,9 +6,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"net/url" // For more specific error checking
 	"regexp"
-	"strings"
 	"sync"
 	"time"
 
@@ -85,7 +83,7 @@ func (c *Connection) performInitialization() error {
 // If subsequent calls find the client is nil (e.g., after a failed re-init),
 // it can attempt to re-initialize.
 func (c *Connection) GetClient() (*resty.Client, error) {
-	// Ensure the first initialization attempt happens only once.
+	// Ensure the first initialization attempt happens only once
 	c.initOnce.Do(func() {
 		c.mu.Lock()
 		defer c.mu.Unlock()
@@ -95,28 +93,26 @@ func (c *Connection) GetClient() (*resty.Client, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	// If there was an error during the last initialization (or the first one via initOnce)
-	if c.lastInitErr != nil {
-		// Optionally, you could try one more time here if you suspect a transient issue,
-		// but be careful about repeated failures.
-		// c.logger.Warn("Returning client with last known error, attempting one more re-init", zap.Error(c.lastInitErr))
-		// if reInitErr := c.performInitialization(); reInitErr != nil {
-		//    c.lastInitErr = reInitErr // Update the error
-		// }
-		return nil, c.lastInitErr
-	}
+	// If there was an error during the last initialization or client is nil,
+	// always attempt to reinitialize
+	if c.lastInitErr != nil || c.client == nil {
+		c.logger.Debug("Previous LCU initialization failed or client is nil, attempting reinitialization",
+			zap.Error(c.lastInitErr))
 
-	// If client is nil even without an error (should be rare after initOnce), try to init.
-	if c.client == nil {
-		c.logger.Warn("LCU client is nil in GetClient despite no error, attempting initialization.")
+		// Try to reinitialize
 		if err := c.performInitialization(); err != nil {
-			c.lastInitErr = err // Store the new error
-			return nil, c.lastInitErr
+			c.lastInitErr = err // Update the error
+			return nil, err
 		}
-		// If still nil, something is very wrong.
+
+		// Double-check client isn't nil after initialization
 		if c.client == nil {
-			return nil, errors.New("LCU client remains nil after explicit re-initialization attempt")
+			err := errors.New("LCU client remains nil after reinitialization attempt")
+			c.lastInitErr = err
+			return nil, err
 		}
+
+		c.logger.Info("LCU client successfully reinitialized")
 	}
 
 	return c.client, nil
@@ -175,19 +171,6 @@ func (c *Connection) IsClientInitialized() bool {
 		SetContext(ctx).SetResult(&response).
 		Get("/lol-summoner/v1/status") // A very lightweight, stable endpoint
 	if err != nil {
-		// Log specific errors that might indicate a stale connection (port changed, client closed)
-		var urlErr *url.Error
-		if errors.As(err, &urlErr) {
-			if urlErr.Timeout() {
-				c.logger.Warn("IsClientInitialized: LCU client ping timed out", zap.Error(err))
-			} else if strings.Contains(urlErr.Err.Error(), "connection refused") {
-				c.logger.Warn("IsClientInitialized: LCU client ping connection refused (likely stale)", zap.Error(err))
-			} else {
-				c.logger.Warn("IsClientInitialized: LCU client ping failed with network error", zap.Error(err))
-			}
-		} else {
-			c.logger.Warn("IsClientInitialized: LCU client ping failed", zap.Error(err))
-		}
 		return false
 	}
 
@@ -196,10 +179,6 @@ func (c *Connection) IsClientInitialized() bool {
 			zap.Int("status_code", resp.StatusCode()),
 			zap.String("body", resp.String()))
 		return false
-	}
-
-	if response.Ready {
-		return true
 	}
 	return true
 }

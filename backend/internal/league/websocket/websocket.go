@@ -61,6 +61,7 @@ type Handler interface {
 	ChampionPurchase(event LCUWebSocketEvent)
 	GameflowPhase(event LCUWebSocketEvent)
 	ChampionPicked(event LCUWebSocketEvent)
+	Restriction(event LCUWebSocketEvent)
 	ReemitEvent(event LCUWebSocketEvent)
 }
 
@@ -446,6 +447,7 @@ func (s *Service) GetHandlers() []EventHandler {
 		s.manager.NewEventHandler("OnJsonApiEvent_lol-gameflow_v1_gameflow-phase", s.handler.GameflowPhase),
 		s.manager.NewEventHandler("OnJsonApiEvent_lol-inventory_v2_inventory", s.handler.ChampionPurchase),
 		s.manager.NewEventHandler("OnJsonApiEvent_lol-champ-select_v1_grid-champions", s.handler.ChampionPicked),
+		s.manager.NewEventHandler("OnJsonApiEvent_lol-leaver-buster_v1_ranked-restriction", s.handler.Restriction),
 		s.manager.NewEventHandler("OnJsonApiEvent_lol-lobby-team-builder_champ-select_v1", s.handler.ReemitEvent),
 		s.manager.NewEventHandler("OnJsonApiEvent_lol-summoner_v1_current-summoner", s.handler.ReemitEvent),
 		s.manager.NewEventHandler("OnJsonApiEvent_lol-gameflow_v1_session", s.handler.ReemitEvent),

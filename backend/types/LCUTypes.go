@@ -649,7 +649,47 @@ type LocalPlayerChampionMastery struct {
 	Puuid        string `json:"puuid"`
 	TokensEarned int    `json:"tokensEarned"`
 }
-type LeaverBusterGamesRemaining struct {
-	NeedsAck               bool `json:"needsAck"`
-	PunishedGamesRemaining int  `json:"punishedGamesRemaining"`
+type LeaverBusterResponse struct {
+	Puuid                     string `json:"puuid"`
+	RankedRestrictionEntryDto struct {
+		Puuid                        string `json:"puuid"`
+		Version                      int    `json:"version"`
+		RestrictedGamesRemaining     int    `json:"restrictedGamesRemaining"`
+		RestrictedGamesOriginal      int    `json:"restrictedGamesOriginal"`
+		RankedRestrictionPenaltyId   string `json:"rankedRestrictionPenaltyId"`
+		PunishmentIncurredGameId     int    `json:"punishmentIncurredGameId"`
+		PunishmentIncurredTimeMillis int64  `json:"punishmentIncurredTimeMillis"`
+		RankedRestrictionAckNeeded   bool   `json:"rankedRestrictionAckNeeded"`
+		PenaltyOrigin                string `json:"penaltyOrigin"`
+	} `json:"rankedRestrictionEntryDto"`
+	LeaverBusterEntryDto struct {
+		Puuid                  string `json:"puuid"`
+		Version                int    `json:"version"`
+		Tainted                bool   `json:"tainted"`
+		PreLockoutAckNeeded    bool   `json:"preLockoutAckNeeded"`
+		OnLockoutAckNeeded     bool   `json:"onLockoutAckNeeded"`
+		LeaverScore            int    `json:"leaverScore"`
+		LeaverLevel            int    `json:"leaverLevel"`
+		PunishedGamesRemaining int    `json:"punishedGamesRemaining"`
+		CurrentPunishmentStep  int    `json:"currentPunishmentStep"`
+		LeaverPenalty          struct {
+			Puuid                              string `json:"puuid"`
+			HasActivePenalty                   bool   `json:"hasActivePenalty"`
+			DelayTime                          int    `json:"delayTime"`
+			QueueLockoutTimerExpiryUtcMillis   int    `json:"queueLockoutTimerExpiryUtcMillis"`
+			PunishmentTimerType                string `json:"punishmentTimerType"`
+			RankRestrictedGamesRemaining       int    `json:"rankRestrictedGamesRemaining"`
+			RankRestrictedTimerExpiryUtcMillis int    `json:"rankRestrictedTimerExpiryUtcMillis"`
+			RankRestricted                     bool   `json:"rankRestricted"`
+		} `json:"leaverPenalty"`
+		WarnSentMillis                   int64  `json:"warnSentMillis"`
+		WarnAckedMillis                  int64  `json:"warnAckedMillis"`
+		LastUpdatedMillis                int64  `json:"lastUpdatedMillis"`
+		TotalPunishedGamesPlayed         int    `json:"totalPunishedGamesPlayed"`
+		LastBustedGameId                 int64  `json:"lastBustedGameId"`
+		LastBustedTimeMillis             int64  `json:"lastBustedTimeMillis"`
+		LastPunishmentIncurredGameId     int64  `json:"lastPunishmentIncurredGameId"`
+		LastPunishmentIncurredTimeMillis int64  `json:"lastPunishmentIncurredTimeMillis"`
+		ProcessedGameIdHistoryString     string `json:"processedGameIdHistoryString"`
+	} `json:"leaverBusterEntryDto"`
 }
