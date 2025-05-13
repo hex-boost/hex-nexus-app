@@ -392,7 +392,11 @@ func (s *Service) runWebSocketLoop() {
 			return
 
 		case <-reconnectTicker.C:
-			if !s.leagueService.IsRunning() || (s.conn != nil && s.isConnected()) {
+			s.mutex.Lock()
+			isConnected := s.conn != nil && s.isConnectedUnsafe()
+			s.mutex.Unlock()
+
+			if !s.leagueService.IsRunning() || isConnected {
 				continue
 			}
 
@@ -405,37 +409,51 @@ func (s *Service) runWebSocketLoop() {
 		}
 	}
 }
-
-// isConnected checks if the WebSocket connection is still valid
-func (s *Service) isConnected() bool {
+func (s *Service) isConnectedUnsafe() bool {
 	if s.conn == nil {
 		return false
 	}
 
-	// Send a ping to check connection
 	err := s.conn.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(time.Second))
 	return err == nil
 }
 
+// isConnected checks if the WebSocket connection is still valid
+func (s *Service) isConnected() bool {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	return s.isConnectedUnsafe()
+}
 func (s *Service) readMessages() {
+	s.mutex.Lock()
 	if s.conn == nil {
+		s.mutex.Unlock()
 		return
 	}
+	currentConn := s.conn
+	s.mutex.Unlock()
 
 	s.logger.Info("Started reading WebSocket messages")
 
 	for {
-		_, message, err := s.conn.ReadMessage()
+		_, message, err := currentConn.ReadMessage()
 		if err != nil {
 			s.logger.Error("WebSocket read error", zap.Error(err))
-			s.conn.Close()
-			s.conn = nil
+
+			s.mutex.Lock()
+			if s.conn == currentConn {
+				currentConn.Close()
+				s.conn = nil
+			}
+			s.mutex.Unlock()
 			return
 		}
+
 		if len(message) < 1 {
 			continue
 		}
-		// Log message type for debugging
+
 		s.handleWebSocketEvent(message)
 	}
 }
