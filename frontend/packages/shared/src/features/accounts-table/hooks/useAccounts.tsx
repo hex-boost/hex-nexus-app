@@ -2,11 +2,13 @@ import type { AccountType, Server } from '@/types/types.ts';
 import type { StrapiResponse } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
 
 import { strapiClient } from '@/lib/strapi.ts';
+
 import { useMapping } from '@/lib/useMapping.tsx';
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import debounce from 'lodash/debounce';
+// Import lodash get for safe property access
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -60,7 +62,6 @@ type AccountsState = {
     pageCount?: number;
   };
 };
-
 export function useAccounts(initialPage = 1, initialPageSize = 20) {
   const { user } = useUserStore();
   const DEFAULT_STATE: AccountsState = {
@@ -269,57 +270,88 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
       strapiFilters.restriction = restrictionFilter;
     }
 
+    // Both ranks and divisions selected
     // Rank and division filters
-    // Rank and division filters
+    const queueTypeFilter = filters.queueType || 'soloqueue'; // Default queue type
 
+    // Helper conditions for a "defined" ELO (not UNRANKED and not empty string)
+    const definedEloConditions = [
+      { elo: { $nei: 'unranked' } },
+      { elo: { $ne: '' } },
+    ];
+
+    // Helper conditions for "undefined" ELO (is UNRANKED or is empty string)
+    const undefinedEloConditions = {
+      $or: [
+        { elo: { $eqi: 'unranked' } },
+        { elo: { $eqi: '' } },
+      ],
+    };
+
+    // Base conditions for matching the filter criteria (rank/division)
+    const filterCriteriaConditions: any[] = [];
     if (filters.ranks?.length > 0 && filters.divisions?.length > 0) {
-      // Create an array of OR conditions for each rank+division combination
       const combinationFilters: any[] = [];
-
       for (const rank of filters.ranks) {
         for (const division of filters.divisions) {
           combinationFilters.push({
             $and: [
-              { elo: { $eqi: rank } },
+              { elo: { $eqi: rank.toUpperCase() } },
               { division: { $eqi: division } },
             ],
           });
         }
       }
-
-      strapiFilters.rankings = {
-        $and: [
-          { queueType: { $eq: filters.queueType || 'soloqueue' } },
-          { $or: [
-            { type: { $eq: 'current' } },
-            { type: { $eq: 'previous' } }, // Add fallback to previous season
-          ] },
-          { $or: combinationFilters },
-        ],
-      };
+      if (combinationFilters.length > 0) {
+        filterCriteriaConditions.push({ $or: combinationFilters });
+      }
     } else if (filters.ranks?.length > 0) {
-      // Only ranks selected
-      strapiFilters.rankings = {
-        $and: [
-          { queueType: { $eqi: filters.queueType || 'soloqueue' } },
-          { $or: [
-            { type: { $eqi: 'current' } },
-            { type: { $eqi: 'previous' } }, // Add fallback to previous season
-          ] },
-          { elo: { $in: filters.ranks.map(rank => rank.toUpperCase()) } },
-        ],
-      };
+      filterCriteriaConditions.push({ elo: { $in: filters.ranks.map(rank => rank.toUpperCase()) } });
     } else if (filters.divisions?.length > 0) {
-      strapiFilters.rankings = {
-        $and: [
-          { queueType: { $eq: filters.queueType || 'soloqueue' } },
-          { $or: [
-            { type: { $eq: 'current' } },
-            { type: { $eq: 'previous' } }, // Add fallback to previous season
-          ] },
-          { division: { $in: filters.divisions } },
-        ],
-      };
+      filterCriteriaConditions.push({ division: { $in: filters.divisions } });
+    }
+
+    // Only apply ranking filters if ranks or divisions are selected
+    if (filterCriteriaConditions.length > 0) {
+      strapiFilters.$or = [
+        // Scenario 1: Account HAS a defined current/provisory rank for the queue, AND it matches the filter.
+        {
+          rankings: {
+            $and: [
+              { queueType: { $eqi: queueTypeFilter } },
+              { type: { $in: ['current', 'provisory'] } },
+              ...definedEloConditions, // Ensures the current/provisory rank is defined
+              ...filterCriteriaConditions, // Ensures this defined rank matches the filter
+            ],
+          },
+        },
+        // Scenario 2: Account HAS current/provisory rank that is unranked or empty,
+        // AND has a previous rank that matches the filter
+        {
+          $and: [
+            // Condition 2a: HAS current/provisory rank that is unranked or empty
+            {
+              rankings: {
+                $and: [
+                  { queueType: { $eqi: queueTypeFilter } },
+                  { type: { $in: ['current', 'provisory'] } },
+                  undefinedEloConditions, // Check for unranked or empty ELO
+                ],
+              },
+            },
+            // Condition 2b: Check if the previous rank matches the filter criteria
+            {
+              rankings: {
+                $and: [
+                  { queueType: { $eqi: queueTypeFilter } },
+                  { type: { $eqi: 'previous' } },
+                  ...filterCriteriaConditions, // Check if previous rank matches
+                ],
+              },
+            },
+          ],
+        },
+      ];
     }
     const queryParams: any = {
       pagination: {
@@ -341,12 +373,57 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
   }, [state]);
 
   // Main data query
-  const { data, isLoading } = useQuery({
+  const { data: rawData, isLoading, isFetching } = useQuery({ // Use isFetching for loading indicators during background updates
     queryKey: ['accounts', state.filters, state.searchQuery, state.pagination.page, state.pagination.pageSize, state.sortConfig],
     queryFn: async () => {
       const queryParams = buildQueryParams(state.pagination.page);
       return await strapiClient.find<AccountType[]>('accounts/available', queryParams) as StrapiResponse<AccountType[]>;
     },
+    placeholderData: previousData => previousData, // Keep previous data while loading new
+    // ** NEW: Use `select` to apply custom sorting **
+    // select: (response: StrapiResponse<AccountType[]>) => {
+    //   const fetchedData = response.data;
+    //   const meta = response.meta;
+    //
+    //   // Check if rank/division filters are active
+    //   const rankFiltersActive = state.filters.ranks?.length > 0 || state.filters.divisions?.length > 0;
+    //
+    //   if (!rankFiltersActive || !fetchedData) {
+    //     // If filters not active or no data, return as is
+    //     return { data: fetchedData || [], meta };
+    //   }
+    //
+    //   const queueTypeFilter = state.filters.queueType || 'soloqueue';
+    //
+    //   // Create a mutable copy for sorting
+    //   const sortedData = [...fetchedData].sort((a, b) => {
+    //     // 1. Primary Sort: Custom Rank Priority
+    //     const priorityA = getAccountRankPriority(a, state.filters, queueTypeFilter);
+    //     const priorityB = getAccountRankPriority(b, state.filters, queueTypeFilter);
+    //
+    //     if (priorityA !== priorityB) {
+    //       return priorityA - priorityB; // Lower priority number comes first
+    //     }
+    //
+    //     // 2. Secondary Sort: User-selected sortConfig (if priorities are equal)
+    //     if (state.sortConfig.key && state.sortConfig.direction) {
+    //       const { key, direction } = state.sortConfig;
+    //       // Use lodash get for safe access to potentially nested keys
+    //       const valueA = get(a, key, null);
+    //       const valueB = get(b, key, null);
+    //
+    //       // Basic comparison (adjust for specific types like numbers, strings if needed)
+    //       const comparison = valueA < valueB ? -1 : (valueA > valueB ? 1 : 0);
+    //
+    //       return direction === 'ascending' ? comparison : -comparison;
+    //     }
+    //
+    //     // 3. Tertiary Sort: Maintain original relative order (or add another default like ID)
+    //     return 0; // Or return a.id - b.id; if IDs are numbers
+    //   });
+    //
+    //   return { data: sortedData, meta }; // Return structure with sorted data
+    // },
   });
 
   const debouncedSetBlueEssence = useCallback(
@@ -372,9 +449,9 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
   }, [debouncedSetBlueEssence]);
   // Prefetch next page
   useEffect(() => {
-    if (data) {
+    if (rawData) {
       const nextPage = state.pagination.page + 1;
-      if (nextPage <= Math.ceil(data.meta.pagination.total / state.pagination.pageSize)) {
+      if (nextPage <= Math.ceil(rawData.meta.pagination.total / state.pagination.pageSize)) {
         queryClient.prefetchQuery({
           queryKey: ['accounts', state.filters, state.searchQuery, nextPage, state.pagination.pageSize, state.sortConfig],
           queryFn: async () => {
@@ -384,7 +461,7 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
         });
       }
     }
-  }, [data, state, queryClient, buildQueryParams]);
+  }, [rawData, state, queryClient, buildQueryParams]);
 
   // Navigation handler
   const handleViewAccountDetails = (accountId: string) => {
@@ -409,16 +486,18 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
   const setPageSize = useCallback((newSize: number) => {
     setPagination({ page: 1, pageSize: newSize });
   }, [setPagination]);
+  const processedData = rawData || { data: [], meta: { pagination: { page: 1, pageSize: state.pagination.pageSize, pageCount: 0, total: 0 } } };
+
   return {
     availableRegions,
     searchQuery: state.searchQuery,
-    filteredAccounts: data?.data || [],
+    filteredAccounts: processedData.data,
     showFilters: state.showFilters,
     setShowFilters,
     filters: state.filters,
     setFilters,
-    data,
-    isLoading,
+    data: rawData,
+    isLoading: isLoading || isFetching,
     getRankColor,
     getEloIcon,
     getRegionIcon,
@@ -435,8 +514,8 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
     pagination: state.pagination,
     handlePageChange,
     setPageSize,
-    totalPages: data?.meta.pagination.pageCount || 1,
-    totalItems: data?.meta.pagination.total || 0,
+    totalPages: processedData.meta.pagination.pageCount || 1,
+    totalItems: processedData.meta.pagination.total || 0,
     setSearchQuery,
     setSelectedSkinIds,
     sliderValue,
