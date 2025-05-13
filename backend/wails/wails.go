@@ -178,6 +178,10 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 
 	lolSkinState := lolskin.NewState()
 	websocketHandler := handler.New(appInstance.Log().League(), accountState, accountClient, summonerClient, lolSkinService, lolSkinState)
+
+	websocketRouter := websocket.NewRouter(appInstance.Log().League())
+	websocketManager := websocket.NewManager()
+	websocketService := websocket.NewService(appInstance.Log().League(), accountMonitor, leagueService, lcuConn, accountClient, websocketRouter, websocketHandler, websocketManager)
 	mainApp := application.New(application.Options{
 		Name:        "Nexus",
 		Description: "Nexus",
@@ -245,6 +249,7 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 			application.NewService(lolSkinState),
 			application.NewService(websocketHandler),
 			application.NewService(summonerClient),
+			application.NewService(websocketService),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.BundledAssetFileServer(assets),
@@ -299,10 +304,8 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 		},
 	)
 
-	websocketRouter := websocket.NewRouter(appInstance.Log().League())
 	websocketHandler.SetApp(mainApp)
-	websocketManager := websocket.NewManager()
-	websocketService := websocket.NewService(appInstance.Log().League(), accountMonitor, leagueService, lcuConn, accountClient, websocketRouter, websocketHandler, websocketManager)
+
 	overlayWindow := gameOverlay.CreateGameOverlay(mainApp)
 	gameOverlayManager.SetWindow(overlayWindow)
 	mainWindow.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
@@ -316,9 +319,7 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 		}
 
 		mainApp.Logger.Info("Forced close requested, shutting down")
-		accountMonitor.Stop()
 		clientMonitor.Stop()
-		websocketService.Stop()
 		gameOverlayManager.Stop() // Stop the overlay manager
 		lockFilePath := filepath.Join(os.TempDir(), "Nexus.lock")
 		err := os.Remove(lockFilePath)
@@ -332,9 +333,7 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 	appProtocol.SetWindow(mainWindow)
 	captchaService.SetWindow(captchaWindow)
 	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(ctx *application.WindowEvent) {
-		websocketService.Start(mainApp)
 
-		websocketService.SubscribeToLeagueEvents()
 		accountMonitor.Start(mainWindow)
 		clientMonitor.Start(mainApp)
 		gameOverlayManager.Start()

@@ -345,7 +345,7 @@ func (cm *Monitor) checkAndUpdateAccount() {
 
 	// Only proceed if League client connection is ready
 	if !cm.leagueService.IsLCUConnectionReady() {
-		cm.logger.Warn("League client connection not ready, skipping account update")
+		//cm.logger.Warn("League client connection not ready, skipping account update")
 		return
 	}
 	cm.emitEvent(websocketEvents.LeagueWebsocketStart)

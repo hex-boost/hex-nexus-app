@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
@@ -38,6 +39,7 @@ type LeagueService interface {
 type LCUConnection interface {
 	IsClientInitialized() bool
 	Initialize() error
+	IsLCUConnectionReady() bool
 	GetLeagueCredentials() (string, string, string, error)
 }
 
@@ -139,6 +141,16 @@ func NewService(
 	service.sendUnsubscriptionFunc = service.sendUnsubscriptionImpl
 
 	return service
+}
+func (s *Service) OnStartup(ctx context.Context, options application.ServiceOptions) error {
+	s.Start(application.Get())
+	s.SubscribeToLeagueEvents()
+	// Any initialization code here
+	return nil
+}
+func (s *Service) OnShutdown(ctx context.Context, options application.ServiceOptions) error {
+	s.Stop()
+	return nil
 }
 
 // Start begins the WebSocket service
@@ -398,7 +410,6 @@ func (s *Service) isConnected() bool {
 	return err == nil
 }
 
-// readMessages handles incoming WebSocket messages
 func (s *Service) readMessages() {
 	if s.conn == nil {
 		return

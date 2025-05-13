@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-resty/resty/v2"
@@ -25,7 +26,9 @@ import (
 )
 
 type Service struct {
-	client        *resty.Client
+	client      *resty.Client
+	clientMutex sync.Mutex // Add this mutex
+
 	logger        *logger.Logger
 	captcha       *captcha.Captcha
 	ctx           context.Context
@@ -213,6 +216,8 @@ func (s *Service) isProcessRunning() bool {
 
 }
 func (s *Service) InitializeClient() error {
+	s.clientMutex.Lock()
+	defer s.clientMutex.Unlock()
 	riotClientPid, err := s.getProcess()
 	if err != nil {
 		s.logger.Error("Failed to get Riot client pid", zap.Error(err))

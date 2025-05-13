@@ -115,17 +115,20 @@ func NewMonitor(
 		checkInterval:   1 * time.Second,
 		stopChan:        make(chan struct{}),
 		eventChan:       make(chan EventPayload, 5), // Buffer for 100 events
-		mutex:           sync.Mutex{},               // Initialize main mutex
+		ctx:             context.Background(),
+		mutex:           sync.Mutex{}, // Initialize main mutex
 	}
 
 }
 func (m *Monitor) OnStartup(ctx context.Context, options application.ServiceOptions) error {
 	m.ctx = ctx
+	m.Start(application.Get().GetWindowByName("Main"))
 	fmt.Println("STARTUP MONITOR", options.Name)
 	return nil
 }
 func (m *Monitor) OnShutdown(ctx context.Context, options application.ServiceOptions) error {
 	fmt.Println("ENDING MONITOR", options.Name)
+	m.Stop()
 	return nil
 }
 
