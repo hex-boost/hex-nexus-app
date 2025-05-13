@@ -3,7 +3,6 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account/events"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/tools/lolskin"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket"
@@ -11,6 +10,7 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"go.uber.org/zap"
+	"sync"
 )
 
 // AccountState defines the contract for account state management
@@ -39,6 +39,10 @@ type LolSkin interface {
 type LolSkinState interface {
 	GetChampionSkin(championID int32) (lolskin.ChampionSkin, bool)
 }
+type eventRequest struct {
+	name string
+	data []any
+}
 
 // Handler implements WebSocketEventHandler with standard event handling logic
 type Handler struct {
@@ -47,9 +51,12 @@ type Handler struct {
 	summonerClient           SummonerClient
 	accountState             AccountState
 	lolSkin                  LolSkin
+	eventCh                  chan eventRequest
 	lolSkinState             LolSkinState
 	previousChampionInjected int
 	app                      App
+	eventMutex               sync.Mutex
+	ctx                      context.Context
 }
 
 // New creates a new WebSocket event handler
@@ -61,14 +68,31 @@ func New(logger logger.Loggerer, accountState AccountState, accountClient Accoun
 		lolSkin:        lolSkin,
 		lolSkinState:   lolSkinState,
 		accountClient:  accountClient,
+		eventCh:        make(chan eventRequest, 10), // Buffer size can be adjusted as needed
+		ctx:            context.Background(),
 	}
 
 }
 func (h *Handler) OnStartup(ctx context.Context, options application.ServiceOptions) error {
-	fmt.Println("fodase")
+	h.ctx = ctx
+	go h.processEvents(ctx)
 	return nil
 }
+func (h *Handler) processEvents(ctx context.Context) {
+	for {
+		select {
+		case req := <-h.eventCh:
+			h.logger.Debug("Emitting event", zap.String("name", req.name))
+			h.eventMutex.Lock()
+			h.app.EmitEvent(req.name, req.data...)
+			h.eventMutex.Unlock()
 
+		case <-ctx.Done():
+			h.logger.Info("Context done, stopping event processing")
+			return
+		}
+	}
+}
 func (h *Handler) SetApp(app App) {
 	h.app = app
 }
@@ -89,7 +113,11 @@ func (h *Handler) ProcessAccountUpdate(update *types.PartialSummonerRented) erro
 		h.logger.Error("Failed to save account data", zap.Error(err))
 		return err
 	}
-	h.app.EmitEvent(events.AccountStateChanged, accountSaved)
+
+	h.eventCh <- eventRequest{
+		name: events.AccountStateChanged,
+		data: []any{accountSaved},
+	}
 	return nil
 }
 
@@ -188,8 +216,10 @@ func (h *Handler) GameflowPhase(event websocket.LCUWebSocketEvent) {
 		h.logger.Error("Failed to parse gameflow phase data", zap.Error(err))
 		return
 	}
-
-	h.app.EmitEvent(event.EventTopic, gameflowPhase)
+	h.eventCh <- eventRequest{
+		name: event.EventTopic,
+		data: []any{gameflowPhase},
+	}
 
 	h.logger.Info("Gameflow phase changed", zap.String("phase", string(gameflowPhase)))
 
@@ -339,8 +369,10 @@ func (h *Handler) Restriction(event websocket.LCUWebSocketEvent) {
 }
 func (h *Handler) ReemitEvent(event websocket.LCUWebSocketEvent) {
 	h.logger.Info("Re-emitting event", zap.String("event", event.EventTopic), zap.String("uri", event.URI))
-
-	h.app.EmitEvent(event.EventTopic, event.Data)
+	h.eventCh <- eventRequest{
+		name: event.EventTopic,
+		data: []any{event.Data},
+	}
 }
 
 // IsRankingSame compares two RankedDetails objects to determine if they are identical

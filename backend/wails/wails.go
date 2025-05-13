@@ -133,7 +133,6 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 	// Create a watchdog client for communication with the watchdog process
 	watchdogClient := watchdog.NewWatchdogClient()
 
-	// updater.NewUpdater(cfg, appInstance.Log().Wails()).Start()
 	mainLogger := appInstance.Log().Wails()
 	appProtocol := protocol.New(appInstance.Log().Protocol())
 	if err := appProtocol.Register(); err != nil {

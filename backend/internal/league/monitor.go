@@ -747,7 +747,7 @@ func (cm *Monitor) HandleLogin(username string, password string, captchaToken st
 func (s *Service) IsLCUConnectionReady() bool {
 	// Ensure client is initialized
 	if !s.LCUconnection.IsClientInitialized() {
-		err := s.LCUconnection.Initialize()
+		_, err := s.LCUconnection.GetClient()
 		if err != nil {
 			return false
 		}

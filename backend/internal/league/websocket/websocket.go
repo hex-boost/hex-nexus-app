@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/go-resty/resty/v2"
 	"net/http"
 	"net/url"
 	"sync"
@@ -38,8 +39,7 @@ type LeagueService interface {
 // LCUConnection defines the contract for the league client connection
 type LCUConnection interface {
 	IsClientInitialized() bool
-	Initialize() error
-	IsLCUConnectionReady() bool
+	GetClient() (*resty.Client, error)
 	GetLeagueCredentials() (string, string, string, error)
 }
 
@@ -194,7 +194,7 @@ func (s *Service) connectToLCUWebSocket() error {
 		}
 	}()
 	if !s.lcuConnection.IsClientInitialized() {
-		err := s.lcuConnection.Initialize()
+		_, err := s.lcuConnection.GetClient()
 		if err != nil {
 			return err
 		}
@@ -229,14 +229,21 @@ func (s *Service) connectToLCUWebSocket() error {
 }
 
 // Subscribe subscribes to a specific LCU event path
+// Update the Subscribe method to properly track subscriptions
 func (s *Service) Subscribe(eventPath string) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
+
+	// Always record the subscription intent
+	s.subscriptions[eventPath] = true
 
 	if s.conn != nil && s.isConnected() {
 		return s.sendSubscriptionFunc(eventPath)
 	}
 
+	// Don't report immediate success if we haven't actually subscribed yet
+	s.logger.Info("Queued subscription for when connection is established",
+		zap.String("event", eventPath))
 	return nil
 }
 
@@ -486,9 +493,9 @@ func (s *Service) SubscribeToLeagueEvents() {
 			err := s.Subscribe(path)
 			if err != nil {
 				s.logger.Error("Failed to subscribe to endpoint", zap.String("path", path), zap.Error(err))
-			} else {
-				s.logger.Info("Successfully subscribed to endpoint", zap.String("path", path))
 			}
+			s.logger.Info("Successfully subscribed to endpoint", zap.String("path", path))
+
 		}
 	})
 

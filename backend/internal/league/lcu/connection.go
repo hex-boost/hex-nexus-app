@@ -49,64 +49,20 @@ func (c *Connection) performInitialization() error {
 	return nil
 }
 
-func (c *Connection) IsLCUConnectionReady() bool {
-	port, token, _, err := c.GetLeagueCredentials()
-	if err != nil || port == "" || token == "" {
-		return false
-	}
-
-	encodedAuth := base64.StdEncoding.EncodeToString([]byte("riot:" + token))
-	tempClient := resty.New().
-		SetBaseURL(fmt.Sprintf("https://127.0.0.1:%s", port)).
-		SetHeader("Accept", "application/json").
-		SetHeader("Authorization", "Basic "+encodedAuth).
-		SetTimeout(3 * time.Second).
-		SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
-
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
-	resp, err := tempClient.R().
-		SetContext(ctx).
-		Get("/lol-summoner/v1/status")
-
-	if err != nil {
-		return false
-	}
-	return resp.IsSuccess()
-}
-
 func (c *Connection) GetClient() (*resty.Client, error) {
+	if c.IsClientInitialized() {
+		return c.client, nil
+	}
+
 	c.mu.Lock()
-	defer c.mu.Unlock()
-	if c.client != nil {
-		return c.client, nil
-	}
-
-	if c.client != nil {
-		return c.client, nil
-	}
-
 	err := c.performInitialization()
+
+	defer c.mu.Unlock()
 	if err != nil {
 		return nil, err
 	}
-
-	if c.client == nil {
-		return nil, errors.New("LCU client remains nil after initialization attempt")
-	}
+	c.logger.Info("LCU client initialized successfully")
 	return c.client, nil
-}
-
-func (c *Connection) ForceReinitialize() error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.performInitialization()
-}
-
-func (c *Connection) Initialize() error {
-	_, err := c.GetClient()
-	return err
 }
 
 func (c *Connection) IsClientInitialized() bool {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/go-resty/resty/v2"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"strings"
 	"sync"
@@ -44,7 +45,7 @@ type SummonerClient interface {
 
 // LCUConnectionInterface defines methods needed from LCUConnection
 type LCUConnection interface {
-	Initialize() error
+	GetClient() (*resty.Client, error)
 	IsClientInitialized() bool
 }
 
@@ -217,7 +218,7 @@ func (m *Monitor) getSummonerNameByRiotClient() string {
 
 func (m *Monitor) getUsernameByLeagueClient() (string, error) {
 	if !m.LCUConnection.IsClientInitialized() {
-		err := m.LCUConnection.Initialize()
+		_, err := m.LCUConnection.GetClient()
 		if err != nil || !m.LCUConnection.IsClientInitialized() {
 			return "", errors.New(fmt.Sprintf("failed to initialize League client connection %v", err))
 		}
