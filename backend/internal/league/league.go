@@ -1,16 +1,16 @@
 package league
 
 import (
+	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account/events"
+	"github.com/wailsapp/wails/v3/pkg/application"
 	"time"
 
 	"fmt" // Added for error wrapping
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account"
-	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account/events"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/lcu"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/summoner"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/mitchellh/go-ps"
-	"github.com/wailsapp/wails/v3/pkg/application"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 	"os"
@@ -22,12 +22,14 @@ type Service struct {
 	Api             *account.Client   // Changed from api to Api for public access
 	summonerService *summoner.Service // Assuming summoner.Service and its methods are thread-safe
 	logger          *logger.Logger
+	accountState    *account.State
 }
 
-func NewService(logger *logger.Logger, api *account.Client, summonerService *summoner.Service, lcuConnection *lcu.Connection) *Service {
+func NewService(logger *logger.Logger, api *account.Client, summonerService *summoner.Service, lcuConnection *lcu.Connection, accountState *account.State) *Service {
 	return &Service{
 		LCUconnection:   lcuConnection,
 		Api:             api,
+		accountState:    accountState,
 		logger:          logger,
 		summonerService: summonerService,
 	}
@@ -219,30 +221,27 @@ func (s *Service) IsInventoryReady() bool {
 }
 
 func (s *Service) UpdateFromLCU() error {
-	// Assuming s.summonerService.UpdateFromLCU() is thread-safe
-	// and correctly uses its own LCU client (obtained via GetClient) if it makes LCU calls.
 	summonerRented, err := s.summonerService.UpdateFromLCU()
 	if err != nil {
 		s.logger.Error("Failed to update account from LCU via summonerService", zap.Error(err))
 		return fmt.Errorf("summonerService.UpdateFromLCU failed: %w", err)
 	}
+	summonerUpdated, err := s.accountState.Update(summonerRented)
+	if err != nil {
+		s.logger.Error("Failed to update account state", zap.Error(err))
+		return fmt.Errorf("accountState.Update failed: %w", err)
+	}
 
-	// Assuming s.Api (account.Client) and its Save method are thread-safe.
-	// If s.Api.Save involves database operations or other shared resources,
-	// its own thread safety must be ensured.
 	if summonerRented == nil {
 		s.logger.Warn("summonerService.UpdateFromLCU returned nil data, cannot save to database.")
-		// Decide if this is an error or an acceptable state.
-		// For now, returning nil, implying no update was performed or needed.
 		return nil // Or an error like: errors.New("no summoner data to save")
 	}
 
-	summonerResponse, err := s.Api.Save(*summonerRented)
+	summonerResponse, err := s.Api.Save(*summonerUpdated)
 	if err != nil {
 		s.logger.Error("Failed to save account to database via Api.Save", zap.Error(err))
 		return fmt.Errorf("Api.Save failed: %w", err)
 	}
-
 	// Wails event emission is generally thread-safe.
 	app := application.Get()
 	if app != nil { // Good practice to check if app is available
