@@ -4,7 +4,6 @@ import type { StrapiResponse } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
 import { strapiClient } from '@/lib/strapi.ts';
 
 import { useMapping } from '@/lib/useMapping.tsx';
-import { useUserStore } from '@/stores/useUserStore.ts';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import debounce from 'lodash/debounce';
@@ -63,7 +62,6 @@ type AccountsState = {
   };
 };
 export function useAccounts(initialPage = 1, initialPageSize = 20) {
-  const { user } = useUserStore();
   const DEFAULT_STATE: AccountsState = {
     searchQuery: '',
     showFilters: false,
@@ -76,7 +74,7 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
       ranks: [],
       region: '',
       queueType: 'soloqueue', // Add default queue type
-      company: user?.accountPermissions.includes('boostroyal') ? 'boostroyal' : 'nexus',
+      company: '',
       status: '',
       selectedChampions: [],
       minBlueEssence: 0,

@@ -1,6 +1,7 @@
 import type { Server } from '@/types/types.ts';
 import bronzeIcon from '@/assets/league_of_legends_bronze.svg';
 import challengerIcon from '@/assets/league_of_legends_challenger.svg';
+
 import diamondIcon from '@/assets/league_of_legends_diamond.svg';
 import emeraldIcon from '@/assets/league_of_legends_emerald.svg';
 import goldIcon from '@/assets/league_of_legends_gold.svg';
@@ -12,6 +13,8 @@ import silverIcon from '@/assets/league_of_legends_silver.svg';
 import unrankedIcon from '@/assets/league_of_legends_unranked.svg';
 import logoBoostRoyal from '@/assets/logo-boost-royal.svg';
 import nexusIcon from '@/assets/logo-hex-boost.svg';
+import logoTurboBoost from '@/assets/logo-turbo-boost.png';
+import { EarthLock } from 'lucide-react';
 import { LolIcon, ValorantIcon } from './icons';
 
 export function useMapping() {
@@ -281,6 +284,12 @@ export function useMapping() {
   const getCompanyIcon = (company: string) => {
     if (company === 'boostroyal') {
       return logoBoostRoyal;
+    }
+    if (company === 'turboboost') {
+      return logoTurboBoost;
+    }
+    if (company === 'private') {
+      return EarthLock;
     }
     return nexusIcon;
   };

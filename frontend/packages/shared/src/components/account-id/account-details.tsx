@@ -122,11 +122,22 @@ export default function AccountDetails({ account, onAccountChange }: {
               </div>
 
               <div className="flex text-lg lc capitalize items-center gap-2">
-                <img
-                  src={getCompanyIcon(account.type)}
-                  alt={account.type}
-                  className="w-8 h-8"
-                />
+                {(() => {
+                  const IconComponentOrUrl = getCompanyIcon(account.type);
+                  if (typeof IconComponentOrUrl === 'string') {
+                    return (
+                      <img
+                        src={IconComponentOrUrl}
+                        alt={account.type}
+                        className="w-8 h-8"
+                      />
+                    );
+                  } else {
+                    // Assuming IconComponentOrUrl is a React component (e.g., EarthLock)
+                    const Icon = IconComponentOrUrl;
+                    return <Icon className="w-8 h-8" />;
+                  }
+                })()}
               </div>
             </CardTitle>
           </CardHeader>
@@ -165,8 +176,8 @@ export default function AccountDetails({ account, onAccountChange }: {
                 className="flex items-center gap-3 bg-blue-50 border border-blue-300/20 dark:bg-blue-900/20 p-3 rounded-lg"
               >
                 <div className="w-10 h-10 ">
-                  {/* eslint-disable-next-line jsx-a11y/alt-text */}
                   <img
+                    alt="Blue Essence"
                     src="https://raw.communitydragon.org/15.2/plugins/rcp-fe-lol-collections/global/default/images/skins-viewer/currencies/icon-blue-essence.png"
                   />
                 </div>

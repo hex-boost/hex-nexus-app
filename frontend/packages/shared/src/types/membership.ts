@@ -79,7 +79,7 @@ export type CheckoutSession = {
   url: string;
 };
 
-export type PaymentMethodsAccepted = 'Pix' | 'Stripe' | 'BR Balance';
+export type PaymentMethodsAccepted = 'Pix' | 'Stripe' | 'BR Balance' | 'Turbo Boost Balance';
 export type PaymentMethod = {
   title: PaymentMethodsAccepted;
   description: string;

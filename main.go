@@ -47,7 +47,6 @@ func RunWithRetry(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte
 							panic(fmt.Sprintf("Failed to start after %d retries: %v", maxRetries, errorMsg))
 						}
 					} else {
-						// For other panics, just re-panic
 						panic(r)
 					}
 				}

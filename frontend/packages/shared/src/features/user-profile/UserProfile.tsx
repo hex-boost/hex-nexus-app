@@ -3,6 +3,7 @@ import type React from 'react';
 import type { Crop } from 'react-image-crop';
 import { DiscordSvg } from '@/assets/icons.tsx';
 import logoBoostRoyal from '@/assets/logo-boost-royal.svg';
+import logoTurboBoost from '@/assets/logo-turbo-boost.png';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
 import { RainbowButton } from '@/components/ui/rainbow-button.tsx';
 import { Separator } from '@/components/ui/separator.tsx';
@@ -10,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip.tsx';
 import { useMembership } from '@/hooks/useMembership.ts';
 import { useProfileAvatar } from '@/hooks/useProfileAvatar.ts';
+import { useMapping } from '@/lib/useMapping.tsx';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { Browser } from '@wailsio/runtime';
@@ -42,6 +44,7 @@ export function UserProfile({
   logoutAction,
 }: UserProfileProps) {
   const queryClient = useQueryClient();
+  const { getCompanyIcon } = useMapping();
   const { updateUserAvatarFromBase64 } = useProfileAvatar();
 
   const [isHover, setHover] = useState(false);
@@ -280,7 +283,7 @@ export function UserProfile({
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div className="flex gap-2 items-center w-fit rounded-full py-0.5 px-3 bg-boostroyal-primary/10">
-                            <p className="text-xs font-bold text-boostroyal-primary"> Boost Royal</p>
+                            <p className="text-xs font-bold text-boostroyal-primary">Boost Royal</p>
                             <img src={logoBoostRoyal} alt="BoostRoyal" className="h-4 w-4" />
                           </div>
                         </TooltipTrigger>
@@ -294,6 +297,26 @@ export function UserProfile({
                       </Tooltip>
                     </TooltipProvider>
                   )}
+                  {user?.accountPermissions?.includes('turboboost') && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex gap-2 items-center w-fit rounded-full py-0.5 px-3 bg-turboboost-primary/10">
+                            <p className="text-xs font-bold text-turboboost-primary">Turbo Boost</p>
+                            <img src={logoTurboBoost} alt="Turbo Boost" className="h-4 w-4" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="px-2 py-1 items-center text-sm flex gap-2">
+                          <span>
+                            Turbo Boost Verified
+                          </span>
+                          {' '}
+                          <CheckCircle className="text-green-400" size={16} />
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+
                 </div>
               </div>
             </div>

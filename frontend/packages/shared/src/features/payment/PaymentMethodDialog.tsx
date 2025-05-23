@@ -17,9 +17,19 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group.tsx';
 import { useMembershipActions } from '@/hooks/useMembershipActions.ts';
 import { ExternalLink } from 'lucide-react';
 import * as React from 'react';
+import { cls } from 'react-image-crop';
 
-export function PaymentMethodDialog({ children, selectedTier }: { selectedTier: PremiumTiers; children: React.ReactNode }) {
-  const { paymentMethods, handlePayment, selectedPaymentMethod, setSelectedPaymentMethod, isPending } = useMembershipActions();
+export function PaymentMethodDialog({ children, selectedTier }: {
+  selectedTier: PremiumTiers;
+  children: React.ReactNode;
+}) {
+  const {
+    paymentMethods,
+    handlePayment,
+    selectedPaymentMethod,
+    setSelectedPaymentMethod,
+    isPending,
+  } = useMembershipActions();
 
   const handleContinue = async () => {
     if (selectedPaymentMethod === 'BR Balance') {
@@ -51,9 +61,9 @@ export function PaymentMethodDialog({ children, selectedTier }: { selectedTier: 
             {paymentMethods.map(method => (
               <div
                 key={method.title}
-                className={`flex cursor-pointer items-center justify-between rounded-lg border p-4 hover:bg-primary/10 ${
+                className={cls(`flex cursor-pointer items-center justify-between rounded-lg border p-4 hover:bg-primary/10 ${
                   selectedPaymentMethod === method.title ? 'bg-primary/20  border-blue-500' : ''
-                }`}
+                }`, method.title.includes('Turbo Boost Balance') && 'disabled pointer-events-none opacity-60')}
                 onClick={() => setSelectedPaymentMethod(method.title)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
@@ -66,17 +76,31 @@ export function PaymentMethodDialog({ children, selectedTier }: { selectedTier: 
                 tabIndex={0}
               >
                 <div className="flex items-center justify-center space-x-4">
-                  <div
-                    className="h-8 w-8 flex items-center justify-center"
-                    dangerouslySetInnerHTML={{ __html: method.icon }}
-                  />
+                  {
+                    method.title.includes('Turbo Boost Balance')
+                      ? (
+                          <div
+                            className=" w-8 flex items-center justify-center"
+                          >
+                            <img alt="Turbo Boost Logo" src={method.icon} />
+                          </div>
+                        )
+
+                      : (
+                          <div
+                            className="h-8 w-8 flex items-center justify-center"
+                            /* eslint-disable-next-line react-dom/no-dangerously-set-innerhtml */
+                            dangerouslySetInnerHTML={{ __html: method.icon }}
+                          />
+                        )
+                  }
                   <div>
                     <div className="flex gap-4">
                       <h3 className="text-sm font-medium">{method.title}</h3>
 
-                      {method.title.includes('BR') && (
+                      {method.title.includes('Turbo Boost Balance') && (
                         <Badge className="rounded-full ">
-                          Best Option
+                          Coming Soon
                         </Badge>
                       )}
                     </div>
@@ -91,7 +115,9 @@ export function PaymentMethodDialog({ children, selectedTier }: { selectedTier: 
           </RadioGroup>
         </div>
 
-        <DialogFooter className="flex flex-col items-center justify-between space-y-2 border-t px-4 py-2 sm:flex-row sm:space-y-0">
+        <DialogFooter
+          className="flex flex-col items-center justify-between space-y-2 border-t px-4 py-2 sm:flex-row sm:space-y-0"
+        >
 
           <DialogClose asChild>
             <Button variant="outline" className="w-full sm:w-auto">
