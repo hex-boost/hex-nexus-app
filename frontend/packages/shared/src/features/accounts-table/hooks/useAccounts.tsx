@@ -9,7 +9,7 @@ import { useRouter } from '@tanstack/react-router';
 import debounce from 'lodash/debounce';
 // Import lodash get for safe property access
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 export const availableRegions: Server[] = [
   'NA1',
@@ -62,7 +62,7 @@ type AccountsState = {
   };
 };
 export function useAccounts(initialPage = 1, initialPageSize = 20) {
-  const DEFAULT_STATE: AccountsState = {
+  const DEFAULT_STATE: AccountsState = useMemo(() => ({
     searchQuery: '',
     showFilters: false,
     selectedChampionIds: [],
@@ -88,7 +88,7 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
       page: 1,
       pageSize: 20,
     },
-  };
+  }), []);
   const queryClient = useQueryClient();
   const router = useRouter();
 
@@ -402,62 +402,15 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
       const queryParams = buildQueryParams(state.pagination.page);
       return await strapiClient.find<AccountType[]>('accounts/available', queryParams) as StrapiResponse<AccountType[]>;
     },
-    placeholderData: previousData => previousData, // Keep previous data while loading new
-    // ** NEW: Use `select` to apply custom sorting **
-    // select: (response: StrapiResponse<AccountType[]>) => {
-    //   const fetchedData = response.data;
-    //   const meta = response.meta;
-    //
-    //   // Check if rank/division filters are active
-    //   const rankFiltersActive = state.filters.ranks?.length > 0 || state.filters.divisions?.length > 0;
-    //
-    //   if (!rankFiltersActive || !fetchedData) {
-    //     // If filters not active or no data, return as is
-    //     return { data: fetchedData || [], meta };
-    //   }
-    //
-    //   const queueTypeFilter = state.filters.queueType || 'soloqueue';
-    //
-    //   // Create a mutable copy for sorting
-    //   const sortedData = [...fetchedData].sort((a, b) => {
-    //     // 1. Primary Sort: Custom Rank Priority
-    //     const priorityA = getAccountRankPriority(a, state.filters, queueTypeFilter);
-    //     const priorityB = getAccountRankPriority(b, state.filters, queueTypeFilter);
-    //
-    //     if (priorityA !== priorityB) {
-    //       return priorityA - priorityB; // Lower priority number comes first
-    //     }
-    //
-    //     // 2. Secondary Sort: User-selected sortConfig (if priorities are equal)
-    //     if (state.sortConfig.key && state.sortConfig.direction) {
-    //       const { key, direction } = state.sortConfig;
-    //       // Use lodash get for safe access to potentially nested keys
-    //       const valueA = get(a, key, null);
-    //       const valueB = get(b, key, null);
-    //
-    //       // Basic comparison (adjust for specific types like numbers, strings if needed)
-    //       const comparison = valueA < valueB ? -1 : (valueA > valueB ? 1 : 0);
-    //
-    //       return direction === 'ascending' ? comparison : -comparison;
-    //     }
-    //
-    //     // 3. Tertiary Sort: Maintain original relative order (or add another default like ID)
-    //     return 0; // Or return a.id - b.id; if IDs are numbers
-    //   });
-    //
-    //   return { data: sortedData, meta }; // Return structure with sorted data
-    // },
   });
 
-  const debouncedSetBlueEssence = useCallback(
+  const debouncedSetBlueEssence = useMemo(() =>
     debounce((value: number) => {
       setFilters({
         ...state.filters,
         minBlueEssence: value,
       });
-    }, 200),
-    [setFilters, state.filters],
-  );
+    }, 200), [setFilters, state.filters]);
   // Function to update slider value immediately (for UI) but debounce the actual filter
   const handleBlueEssenceChange = useCallback((value: number) => {
     setSliderValue(value);
