@@ -1,4 +1,5 @@
 import type { PremiumTiers } from '@/types/types.ts';
+import type { LucideAArrowDown } from 'lucide-react';
 
 export type Benefit = {
   title: string;
@@ -83,6 +84,6 @@ export type PaymentMethodsAccepted = 'Pix' | 'Stripe' | 'BR Balance' | 'Turbo Bo
 export type PaymentMethod = {
   title: PaymentMethodsAccepted;
   description: string;
-  icon: string;
+  icon: string | typeof LucideAArrowDown;
   isExternal?: boolean;
 };

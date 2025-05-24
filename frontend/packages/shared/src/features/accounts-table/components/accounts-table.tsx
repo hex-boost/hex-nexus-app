@@ -1,4 +1,5 @@
 import type { FilterState } from '@/features/accounts-table/hooks/useAccounts.tsx';
+import type { ArrowUpIcon } from 'lucide-react';
 import { AccountRow } from '@/features/accounts-table/components/account-row.tsx';
 import { AccountTableSkeleton } from '@/features/accounts-table/components/account-table-skeleton.tsx';
 import React from 'react';
@@ -14,7 +15,7 @@ type AccountsTableProps = {
   handleViewAccountDetails: (id: string) => void;
   getEloIcon: (elo: string) => string;
   getRegionIcon: (region: string) => React.ReactNode;
-  getCompanyIcon: (company: string) => string;
+  getCompanyIcon: (company: string | typeof ArrowUpIcon) => string;
   getRankColor: (elo: string) => string;
 };
 

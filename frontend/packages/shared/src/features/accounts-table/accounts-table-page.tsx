@@ -1,6 +1,7 @@
 import type { Rank } from '@/components/RanksRadioGroup.tsx';
 import logoBoostRoyal from '@/assets/logo-boost-royal.svg';
 import logoHexBoost from '@/assets/logo-hex-boost.svg';
+import logoTurboBoost from '@/assets/logo-turbo-boost.png';
 import { DivisionsMultiSelect, RanksMultiSelect } from '@/components/RanksRadioGroup.tsx';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
@@ -157,7 +158,7 @@ export function AccountsTablePage() {
                   <Label className="text-sm font-medium pb-1 block">
                     Queue Type
                   </Label>
-                  <div className="flex space-x-2 w-full ">
+                  <div className="flex justify-between space-x-2 w-full ">
                     <RadioGroup
                       value={filters.queueType || 'soloqueue'}
                       onValueChange={value => setFilters({ ...filters, queueType: value })}
@@ -341,7 +342,7 @@ export function AccountsTablePage() {
                     <Label className="text-sm font-medium mb-1.5 block">
                       Company
                     </Label>
-                    {filters.company !== '' && user?.accountPermissions.includes('boostroyal') && (
+                    {filters.company !== '' && user?.accountPermissions && user?.accountPermissions?.length > 1 && (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -353,30 +354,53 @@ export function AccountsTablePage() {
                     )}
                   </div>
                   <RadioGroup
-                    disabled={!user?.accountPermissions.includes('boostroyal')}
+                    disabled={!user?.accountPermissions || user?.accountPermissions?.length < 2}
                     value={filters.company}
                     onValueChange={value => setFilters({ ...filters, company: value })}
                     className="flex space-x-2"
                   >
-                    <div className="flex items-center w-full space-x-2">
+                    { user?.accountPermissions?.some(permission => permission === 'private') && (
+                      <div className="flex justify-center items-center w-full ">
+                        <RadioGroupItem value="private" id="private" className="peer" />
+                        <Label
+                          htmlFor="private"
+                          className="flex justify-center items-center gap-2 cursor-pointer peer-data-[state=checked]:text-primary"
+                        >
+                          <img src={logoHexBoost} alt="Nexus" className="ml-2 w-6 h-6" />
+                          <span className="min-w-fit">Private</span>
+                        </Label>
+                      </div>
+                    )}
+
+                    <div className="flex justify-center items-center w-full ">
                       <RadioGroupItem value="nexus" id="nexus" className="peer" />
                       <Label
                         htmlFor="nexus"
-                        className="flex items-center gap-2 cursor-pointer peer-data-[state=checked]:text-primary"
+                        className="flex justify-center items-center gap-2 cursor-pointer peer-data-[state=checked]:text-primary"
                       >
-                        <img src={logoHexBoost} alt="Nexus" className="w-6 h-6" />
-                        <span>Nexus</span>
+                        <img src={logoHexBoost} alt="Nexus" className="ml-2 w-6 h-6" />
+                        <span className="min-w-fit">Nexus</span>
                       </Label>
                     </div>
 
-                    <div className="flex w-full items-center space-x-2">
+                    <div className="flex justify-center w-full items-center ">
                       <RadioGroupItem value="boostroyal" id="boostroyal" className="peer" />
                       <Label
                         htmlFor="boostroyal"
-                        className="flex items-center gap-2 cursor-pointer peer-data-[state=checked]:text-primary"
+                        className="flex justify-center items-center gap-2 cursor-pointer peer-data-[state=checked]:text-primary"
                       >
-                        <img src={logoBoostRoyal} alt="BoostRoyal" className="w-6 h-6" />
-                        <span>BoostRoyal</span>
+                        <img src={logoBoostRoyal} alt="BoostRoyal" className="ml-2 w-6 h-6" />
+                        <span className="min-w-fit">Boost Royal</span>
+                      </Label>
+                    </div>
+                    <div className="flex  justify-center w-full items-center ">
+                      <RadioGroupItem value="turboboost" id="turboboost" className="peer " />
+                      <Label
+                        htmlFor="turboboost"
+                        className="flex justify-center items-center gap-2 cursor-pointer peer-data-[state=checked]:text-primary"
+                      >
+                        <img src={logoTurboBoost} alt="Turbo Boost" className="w-6 h-6 ml-2" />
+                        <span className="min-w-fit">Turbo Boost</span>
                       </Label>
                     </div>
                   </RadioGroup>
@@ -516,7 +540,7 @@ export function AccountsTablePage() {
           handleViewAccountDetails={handleViewAccountDetails}
           getEloIcon={getEloIcon}
           getRegionIcon={getRegionIcon}
-          getCompanyIcon={getCompanyIcon}
+          getCompanyIcon={getCompanyIcon as any}
           getRankColor={getRankColor}
         />
 

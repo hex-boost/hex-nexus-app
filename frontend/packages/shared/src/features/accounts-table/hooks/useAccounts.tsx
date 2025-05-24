@@ -187,7 +187,7 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
     };
     setState(newState);
     queryClient.setQueryData(['accounts-filter-state'], newState);
-  }, [queryClient, state.pagination.pageSize]);
+  }, [queryClient, state.pagination.pageSize, DEFAULT_STATE]);
 
   // Sort handling
   const requestSort = useCallback((key: SortKey) => {
@@ -268,88 +268,113 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
       strapiFilters.restriction = restrictionFilter;
     }
 
-    // Both ranks and divisions selected
     // Rank and division filters
     const queueTypeFilter = filters.queueType || 'soloqueue'; // Default queue type
+    const inputRanks = filters.ranks?.map(rank => rank.toUpperCase()) || [];
+    const divisions = filters.divisions || [];
 
-    // Helper conditions for a "defined" ELO (not UNRANKED and not empty string)
-    const definedEloConditions = [
-      { elo: { $nei: 'unranked' } },
-      { elo: { $ne: '' } },
-    ];
+    const hasRankOrDivisionFilters = inputRanks.length > 0 || divisions.length > 0;
 
-    // Helper conditions for "undefined" ELO (is UNRANKED or is empty string)
-    const undefinedEloConditions = {
-      $or: [
-        { elo: { $eqi: 'unranked' } },
-        { elo: { $eqi: '' } },
-      ],
-    };
+    if (hasRankOrDivisionFilters) {
+      const orConditions: any[] = [];
 
-    // Base conditions for matching the filter criteria (rank/division)
-    const filterCriteriaConditions: any[] = [];
-    if (filters.ranks?.length > 0 && filters.divisions?.length > 0) {
-      const combinationFilters: any[] = [];
-      for (const rank of filters.ranks) {
-        for (const division of filters.divisions) {
-          combinationFilters.push({
-            $and: [
-              { elo: { $eqi: rank.toUpperCase() } },
-              { division: { $eqi: division } },
-            ],
-          });
+      const selectedIsUnranked = inputRanks.includes('UNRANKED');
+      const selectedDefinedRanks = inputRanks.filter(r => r !== 'UNRANKED');
+
+      // Helper to build conditions for defined ranks/divisions
+      const buildDefinedRankDivisionMatcher = (ranksToMatch: string[], divsToMatch: string[]) => {
+        const conditions: any[] = [];
+        if (ranksToMatch.length > 0 && divsToMatch.length > 0) {
+          for (const rank of ranksToMatch) {
+            for (const division of divsToMatch) {
+              conditions.push({ $and: [{ elo: { $eqi: rank } }, { division: { $eqi: division } }] });
+            }
+          }
+        } else if (ranksToMatch.length > 0) {
+          conditions.push({ elo: { $in: ranksToMatch } });
+        } else if (divsToMatch.length > 0) {
+          // This case handles when only divisions are selected, implying any defined rank within those divisions.
+          conditions.push({ division: { $in: divsToMatch } });
         }
-      }
-      if (combinationFilters.length > 0) {
-        filterCriteriaConditions.push({ $or: combinationFilters });
-      }
-    } else if (filters.ranks?.length > 0) {
-      filterCriteriaConditions.push({ elo: { $in: filters.ranks.map(rank => rank.toUpperCase()) } });
-    } else if (filters.divisions?.length > 0) {
-      filterCriteriaConditions.push({ division: { $in: filters.divisions } });
-    }
+        // Return a single condition object if only one, or an $or for multiple.
+        // If conditions array is empty, return null.
+        if (conditions.length === 0) {
+          return null;
+        }
+        return conditions.length === 1 ? conditions[0] : { $or: conditions };
+      };
 
-    // Only apply ranking filters if ranks or divisions are selected
-    if (filterCriteriaConditions.length > 0) {
-      strapiFilters.$or = [
-        // Scenario 1: Account HAS a defined current/provisory rank for the queue, AND it matches the filter.
-        {
+      const definedRankDivisionMatcher = buildDefinedRankDivisionMatcher(selectedDefinedRanks, divisions);
+
+      // Condition 1: Current/provisory rank matches a *defined* selected rank/division
+      if (definedRankDivisionMatcher) {
+        orConditions.push({
           rankings: {
             $and: [
               { queueType: { $eqi: queueTypeFilter } },
               { type: { $in: ['current', 'provisory'] } },
-              ...definedEloConditions, // Ensures the current/provisory rank is defined
-              ...filterCriteriaConditions, // Ensures this defined rank matches the filter
+              { elo: { $nin: ['unranked', '', null] } }, // Elo must be defined (not unranked, empty, or null)
+              definedRankDivisionMatcher,
             ],
           },
-        },
-        // Scenario 2: Account HAS current/provisory rank that is unranked or empty,
-        // AND has a previous rank that matches the filter
-        {
+        });
+      }
+
+      // Condition 2: If "UNRANKED" is selected, current/provisory rank is unranked/empty/non-existent
+      if (selectedIsUnranked) {
+        orConditions.push({
+          rankings: {
+            $and: [
+              { queueType: { $eqi: queueTypeFilter } },
+              { type: { $in: ['current', 'provisory'] } },
+              {
+                $or: [ // Elo is unranked, empty, or does not exist
+                  { elo: { $eqi: 'unranked' } },
+                  { elo: { $eqi: '' } },
+                  { elo: { $exists: false } },
+                ],
+              },
+            ],
+          },
+        });
+      }
+
+      // Condition 3: Current/provisory is unranked/empty, BUT previous rank matches a *defined* selected rank/division
+      if (definedRankDivisionMatcher) {
+        orConditions.push({
           $and: [
-            // Condition 2a: HAS current/provisory rank that is unranked or empty
-            {
+            { // Current/provisory is unranked/empty/non-existent
               rankings: {
                 $and: [
                   { queueType: { $eqi: queueTypeFilter } },
                   { type: { $in: ['current', 'provisory'] } },
-                  undefinedEloConditions, // Check for unranked or empty ELO
+                  {
+                    $or: [
+                      { elo: { $eqi: 'unranked' } },
+                      { elo: { $eqi: '' } },
+                      { elo: { $exists: false } },
+                    ],
+                  },
                 ],
               },
             },
-            // Condition 2b: Check if the previous rank matches the filter criteria
-            {
+            { // Previous rank matches defined criteria
               rankings: {
                 $and: [
                   { queueType: { $eqi: queueTypeFilter } },
                   { type: { $eqi: 'previous' } },
-                  ...filterCriteriaConditions, // Check if previous rank matches
+                  { elo: { $nin: ['unranked', '', null] } }, // Previous Elo must be defined
+                  definedRankDivisionMatcher,
                 ],
               },
             },
           ],
-        },
-      ];
+        });
+      }
+
+      if (orConditions.length > 0) {
+        strapiFilters.$or = orConditions;
+      }
     }
     const queryParams: any = {
       pagination: {

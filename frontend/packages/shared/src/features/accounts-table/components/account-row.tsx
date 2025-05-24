@@ -1,5 +1,6 @@
 import type { FilterState } from '@/features/accounts-table/hooks/useAccounts.tsx';
 import type { AccountType, RankingType } from '@/types/types.ts';
+import type { ArrowUp } from 'lucide-react';
 import { AccountGameIcon } from '@/components/GameComponents.tsx';
 import { GameRankDisplay } from '@/components/GameRankDisplay.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
@@ -19,7 +20,7 @@ type AccountRowProps = {
   onViewDetails: (id: string) => void;
   getEloIcon: (elo: string) => string;
   getRegionIcon: (region: string) => React.ReactNode;
-  getCompanyIcon: (company: string) => string;
+  getCompanyIcon: (company: string | typeof ArrowUp) => string;
   getRankColor: (elo: string) => string;
   filters: FilterState;
 
@@ -85,8 +86,21 @@ export function AccountRow({
       </td>
 
       <td className="p-3">
-
-        <img src={getCompanyIcon(account.type)} alt="BoostRoyal" className="w-6 h-6" />
+        {(() => {
+          const IconComponentOrUrl = getCompanyIcon(account.type);
+          if (typeof IconComponentOrUrl === 'string') {
+            return (
+              <img
+                src={IconComponentOrUrl}
+                alt={account.type}
+                className="w-8 h-8"
+              />
+            );
+          } else {
+            const Icon = IconComponentOrUrl;
+            return <Icon className="w-8 h-8" />;
+          }
+        })()}
 
       </td>
       <td className="p-3">

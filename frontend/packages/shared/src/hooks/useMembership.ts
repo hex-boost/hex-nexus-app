@@ -204,7 +204,7 @@ export function useMembership() {
     {
       title: 'Turbo Boost Balance',
       description: 'Pay using your Turbo balance',
-      icon: getCompanyIcon('turboboost') as any,
+      icon: getCompanyIcon('turboboost'),
 
     },
   ];
