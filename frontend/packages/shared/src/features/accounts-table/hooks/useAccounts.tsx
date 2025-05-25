@@ -17,16 +17,11 @@ export const availableRegions: Server[] = [
   'EUN1',
   'OC1',
   'BR1',
-  'JP1',
   'LA1',
   'LA2',
   'RU',
   'TR1',
   'ME1',
-  'SG2',
-  'PH2',
-  'VN2',
-  'TH2',
 ];
 
 type SortKey = keyof AccountType | 'coin_price' | 'price' | 'winrate' | 'blueEssence' | 'LCUchampions' | 'LCUskins';
