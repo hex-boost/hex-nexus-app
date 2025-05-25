@@ -392,7 +392,9 @@ export type ApiAccountAccount = {
       Schema.Attribute.Private;
     gamename: Schema.Attribute.String & Schema.Attribute.Private;
     isEmailVerified: Schema.Attribute.Boolean & Schema.Attribute.Private;
+    isInvalid: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     isPhoneVerified: Schema.Attribute.Boolean;
+    lastChecked: Schema.Attribute.DateTime;
     LCUchampions: Schema.Attribute.JSON;
     LCUskins: Schema.Attribute.JSON;
     leaverBuster: Schema.Attribute.JSON;
@@ -405,6 +407,7 @@ export type ApiAccountAccount = {
     party_restrictions: Schema.Attribute.JSON;
     password: Schema.Attribute.String & Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
+    PUUID: Schema.Attribute.String;
     rankings: Schema.Attribute.Relation<'oneToMany', 'api::ranking.ranking'>;
     riotPoints: Schema.Attribute.Integer;
     server: Schema.Attribute.Enumeration<
@@ -427,8 +430,10 @@ export type ApiAccountAccount = {
       ]
     >;
     tagline: Schema.Attribute.String & Schema.Attribute.Private;
-    type: Schema.Attribute.Enumeration<['nexus', 'boostroyal', 'private']> &
-      Schema.Attribute.DefaultTo<'nexus'>;
+    type: Schema.Attribute.Enumeration<
+      ['nexus', 'boostroyal', 'turboboost', 'private']
+    > &
+    Schema.Attribute.DefaultTo<'nexus'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -488,12 +493,13 @@ export type ApiActionAction = {
 export type ApiFavoriteAccountFavoriteAccount = {
   collectionName: 'favorite_accounts';
   info: {
+    description: '';
     displayName: 'Favorite Account';
     pluralName: 'favorite-accounts';
     singularName: 'favorite-account';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -569,14 +575,16 @@ export type ApiNotificationNotification = {
 export type ApiPaymentPayment = {
   collectionName: 'payments';
   info: {
+    description: '';
     displayName: 'Payment';
     pluralName: 'payments';
     singularName: 'payment';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
+    amount: Schema.Attribute.Integer;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -596,6 +604,10 @@ export type ApiPaymentPayment = {
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'oneToOne',
+      'plugin::users-permissions.user'
+    >;
   };
 } & Struct.CollectionTypeSchema;
 
@@ -611,10 +623,13 @@ export type ApiPremiumPremium = {
     draftAndPublish: false;
   };
   attributes: {
+    coinDistributionCycleAnchorDate: Schema.Attribute.DateTime;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    expirationWarningSent: Schema.Attribute.Boolean;
     expiresAt: Schema.Attribute.DateTime;
+    lastCoinDistributionDate: Schema.Attribute.DateTime;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -1217,7 +1232,12 @@ export type PluginUsersPermissionsUser = {
     accountPermissions: Schema.Attribute.JSON &
       Schema.Attribute.CustomField<
         'plugin::multi-select.multi-select',
-        ['nexus:nexus', 'boostroyal:boostroyal', 'private:private']
+        [
+          'nexus:nexus',
+          'boostroyal:boostroyal',
+          'private:private',
+          'turboboost:turboboost',
+        ]
       > &
       Schema.Attribute.DefaultTo<'["nexus"]'>;
     actions: Schema.Attribute.Relation<'oneToMany', 'api::action.action'>;
