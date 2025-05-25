@@ -82,7 +82,7 @@ export function PaymentMethodDialog({ children, selectedTier }: {
                           <div
                             className=" w-8 flex items-center justify-center"
                           >
-                            <img alt="Turbo Boost Logo" src={method.icon} />
+                            <img alt="Turbo Boost Logo" src={method.icon as any} />
                           </div>
                         )
 

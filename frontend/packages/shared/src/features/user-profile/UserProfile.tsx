@@ -11,7 +11,6 @@ import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip.tsx';
 import { useMembership } from '@/hooks/useMembership.ts';
 import { useProfileAvatar } from '@/hooks/useProfileAvatar.ts';
-import { useMapping } from '@/lib/useMapping.tsx';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { Browser } from '@wailsio/runtime';
@@ -44,7 +43,6 @@ export function UserProfile({
   logoutAction,
 }: UserProfileProps) {
   const queryClient = useQueryClient();
-  const { getCompanyIcon } = useMapping();
   const { updateUserAvatarFromBase64 } = useProfileAvatar();
 
   const [isHover, setHover] = useState(false);
