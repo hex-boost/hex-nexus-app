@@ -94,12 +94,6 @@ export default function PricingCards() {
           <h3 className="text-xl font-bold mb-2">Ready to go further?</h3>
           <p className="text-gray-400 mb-8">Upgrade and outship the competition</p>
 
-          <div className="inline-block mb-6">
-            <div className={`${`${getTierColorClass('pro').glow}`} text-white text-sm py-2 px-4 rounded-full font-medium `}>
-              🎉 Promotion Extended: 50% OFF ALL PLANS - Ends May 31th! 🎉
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
             {pricingPlans
               .filter(plan => !plan.tier_enum || plan.tier_enum !== user?.premium?.tier?.toLowerCase())
@@ -122,18 +116,14 @@ export default function PricingCards() {
                       : (
                           <>
                             <span className={`${getTierColorClass(plan.tier_enum).text} text-6xl font-bold mx-1`}>
-                              {Math.floor(plan.price * 0.5) - 1}
+                              {plan.price}
+                              {Math.floor(plan.price) - 1}
                             </span>
                             <span className={`${getTierColorClass(plan.tier_enum).text} text-4xl font-bold -ml-1`}>.99</span>
                           </>
                         )}
                     <div className="flex relative flex-col ml-1">
-                      {plan.price > 0 && (
-                        <span className="text-white/40 -top-7 absolute line-through text-lg font-medium">
-                          $
-                          {plan.price}
-                        </span>
-                      )}
+
                       <span className={`${getTierColorClass(plan.tier_enum).text} text-xl`}>{plan.period}</span>
                     </div>
                   </div>
