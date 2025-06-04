@@ -20,7 +20,14 @@ export function useCommonFetch() {
     queryFn: async () => {
       const user = await strapiClient.request<UserType>('get', 'users/me');
       if (import.meta.env.VITE_NODE_ENV !== 'development') {
-        if (user.hwid !== await HWID.Get()) {
+        const currentHwid = await HWID.Get();
+        if (user.hwid === '') {
+          await strapiClient.axios.put(`/users/${user.id}`, {
+            hwid: currentHwid,
+          });
+          user.hwid = currentHwid;
+        }
+        if (user.hwid !== currentHwid) {
           logout();
           toast.error('You have been logged out due to HWID mismatch');
           router.navigate({ to: '/login' });

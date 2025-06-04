@@ -2,7 +2,7 @@ import type { StrapiError } from '@/types/types';
 import { LoginForm } from '@/features/auth/login-form.tsx';
 import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
 import { useProfileAvatar } from '@/hooks/useProfileAvatar.ts';
-import { userAuth } from '@/lib/strapi.ts';
+import { strapiClient, userAuth } from '@/lib/strapi.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { Discord } from '@discord';
 import { HWID } from '@hwid';
@@ -23,8 +23,14 @@ export function LoginFormPage() {
     onSuccess: async (data) => {
       if (import.meta.env.MODE !== 'development') {
         const currentHwid = await HWID.Get();
+        if (data.user.hwid === '') {
+          await strapiClient.axios.put(`/users/${data.user.id}`, {
+            hwid: currentHwid,
+          });
+          data.user.hwid = currentHwid;
+        }
         if (data.user.hwid && data.user.hwid !== currentHwid) {
-          setAuthToken(''); // Clear token
+          setAuthToken('');
           toast.error('Login failed: Hardware ID mismatch');
           return;
         }
