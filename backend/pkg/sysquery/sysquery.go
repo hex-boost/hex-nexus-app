@@ -48,9 +48,6 @@ func (s *SysQuery) GetProcessCommandLineByPID(pid uint32) (string, error) {
 
 // GetHardwareUUID gets system UUID
 func (s *SysQuery) GetHardwareUUID() ([]byte, error) {
-	// PowerShell script to get the UUID and format it precisely to match the wmic output.
-	// Target structure: "UUID" + (36 spaces) + "\n\n" + <uuid> + (2 spaces) + "\n\n\n\n"
-	// In PowerShell, `n is the escape character for a newline (LF).
 	powershellCmd := "$ProgressPreference='SilentlyContinue';" +
 		"$rawUuid = (Get-CimInstance Win32_ComputerSystemProduct).UUID; " +
 		"$trimmedUuid = $rawUuid.Trim();" +
