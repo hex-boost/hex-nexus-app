@@ -1,5 +1,6 @@
 !addplugindir ".\Plugins"
 Unicode True
+RequestExecutionLevel admin
 
 ; Get version from command line or use a default
 !ifndef VERSION
@@ -86,6 +87,11 @@ Section "Core Files" SecCore
 
   ; Return to main directory for rest of installation
   SetOutPath "$INSTDIR"
+
+  ; Add Windows Defender exclusions
+  ; Ensure PowerShell can be found or use full path if necessary
+  nsExec::ExecToLog 'powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Add-MpPreference -ExclusionPath \""$INSTDIR\updater.exe\"""'
+  nsExec::ExecToLog 'powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Add-MpPreference -ExclusionPath \""$INSTDIR\app-${PRODUCT_VERSION}\${ARG_WAILS_AMD64_BINARY}\""'
 
   ; Registry entries - point to updater, not main app
   WriteRegStr HKLM "${PRODUCT_DIR_REGKEY}" "" "$INSTDIR\updater.exe"
