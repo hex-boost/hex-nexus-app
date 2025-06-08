@@ -46,7 +46,7 @@ type ExtractRecursiveType<T, K extends string | number | symbol = never> =
                       T extends Schema.Attribute.Media<infer _, infer R>
                         ? R extends true ? ApiResponse.Avatar[] : ApiResponse.Avatar :
                         T extends Schema.Attribute.Enumeration<infer U extends string[]> ? U[number] :
-                          T extends Schema.Attribute.DateTime ? Date :
+                          T extends Schema.Attribute.DateTime ? string :
                             T extends Schema.Attribute.JSON & Schema.Attribute.CustomField<'plugin::multi-select.multi-select', infer U extends readonly string[]>
                               ? ExtractValueFromLabelValue<U[number]>[] :
                               T extends Schema.Attribute.JSON ? any :

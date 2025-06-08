@@ -100,7 +100,7 @@ export function PaymentMethodDialog({ children, selectedTier }: {
 
                       {method.title.includes('Turbo Boost Balance') && (
                         <Badge className="rounded-full ">
-                          Coming Soon
+                          dm @naratios on discord
                         </Badge>
                       )}
                     </div>

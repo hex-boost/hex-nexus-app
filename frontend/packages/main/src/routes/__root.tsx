@@ -40,7 +40,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
   },
 });
 function RootLayout() {
-  const { isOpen, tier, paymentMethod, amount, close } = usePremiumPaymentModalStore();
+  const { isOpen, tier, paymentMethod, amount, close, currency } = usePremiumPaymentModalStore();
   useGoState();
   const { jwt } = useUserStore();
   useEffect(() => {
@@ -52,7 +52,7 @@ function RootLayout() {
   }, [jwt]);
   return (
     <>
-      <PremiumPaymentModal isOpen={isOpen} tier={tier} paymentMethod={paymentMethod} amount={amount} onClose={close} />
+      <PremiumPaymentModal currency={currency} isOpen={isOpen} tier={tier} paymentMethod={paymentMethod} amount={amount} onClose={close} />
       <Outlet />
     </>
   );

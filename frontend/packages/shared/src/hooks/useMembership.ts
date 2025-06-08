@@ -51,7 +51,6 @@ export function useMembership() {
       tier: 'Free',
       tier_enum: 'free',
       description: 'Thanks for being part of Nexus.',
-      price: 0,
 
       benefits: [
 
@@ -76,7 +75,6 @@ export function useMembership() {
     {
       tier: 'Basic',
       description: 'Perfect for part-time boosters',
-      price: 10,
       period: '/mo',
 
       benefits: [
@@ -108,7 +106,6 @@ export function useMembership() {
     {
       tier: 'Premium',
       description: 'The ideal solution for serious boosters.',
-      price: 20,
       tier_enum: 'premium',
       benefits: [
         {
@@ -140,7 +137,6 @@ export function useMembership() {
       tier: 'Pro',
       tier_enum: 'pro',
       description: 'For full-time professional boosters',
-      price: 30,
       benefits: [
         {
           title: 'Unlimited coins',

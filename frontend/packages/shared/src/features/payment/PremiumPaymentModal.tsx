@@ -12,7 +12,7 @@ type PremiumPaymentModalProps = {
   isOpen: boolean;
   onClose: () => void;
   tier: PremiumTiers;
-  currency?: 'USD' | 'BRL';
+  currency?: 'USD' | 'BRL' | 'EUR';
   paymentMethod: PaymentMethodsAccepted;
   amount: number;
 };
@@ -213,7 +213,7 @@ export function PremiumPaymentModal({
                       <div className="flex items-center justify-between w-full">
                         <span className="font-medium text-zinc-100 tracking-tight capitalize">{tier}</span>
                         <span className={`font-bold ${colors.text}`}>
-                          {currency === 'USD' ? '$' : 'R$'}
+                          {currency === 'USD' ? '$' : currency === 'EUR' ? '€' : 'R$'}
                           {amount.toFixed(2)}
                         </span>
                       </div>
