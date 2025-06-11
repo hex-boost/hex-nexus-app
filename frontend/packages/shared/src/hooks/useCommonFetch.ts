@@ -21,7 +21,9 @@ export function useCommonFetch() {
       const user = await strapiClient.request<UserType>('get', 'users/me');
       if (import.meta.env.VITE_NODE_ENV !== 'development') {
         const currentHwid = await HWID.Get();
-        if (user.hwid === '') {
+        console.log(currentHwid, 'currentHwid');
+        console.log(user.hwid, 'userHwid');
+        if (!user.hwid || user.hwid === '') {
           await strapiClient.axios.put(`/users/${user.id}`, {
             hwid: currentHwid,
           });

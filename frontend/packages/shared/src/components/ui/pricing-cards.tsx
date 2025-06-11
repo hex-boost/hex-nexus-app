@@ -138,7 +138,6 @@ export default function PricingCards() {
                               )}
                         {currentPlanDetails.price > 0 && currentPlanDetails.period && (
                           <span className="text-gray-400 text-sm ml-1">
-                            /
                             {' '}
                             {currentPlanDetails.period.toLowerCase()}
                           </span>
