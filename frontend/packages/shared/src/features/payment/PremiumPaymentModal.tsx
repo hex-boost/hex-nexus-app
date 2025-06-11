@@ -58,7 +58,9 @@ export function PremiumPaymentModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-      <DialogContent className="sm:max-w-md md:max-w-lg bg-background border-zinc-800 backdrop-blur-sm p-0 overflow-hidden">
+      <DialogContent
+        className="sm:max-w-md md:max-w-lg bg-background border-zinc-800 backdrop-blur-sm p-0 overflow-hidden"
+      >
 
         <div className="p-6">
           <Card className="w-full bg-transparent border-none shadow-none">
@@ -192,18 +194,52 @@ export function PremiumPaymentModal({
                         Payment Method
                       </span>
                       <div className="flex items-center gap-2.5 group transition-all">
-                        <span
-                          className={`inline-flex items-center justify-center w-8 h-8 rounded-lg  shadow-lg ${colors.border} text-sm font-medium ${colors.text} group-hover:scale-105 transition-transform`}
-                          /* eslint-disable-next-line react-dom/no-dangerously-set-innerhtml */
-                          dangerouslySetInnerHTML={{ __html: paymentMethods.find(paymentMethodAccepted => paymentMethodAccepted.title.toLowerCase() === paymentMethod.toLowerCase())?.icon as any }}
+                        {(() => {
+                          const selectedPaymentMethod = paymentMethods.find(
+                            p => p.title.toLowerCase().includes(paymentMethod.toLowerCase()),
+                          );
+                          const icon = selectedPaymentMethod?.icon;
 
+                          // If icon is undefined, render nothing
+                          if (!icon) {
+                            return null;
+                          }
+
+                          // If icon is a string and ends with .png, render as an img
+                          if (typeof icon === 'string' && icon.endsWith('.png')) {
+                            return (
+                              <span
+                                className={`inline-flex items-center justify-center w-8 h-8  ${colors.border}  font-medium ${colors.text} group-hover:scale-105 transition-transform`}
+                              >
+                                <img
+                                  src={icon}
+                                  alt={selectedPaymentMethod?.title || 'Payment method'}
+                                  className=""
+                                />
+                              </span>
+                            );
+                          }
+
+                          // Otherwise, use dangerouslySetInnerHTML for SVGs
+                          return (
+                            <span
+                              className={`inline-flex items-center justify-center w-8 h-8 rounded-lg shadow-lg ${colors.border} text-sm font-medium ${colors.text} group-hover:scale-105 transition-transform`}
+                              dangerouslySetInnerHTML={{ __html: icon }}
+                            />
+                          );
+                        })()}
+                        {' '}
+                        <span
+                          className="font-medium text-zinc-100 tracking-tight"
                         >
+                          {paymentMethod}
                         </span>
-                        <span className="font-medium text-zinc-100 tracking-tight">{paymentMethod}</span>
                       </div>
                     </div>
 
-                    <div className="w-full h-px bg-gradient-to-r from-transparent via-zinc-700 to-transparent" />
+                    <div
+                      className="w-full h-px bg-gradient-to-r from-transparent via-zinc-700 to-transparent"
+                    />
 
                     <div className="space-y-1.5 w-full">
                       <span className="text-xs font-medium text-zinc-500 flex items-center gap-1.5">
@@ -211,7 +247,11 @@ export function PremiumPaymentModal({
                         Premium Tier
                       </span>
                       <div className="flex items-center justify-between w-full">
-                        <span className="font-medium text-zinc-100 tracking-tight capitalize">{tier}</span>
+                        <span
+                          className="font-medium text-zinc-100 tracking-tight capitalize"
+                        >
+                          {tier}
+                        </span>
                         <span className={`font-bold ${colors.text}`}>
                           {currency === 'USD' ? '$' : currency === 'EUR' ? '€' : 'R$'}
                           {amount.toFixed(2)}
@@ -232,5 +272,6 @@ export function PremiumPaymentModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
+  )
+  ;
 }

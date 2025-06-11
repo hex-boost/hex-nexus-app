@@ -287,7 +287,7 @@ const getCompanyIcon = (company: string): CompanyIcon => {
   }
   if (company === 'turboboost') {
     // Return an img tag string for PNGs to work with dangerouslySetInnerHTML
-    return `<img src="${logoTurboBoost}" alt="Turbo Boost" style="width: 100%; height: 100%;" />`;
+    return logoTurboBoost;
   }
   if (company === 'private') {
     return EarthLock; // This case needs to be handled differently if used with dangerouslySetInnerHTML
