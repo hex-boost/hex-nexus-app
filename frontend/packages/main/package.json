@@ -4,7 +4,7 @@
   "version": "1.0.18",
   "type": "module",
   "scripts": {
-    "dev": "vit",
+    "dev": "vite",
     "build:dev": "vite build --minify false --mode development",
     "build": "pnpm exec tsc && vite build --emptyOutDir --mode production",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0 --fix",
