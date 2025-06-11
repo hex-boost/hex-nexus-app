@@ -254,7 +254,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         return;
       }
       if (notification.event === NOTIFICATION_EVENTS.MEMBERSHIP_PAID && !notification.isSeen) {
-        const amount = notification.metadata.amount ? notification.metadata.amount : pricingPlans?.find(plan => notification.metadata.tier.toLowerCase() === plan.tier_enum)?.price ?? 10;
+        const amount = notification.metadata.amount ? notification.metadata.amount : 10;
         premiumModalStore.open({ currency: notification.metadata?.currency, amount, tier: notification.metadata?.tier?.slice(0, 1).toUpperCase() + notification.metadata?.tier?.slice(1), paymentMethod: notification.metadata.paymentMethod === 'Boost Royal' ? 'BR Balance' : notification.metadata.paymentMethod });
         markAsRead(notification.documentId);
       }

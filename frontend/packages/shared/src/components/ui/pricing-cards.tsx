@@ -1,3 +1,4 @@
+import type { Currency } from '@/hooks/useMembershipPrices/useMembershipPrices.ts';
 import type { PremiumTiers } from '@/types/types.ts'; // Assuming PremiumTiers is 'free' | 'basic' | 'premium' | 'pro'
 import { FlickeringGrid } from '@/components/magicui/flickering-grid.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
@@ -7,14 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { PaymentMethodDialog } from '@/features/payment/PaymentMethodDialog.tsx';
 import { useMembership } from '@/hooks/useMembership.ts';
-import { strapiClient } from '@/lib/strapi.ts';
+import { useMembershipPrices } from '@/hooks/useMembershipPrices/useMembershipPrices.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
-import { useQuery } from '@tanstack/react-query';
 import { ArrowDownCircle, CircleCheckBig, UserCircle } from 'lucide-react'; // Added UserCircle for fallback
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef } from 'react';
 
 // Define available currencies and their symbols
-type Currency = 'EUR' | 'USD' | 'BRL';
 const currencySymbols: Record<Currency, string> = {
   EUR: '€',
   USD: '$',
@@ -26,26 +25,15 @@ export type Prices = {
   pro: number;
 };
 // Function to fetch prices from the API
-const fetchPrices = async (currency: Currency): Promise<Record<string, number>> => {
-  // Assuming the API returns an object matching the structure expected by pricesData?.[plan.tier_enum.toLowerCase()]
-  return await strapiClient.request<Record<string, number>>('GET', `/premium/prices/${currency}`);
-};
 
 export default function PricingCards() {
   const pricingRef = useRef<HTMLDivElement>(null);
   const { user } = useUserStore();
   const { getBackgroundColor, getTierColorClass, pricingPlans: staticPricingPlans } = useMembership();
-  const [selectedCurrency, setSelectedCurrency] = useState<Currency>('USD');
-
+  const { pricesData, selectedCurrency, pricesError, pricesLoading, setSelectedCurrency } = useMembershipPrices();
   const scrollToPricing = () => {
     pricingRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
-
-  const { data: pricesData, isLoading: pricesLoading, error: pricesError } = useQuery<Record<string, number>, Error>({
-    queryKey: ['prices', selectedCurrency],
-    queryFn: () => fetchPrices(selectedCurrency),
-    staleTime: 1000 * 60 * 5, // Cache prices for 5 minutes
-  });
 
   const plansWithPrices = useMemo(() => {
     return staticPricingPlans.map((plan) => {
@@ -211,7 +199,7 @@ export default function PricingCards() {
               {' '}
               Plan
             </h1>
-            <p className="text-gray-400 text-center max-w-lg ">
+            <p className="text-gray-400 text-center max-w-lg mb-4">
               {currentPlanDetails.description}
               {currentPlanDetails.tier_enum === 'free' && ' As a member of the Free Plan, you have access to:'}
             </p>
