@@ -286,12 +286,13 @@ const getCompanyIcon = (company: string): CompanyIcon => {
     return logoBoostRoyal;
   }
   if (company === 'turboboost') {
-    return logoTurboBoost;
+    // Return an img tag string for PNGs to work with dangerouslySetInnerHTML
+    return `<img src="${logoTurboBoost}" alt="Turbo Boost" style="width: 100%; height: 100%;" />`;
   }
   if (company === 'private') {
-    return EarthLock;
+    return EarthLock; // This case needs to be handled differently if used with dangerouslySetInnerHTML
   }
-  return nexusIcon;
+  return nexusIcon; // Assuming nexusIcon is an SVG string or compatible
 };
 const getGameIcon = (game: 'lol' | 'valorant', props?: { size?: number; className?: string }) => {
   if (game === 'lol') {
