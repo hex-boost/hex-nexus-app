@@ -3,6 +3,7 @@ import PremiumContentWrapper from '@/components/paywall/premium-content-wrapper.
 import CharacterSelection from '@/features/skin-selector/character-selection.tsx';
 import { useAllDataDragon } from '@/hooks/useDataDragon/useDataDragon.ts';
 import { saveSkinSelection } from '@/lib/champion-skin-store';
+import { logger } from '@/lib/logger.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { State as LolSkinState } from '@lolskin';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
@@ -19,6 +20,10 @@ function RouteComponent() {
   const { user } = useUserStore();
   const router = useRouter();
   const handleSelectSkin = async (champion: FormattedChampion, skin: FormattedSkin, chroma: any | null = null) => {
+    if (user?.premium.tier !== 'pro') {
+      logger.info('lolskin', 'User is not a premium user blocking skin changer');
+      return;
+    }
     // Apply skin change
     LolSkinState.SetChampionSkin(Number(champion.id), skin.num, chroma?.id || null);
 

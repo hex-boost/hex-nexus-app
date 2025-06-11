@@ -22,6 +22,7 @@ type AccountState interface {
 
 type AccountClient interface {
 	Save(summoner types.PartialSummonerRented) (*types.SummonerResponse, error)
+	UserMe() (*types.User, error)
 }
 
 type App interface {
@@ -51,6 +52,7 @@ type Handler struct {
 	summonerClient           SummonerClient
 	accountState             AccountState
 	lolSkin                  LolSkin
+	isLolSkinEnabled         bool
 	eventCh                  chan eventRequest
 	lolSkinState             LolSkinState
 	previousChampionInjected int
@@ -77,6 +79,14 @@ func (h *Handler) OnStartup(ctx context.Context, options application.ServiceOpti
 	h.ctx = ctx
 	go h.processEvents(ctx)
 	return nil
+}
+func (h *Handler) SetLolSkinEnabled(enabled bool) {
+	h.isLolSkinEnabled = enabled
+	if !enabled {
+		h.previousChampionInjected = 0 // Reset if skin feature is disabled
+	}
+	h.logger.Info("Set LolSkin enabled", zap.Bool("enabled", enabled))
+
 }
 func (h *Handler) processEvents(ctx context.Context) {
 	for {
@@ -266,6 +276,15 @@ func (h *Handler) GameflowPhase(event websocket.LCUWebSocketEvent) {
 	}
 }
 func (h *Handler) ChampionPicked(event websocket.LCUWebSocketEvent) {
+	userMe, err := h.accountClient.UserMe()
+	if err != nil {
+		h.logger.Error("Failed to get user data", zap.Error(err))
+		return
+	}
+	if userMe.Premium.Tier != "pro" {
+		h.logger.Info("Skipping champion pick event for non-premium user", zap.String("username", userMe.Username))
+		return
+	}
 	var LolChampSelect types.LolChampSelectGridChampions
 	if err := json.Unmarshal(event.Data, &LolChampSelect); err != nil {
 		h.logger.Error("Failed to parse champion data", zap.Error(err))
@@ -407,7 +426,7 @@ func IsRankingSame(oldRank, newRank types.RankedDetails) bool {
 }
 
 func (h *Handler) SkinSelectionChanged(championID, skinID int32) {
-	if h.previousChampionInjected != int(championID) {
+	if h.previousChampionInjected != 0 && h.previousChampionInjected != int(championID) {
 		return
 	}
 	h.logger.Info("Skin selection changed",

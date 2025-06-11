@@ -72,6 +72,14 @@ func (s *Client) GetAll() ([]types.SummonerBase, error) {
 	}
 	return response.Data, nil
 }
+func (s *Client) UserMe() (*types.User, error) {
+	var response types.User
+	_, err := s.api.Get("/api/users/me", &response)
+	if err != nil {
+		return nil, err
+	}
+	return &response, nil
+}
 func (s *Client) UsernameExistsInDatabase(username string) (bool, error) {
 	var result bool
 	apiTokenClient := s.GetApiTokenClient()
