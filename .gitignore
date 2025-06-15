@@ -6,6 +6,7 @@ frontend/bindings
 /logs/*
 build/bin/*
 bin/*
+lolskin
 .task
 backend/cmd/updater/dist/assets
 frontend/packages/main/dist/assets
