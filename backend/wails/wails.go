@@ -157,7 +157,7 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 	summonerService := summoner.NewService(appInstance.Log().League(), summonerClient)
 	captchaService := captcha.New(appInstance.Log().Riot())
 	leagueService := league.NewService(appInstance.Log().Riot(), accountClient, summonerService, lcuConn, accountState)
-	lolSkinService := lolskin.New(appInstance.Log().League(), leagueService.GetPath(), catalog, csLolDLL, modToolsExe)
+	lolskinInjector := lolskin.New(appInstance.Log().League(), leagueService.GetPath(), catalog, csLolDLL, modToolsExe)
 	riotService := riot.NewService(appInstance.Log().Riot(), captchaService, accountClient)
 	newUpdaterUtils := updaterUtils.New(appInstance.Log().Wails())
 	updateManager := updater.NewUpdateManager(cfg, newUpdaterUtils, appInstance.Log().League())
@@ -176,7 +176,8 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 	clientMonitor := league.NewMonitor(appInstance.Log().League(), accountMonitor, leagueService, riotService, captchaService, accountState, riotService, accountClient)
 
 	lolSkinState := lolskin.NewState()
-	websocketHandler := handler.New(appInstance.Log().League(), accountState, accountClient, summonerClient, lolSkinService, lolSkinState)
+	lolSkinService := lolskin.NewService(appInstance.Log().League(), accountState, accountClient, lolskinInjector, lolSkinState)
+	websocketHandler := handler.New(appInstance.Log().League(), accountState, accountClient, summonerClient, lolSkinState, lolSkinService)
 
 	websocketRouter := websocket.NewRouter(appInstance.Log().League())
 	websocketManager := websocket.NewManager()
@@ -244,11 +245,12 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 			application.NewService(stripeService),
 			application.NewService(gameOverlayManager),
 			application.NewService(updateManager),
-			application.NewService(lolSkinService),
+			application.NewService(lolskinInjector),
 			application.NewService(lolSkinState),
 			application.NewService(websocketHandler),
 			application.NewService(summonerClient),
 			application.NewService(websocketService),
+			application.NewService(lolSkinService),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.BundledAssetFileServer(assets),

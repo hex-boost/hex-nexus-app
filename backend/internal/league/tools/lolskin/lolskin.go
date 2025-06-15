@@ -30,7 +30,6 @@ type LolSkin struct {
 	patcherStdin    *os.File
 	onStateChanged  func(CSLOLState)
 	onStatusChanged func(string)
-	parsedCatalog   *Catalog // Store the parsed catalog
 
 	tempDir string // new field to store the temp directory
 }
@@ -50,12 +49,23 @@ const CsLolDLL = "cslol-dll.dll"
 
 func New(logger *logger.Logger, leaguePath string, catalog, csLolDLL, modToolsExe embed.FS) *LolSkin {
 	// Create a temporary directory for our extracted files
-	tempDir, err := os.MkdirTemp("", "lolskin")
+
+	exePath, err := os.Executable()
 	if err != nil {
-		fmt.Printf("Failed to create temp directory: %v\n", err)
+		fmt.Printf("Failed to get executable path: %v\n", err)
 		return nil
 	}
 
+	// Get parent directory of the executable
+	parentDir := filepath.Dir(filepath.Dir(exePath))
+
+	// Create the lolskin directory in the parent directory
+	tempDir := filepath.Join(parentDir, "lolskin")
+	err = os.MkdirAll(tempDir, 0755) // Using MkdirAll to create intermediate directories if needed
+	if err != nil {
+		fmt.Printf("Failed to create directory: %v\n", err)
+		return nil
+	}
 	// Extract the mod-tools.exe to the temp directory
 	lolskin := &LolSkin{
 		logger:      logger,
@@ -65,21 +75,6 @@ func New(logger *logger.Logger, leaguePath string, catalog, csLolDLL, modToolsEx
 		state:       StateIdle,
 		tempDir:     tempDir,
 	}
-
-	// Parse the catalog during initialization
-	catalogData, err := catalog.ReadFile("backend/assets/mod-tools/catalog.json")
-	if err != nil {
-		fmt.Printf("Failed to read catalog: %v\n", err)
-		os.RemoveAll(tempDir)
-		panic("error reading catalog")
-	}
-	var parsedCatalog Catalog
-	if err := json.Unmarshal(catalogData, &parsedCatalog); err != nil {
-		fmt.Printf("Failed to parse catalog: %v\n", err)
-		os.RemoveAll(tempDir)
-		panic("error parsing catalog")
-	}
-	lolskin.parsedCatalog = &parsedCatalog
 
 	err = lolskin.extractModTools()
 	if err != nil {
@@ -158,14 +153,7 @@ func (c *LolSkin) StopRunningPatcher() {
 	}
 }
 func (c *LolSkin) InjectFantome(fantomePath string) error {
-	c.StopRunningPatcher()
 
-	c.mutex.Lock()
-	if c.state != StateIdle {
-		c.mutex.Unlock()
-		return fmt.Errorf("tool is busy")
-	}
-	c.setState(StateBusy)
 	c.mutex.Unlock()
 
 	// Change League Path (important step from working logs)
@@ -410,8 +398,7 @@ func (c *LolSkin) DownloadFantome(championId int32, skinId int32) (string, error
 	c.logger.Info("Skin not in cache, downloading")
 
 	// Construct download URL
-	downloadUrl := fmt.Sprintf("https://raw.githubusercontent.com/koobzaar/lol-skins-developer/main/%d/%d.fantome", championId, skinId)
-
+	downloadUrl := fmt.Sprintf("https://gitee.com/jinjutwo/lol-skins-developer/raw/master/%d/%d.fantome", championId, skinId)
 	// Download the file
 	resp, err := http.Get(downloadUrl)
 	if err != nil {

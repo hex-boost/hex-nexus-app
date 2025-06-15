@@ -19,7 +19,6 @@ export function RentedAccountButton({ account }: RentedAccountButtonProps) {
     isStateLoading,
   } = useLeagueManager({ account });
   const { user } = useUserStore();
-  // First check if we're in an auth flow regardless of client state
 
   if (isStateLoading || (clientState === LeagueClientStateType.ClientStateNone)) {
     return (

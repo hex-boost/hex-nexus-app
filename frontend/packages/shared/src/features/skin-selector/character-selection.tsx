@@ -1,6 +1,8 @@
 import type { FormattedChampion, FormattedSkin } from '@/hooks/useDataDragon/types/useDataDragonHook.ts';
 import { Button } from '@/components/ui/button.tsx';
 import { Input } from '@/components/ui/input.tsx';
+import { Label } from '@/components/ui/label.tsx';
+import { Switch } from '@/components/ui/switch.tsx';
 import CharacterCard from '@/features/skin-selector/components/character-card.tsx';
 import { SkinSelectorTutorial } from '@/features/skin-selector/skin-selector-tutorial.tsx';
 import { useLocalStorage } from '@/hooks/use-local-storage.tsx';
@@ -23,6 +25,9 @@ type CharacterSelectionProps = {
   initialChampionId?: number;
   initialSkinId?: number;
   isLoading: boolean;
+  isLolSkinEnabled?: boolean;
+  toggleLolSkinEnabled?: () => Promise<void>; // Optional prop to control skin feature toggle
+
 };
 
 export default function CharacterSelection({
@@ -30,12 +35,13 @@ export default function CharacterSelection({
   onSelectSkin,
   initialChampionId,
   isLoading,
+  isLolSkinEnabled, // Default to true if not provided
+  toggleLolSkinEnabled, // Optional prop to control skin feature toggle
 }: CharacterSelectionProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchDebounced, setSearchDebounced] = useState('');
   const [selectedChampion, setSelectedChampion] = useState<FormattedChampion | null>(null);
 
-  // User preferences with local storage persistence
   const [userPreferences, setUserPreferences] = useLocalStorage<UserPreferences>('champion-preferences', {});
 
   // Initialize with selected champion if provided
@@ -154,7 +160,20 @@ export default function CharacterSelection({
             </Button>
           )}
           <div className="flex justify-between items-center w-full">
-            <h2 className="text-3xl font-semibold text-foreground">{pageTitle}</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-3xl font-semibold text-foreground">{pageTitle}</h2>
+              {/* Add this after the title in the header */}
+              <div className="flex items-center space-x-2 ml-auto">
+                <Switch
+                  id="skin-feature-switch"
+                  checked={isLolSkinEnabled}
+                  onCheckedChange={toggleLolSkinEnabled}
+                />
+                <Label htmlFor="skin-feature-switch" className="text-sm">
+                  {isLolSkinEnabled ? 'Enabled' : 'Disabled'}
+                </Label>
+              </div>
+            </div>
             <Button variant="outline" onClick={() => setShowTutorial(true)}>
               How It Works
               <HelpCircle className="ml-2" size={16} />

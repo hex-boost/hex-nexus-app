@@ -1,12 +1,14 @@
 import type { FormattedChampion, FormattedSkin } from '@/hooks/useDataDragon/types/useDataDragonHook.ts';
 import PremiumContentWrapper from '@/components/paywall/premium-content-wrapper.tsx';
 import CharacterSelection from '@/features/skin-selector/character-selection.tsx';
+import { useLocalStorage } from '@/hooks/use-local-storage.tsx';
 import { useAllDataDragon } from '@/hooks/useDataDragon/useDataDragon.ts';
 import { saveSkinSelection } from '@/lib/champion-skin-store';
 import { logger } from '@/lib/logger.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
-import { State as LolSkinState } from '@lolskin';
+import { State as LolSkinState, Service } from '@lolskin';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
+import { useEffect } from 'react';
 import {
   Handler,
 } from '../../../../bindings/github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket/handler/index.ts';
@@ -17,8 +19,10 @@ export const Route = createFileRoute('/_protected/tools/')({
 
 function RouteComponent() {
   const { allChampions, allSkins, isLoading } = useAllDataDragon();
+
   const { user } = useUserStore();
   const router = useRouter();
+  const [isLolskinEnabled, toggleLolSkinEnabled] = useLocalStorage<boolean>('lolskin-enabled', false);
   const handleSelectSkin = async (champion: FormattedChampion, skin: FormattedSkin, chroma: any | null = null) => {
     if (user?.premium.tier !== 'pro') {
       logger.info('lolskin', 'User is not a premium user blocking skin changer');
@@ -42,6 +46,32 @@ function RouteComponent() {
       console.error('Error saving skin selection:', error);
     }
   };
+  useEffect(() => {
+    if (user?.premium.tier !== 'pro') {
+      logger.info('lolskin', 'User is not a premium user blocking skin feature toggle');
+      Service.ToggleLolSkinEnabled(false);
+
+      toggleLolSkinEnabled(false);
+      return;
+    }
+    Service.ToggleLolSkinEnabled(isLolskinEnabled);
+    toggleLolSkinEnabled(isLolskinEnabled);
+    Service.StartInjection();
+  }, []);
+  const handleToggleSkinFeature = async () => {
+    try {
+      if (user?.premium.tier !== 'pro') {
+        logger.info('lolskin', 'User is not a premium user blocking skin feature toggle');
+        return;
+      }
+      await Service.ToggleLolSkinEnabled(!isLolskinEnabled);
+      toggleLolSkinEnabled(!isLolskinEnabled);
+
+      console.log('Skin feature toggled to:', !isLolskinEnabled);
+    } catch (error) {
+      console.error('Failed to toggle skin feature:', error);
+    }
+  };
   return (
     <>
       <PremiumContentWrapper isPremiumUser={user?.premium?.tier === 'pro'} onPurchase={() => router.navigate({ to: '/subscription' })}>
@@ -50,6 +80,8 @@ function RouteComponent() {
           skins={allSkins}
           champions={allChampions}
           onSelectSkin={handleSelectSkin}
+          isLolSkinEnabled={isLolskinEnabled}
+          toggleLolSkinEnabled={handleToggleSkinFeature}
         />
       </PremiumContentWrapper>
     </>

@@ -60,16 +60,17 @@ type Handler struct {
 	app                      App
 	eventMutex               sync.Mutex
 	ctx                      context.Context
+	lolSkinService           *lolskin.Service
 }
 
 // New creates a new WebSocket event handler
-func New(logger logger.Loggerer, accountState AccountState, accountClient AccountClient, summonerClient SummonerClient, lolSkin LolSkin, lolSkinState LolSkinState) *Handler {
+func New(logger logger.Loggerer, accountState AccountState, accountClient AccountClient, summonerClient SummonerClient, lolSkinState LolSkinState, lolskinService *lolskin.Service) *Handler {
 	return &Handler{
 		isLolSkinEnabled: true,
 		accountState:     accountState,
 		summonerClient:   summonerClient,
 		logger:           logger,
-		lolSkin:          lolSkin,
+		lolSkinService:   lolskinService,
 		lolSkinState:     lolSkinState,
 		accountClient:    accountClient,
 		eventCh:          make(chan eventRequest, 10), // Buffer size can be adjusted as needed
@@ -80,16 +81,8 @@ func New(logger logger.Loggerer, accountState AccountState, accountClient Accoun
 func (h *Handler) OnStartup(ctx context.Context, options application.ServiceOptions) error {
 	h.ctx = ctx
 	go h.processEvents(ctx)
-	return nil
-}
-func (h *Handler) SetLolSkinEnabled(enabled bool) {
-	h.isLolSkinEnabled = enabled
-	if !enabled {
-		h.lolSkin.StopRunningPatcher()
-		h.previousChampionInjected = 0 // Reset if skin feature is disabled
-	}
-	h.logger.Info("Set LolSkin enabled", zap.Bool("enabled", enabled))
 
+	return nil
 }
 func (h *Handler) processEvents(ctx context.Context) {
 	for {
@@ -279,12 +272,12 @@ func (h *Handler) GameflowPhase(event websocket.LCUWebSocketEvent) {
 	}
 }
 func (h *Handler) ChampionPicked(event websocket.LCUWebSocketEvent) {
+	if true {
+		return
+	}
 	var LolChampSelect types.LolChampSelectGridChampions
 	if err := json.Unmarshal(event.Data, &LolChampSelect); err != nil {
 		h.logger.Error("Failed to parse champion data", zap.Error(err))
-		return
-	}
-	if !h.IsLolSkinEnabled() {
 		return
 	}
 
@@ -421,29 +414,8 @@ func IsRankingSame(oldRank, newRank types.RankedDetails) bool {
 	// If we've gotten here, the rankings are the same
 	return true
 }
-func (h *Handler) IsLolSkinEnabled() bool {
-	userMe, err := h.accountClient.UserMe()
-	if err != nil {
-		h.logger.Error("Failed to get user data", zap.Error(err))
-		h.isLolSkinEnabled = false
-		h.lolSkin.StopRunningPatcher()
-		return false
-	}
-	if userMe.Premium.Tier != "pro" {
-		h.logger.Info("Skipping champion pick event for non-premium user", zap.String("username", userMe.Username))
-		h.isLolSkinEnabled = false
-		h.lolSkin.StopRunningPatcher()
-		return false
-	}
-	h.logger.Info("Lolskin enabled", zap.Bool("isLolSkinEnabled", h.isLolSkinEnabled))
-
-	return h.isLolSkinEnabled
-}
 func (h *Handler) SkinSelectionChanged(championID, skinID int32) {
 	if h.previousChampionInjected != 0 && h.previousChampionInjected != int(championID) {
-		return
-	}
-	if !h.IsLolSkinEnabled() {
 		return
 	}
 
