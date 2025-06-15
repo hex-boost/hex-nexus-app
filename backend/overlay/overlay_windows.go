@@ -254,6 +254,9 @@ func (m *Overlay) savePosition() error {
 // --- Core Logic ---
 
 func (m *Overlay) Start() {
+	if true {
+		return
+	}
 	// Initial state is Hidden, mouse events should be ignored.
 	if m.overlay != nil {
 		m.overlay.SetIgnoreMouseEvents(true)
