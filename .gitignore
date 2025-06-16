@@ -21,3 +21,4 @@ logs
 dist
 **/mocks/
 /frontend/.pnpm-store
+/lolskin/
