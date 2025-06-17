@@ -52,6 +52,7 @@ function RootLayout() {
   }, [jwt]);
   return (
     <>
+
       <PremiumPaymentModal currency={currency} isOpen={isOpen} tier={tier} paymentMethod={paymentMethod} amount={amount} onClose={close} />
       <Outlet />
     </>

@@ -30,6 +30,8 @@ type SummonerClient interface {
 
 type LolSkinState interface {
 	GetChampionSkin(championID int32) (ChampionSkin, bool)
+	UpdateSelections(selections []ChampionSkin)
+	GetAllSelections() []ChampionSkin
 }
 
 type eventRequest struct {
@@ -70,8 +72,7 @@ func (h *Service) ToggleLolSkinEnabled(enabled bool) {
 		h.lolSkin.StopRunningPatcher()
 		h.previousChampionInjected = 0 // Reset if skin feature is disabled
 	} else {
-		// If enabling, we might want to start the patcher or any other necessary setup
-		if err := h.lolSkin.InjectFantome(); err != nil {
+		if err := h.lolSkin.InjectFantome([]string{"All-star Akali"}); err != nil {
 			h.logger.Error("Failed to start LolSkin patcher", zap.Error(err))
 			return
 		}
@@ -98,7 +99,60 @@ func (h *Service) IsLolSkinEnabled() bool {
 	return h.isLolSkinEnabled
 }
 
+// Modify StartInjection method in lolskin_service.go
 func (h *Service) StartInjection() {
-	return
+	if !h.IsLolSkinEnabled() {
+		h.logger.Info("LolSkin is not enabled, skipping injection")
+		return
+	}
 
+	// Stop any running patcher before starting a new one
+	h.lolSkin.StopRunningPatcher()
+
+	// Get all selected skins
+	skinsSelected := h.lolSkinState.GetAllSelections()
+	if len(skinsSelected) == 0 {
+		h.logger.Info("No skins selected, nothing to inject")
+		return
+	}
+
+	// Store just skin names for injection
+	var skinNames []string
+
+	// Download all selected skins
+	for _, skin := range skinsSelected {
+		if skin.ChampionID == 0 || skin.SkinID == 0 {
+			h.logger.Info("Skipping injection for invalid skin selection",
+				zap.Int32("championId", skin.ChampionID),
+				zap.Int32("skinId", skin.SkinID))
+			continue
+		}
+
+		// Download the skin - but use the modified version that saves to installed folder
+		skinName, err := h.lolSkin.DownloadSkins(skin.ChampionID, skin.SkinID)
+		if err != nil {
+			h.logger.Error("Failed to download skin",
+				zap.Int32("championId", skin.ChampionID),
+				zap.Int32("skinId", skin.SkinID),
+				zap.Error(err))
+			continue
+		}
+
+		// Add just the skin name to inject
+		skinNames = append(skinNames, skinName)
+	}
+
+	// If we have skins to inject
+	if len(skinNames) > 0 {
+		h.logger.Info("Injecting skins", zap.Int("count", len(skinNames)))
+
+		// Inject all skins at once using just their names
+		err := h.lolSkin.InjectFantome(skinNames)
+		if err != nil {
+			h.logger.Error("Failed to inject skins", zap.Error(err))
+			return
+		}
+
+		h.logger.Info("Successfully injected all skins")
+	}
 }

@@ -1,6 +1,7 @@
 package lolskin
 
 import (
+	"archive/zip"
 	"bufio"
 	"bytes"
 	"embed"
@@ -11,6 +12,7 @@ import (
 	"go.uber.org/zap"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -23,25 +25,16 @@ type LolSkin struct {
 	modToolsExe     embed.FS
 	csLolDLL        embed.FS
 	game            string
-	state           CSLOLState
 	mutex           sync.Mutex
 	logger          *logger.Logger
 	patcherProcess  *exec.Cmd
 	patcherStdin    *os.File
-	onStateChanged  func(CSLOLState)
 	onStatusChanged func(string)
 
 	tempDir string // new field to store the temp directory
 }
 
 // CSLOLState represents the different states of the tool
-type CSLOLState int
-
-const (
-	StateIdle CSLOLState = iota // Will be 0
-	StateBusy
-	StateRunning
-)
 
 // Platform-specific constants
 const ModToolsExe = "mod-tools.exe"
@@ -72,7 +65,6 @@ func New(logger *logger.Logger, leaguePath string, catalog, csLolDLL, modToolsEx
 		modToolsExe: modToolsExe,
 		csLolDLL:    csLolDLL,
 		game:        leaguePath,
-		state:       StateIdle,
 		tempDir:     tempDir,
 	}
 
@@ -132,35 +124,55 @@ func (c *LolSkin) StopRunningPatcher() {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	if c.state == StateRunning && c.patcherProcess != nil {
-		c.logger.Info("Stopping previous patcher...")
-		// Send newline to gracefully stop the patcher
-		if c.patcherStdin != nil {
-			c.patcherStdin.Write([]byte("\n"))
-		}
+	c.logger.Info("StopRunningPatcher called")
 
-		// Wait for a moment to let the process terminate gracefully
-		time.Sleep(500 * time.Millisecond)
-
-		// Force kill if still running
-		if c.patcherProcess != nil && c.patcherProcess.Process != nil {
-			c.patcherProcess.Process.Kill()
-			c.patcherProcess = nil
-			c.patcherStdin = nil
-		}
-
-		c.setState(StateIdle)
+	if c.patcherProcess == nil {
+		c.logger.Info("No patcher process running, nothing to stop")
+		return
 	}
+
+	var pid int
+	if c.patcherProcess.Process != nil {
+		pid = c.patcherProcess.Process.Pid
+	}
+	c.logger.Info("Attempting to stop patcher process", zap.Int("pid", pid))
+
+	// Try graceful termination first
+	if c.patcherStdin != nil {
+		c.logger.Info("Sending termination signal via stdin", zap.Int("pid", pid))
+		if _, err := c.patcherStdin.Write([]byte("\n")); err != nil {
+			c.logger.Warn("Failed to write to patcher stdin", zap.Error(err))
+		}
+	} else {
+		c.logger.Info("No stdin pipe available for graceful termination")
+	}
+
+	// Wait for a moment to let the process terminate gracefully
+	c.logger.Info("Waiting for graceful termination", zap.Duration("timeout", 500*time.Millisecond))
+	time.Sleep(500 * time.Millisecond)
+
+	// Force kill if still running
+	if c.patcherProcess != nil && c.patcherProcess.Process != nil {
+		c.logger.Info("Process still running, forcing termination", zap.Int("pid", pid))
+		if err := c.patcherProcess.Process.Kill(); err != nil {
+			c.logger.Error("Failed to kill patcher process", zap.Error(err), zap.Int("pid", pid))
+		} else {
+			c.logger.Info("Successfully killed patcher process", zap.Int("pid", pid))
+		}
+
+		c.patcherProcess = nil
+		c.patcherStdin = nil
+	}
+
+	c.logger.Info("Patcher stopped, state set to idle")
 }
-func (c *LolSkin) InjectFantome(fantomePath string) error {
+func (c *LolSkin) InjectFantome(mods []string) error {
 
-	c.mutex.Unlock()
-
-	// Change League Path (important step from working logs)
+	// Change League Path
 	c.changeLeaguePath()
 
 	gameDir := filepath.Dir(c.game)
-	modName := strings.TrimSuffix(filepath.Base(fantomePath), filepath.Ext(filepath.Base(fantomePath)))
+	profileName := "Default Profile" // Always use the same profile
 
 	// Create log file
 	logFile, _ := os.Create(filepath.Join(c.tempDir, "mod-tools-log.txt"))
@@ -169,48 +181,38 @@ func (c *LolSkin) InjectFantome(fantomePath string) error {
 		fmt.Fprintf(logFile, "==== CSLOL TOOLS LOG ====\n")
 		fmt.Fprintf(logFile, "Time: %s\n", time.Now().Format(time.RFC3339))
 		fmt.Fprintf(logFile, "Game path: %s\n", gameDir)
-		fmt.Fprintf(logFile, "Fantome path: %s\n", fantomePath)
+		fmt.Fprintf(logFile, "Mods: %s\n", strings.Join(mods, ", "))
 	}
 
-	// Step 1: Import mod
-	importArgs := []string{
-		"import",
-		fantomePath,
-		filepath.Join(c.tempDir, "installed", modName),
-		"--game:" + gameDir,
-	}
-
-	if err := c.executeCommand(ModToolsExe, importArgs, "IMPORT", logFile); err != nil {
-		c.setState(StateIdle)
-		return err
-	}
-
-	// Save profile
-
-	profileName := "Default Profile"
+	// Write default profile with selected mods
 	c.writeCurrentProfile(profileName)
 
 	profileFile, _ := os.Create(filepath.Join(c.tempDir, "profiles", profileName+".profile"))
 	if profileFile != nil {
-		profileFile.WriteString(modName + "\n")
+		for _, mod := range mods {
+			profileFile.WriteString(mod + "\n")
+		}
 		profileFile.Close()
 	}
 
-	// Create overlay
+	// Create overlay with all selected mods
 	overlayArgs := []string{
 		"mkoverlay",
 		filepath.Join(c.tempDir, "installed"),
 		filepath.Join(c.tempDir, "profiles", profileName),
 		"--game:" + gameDir,
-		"--mods:" + modName,
+	}
+
+	if len(mods) > 0 {
+		overlayArgs = append(overlayArgs, "--mods:"+strings.Join(mods, "/"))
 	}
 
 	if err := c.executeCommand(ModToolsExe, overlayArgs, "OVERLAY", logFile); err != nil {
-		c.setState(StateIdle)
+
 		return err
 	}
 
-	// Step 3: Run the patcher
+	// Run the patcher
 	patcherArgs := []string{
 		"runoverlay",
 		filepath.Join(c.tempDir, "profiles", profileName),
@@ -223,8 +225,6 @@ func (c *LolSkin) InjectFantome(fantomePath string) error {
 	return nil
 }
 
-// Helper method for executing commands with proper output capture
-// Helper method for executing commands with proper output capture
 func (c *LolSkin) executeCommand(executable string, args []string, logPrefix string, logFile *os.File) error {
 	execPath := filepath.Join(c.tempDir, executable)
 
@@ -300,11 +300,9 @@ func (c *LolSkin) runPatcher(args []string) {
 	if err != nil {
 		errorDetails := fmt.Sprintf("arguments:\n  %s\n", strings.Join(args, "\n  "))
 		c.logger.Error("Failed to start patcher", zap.Error(err), zap.String("details", errorDetails))
-		c.setState(StateIdle)
+
 		return
 	}
-
-	c.setState(StateRunning)
 
 	// Wait for process completion
 	go func() {
@@ -313,7 +311,7 @@ func (c *LolSkin) runPatcher(args []string) {
 			c.logger.Error("Patcher process failed", zap.Error(err))
 		}
 		c.logger.Info("Patcher process completed")
-		c.setState(StateIdle)
+
 		c.patcherProcess = nil
 		c.patcherStdin = nil
 	}()
@@ -322,7 +320,7 @@ func (c *LolSkin) runPatcher(args []string) {
 // StopProfile terminates the injection process
 func (c *LolSkin) StopProfile() {
 	c.mutex.Lock()
-	if c.state == StateRunning && c.patcherStdin != nil {
+	if c.patcherStdin != nil {
 		c.patcherStdin.Write([]byte("\n"))
 	}
 	c.mutex.Unlock()
@@ -336,14 +334,6 @@ func (c *LolSkin) Cleanup() {
 }
 
 // Helper methods
-func (c *LolSkin) setState(state CSLOLState) {
-	if c.state != state {
-		c.state = state
-		if c.onStateChanged != nil {
-			c.onStateChanged(state)
-		}
-	}
-}
 
 func (c *LolSkin) writeCurrentProfile(profile string) {
 	file, err := os.Create(filepath.Join(c.tempDir, "current.profile"))
@@ -368,38 +358,43 @@ func (c *LolSkin) loadCatalog(path string) (*Catalog, error) {
 	return &catalog, nil
 }
 
-func (c *LolSkin) DownloadFantome(championId int32, skinId int32) (string, error) {
-	// Get executable path for cache directory location
-	exePath, err := os.Executable()
+func (c *LolSkin) DownloadSkins(championID int32, skinID int32) (string, error) {
+	// Get champion and skin names from ID
+	championData, skinName, err := c.resolveChampionAndSkinData(championID, skinID)
 	if err != nil {
-		return "", fmt.Errorf("failed to get executable path: %w", err)
+		return "", fmt.Errorf("failed to resolve names: %w", err)
 	}
 
-	// Create cache directory if it doesn't exist
-	cachePath := filepath.Join(filepath.Dir(exePath), "cache")
-	if err := os.MkdirAll(cachePath, 0755); err != nil {
-		return "", fmt.Errorf("failed to create cache directory: %w", err)
+	// Define the direct path in the installed folder
+	installedPath := filepath.Join(c.tempDir, "installed", skinName)
+
+	// Check if the skin folder already exists in installed directory
+	if _, err := os.Stat(installedPath); err == nil {
+		c.logger.Info("Using already installed skin",
+			zap.Int32("championId", championID),
+			zap.Int32("skinId", skinID),
+			zap.String("path", installedPath))
+		return skinName, nil
 	}
 
-	// Construct filename and local path
-	filename := fmt.Sprintf("%d_%d.fantome", championId, skinId)
-	localPath := filepath.Join(cachePath, filename)
-
-	// Check if file already exists in cache
-	if _, err := os.Stat(localPath); err == nil {
-		c.logger.Info("Using cached skin file",
-			zap.Int32("championId", championId),
-			zap.Int32("skinId", skinId),
-			zap.String("path", localPath))
-		return localPath, nil // Return cached file path immediately
+	// Create temp directory for download
+	tempDownloadDir := filepath.Join(c.tempDir, "temp_downloads")
+	if err := os.MkdirAll(tempDownloadDir, 0755); err != nil {
+		return "", fmt.Errorf("failed to create temp download directory: %w", err)
 	}
 
-	// File not found in cache, download it
-	c.logger.Info("Skin not in cache, downloading")
+	zipFilePath := filepath.Join(tempDownloadDir, skinName+".zip")
 
-	// Construct download URL
-	downloadUrl := fmt.Sprintf("https://gitee.com/jinjutwo/lol-skins-developer/raw/master/%d/%d.fantome", championId, skinId)
-	// Download the file
+	// Download the zip file
+	downloadUrl := fmt.Sprintf("https://github.com/darkseal-org/lol-skins/raw/main/skins/%s/%s.zip",
+		url.PathEscape(championData.Name), url.PathEscape(skinName))
+
+	c.logger.Info("Downloading skin zip",
+		zap.String("champion", championData.Name),
+		zap.String("skin", skinName),
+		zap.String("url", downloadUrl))
+
+	// Create the download request
 	resp, err := http.Get(downloadUrl)
 	if err != nil {
 		return "", fmt.Errorf("failed to download: %w", err)
@@ -410,22 +405,246 @@ func (c *LolSkin) DownloadFantome(championId int32, skinId int32) (string, error
 		return "", fmt.Errorf("bad status: %s", resp.Status)
 	}
 
-	// Create the file
-	out, err := os.Create(localPath)
+	// Create the zip file
+	out, err := os.Create(zipFilePath)
 	if err != nil {
 		return "", fmt.Errorf("failed to create file: %w", err)
 	}
 	defer out.Close()
 
-	// Write the body to file
+	// Write the file
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("failed to write file: %w", err)
 	}
 
-	c.logger.Info("Successfully downloaded and cached skin",
-		zap.Int32("championId", championId),
-		zap.Int32("skinId", skinId))
+	// Extract directly to installed folder
+	if err := c.extractZip(zipFilePath, installedPath); err != nil {
+		return "", fmt.Errorf("failed to extract zip: %w", err)
+	}
 
-	return localPath, nil
+	// Clean up the temporary zip file
+	os.Remove(zipFilePath)
+
+	c.logger.Info("Successfully downloaded and extracted skin",
+		zap.String("champion", championData.Name),
+		zap.String("skin", skinName))
+
+	// Return just the skin name instead of the full path
+	return skinName, nil
+}
+
+// Helper function to extract a zip file
+func (c *LolSkin) extractZip(zipPath, destPath string) error {
+	// Open the zip file
+	r, err := zip.OpenReader(zipPath)
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+
+	// Create the destination directory
+	if err := os.MkdirAll(destPath, 0755); err != nil {
+		return err
+	}
+
+	// Extract each file
+	for _, file := range r.File {
+		rc, err := file.Open()
+		if err != nil {
+			return err
+		}
+		defer rc.Close()
+
+		path := filepath.Join(destPath, file.Name)
+
+		if file.FileInfo().IsDir() {
+			os.MkdirAll(path, 0755)
+		} else {
+			// Create the file
+			os.MkdirAll(filepath.Dir(path), 0755)
+			f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, file.Mode())
+			if err != nil {
+				return err
+			}
+			defer f.Close()
+
+			// Copy the file contents
+			_, err = io.Copy(f, rc)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+// Helper to resolve champion and skin names from DataDragon
+type ChampionData struct {
+	ID    string
+	Name  string
+	Skins []struct {
+		ID   string
+		Name string
+		Num  int
+	}
+}
+
+func (c *LolSkin) resolveChampionAndSkinData(championID int32, skinID int32) (*ChampionData, string, error) {
+	// Create a cache if needed for DataDragon data
+	cachePath := filepath.Join(c.tempDir, "dataDragon")
+	os.MkdirAll(cachePath, 0755)
+
+	// Check for cached data first
+	cacheFile := filepath.Join(cachePath, "champion_data.json")
+	var champions map[string]ChampionData
+
+	// Try to load from cache
+	data, err := os.ReadFile(cacheFile)
+	if err == nil {
+		if err := json.Unmarshal(data, &champions); err == nil {
+			// Find champion by ID
+			for _, champion := range champions {
+				if champion.ID == fmt.Sprint(championID) {
+					// Find skin by num
+					skinNum := int(skinID) % 1000 // Remove champion base ID
+					for _, skin := range champion.Skins {
+						if skin.Num == skinNum {
+							return &champion, skin.Name, nil
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// If cache doesn't exist or champion/skin not found, fetch from DataDragon API
+	c.logger.Info("Fetching champion data from DataDragon API")
+
+	// Get latest version first
+	versionURL := "https://ddragon.leagueoflegends.com/api/versions.json"
+	vResp, err := http.Get(versionURL)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to get versions: %w", err)
+	}
+	defer vResp.Body.Close()
+
+	var versions []string
+	if err := json.NewDecoder(vResp.Body).Decode(&versions); err != nil {
+		return nil, "", fmt.Errorf("failed to parse versions: %w", err)
+	}
+
+	if len(versions) == 0 {
+		return nil, "", fmt.Errorf("no versions available")
+	}
+
+	latestVersion := versions[0]
+
+	// Get all champions data
+	championsURL := fmt.Sprintf("https://ddragon.leagueoflegends.com/cdn/%s/data/en_US/champion.json", latestVersion)
+	cResp, err := http.Get(championsURL)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to get champion list: %w", err)
+	}
+	defer cResp.Body.Close()
+
+	var champListResp struct {
+		Data map[string]struct {
+			ID   string `json:"id"`
+			Key  string `json:"key"` // This is the numeric ID as string
+			Name string `json:"name"`
+		} `json:"data"`
+	}
+
+	if err := json.NewDecoder(cResp.Body).Decode(&champListResp); err != nil {
+		return nil, "", fmt.Errorf("failed to parse champion list: %w", err)
+	}
+
+	// Find the champion with matching ID
+	var champKey string
+	for _, champ := range champListResp.Data {
+		if champ.Key == fmt.Sprint(championID) {
+			champKey = champ.ID
+			break
+		}
+	}
+
+	if champKey == "" {
+		return nil, "", fmt.Errorf("champion with ID %d not found", championID)
+	}
+
+	// Get detailed champion data including skins
+	champDetailURL := fmt.Sprintf("https://ddragon.leagueoflegends.com/cdn/%s/data/en_US/champion/%s.json",
+		latestVersion, champKey)
+	dResp, err := http.Get(champDetailURL)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to get champion details: %w", err)
+	}
+	defer dResp.Body.Close()
+
+	var champDetailResp struct {
+		Data map[string]struct {
+			ID    string `json:"id"`
+			Key   string `json:"key"`
+			Name  string `json:"name"`
+			Skins []struct {
+				ID   string `json:"id"`
+				Num  int    `json:"num"`
+				Name string `json:"name"`
+			} `json:"skins"`
+		} `json:"data"`
+	}
+
+	if err := json.NewDecoder(dResp.Body).Decode(&champDetailResp); err != nil {
+		return nil, "", fmt.Errorf("failed to parse champion details: %w", err)
+	}
+
+	// Extract the champion data
+	var champData ChampionData
+	for _, detail := range champDetailResp.Data {
+		champData.ID = detail.Key
+		champData.Name = detail.Name
+
+		// Copy skins one by one
+		champData.Skins = make([]struct {
+			ID   string
+			Name string
+			Num  int
+		}, len(detail.Skins))
+
+		for i, skin := range detail.Skins {
+			champData.Skins[i].ID = skin.ID
+			champData.Skins[i].Name = skin.Name
+			champData.Skins[i].Num = skin.Num
+		}
+
+		break // There should be only one champion in the response
+	}
+	// Find skin by num
+	skinNum := int(skinID) % 1000
+	var skinName string
+	for _, skin := range champData.Skins {
+		if skin.Num == skinNum {
+			skinName = skin.Name
+			break
+		}
+	}
+
+	if skinName == "" {
+		return nil, "", fmt.Errorf("skin with num %d not found for champion %s", skinNum, champData.Name)
+	}
+
+	// Cache the data for future use
+	if champions == nil {
+		champions = make(map[string]ChampionData)
+	}
+	champions[champData.ID] = champData
+
+	cacheData, err := json.Marshal(champions)
+	if err == nil {
+		os.WriteFile(cacheFile, cacheData, 0644)
+	}
+
+	return &champData, skinName, nil
 }

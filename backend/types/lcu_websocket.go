@@ -41,3 +41,11 @@ type LolInventoryItem struct {
 	Uuid           string        `json:"uuid"`
 	Wins           int           `json:"wins"`
 }
+type SkinSelectorInfo struct {
+	ChampionName           string `json:"championName"`
+	IsSkinGrantedFromBoost bool   `json:"isSkinGrantedFromBoost"`
+	SelectedChampionId     int    `json:"selectedChampionId"`
+	SelectedSkinId         int    `json:"selectedSkinId"`
+	ShowSkinSelector       bool   `json:"showSkinSelector"`
+	SkinSelectionDisabled  bool   `json:"skinSelectionDisabled"`
+}

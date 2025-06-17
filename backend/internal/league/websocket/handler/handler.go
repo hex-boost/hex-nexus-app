@@ -40,6 +40,7 @@ type LolSkin interface {
 
 type LolSkinState interface {
 	GetChampionSkin(championID int32) (lolskin.ChampionSkin, bool)
+	UpdateSelections(selections []lolskin.ChampionSkin)
 }
 type eventRequest struct {
 	name string
@@ -414,36 +415,21 @@ func IsRankingSame(oldRank, newRank types.RankedDetails) bool {
 	// If we've gotten here, the rankings are the same
 	return true
 }
-func (h *Handler) SkinSelectionChanged(championID, skinID int32) {
-	if h.previousChampionInjected != 0 && h.previousChampionInjected != int(championID) {
-		return
-	}
 
+func (h *Handler) SkinSelectionChanged(championID, skinID int32) {
 	h.logger.Info("Skin selection changed",
 		zap.Int32("championId", championID),
 		zap.Int32("skinId", skinID))
 
-	// Download and inject in a single goroutine to ensure proper sequence
-	go func() {
+	// Update skin state with new selection
+	h.lolSkinState.UpdateSelections([]lolskin.ChampionSkin{
+		{
+			ChampionID: championID,
+			SkinID:     skinID,
+			ChromaID:   nil,
+		},
+	})
 
-		fantomePath, err := h.lolSkin.DownloadFantome(championID, skinID)
-		if err != nil {
-			h.logger.Error("Failed to download fantome", zap.Error(err))
-			h.previousChampionInjected = 0 // Reset on error
-
-			return
-		}
-
-		h.logger.Info("Injecting new skin for champion",
-			zap.Int32("championId", championID),
-			zap.Int32("skinId", skinID))
-
-		err = h.lolSkin.InjectFantome(fantomePath)
-		if err != nil {
-			h.logger.Error("Failed to inject fantome", zap.Error(err))
-			h.previousChampionInjected = 0 // Reset on error
-			return
-		}
-		h.previousChampionInjected = int(championID)
-	}()
+	// Trigger the injection process with all selected skins
+	h.lolSkinService.StartInjection()
 }

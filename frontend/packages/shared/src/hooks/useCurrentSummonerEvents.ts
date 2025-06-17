@@ -1,6 +1,6 @@
-import {useCurrentSummonerQuery} from '@/hooks/useCurrentSummonerQuery.ts';
-import {Events} from '@wailsio/runtime';
-import {useEffect} from 'react';
+import { useCurrentSummonerQuery } from '@/hooks/useCurrentSummonerQuery.ts';
+import { Events } from '@wailsio/runtime';
+import { useEffect } from 'react';
 
 export function UseCurrentSummonerEvents() {
   const { update } = useCurrentSummonerQuery();
