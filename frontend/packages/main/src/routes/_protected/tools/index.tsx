@@ -75,37 +75,6 @@ function RouteComponent() {
       },
     );
   };
-  // const { mutate: changeSkin, isPending } = useMutation({
-  //   mutationKey: ['change-skin'],
-  //   mutationFn: async (skinId: number) => {
-  //     console.log(skinId);
-  //   },
-  // });
-
-  // useEffect(() => {
-  //   if (
-  //     isLolskinEnabled
-  //     && !isDefaultSkin
-  //     && gameflowPhase?.phase === LolChallengesGameflowPhase.ChampSelect
-  //     && !isDismissed
-  //   ) {
-  //     toast.warning('Skin Conflict', {
-  //       description: ` Please select the default skin for ${selectedSkinAndChampion?.championName} to use this feature.`,
-  //       action: (
-  //         <Button
-  //           onClick={() => {
-  //             changeSkin(defaultSkinId);
-  //             setIsDismissed(true);
-  //           }}
-  //           disabled={isPending}
-  //         >
-  //           {isPending ? 'Loading...' : 'Select default skin'}
-  //         </Button>
-  //       ),
-  //       onDismiss: () => setIsDismissed(true),
-  //     });
-  //   }
-  // }, [isLolskinEnabled, isDefaultSkin, gameflowPhase?.phase, isDismissed, selectedSkinAndChampion?.championName, isPending, changeSkin, defaultSkinId]);
   return (
     <>
       <PremiumContentWrapper isPremiumUser={user?.premium?.tier === 'pro'} onPurchase={() => router.navigate({ to: '/subscription' })}>
