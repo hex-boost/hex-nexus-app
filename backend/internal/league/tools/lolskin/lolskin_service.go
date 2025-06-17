@@ -72,10 +72,7 @@ func (h *Service) ToggleLolSkinEnabled(enabled bool) {
 		h.lolSkin.StopRunningPatcher()
 		h.previousChampionInjected = 0 // Reset if skin feature is disabled
 	} else {
-		if err := h.lolSkin.InjectFantome([]string{"All-star Akali"}); err != nil {
-			h.logger.Error("Failed to start LolSkin patcher", zap.Error(err))
-			return
-		}
+		h.StartInjection()
 	}
 	h.logger.Info("Set LolSkin enabled", zap.Bool("enabled", enabled))
 

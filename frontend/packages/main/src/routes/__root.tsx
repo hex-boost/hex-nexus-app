@@ -1,11 +1,16 @@
 import { ErrorPage } from '@/components/error-page.tsx';
 import { PremiumPaymentModal } from '@/features/payment/PremiumPaymentModal.tsx';
+import { useLocalStorage } from '@/hooks/use-local-storage.tsx';
 import { useGoState } from '@/hooks/useGoBindings.ts';
+import { getSkinSelections } from '@/lib/champion-skin-store';
+import { logger } from '@/lib/logger.ts';
 import { usePremiumPaymentModalStore } from '@/stores/usePremiumPaymentModalStore';
 import { useUserStore } from '@/stores/useUserStore';
 import { BaseClient } from '@client';
+import { State as LolSkinState, Service } from '@lolskin';
 import { createRootRouteWithContext, Outlet, redirect } from '@tanstack/react-router';
 import { useEffect } from 'react';
+import { toast } from 'sonner';
 import '@wailsio/runtime';
 
 export type RouterContext = {
@@ -41,8 +46,10 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 });
 function RootLayout() {
   const { isOpen, tier, paymentMethod, amount, close, currency } = usePremiumPaymentModalStore();
+  const [isLolskinEnabled] = useLocalStorage<boolean>('lolskin-enabled', false);
+  const { jwt, user, isAuthenticated } = useUserStore();
+
   useGoState();
-  const { jwt } = useUserStore();
   useEffect(() => {
     if (jwt) {
       BaseClient.SetJWT(jwt);
@@ -50,6 +57,49 @@ function RootLayout() {
       BaseClient.ClearJWT();
     }
   }, [jwt]);
+  useEffect(() => {
+    // Only run if user is authenticated and premium features are available
+    if (!isAuthenticated() || !user) {
+      return;
+    }
+
+    const loadSavedSkins = async () => {
+      if (user?.premium?.tier !== 'pro' || !isLolskinEnabled) {
+        return;
+      }
+
+      logger.info('lolskin', 'Loading saved skin selections at application start');
+
+      try {
+        const savedSelections = await getSkinSelections();
+
+        if (savedSelections.length > 0) {
+          // This will update the state but not immediately trigger injection
+          for (const selection of savedSelections) {
+            await LolSkinState.SetChampionSkin(
+              selection.championId,
+              selection.skinNum,
+              selection.chromaId,
+            );
+          }
+
+          // After updating all selections, trigger a single injection
+          await Service.StartInjection();
+          toast.success(`${savedSelections.length} saved skins have been applied`);
+          logger.info('lolskin', `Applied ${savedSelections.length} saved skin selections`);
+        }
+      } catch (error) {
+        console.error('Failed to load saved skin selections:', error);
+        toast.error('Failed to load your saved skin selections');
+        logger.error('lolskin', 'Failed to load saved skin selections', error);
+      }
+    };
+
+    // Load skins after auth is confirmed and if feature is enabled
+    if (isLolskinEnabled) {
+      loadSavedSkins();
+    }
+  }, [isAuthenticated, user, isLolskinEnabled]);
   return (
     <>
 

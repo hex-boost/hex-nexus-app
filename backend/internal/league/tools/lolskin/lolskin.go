@@ -263,7 +263,12 @@ func (c *LolSkin) executeCommand(executable string, args []string, logPrefix str
 }
 
 // RunPatcher starts the patcher process with the specified arguments
+// RunPatcher starts the patcher process with the specified arguments
+// Returns a channel that receives a signal when the injection is successful
 func (c *LolSkin) runPatcher(args []string) {
+	// Create a completion channel
+	completed := make(chan struct{})
+
 	// Create the command
 	execPath := filepath.Join(c.tempDir, ModToolsExe)
 	commander := command.New()
@@ -283,6 +288,13 @@ func (c *LolSkin) runPatcher(args []string) {
 		for scanner.Scan() {
 			line := scanner.Text()
 			c.logger.Info("Patcher output", zap.String("message", line))
+
+			// Check for successful completion message
+			if strings.Contains(line, "Waiting for league match to start") {
+				c.logger.Info("Successfully injected all skins")
+				close(completed)
+				return
+			}
 		}
 	}()
 
@@ -300,7 +312,7 @@ func (c *LolSkin) runPatcher(args []string) {
 	if err != nil {
 		errorDetails := fmt.Sprintf("arguments:\n  %s\n", strings.Join(args, "\n  "))
 		c.logger.Error("Failed to start patcher", zap.Error(err), zap.String("details", errorDetails))
-
+		close(completed)
 		return
 	}
 
@@ -315,6 +327,17 @@ func (c *LolSkin) runPatcher(args []string) {
 		c.patcherProcess = nil
 		c.patcherStdin = nil
 	}()
+
+	// Wait for completion signal or timeout
+	select {
+	case <-completed:
+		// Successful injection, we can return now
+		return
+	case <-time.After(30 * time.Second):
+		// Timeout waiting for success message
+		c.logger.Warn("Timeout waiting for successful injection")
+		return
+	}
 }
 
 // StopProfile terminates the injection process

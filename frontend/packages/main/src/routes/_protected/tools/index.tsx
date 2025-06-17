@@ -3,12 +3,11 @@ import PremiumContentWrapper from '@/components/paywall/premium-content-wrapper.
 import CharacterSelection from '@/features/skin-selector/character-selection.tsx';
 import { useLocalStorage } from '@/hooks/use-local-storage.tsx';
 import { useAllDataDragon } from '@/hooks/useDataDragon/useDataDragon.ts';
-import { getSkinSelections, saveSkinSelection } from '@/lib/champion-skin-store';
+import { saveSkinSelection } from '@/lib/champion-skin-store';
 import { logger } from '@/lib/logger.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { State as LolSkinState, Service } from '@lolskin';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
-import { useEffect } from 'react';
 import { toast } from 'sonner'; // or your toast library
 import {
   Handler,
@@ -76,42 +75,6 @@ function RouteComponent() {
       },
     );
   };
-  useEffect(() => {
-    // Load and apply all saved skin selections on component mount
-    const loadSavedSkins = async () => {
-      if (user?.premium.tier !== 'pro' || !isLolskinEnabled) {
-        return;
-      }
-
-      try {
-        // Get all stored skin selections from IndexedDB (implementation depends on your storage setup)
-        const savedSelections = await getSkinSelections();
-
-        if (savedSelections.length > 0) {
-          // This will update the state but not immediately trigger injection
-          for (const selection of savedSelections) {
-            await LolSkinState.SetChampionSkin(
-              selection.championId,
-              selection.skinNum,
-              selection.chromaId,
-            );
-          }
-
-          // After updating all selections, trigger a single injection
-          await Service.StartInjection();
-          toast.success(`${savedSelections.length} saved skins have been applied`);
-        }
-      } catch (error) {
-        console.error('Failed to load saved skin selections:', error);
-        toast.error('Failed to load your saved skin selections');
-      }
-    };
-
-    // Load saved skins after checking the skin feature is enabled
-    if (isLolskinEnabled) {
-      loadSavedSkins();
-    }
-  }, [isLolskinEnabled, user?.premium.tier]);
   // const { mutate: changeSkin, isPending } = useMutation({
   //   mutationKey: ['change-skin'],
   //   mutationFn: async (skinId: number) => {

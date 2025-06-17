@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label.tsx';
 import { Switch } from '@/components/ui/switch.tsx';
 import CharacterCard from '@/features/skin-selector/components/character-card.tsx';
 import { SkinSelectorTutorial } from '@/features/skin-selector/skin-selector-tutorial.tsx';
-import { useLocalStorage } from '@/hooks/use-local-storage.tsx';
+import { getSkinSelections, saveSkinSelection } from '@/lib/champion-skin-store';
 import { cn } from '@/lib/utils.ts';
 import { ArrowLeft, HelpCircle, Search, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -42,9 +42,40 @@ export default function CharacterSelection({
   const [searchDebounced, setSearchDebounced] = useState('');
   const [selectedChampion, setSelectedChampion] = useState<FormattedChampion | null>(null);
 
-  const [userPreferences, setUserPreferences] = useLocalStorage<UserPreferences>('champion-preferences', {});
+  const [skinSelections, setSkinSelections] = useState<Record<number, { skinNum: number; chromaId: number | null }>>({});
 
-  // Initialize with selected champion if provided
+  // Load saved skin selections when component mounts
+  useEffect(() => {
+    const loadSkinSelections = async () => {
+      try {
+        const selections = await getSkinSelections();
+        const selectionsMap: Record<number, { skinNum: number; chromaId: number | null }> = {};
+
+        selections.forEach((selection) => {
+          selectionsMap[selection.championId] = {
+            skinNum: selection.skinNum,
+            chromaId: selection.chromaId,
+          };
+        });
+
+        setSkinSelections(selectionsMap);
+      } catch (error) {
+        console.error('Failed to load skin selections', error);
+      }
+    };
+
+    loadSkinSelections();
+  }, []);
+
+  useEffect(() => {
+    // Existing champion initialization code remains the same
+    if (initialChampionId && !selectedChampion) {
+      const champion = champions.find(c => Number(c.id) === initialChampionId);
+      if (champion) {
+        setSelectedChampion(champion);
+      }
+    }
+  }, [champions, initialChampionId, selectedChampion]);
   useEffect(() => {
     if (initialChampionId && !selectedChampion) {
       const champion = champions.find(c => Number(c.id) === initialChampionId);
@@ -90,40 +121,51 @@ export default function CharacterSelection({
   // Get the selected skin for a champion
   const getSelectedSkin = useCallback(
     (champion: FormattedChampion): FormattedSkin => {
-      const pref = userPreferences[Number(champion.id)];
-      if (!pref) {
+      const selection = skinSelections[Number(champion.id)];
+      if (!selection) {
         return champion.skins[0];
       }
 
-      const selectedSkin = champion.skins.find(skin => Number(skin.id) === pref.selectedSkinId);
+      // Find skin by skin number (not ID)
+      const selectedSkin = champion.skins.find(skin => Number(skin.num) === selection.skinNum);
       return selectedSkin || champion.skins[0];
     },
-    [userPreferences],
+    [skinSelections],
   );
-
   // Handle skin selection
   const handleSkinSelect = useCallback(
     (championId: number, skinId: number, chromaId?: number) => {
-      setUserPreferences(prev => ({
+      // Find skin num from skin ID
+      const skin = selectedChampion?.skins.find(s => Number(s.id) === skinId);
+      if (!skin) {
+        return;
+      }
+
+      // Update local state for immediate UI feedback
+      setSkinSelections(prev => ({
         ...prev,
         [championId]: {
-          selectedSkinId: skinId,
-          ...(chromaId ? { selectedChromaId: chromaId } : {}),
+          skinNum: skin.num,
+          chromaId: chromaId || null,
         },
       }));
 
+      // Save to the skin store
+      saveSkinSelection({
+        championId,
+        skinNum: skin.num,
+        chromaId: chromaId || null,
+        timestamp: Date.now(),
+      });
+
       // If in embedded mode, call the onSelectSkin callback
       if (onSelectSkin && selectedChampion) {
-        const skin = selectedChampion.skins.find(s => Number(s.id) === skinId) as FormattedSkin;
-        if (skin) {
-          const chroma = chromaId && skin.chromas ? skin.chromas.find(c => c.id === chromaId) : null;
-          onSelectSkin(selectedChampion, skin, chroma || undefined);
-        }
+        const chroma = chromaId && skin.chromas ? skin.chromas.find(c => c.id === chromaId) : null;
+        onSelectSkin(selectedChampion, skin, chroma || undefined);
       }
     },
-    [onSelectSkin, selectedChampion, setUserPreferences],
+    [onSelectSkin, selectedChampion],
   );
-
   // Handle card click based on current view
   const handleCardClick = (item: FormattedChampion | FormattedSkin) => {
     if (selectedChampion) {
@@ -217,7 +259,7 @@ export default function CharacterSelection({
               if (selectedChampion) {
                 // Skin view
                 const skin = item as FormattedSkin;
-                const isSelected = userPreferences[Number(selectedChampion.id)]?.selectedSkinId === Number(skin.id);
+                const isSelected = skinSelections[Number(selectedChampion.id)]?.skinNum === skin.num;
 
                 return (
                   <CharacterCard
