@@ -8,7 +8,7 @@ import { SkinSelectorTutorial } from '@/features/skin-selector/skin-selector-tut
 import { getSkinSelections, saveSkinSelection } from '@/lib/champion-skin-store';
 import { cn } from '@/lib/utils.ts';
 import { ArrowLeft, HelpCircle, Search, X } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 // Type for user preferences
 export type UserPreferences = {
@@ -41,32 +41,44 @@ export default function CharacterSelection({
   const [searchQuery, setSearchQuery] = useState('');
   const [searchDebounced, setSearchDebounced] = useState('');
   const [selectedChampion, setSelectedChampion] = useState<FormattedChampion | null>(null);
+  const skinCheckIntervalRef = useRef<number | null>(null);
 
   const [skinSelections, setSkinSelections] = useState<Record<number, { skinNum: number; chromaId: number | null }>>({});
 
   // Load saved skin selections when component mounts
-  useEffect(() => {
-    const loadSkinSelections = async () => {
-      try {
-        const selections = await getSkinSelections();
-        const selectionsMap: Record<number, { skinNum: number; chromaId: number | null }> = {};
+  const loadSkinSelections = useCallback(async () => {
+    try {
+      const selections = await getSkinSelections();
+      const selectionsMap: Record<number, { skinNum: number; chromaId: number | null }> = {};
 
-        selections.forEach((selection) => {
-          selectionsMap[selection.championId] = {
-            skinNum: selection.skinNum,
-            chromaId: selection.chromaId,
-          };
-        });
+      selections.forEach((selection) => {
+        selectionsMap[selection.championId] = {
+          skinNum: selection.skinNum,
+          chromaId: selection.chromaId,
+        };
+      });
 
-        setSkinSelections(selectionsMap);
-      } catch (error) {
-        console.error('Failed to load skin selections', error);
-      }
-    };
-
-    loadSkinSelections();
+      setSkinSelections(selectionsMap);
+    } catch (error) {
+      console.error('Failed to load skin selections', error);
+    }
   }, []);
 
+  // Load on component mount
+  useEffect(() => {
+    loadSkinSelections();
+
+    // Set up periodic refresh to catch external changes
+    skinCheckIntervalRef.current = window.setInterval(() => {
+      loadSkinSelections();
+    }, 1000);
+
+    return () => {
+      if (skinCheckIntervalRef.current) {
+        clearInterval(skinCheckIntervalRef.current);
+      }
+    };
+  }, [loadSkinSelections]);
   useEffect(() => {
     // Existing champion initialization code remains the same
     if (initialChampionId && !selectedChampion) {
@@ -156,15 +168,17 @@ export default function CharacterSelection({
         skinNum: skin.num,
         chromaId: chromaId || null,
         timestamp: Date.now(),
+      }).then(() => {
+        // Refresh skin selections after saving
+        loadSkinSelections();
       });
-
       // If in embedded mode, call the onSelectSkin callback
       if (onSelectSkin && selectedChampion) {
         const chroma = chromaId && skin.chromas ? skin.chromas.find(c => c.id === chromaId) : null;
         onSelectSkin(selectedChampion, skin, chroma || undefined);
       }
     },
-    [onSelectSkin, selectedChampion],
+    [onSelectSkin, selectedChampion, loadSkinSelections],
   );
   // Handle card click based on current view
   const handleCardClick = (item: FormattedChampion | FormattedSkin) => {

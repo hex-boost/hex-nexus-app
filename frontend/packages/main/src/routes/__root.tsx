@@ -71,6 +71,8 @@ function RootLayout() {
       logger.info('lolskin', 'Loading saved skin selections at application start');
 
       try {
+        await Service.ToggleLolSkinEnabled(true);
+
         const savedSelections = await getSkinSelections();
 
         if (savedSelections.length > 0) {
