@@ -333,11 +333,11 @@ func (h *Handler) Restriction(event websocket.LCUWebSocketEvent) {
 	// Extract the current punished games count from existing account data
 	account := h.accountState.Get()
 
-	if restriction.PunishedGamesRemaining != account.PartyRestrictions.PunishedGamesRemaining {
+	if restriction.PunishedGamesRemaining != *account.PartyRestriction {
 		h.logger.Info("Updating leaver buster information",
 			zap.Int("oldPunishedGames", restriction.PunishedGamesRemaining),
-			zap.Int("newPunishedGames", account.PartyRestrictions.PunishedGamesRemaining))
-		err := h.ProcessAccountUpdate(&types.PartialSummonerRented{PartyRestrictions: &restriction})
+			zap.Int("newPunishedGames", *account.PartyRestriction))
+		err := h.ProcessAccountUpdate(&types.PartialSummonerRented{PartyRestriction: &restriction.PunishedGamesRemaining})
 		if err != nil {
 			h.logger.Error("Failed to process account update for leaver buster", zap.Error(err))
 			return
