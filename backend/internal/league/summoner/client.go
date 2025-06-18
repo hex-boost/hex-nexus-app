@@ -395,6 +395,29 @@ func (s *Client) GetUserInfo() (*types.UserInfo, error) {
 	return &decodedUserinfo, nil
 }
 
+func (s *Client) GetPartyRestrictions() (*types.PartyRestriction, error) {
+	s.logger.Debug("Fetching party restriction")
+	lcuClient, err := s.conn.GetClient()
+	if err != nil {
+		s.logger.Error("Failed to get LCU client for GetPartyRestrictions", zap.Error(err))
+		return nil, fmt.Errorf("LCU client unavailable for GetPartyRestrictions: %w", err)
+	}
+
+	var partyRestriction types.PartyRestriction
+	resp, err := lcuClient.R().SetResult(&partyRestriction).Get("/lol-leaver-buster/v1/ranked-restriction")
+	if err != nil {
+		s.logger.Error("Error fetching ranked restriction data", zap.Error(err))
+		return nil, err
+	}
+
+	if resp.IsError() {
+		errMsg := fmt.Sprintf("Failed to get gameflow status: %d, body: %s", resp.StatusCode(), resp.String())
+		s.logger.Warn(errMsg)
+		return nil, errors.New(errMsg)
+	}
+
+	return &partyRestriction, nil
+}
 func (s *Client) GetGameflowSession() (*types.LolGameflowV1Session, error) {
 	s.logger.Debug("Fetching gameflow session")
 	lcuClient, err := s.conn.GetClient()

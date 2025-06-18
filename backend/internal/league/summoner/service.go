@@ -32,6 +32,7 @@ func (l *Service) UpdateFromLCU() (*types.PartialSummonerRented, error) {
 		mu              sync.Mutex
 		currentSummoner types.CurrentSummoner
 		leaverBuster    types.LeaverBusterResponse
+		partyRestrictions interface{}
 	)
 
 	eg, _ := errgroup.WithContext(context.Background())
@@ -43,6 +44,18 @@ func (l *Service) UpdateFromLCU() (*types.PartialSummonerRented, error) {
 		}
 		mu.Lock()
 		userinfo = *userinfoResponse
+		mu.Unlock()
+		return nil
+	})
+
+	eg.Go(func() error {
+		partyRestriction, err := l.client.()
+		if err != nil {
+			l.logger.Error("Failed to get current summoner")
+			return err
+		}
+		mu.Lock()
+		userinfo = *partyRestriction
 		mu.Unlock()
 		return nil
 	})

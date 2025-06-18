@@ -154,7 +154,7 @@ export default function PricingCards() {
                   <p className="font-semibold text-gray-300 mb-1">Next Coin Distribution</p>
                   <p className="text-gray-400 text-right font-medium">
                     {user?.premium?.coinDistributionCycleAnchorDate
-                      ? `Cycle starts: ${formatDate(user.premium.coinDistributionCycleAnchorDate)}`
+                      ? ` ${formatDate(user.premium.coinDistributionCycleAnchorDate)}`
                       : user?.premium?.lastCoinDistributionDate
                         ? `Last: ${formatDate(user.premium.lastCoinDistributionDate)} (Cycle info N/A)`
                         : 'Not available'}

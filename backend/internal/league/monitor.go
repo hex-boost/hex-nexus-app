@@ -343,9 +343,7 @@ func (cm *Monitor) initializeRiotClient() {
 // checkAndUpdateAccount checks and updates account information if needed
 func (cm *Monitor) checkAndUpdateAccount() {
 
-	// Only proceed if League client connection is ready
 	if !cm.leagueService.IsLCUConnectionReady() {
-		//cm.logger.Warn("League client connection not ready, skipping account update")
 		return
 	}
 	cm.emitEvent(websocketEvents.LeagueWebsocketStart)
@@ -387,30 +385,13 @@ func (cm *Monitor) checkAndUpdateAccount() {
 		return // Return on LCU update failure
 	}
 
-	// --- Update status and emit event ---
-	// Use a temporary flag to check if we actually updated the state
-	updated := false
 	cm.stateMutex.Lock()
 	if !cm.isFirstUpdated { // Only set to true once
 		cm.isFirstUpdated = true
-		updated = true // Mark that we updated the flag
 		cm.logger.Info("Marking account as updated for the first time (isFirstUpdated = true)")
 	}
-	// Ensure username is correctly set in state (might be redundant if Update worked, but safe)
-	// This part seems redundant if the earlier accountState.Update succeeded.
-	// Consider removing this second update call unless strictly necessary.
-	/*
-		_, err = cm.accountState.Update(&types.PartialSummonerRented{Username: loggedInUsername}) // Already lowercased
-		if err != nil {
-			cm.logger.Error("Error during final account state username update", zap.Error(err))
-			// Handle error - maybe revert isFirstUpdated?
-		}
-	*/
-	cm.stateMutex.Unlock()
 
-	// Only emit start event if we actually marked as updated
-	if updated {
-	}
+	cm.stateMutex.Unlock()
 
 	cm.logger.Info("Account successfully updated", zap.String("username", loggedInUsername))
 }
