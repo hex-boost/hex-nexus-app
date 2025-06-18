@@ -133,7 +133,7 @@ export default function PricingCards() {
                               )
                             : (
                                 <span className={`${getTierColorClass(currentPlanDetails.tier_enum).text} text-3xl font-bold mx-1`}>
-                                  {currentPlanDetails.price.toFixed(2)}
+                                  {currentPlanDetails?.price?.toFixed(2)}
                                 </span>
                               )}
                         {currentPlanDetails.price > 0 && currentPlanDetails.period && (
@@ -377,13 +377,13 @@ export default function PricingCards() {
                                               )
                                             : ( // Fallback for USD prices < 1 or if charm pricing is not applicable
                                                 <span className={`${getTierColorClass(plan.tier_enum).text} text-6xl font-bold mx-1`}>
-                                                  {plan.price.toFixed(2)}
+                                                  {plan.price?.toFixed(2)}
                                                 </span>
                                               )
                                         )
                                       : ( // For other currencies
                                           <span className={`${getTierColorClass(plan.tier_enum).text} text-6xl font-bold mx-1`}>
-                                            {plan.price.toFixed(2)}
+                                            {plan.price?.toFixed(2)}
                                           </span>
                                         )}
                                   </>

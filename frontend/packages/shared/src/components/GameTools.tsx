@@ -713,7 +713,7 @@ function PlayerCard({ player }: { player: Player }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Calculate KDA ratio
-  const kdaRatio = ((player.kda.kills + player.kda.assists) / Math.max(1, player.kda.deaths)).toFixed(2);
+  const kdaRatio = ((player.kda.kills + player.kda.assists) / Math.max(1, player.kda.deaths))?.toFixed(2);
 
   return (
     <Card className="overflow-hidden">

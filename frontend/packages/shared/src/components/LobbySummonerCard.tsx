@@ -98,7 +98,7 @@ export function LobbySummonerCard({
           </Avatar>
           <div className="flex flex-col items-center">
             <p className={cn('text-xs', getWinrateColorClass(winRate))}>
-              {winRate.toFixed(1)}
+              {winRate?.toFixed(1)}
               %
             </p>
             <p className="text-xs text-muted-foreground">
@@ -109,7 +109,7 @@ export function LobbySummonerCard({
           </div>
           <div className="flex flex-col items-center">
             <p className={cn('font-medium text-xs', getKdaColor(kdaValue))}>
-              {kdaValue.toFixed(1)}
+              {kdaValue?.toFixed(1)}
               {' '}
               KDA
             </p>

@@ -254,7 +254,7 @@ export function PremiumPaymentModal({
                         </span>
                         <span className={`font-bold ${colors.text}`}>
                           {currency === 'USD' ? '$' : currency === 'EUR' ? '€' : 'R$'}
-                          {amount.toFixed(2)}
+                          {amount?.toFixed(2)}
                         </span>
                       </div>
                     </div>
