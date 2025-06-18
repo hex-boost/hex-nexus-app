@@ -108,8 +108,8 @@ func (s *State) Update(update *types.PartialSummonerRented) (*types.PartialSummo
 	if update.PUUID != nil {
 		s.account.PUUID = update.PUUID
 	}
-	if update.PartyRestrictions != nil {
-		s.account.PartyRestrictions = update.PartyRestrictions
+	if update.PartyRestriction != nil {
+		s.account.PartyRestriction = update.PartyRestriction
 	}
 
 	// Handle currencies separately to retain existing values if not provided

@@ -171,7 +171,7 @@ type SummonerResponse struct {
 	Ban          struct {
 		Restrictions []interface{} `json:"restrictions"`
 	} `json:"ban"`
-	IsPhoneVerified   interface{} `json:"isPhoneVerified"`
-	IsEmailVerified   interface{} `json:"isEmailVerified"`
-	PartyRestrictions interface{} `json:"party_restrictions"`
+	IsPhoneVerified  interface{} `json:"isPhoneVerified"`
+	IsEmailVerified  interface{} `json:"isEmailVerified"`
+	PartyRestriction int         `json:"partyRestriction"`
 }

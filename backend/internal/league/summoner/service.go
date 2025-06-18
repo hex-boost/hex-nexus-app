@@ -32,7 +32,7 @@ func (l *Service) UpdateFromLCU() (*types.PartialSummonerRented, error) {
 		mu                sync.Mutex
 		currentSummoner   types.CurrentSummoner
 		leaverBuster      types.LeaverBusterResponse
-		partyRestrictions *types.PartyRestriction
+		partyRestrictions int
 	)
 
 	eg, _ := errgroup.WithContext(context.Background())
@@ -55,7 +55,7 @@ func (l *Service) UpdateFromLCU() (*types.PartialSummonerRented, error) {
 			return err
 		}
 		mu.Lock()
-		partyRestrictions = partyRestriction
+		partyRestrictions = partyRestriction.PunishedGamesRemaining
 		mu.Unlock()
 		return nil
 	})
@@ -148,20 +148,20 @@ func (l *Service) UpdateFromLCU() (*types.PartialSummonerRented, error) {
 		}
 	}
 	summoner := &types.PartialSummonerRented{
-		Username:          userinfo.Username,
-		GameName:          &userinfo.Acct.GameName,
-		Tagline:           &userinfo.Acct.TagLine,
-		LCUchampions:      &champions,
-		PUUID:             &currentSummoner.Puuid,
-		LCUskins:          &skins,
-		IsEmailVerified:   &userinfo.EmailVerified,
-		LeaverBuster:      &leaverBuster,
-		Currencies:        &currencies,
-		Rankings:          rankingMap,
-		Server:            &userinfo.LOL.CPID,
-		Ban:               &userinfo.Ban,
-		IsPhoneVerified:   &userinfo.PhoneNumberVerified,
-		PartyRestrictions: partyRestrictions,
+		Username:         userinfo.Username,
+		GameName:         &userinfo.Acct.GameName,
+		Tagline:          &userinfo.Acct.TagLine,
+		LCUchampions:     &champions,
+		PUUID:            &currentSummoner.Puuid,
+		LCUskins:         &skins,
+		IsEmailVerified:  &userinfo.EmailVerified,
+		LeaverBuster:     &leaverBuster,
+		Currencies:       &currencies,
+		Rankings:         rankingMap,
+		Server:           &userinfo.LOL.CPID,
+		Ban:              &userinfo.Ban,
+		IsPhoneVerified:  &userinfo.PhoneNumberVerified,
+		PartyRestriction: &partyRestrictions,
 	}
 
 	return summoner, nil

@@ -30,8 +30,6 @@ type App interface {
 }
 type SummonerClient interface {
 	GetRanking() (*types.RankedStatsRefresh, error)
-	GetLeaverBuster() (*types.LeaverBusterResponse, error)
-	GetPartyRestrictions() (*types.PartyRestriction, error)
 }
 type LolSkin interface {
 	DownloadFantome(championId int32, skinId int32) (string, error)

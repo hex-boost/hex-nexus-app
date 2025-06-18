@@ -14,23 +14,23 @@ type CurrenciesPointer struct {
 	LolBlueEssence *int `json:"lol_blue_essence"`
 }
 type PartialSummonerRented struct {
-	Username          string                `json:"username,omitempty"`
-	Password          *string               `json:"password,omitempty"`
-	GameName          *string               `json:"gamename,omitempty"`
-	Type              *string               `json:"type,omitempty"`
-	LeaverBuster      *LeaverBusterResponse `json:"leaverBuster,omitempty"`
-	Tagline           *string               `json:"tagline,omitempty"`
-	Server            *string               `json:"server,omitempty"`
-	LCUchampions      *[]int                `json:"champions,omitempty"`
-	LCUskins          *[]int                `json:"championSkins,omitempty"`
-	PUUID             *string               `json:"PUUID,omitempty"`
-	Currencies        *CurrenciesPointer    `json:"currencies,omitempty"`
-	Ban               *Ban                  `json:"ban,omitempty"`
-	IsPhoneVerified   *bool                 `json:"isPhoneVerified,omitempty"`
-	IsEmailVerified   *bool                 `json:"isEmailVerified,omitempty"`
-	Rankings          *RankedStatsRefresh   `json:"rankedStats,omitempty"`
-	PartyRestrictions *PartyRestriction     `json:"party_restrictions"`
-	AccountLevel      *int                  `json:"accountLevel,omitempty"`
+	Username         string                `json:"username,omitempty"`
+	Password         *string               `json:"password,omitempty"`
+	GameName         *string               `json:"gamename,omitempty"`
+	Type             *string               `json:"type,omitempty"`
+	LeaverBuster     *LeaverBusterResponse `json:"leaverBuster,omitempty"`
+	Tagline          *string               `json:"tagline,omitempty"`
+	Server           *string               `json:"server,omitempty"`
+	LCUchampions     *[]int                `json:"champions,omitempty"`
+	LCUskins         *[]int                `json:"championSkins,omitempty"`
+	PUUID            *string               `json:"PUUID,omitempty"`
+	Currencies       *CurrenciesPointer    `json:"currencies,omitempty"`
+	Ban              *Ban                  `json:"ban,omitempty"`
+	IsPhoneVerified  *bool                 `json:"isPhoneVerified,omitempty"`
+	IsEmailVerified  *bool                 `json:"isEmailVerified,omitempty"`
+	Rankings         *RankedStatsRefresh   `json:"rankedStats,omitempty"`
+	PartyRestriction *int                  `json:"partyRestriction"`
+	AccountLevel     *int                  `json:"accountLevel,omitempty"`
 }
 type SummonerBase struct {
 	ID              int                `json:"id,omitempty"`
