@@ -24,15 +24,15 @@ func NewService(logger *logger.Logger, client *Client) *Service {
 
 func (l *Service) UpdateFromLCU() (*types.PartialSummonerRented, error) {
 	var (
-		champions       []int
-		skins           []int
-		currencyMap     map[string]interface{}
-		rankingMap      *types.RankedStatsRefresh
-		userinfo        types.UserInfo
-		mu              sync.Mutex
-		currentSummoner types.CurrentSummoner
-		leaverBuster    types.LeaverBusterResponse
-		partyRestrictions interface{}
+		champions         []int
+		skins             []int
+		currencyMap       map[string]interface{}
+		rankingMap        *types.RankedStatsRefresh
+		userinfo          types.UserInfo
+		mu                sync.Mutex
+		currentSummoner   types.CurrentSummoner
+		leaverBuster      types.LeaverBusterResponse
+		partyRestrictions *types.PartyRestriction
 	)
 
 	eg, _ := errgroup.WithContext(context.Background())
@@ -49,13 +49,13 @@ func (l *Service) UpdateFromLCU() (*types.PartialSummonerRented, error) {
 	})
 
 	eg.Go(func() error {
-		partyRestriction, err := l.client.()
+		partyRestriction, err := l.client.GetPartyRestrictions()
 		if err != nil {
 			l.logger.Error("Failed to get current summoner")
 			return err
 		}
 		mu.Lock()
-		userinfo = *partyRestriction
+		partyRestrictions = partyRestriction
 		mu.Unlock()
 		return nil
 	})
@@ -148,18 +148,20 @@ func (l *Service) UpdateFromLCU() (*types.PartialSummonerRented, error) {
 		}
 	}
 	summoner := &types.PartialSummonerRented{
-		Username:        userinfo.Username,
-		GameName:        &userinfo.Acct.GameName,
-		Tagline:         &userinfo.Acct.TagLine,
-		LCUchampions:    &champions,
-		PUUID:           &currentSummoner.Puuid,
-		LCUskins:        &skins,
-		IsEmailVerified: &userinfo.EmailVerified,
-		LeaverBuster:    &leaverBuster,
-		Currencies:      &currencies,
-		Rankings:        rankingMap,
-		Server:          &userinfo.LOL.CPID,
-		Ban:             &userinfo.Ban,
+		Username:          userinfo.Username,
+		GameName:          &userinfo.Acct.GameName,
+		Tagline:           &userinfo.Acct.TagLine,
+		LCUchampions:      &champions,
+		PUUID:             &currentSummoner.Puuid,
+		LCUskins:          &skins,
+		IsEmailVerified:   &userinfo.EmailVerified,
+		LeaverBuster:      &leaverBuster,
+		Currencies:        &currencies,
+		Rankings:          rankingMap,
+		Server:            &userinfo.LOL.CPID,
+		Ban:               &userinfo.Ban,
+		IsPhoneVerified:   &userinfo.PhoneNumberVerified,
+		PartyRestrictions: partyRestrictions,
 	}
 
 	return summoner, nil
