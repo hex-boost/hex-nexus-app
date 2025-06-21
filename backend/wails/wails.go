@@ -145,22 +145,38 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 	}
 	var mainWindow *application.WebviewWindow
 	accountState := account.NewState()
-	//gameOverlayManager := gameOverlay.NewGameOverlayManager(appInstance.Log().League(), cfg)
+
+	mainLogger.Info("Initializing stripeService")
 	stripeService := stripe.New(appInstance.Log().Stripe())
+
+	mainLogger.Info("Initializing command and process utilities")
 	cmd := command.New()
 	procs := process.New(cmd)
+
+	mainLogger.Info("Initializing LCU connection")
 	lcuConn := lcu.NewConnection(appInstance.Log().League(), procs)
+
+	mainLogger.Info("Initializing clients")
 	baseClient := client.NewBaseClient(appInstance.Log().Repo(), cfg)
 	httpClient := client.NewHTTPClient(baseClient)
 	accountClient := account.NewClient(appInstance.Log().Web(), cfg, httpClient)
 	summonerClient := summoner.NewClient(appInstance.Log().League(), lcuConn)
+
+	mainLogger.Info("Initializing summoner service")
 	summonerService := summoner.NewService(appInstance.Log().League(), summonerClient)
+
+	mainLogger.Info("Initializing captcha service")
 	captchaService := captcha.New(appInstance.Log().Riot())
+
+	mainLogger.Info("Initializing league service")
 	leagueService := league.NewService(appInstance.Log().Riot(), accountClient, summonerService, lcuConn, accountState)
 	lolskinInjector := lolskin.New(appInstance.Log().League(), leagueService.GetPath(), catalog, csLolDLL, modToolsExe)
 	riotService := riot.NewService(appInstance.Log().Riot(), captchaService, accountClient)
+	mainLogger.Info("Initializing updater")
 	newUpdaterUtils := updaterUtils.New(appInstance.Log().Wails())
 	updateManager := updater.NewUpdateManager(cfg, newUpdaterUtils, appInstance.Log().League())
+
+	mainLogger.Info("Initializing account monitor")
 	accountMonitor := account.NewMonitor(
 		appInstance.Log().Riot(),
 		leagueService,
@@ -171,17 +187,27 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 		accountClient,
 		accountState,
 	)
+
+	mainLogger.Info("Initializing discord service")
 	discordService := discord.New(appInstance.Log().Discord(), cfg)
 	debugMode := cfg.Debug
+
+	mainLogger.Info("Initializing client monitor")
 	clientMonitor := league.NewMonitor(appInstance.Log().League(), accountMonitor, leagueService, riotService, captchaService, accountState, riotService, accountClient)
 
+	mainLogger.Info("Initializing lolskin services")
 	lolSkinState := lolskin.NewState()
 	lolSkinService := lolskin.NewService(appInstance.Log().League(), accountState, accountClient, lolskinInjector, lolSkinState)
+
+	mainLogger.Info("Initializing websocket services")
 	websocketHandler := handler.New(appInstance.Log().League(), accountState, accountClient, summonerClient, lolSkinState, lolSkinService)
 
 	websocketRouter := websocket.NewRouter(appInstance.Log().League())
 	websocketManager := websocket.NewManager()
 	websocketService := websocket.NewService(appInstance.Log().League(), accountMonitor, leagueService, lcuConn, accountClient, websocketRouter, websocketHandler, websocketManager)
+
+	mainLogger.Info("Creating main application with services")
+
 	mainApp := application.New(application.Options{
 		Name:        "Nexus",
 		Description: "Nexus",

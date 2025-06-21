@@ -49,20 +49,21 @@ func New(prefix string, config *config.Config) *Logger {
 		),
 	}
 
-	// Try to add file logging if possible
+	logFilePath := filepath.Join(config.LogsDirectory, "app.log")
+	err := os.MkdirAll(config.LogsDirectory, os.ModePerm)
 	if err == nil {
-		logFile, fileErr := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-		if fileErr == nil {
-			fileEncoder := zapcore.NewConsoleEncoder(encoderConfig)
-			cores = append(cores, zapcore.NewCore(
-				fileEncoder,
-				zapcore.AddSync(logFile),
-				atomicLevel,
-			))
-		} else {
-			// Log the error to console but continue without file logging
-			fmt.Printf("Warning: Could not open log file: %v. Continuing with console logging only.\n", fileErr)
-		}
+		fileEncoder := zapcore.NewConsoleEncoder(encoderConfig)
+		cores = append(cores, zapcore.NewCore(
+			fileEncoder,
+			zapcore.AddSync(&lumberjack.Logger{
+				Filename:   logFilePath,
+				MaxSize:    10, // megabytes
+				MaxBackups: 3,
+				MaxAge:     28, // days
+				Compress:   true,
+			}),
+			atomicLevel,
+		))
 	} else {
 		fmt.Printf("Warning: Could not create logs directory: %v. Continuing with console logging only.\n", err)
 	}
