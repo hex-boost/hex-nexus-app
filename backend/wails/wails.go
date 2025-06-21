@@ -4,18 +4,6 @@ import (
 	"context"
 	"embed"
 	"fmt"
-	"github.com/hex-boost/hex-nexus-app/backend/internal/league/tools/lolskin"
-	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
-	"log"
-	"os"
-	"os/signal"
-	"path/filepath"
-	"strconv"
-	"strings"
-	"sync"
-	"syscall"
-	"time"
-
 	"github.com/hex-boost/hex-nexus-app/backend/app"
 	"github.com/hex-boost/hex-nexus-app/backend/client"
 	updaterUtils "github.com/hex-boost/hex-nexus-app/backend/cmd/updater/utils"
@@ -26,18 +14,32 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/lcu"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/manager"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/summoner"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/league/tools/lolskin"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket/handler"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/systemtray"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/updater"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/command"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/hwid"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/metrics"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/observability"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/process"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/tracing"
 	"github.com/hex-boost/hex-nexus-app/backend/protocol"
 	"github.com/hex-boost/hex-nexus-app/backend/riot"
 	"github.com/hex-boost/hex-nexus-app/backend/riot/captcha"
 	"github.com/hex-boost/hex-nexus-app/backend/stripe"
 	"github.com/hex-boost/hex-nexus-app/backend/watchdog"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"path/filepath"
+	"strconv"
+	"sync"
+	"syscall"
+	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
@@ -101,6 +103,44 @@ func RunWithRetry(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte
 func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256 []byte) {
 	cfg, _ := config.LoadConfig()
 	watchdogLog := logger.New("watchdog", cfg)
+	mainLogger := logger.New("Startup", cfg)
+
+	appMetrics := metrics.NewMetrics()
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Initialize tracer
+	tracer, err := tracing.NewTracer(context.Background(), cfg, mainLogger.Logger)
+	if err != nil {
+		mainLogger.Error("Failed to initialize tracer", zap.Error(err))
+	}
+
+	// Initialize observability manager
+	obsManager := observability.NewManager(cfg, mainLogger.Logger)
+	err = obsManager.Start()
+	if err != nil {
+		mainLogger.Error("Failed to start observability manager", zap.Error(err))
+	}
+
+	metrics.InitializeObservability(ctx, appMetrics, tracer, mainLogger.Logger, cfg)
+
+	if cfg.Prometheus.Enabled {
+		promExporter, err := metrics.InitPrometheusExporter()
+		if err != nil {
+			mainLogger.Error("Failed to create Prometheus exporter", zap.Error(err))
+		} else {
+			http.Handle("/metrics", promExporter.Handler())
+			go func() {
+				mainLogger.Info("Starting metrics server on :2112")
+				err := http.ListenAndServe(":2112", nil)
+				if err != nil {
+					mainLogger.Error("Metrics server error", zap.Error(err))
+				}
+			}()
+		}
+	}
+
+	mainLogger.Info("Starting application initialization")
+	mainLogger.Info("Initializing App instance")
 	appInstance := app.App(cfg, logger.New("App", cfg))
 	mainLogger := appInstance.Log().Wails()
 	mainLogger.Info("Initializing LeagueManager")
@@ -241,6 +281,7 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 
 	mainLogger.Info("Initializing discord service")
 	discordService := discord.New(appInstance.Log().Discord(), cfg)
+
 	debugMode := cfg.Debug
 
 	mainLogger.Info("Initializing client monitor")
@@ -252,7 +293,6 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 
 	mainLogger.Info("Initializing websocket services")
 	websocketHandler := handler.New(appInstance.Log().League(), accountState, accountClient, summonerClient, lolSkinState, lolSkinService)
-
 	websocketRouter := websocket.NewRouter(appInstance.Log().League())
 	websocketManager := websocket.NewManager()
 	websocketService := websocket.NewService(appInstance.Log().League(), accountMonitor, leagueService, lcuConn, accountClient, websocketRouter, websocketHandler, websocketManager)
@@ -393,7 +433,14 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 			mainWindow.EmitEvent("nexus:confirm-close")
 			return
 		}
-
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if tracer != nil {
+			_ = tracer.Shutdown(ctx)
+		}
+		if obsManager != nil {
+			_ = obsManager.Stop()
+		}
 		mainApp.Logger.Info("Forced close requested, shutting down")
 		clientMonitor.Stop()
 		//gameOverlayManager.Stop() // Stop the overlay manager

@@ -3,11 +3,9 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/joho/godotenv"
 	"log"
 	"os"
-	"time"
-
-	"github.com/joho/godotenv"
 )
 
 var (
@@ -30,6 +28,20 @@ type Config struct {
 	LogsDirectory string `json:"logsDirectory"`
 
 	LogLevel string `json:"logLevel"`
+	Loki     struct {
+		Enabled  bool   `json:"enabled"`
+		Endpoint string `json:"endpoint"`
+	} `json:"loki"`
+
+	Tempo struct {
+		Enabled  bool   `json:"enabled"`
+		Endpoint string `json:"endpoint"`
+	} `json:"tempo"`
+
+	Prometheus struct {
+		Enabled  bool   `json:"enabled"`
+		Endpoint string `json:"endpoint"` // For remote_write if needed
+	} `json:"prometheus"`
 }
 
 func LoadConfig() (*Config, error) {
@@ -39,6 +51,7 @@ func LoadConfig() (*Config, error) {
 		log.Println("Error loading .env file")
 	}
 	var isDebug bool
+	Debug = getEnv("DEBUG", "false")
 	if Debug == "true" {
 		isDebug = true
 	} else {
@@ -46,14 +59,44 @@ func LoadConfig() (*Config, error) {
 	}
 
 	config := &Config{
-		ModToolsPath:   getEnv("MOD_TOOLS_PATH", ""),
 		Version:        getEnv("VERSION", Version),
 		RefreshApiKey:  getEnv("REFRESH_API_KEY", RefreshApiKey),
+		LeagueAuthType: getEnv("LOGS_DIR", LeagueAuthType),
 		BackendURL:     getEnv("API_URL", BackendURL),
 		Debug:          getBoolEnv("DEBUG", isDebug),
+		ModToolsPath:   getEnv("MOD_TOOLS_PATH", ""),
 		LogsDirectory:  getEnv("LOGS_DIR", "./logs"),
-		LeagueAuthType: getEnv("LOGS_DIR", LeagueAuthType),
 		LogLevel:       getEnv("LOG_LEVEL", LogLevel),
+		Loki: struct {
+			Enabled  bool   `json:"enabled"`
+			Endpoint string `json:"endpoint"`
+		}(struct {
+			Enabled  bool
+			Endpoint string
+		}{
+			Enabled:  getEnv("LOKI_ENABLED", "true") == "true",
+			Endpoint: getEnv("LOKI_ENDPOINT", "https://loki-production-893b.up.railway.app"),
+		}),
+		Tempo: struct {
+			Enabled  bool   `json:"enabled"`
+			Endpoint string `json:"endpoint"`
+		}(struct {
+			Enabled  bool
+			Endpoint string
+		}{
+			Enabled:  getEnv("TEMPO_ENABLED", "true") == "true",
+			Endpoint: getEnv("TEMPO_ENDPOINT", "https://tempo-production-a6ee.up.railway.app"),
+		}),
+		Prometheus: struct {
+			Enabled  bool   `json:"enabled"`
+			Endpoint string `json:"endpoint"`
+		}(struct {
+			Enabled  bool
+			Endpoint string
+		}{
+			Enabled:  getEnv("PROMETHEUS_ENABLED", "true") == "true",
+			Endpoint: getEnv("PROMETHEUS_ENDPOINT", "https://prometheus-production-e845.up.railway.app"),
+		}),
 	}
 
 	// Try to load from config file if specified
@@ -80,15 +123,6 @@ func getEnv(key, defaultValue string) string {
 func getBoolEnv(key string, defaultValue bool) bool {
 	if value, exists := os.LookupEnv(key); exists {
 		return value == "true" || value == "1"
-	}
-	return defaultValue
-}
-
-func getDurationEnv(key string, defaultValue time.Duration) time.Duration {
-	if value, exists := os.LookupEnv(key); exists {
-		if duration, err := time.ParseDuration(value); err == nil {
-			return duration
-		}
 	}
 	return defaultValue
 }

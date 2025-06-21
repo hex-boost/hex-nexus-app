@@ -58,7 +58,7 @@ func New(prefix string, config *config.Config) *Logger {
 				Filename:   logFilePath,
 				MaxSize:    10, // megabytes
 				MaxBackups: 3,
-				MaxAge:     28, // days
+				MaxAge:     7, // days
 				Compress:   true,
 			}),
 			atomicLevel,
@@ -70,18 +70,18 @@ func New(prefix string, config *config.Config) *Logger {
 	// Create the logger with available cores
 	core := zapcore.NewTee(cores...)
 	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
-	//if config.Loki != nil && config.Loki.Enabled {
-	//	lokiHook := NewLokiHook(config)
-	//
-	//	lokiEncoder := zapcore.NewJSONEncoder(encoderConfig)
-	//	lokiCore := zapcore.NewCore(
-	//		lokiEncoder,
-	//		zapcore.AddSync(lokiHook),
-	//		atomicLevel,
-	//	)
-	//
-	//	core = zapcore.NewTee(append(cores, lokiCore)...)
-	//}
+	if config.Loki.Enabled {
+		lokiHook := NewLokiHook(config)
+
+		lokiEncoder := zapcore.NewJSONEncoder(encoderConfig)
+		lokiCore := zapcore.NewCore(
+			lokiEncoder,
+			zapcore.AddSync(lokiHook),
+			atomicLevel,
+		)
+
+		core = zapcore.NewTee(append(cores, lokiCore)...)
+	}
 
 	// Add prefix if provided
 	if prefix != "" {
