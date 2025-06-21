@@ -74,6 +74,13 @@ export function useRiotAccount({ account }: { account?: AccountType }) {
     };
   }
   function getLeaverBusterInfo() {
+    if (account?.partyRestriction > 0) {
+      return {
+        hasRestriction: true,
+        severity: 3,
+        message: `Account has to play ${account?.partyRestriction} normal games until being able to play ranked`,
+      };
+    }
     if (!account?.leaverBuster?.leaverBusterEntryDto) {
       return null;
     }

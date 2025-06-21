@@ -106,7 +106,6 @@ export function AccountRow({
       <td className="p-3">
         {(() => {
           const leaverInfo = getLeaverBusterInfo();
-
           if (!leaverInfo) {
             return (
               <div className="flex items-start">
@@ -143,6 +142,33 @@ export function AccountRow({
                   {(() => {
                     if (!leaverInfo) {
                       return null;
+                    }
+                    if (account.partyRestriction > 0) {
+                      return (
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center pb-1 mb-1 border-b border-zinc-200 dark:border-zinc-700 backdrop-blur-2xl">
+                            <span className="font-medium">Party Restriction</span>
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] ${severityConfig.badge}`}>
+                              {severityConfig.label}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-y-1.5 gap-x-2">
+                            <span className="text-zinc-500 dark:text-zinc-400">Status:</span>
+                            <span className="font-medium text-red-500">Restricted</span>
+
+                            <span className="text-zinc-500 dark:text-zinc-400">Games Required:</span>
+                            <span className="font-medium">
+                              {account.partyRestriction}
+                              {' '}
+                              normal games
+                            </span>
+
+                            <span className="text-zinc-500 dark:text-zinc-400">Restriction Type:</span>
+                            <span className="font-medium">Ranked Blocked</span>
+                          </div>
+                        </div>
+                      );
                     }
 
                     const leaverData = account.leaverBuster?.leaverBusterEntryDto;
