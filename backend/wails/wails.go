@@ -4,6 +4,7 @@ import (
 	"embed"
 	"fmt"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/tools/lolskin"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"log"
 	"os"
 	"os/signal"
@@ -27,7 +28,6 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket/handler"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/systemtray"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/updater"
-	gameOverlay "github.com/hex-boost/hex-nexus-app/backend/overlay"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/command"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/hwid"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/process"
@@ -145,7 +145,7 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 	}
 	var mainWindow *application.WebviewWindow
 	accountState := account.NewState()
-	gameOverlayManager := gameOverlay.NewGameOverlayManager(appInstance.Log().League(), cfg)
+	//gameOverlayManager := gameOverlay.NewGameOverlayManager(appInstance.Log().League(), cfg)
 	stripeService := stripe.New(appInstance.Log().Stripe())
 	cmd := command.New()
 	procs := process.New(cmd)
@@ -243,7 +243,7 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 			application.NewService(accountMonitor),
 			application.NewService(leagueManager),
 			application.NewService(stripeService),
-			application.NewService(gameOverlayManager),
+			//application.NewService(gameOverlayManager),
 			application.NewService(updateManager),
 			application.NewService(lolskinInjector),
 			application.NewService(lolSkinState),
@@ -307,8 +307,8 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 
 	websocketHandler.SetApp(mainApp)
 
-	overlayWindow := gameOverlay.CreateGameOverlay(mainApp)
-	gameOverlayManager.SetWindow(overlayWindow)
+	//overlayWindow := gameOverlay.CreateGameOverlay(mainApp)
+	//gameOverlayManager.SetWindow(overlayWindow)
 	mainWindow.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
 		mainApp.Logger.Info("Window closing event triggered")
 
@@ -321,7 +321,7 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 
 		mainApp.Logger.Info("Forced close requested, shutting down")
 		clientMonitor.Stop()
-		gameOverlayManager.Stop() // Stop the overlay manager
+		//gameOverlayManager.Stop() // Stop the overlay manager
 		lockFilePath := filepath.Join(os.TempDir(), "Nexus.lock")
 		err := os.Remove(lockFilePath)
 		if err != nil {
@@ -329,17 +329,17 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 		}
 	})
 
-	systemTray := systemtray.New(mainWindow, icon16, accountMonitor, leagueManager)
-	systemTray.Setup()
+	systemTray := systemtray.New(mainWindow, icon16, accountMonitor, leagueManager, logger.New("SystemTray", cfg))
 	appProtocol.SetWindow(mainWindow)
 	captchaService.SetWindow(captchaWindow)
 	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(ctx *application.WindowEvent) {
 
 		websocketService.Start(mainApp)
+		systemTray.Setup()
 		websocketService.SubscribeToLeagueEvents()
 		accountMonitor.Start(mainWindow)
 		clientMonitor.Start(mainApp)
-		gameOverlayManager.Start()
+		//gameOverlayManager.Start()
 	})
 
 	err := mainApp.Run()

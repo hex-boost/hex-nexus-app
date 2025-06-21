@@ -3,8 +3,9 @@ package systemtray
 import (
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/manager"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/wailsapp/wails/v3/pkg/application"
-	"log"
+	"go.uber.org/zap"
 )
 
 type SystemTray struct {
@@ -13,13 +14,15 @@ type SystemTray struct {
 	icon    []byte
 	monitor *account.Monitor
 	manager *manager.Manager
+	logger  *logger.Logger
 }
 
-func New(window *application.WebviewWindow, icon []byte, monitor *account.Monitor, manager *manager.Manager) *SystemTray {
+func New(window *application.WebviewWindow, icon []byte, monitor *account.Monitor, manager *manager.Manager, logger *logger.Logger) *SystemTray {
 	return &SystemTray{
 		app:     application.Get(),
 		window:  window,
 		icon:    icon,
+		logger:  logger,
 		monitor: monitor,
 		manager: manager,
 	}
@@ -32,34 +35,34 @@ func (s *SystemTray) Setup() *application.SystemTray {
 	menu.AddSeparator()
 	sairItem := menu.Add("Exit Nexus")
 	sairItem.OnClick(func(ctx *application.Context) {
-		log.Println("[SystemTray] Exit Nexus clicked")
+		s.logger.Info("[SystemTray] Exit Nexus clicked")
 
 		isNexusAccount := s.monitor.IsNexusAccount()
-		log.Printf("[SystemTray] IsNexusAccount check result: %v", isNexusAccount)
+		s.logger.Info("[SystemTray] IsNexusAccount check result", zap.Bool("isNexusAccount", isNexusAccount))
 
 		if isNexusAccount {
-			log.Println("[SystemTray] Nexus account detected, showing confirmation dialog")
-			log.Printf("[SystemTray] Window visibility before Show(): %v", s.window.IsVisible())
+			s.logger.Info("[SystemTray] Nexus account detected, showing confirmation dialog")
+			s.logger.Info("[SystemTray] Window visibility before Show()", zap.Bool("isVisible", s.window.IsVisible()))
 
 			s.window.Show()
-			log.Printf("[SystemTray] Window visibility after Show(): %v", s.window.IsVisible())
+			s.logger.Info("[SystemTray] Window visibility after Show()", zap.Bool("isVisible", s.window.IsVisible()))
 
 			s.window.Focus()
-			log.Println("[SystemTray] Window Focus() called")
+			s.logger.Info("[SystemTray] Window Focus() called")
 
-			log.Println("[SystemTray] Emitting nexus:confirm-close event")
+			s.logger.Info("[SystemTray] Emitting nexus:confirm-close event")
 			s.window.EmitEvent("nexus:confirm-close")
-			log.Println("[SystemTray] nexus:confirm-close event emitted")
+			s.logger.Info("[SystemTray] nexus:confirm-close event emitted")
 		} else {
-			log.Println("[SystemTray] Not a Nexus account, proceeding with direct quit")
+			s.logger.Info("[SystemTray] Not a Nexus account, proceeding with direct quit")
 
-			log.Println("[SystemTray] Setting ForceClose flag to true")
+			s.logger.Info("[SystemTray] Setting ForceClose flag to true")
 			s.manager.SetForceClose(true)
 
 			forceCloseValue := s.manager.ShouldForceClose()
-			log.Printf("[SystemTray] ForceClose flag after setting: %v", forceCloseValue)
+			s.logger.Info("[SystemTray] ForceClose flag after setting", zap.Bool("forceClose", forceCloseValue))
 
-			log.Println("[SystemTray] Calling app.Quit()")
+			s.logger.Info("[SystemTray] Calling app.Quit()")
 			s.app.Quit()
 		}
 	})

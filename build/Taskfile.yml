@@ -15,26 +15,26 @@ tasks:
       BUILD_FLAGS: '{{if eq .PRODUCTION "true"}}-tags production -trimpath -buildvcs=false -ldflags="-w -s -H windowsgui"{{else}}-buildvcs=false -gcflags=all="-l"{{end}}'
     cmds:
       # Execute frontend tasks sequentially
-      - task: install:frontend:deps
-      - task: prepare:frontend:dist
-        vars:
-          PRODUCTION: '{{.PRODUCTION}}'
-      - task: generate:bindings
-      - task: generate:bindings:updater
-      - task: build:frontend
-        vars:
-          PRODUCTION: '{{.PRODUCTION}}'
-      - task: build:frontend:updater
-        vars:
-          PRODUCTION: '{{.PRODUCTION}}'
-      # Continue with remaining build steps
-      - task: mock
-      - task: go:mod:tidy
-      - task: clean
-      - task: generate:icons
-      - task: generate:syso
+#      - task: install:frontend:deps
+#      - task: prepare:frontend:dist
+#        vars:
+#          PRODUCTION: '{{.PRODUCTION}}'
+#      - task: generate:bindings
+#      - task: generate:bindings:updater
+#      - task: build:frontend
+#        vars:
+#          PRODUCTION: '{{.PRODUCTION}}'
+#      - task: build:frontend:updater
+#        vars:
+#          PRODUCTION: '{{.PRODUCTION}}'
+#      # Continue with remaining build steps
+#      - task: mock
+#      - task: go:mod:tidy
+#      - task: clean
+#      - task: generate:icons
+#      - task: generate:syso
       - cmd: go build -tags production -trimpath -buildvcs=false -ldflags="-X github.com/hex-boost/hex-nexus-app/backend/internal/config.Version={{.VERSION}} -X github.com/hex-boost/hex-nexus-app/backend/internal/config.LogLevel=debug -X github.com/hex-boost/hex-nexus-app/backend/internal/config.BackendURL={{.API_URL}} -X github.com/hex-boost/hex-nexus-app/backend/internal/config.RefreshApiKey={{.REFRESH_API_KEY}} -w -s -H windowsgui" -o bin/Nexus.exe .
-      - cmd: go build -tags production -trimpath -buildvcs=false -ldflags="-X github.com/hex-boost/hex-nexus-app/backend/internal/config.Version={{.VERSION}} -X github.com/hex-boost/hex-nexus-app/backend/internal/config.LogLevel=debug -X github.com/hex-boost/hex-nexus-app/backend/internal/config.BackendURL={{.API_URL}} -w -s -H windowsgui" -o bin/updater.exe ./backend/cmd/updater
+#      - cmd: go build -tags production -trimpath -buildvcs=false -ldflags="-X github.com/hex-boost/hex-nexus-app/backend/internal/config.Version={{.VERSION}} -X github.com/hex-boost/hex-nexus-app/backend/internal/config.LogLevel=debug -X github.com/hex-boost/hex-nexus-app/backend/internal/config.BackendURL={{.API_URL}} -w -s -H windowsgui" -o bin/updater.exe ./backend/cmd/updater
       - cmd: powershell Remove-item *.syso
     env:
       GOOS: windows

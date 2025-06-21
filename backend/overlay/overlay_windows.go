@@ -1,6 +1,6 @@
 // --- START OF NEW FILE overlay_windows.h ---
 
-//go:build windows
+//go:build ignore
 
 package overlay
 

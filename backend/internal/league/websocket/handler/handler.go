@@ -341,7 +341,7 @@ func (h *Handler) Restriction(event websocket.LCUWebSocketEvent) {
 	// Extract the current punished games count from existing account data
 	account := h.accountState.Get()
 	if account == nil || account.PartyRestriction == nil {
-		h.logger.Warn("No account data available or PartyRestriction is nil, skipping update")
+		h.logger.Error("No account data available or PartyRestriction is nil, skipping update")
 		return
 	}
 	if restriction.PunishedGamesRemaining != *account.PartyRestriction {

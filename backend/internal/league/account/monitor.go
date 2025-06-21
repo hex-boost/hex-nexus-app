@@ -287,7 +287,7 @@ func (m *Monitor) IsNexusAccount() bool {
 func (m *Monitor) processEvents() {
 	defer func() {
 		if r := recover(); r != nil {
-			h.logger.Error("Panic in processEvents", zap.Any("error", r))
+			m.logger.Error("Panic in processEvents", zap.Any("error", r))
 		}
 	}()
 	for {
