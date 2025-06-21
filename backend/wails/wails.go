@@ -60,6 +60,8 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 	cfg, _ := config.LoadConfig()
 	watchdogLog := logger.New("watchdog", cfg)
 	appInstance := app.App(cfg, logger.New("App", cfg))
+
+	mainLogger.Info("Initializing LeagueManager")
 	leagueManager := manager.New(logger.New("LeagueManager", cfg))
 	if !cfg.Debug {
 		if len(os.Args) >= 3 && os.Args[1] == "--watchdog" {
@@ -131,9 +133,11 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 	}
 
 	// Create a watchdog client for communication with the watchdog process
+	mainLogger.Info("Initializing WatchdogClient")
 	watchdogClient := watchdog.NewWatchdogClient()
 
-	mainLogger := appInstance.Log().Wails()
+	mainLogger = appInstance.Log().Wails()
+	mainLogger.Info("Initializing protocol handling")
 	appProtocol := protocol.New(appInstance.Log().Protocol())
 	if err := appProtocol.Register(); err != nil {
 		mainLogger.Info("Warning: Failed to register custom protocol", zap.Error(err))
@@ -170,8 +174,13 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 
 	mainLogger.Info("Initializing league service")
 	leagueService := league.NewService(appInstance.Log().Riot(), accountClient, summonerService, lcuConn, accountState)
+
+	mainLogger.Info("Initializing lolskin injector")
 	lolskinInjector := lolskin.New(appInstance.Log().League(), leagueService.GetPath(), catalog, csLolDLL, modToolsExe)
+
+	mainLogger.Info("Initializing riot service")
 	riotService := riot.NewService(appInstance.Log().Riot(), captchaService, accountClient)
+
 	mainLogger.Info("Initializing updater")
 	newUpdaterUtils := updaterUtils.New(appInstance.Log().Wails())
 	updateManager := updater.NewUpdateManager(cfg, newUpdaterUtils, appInstance.Log().League())
