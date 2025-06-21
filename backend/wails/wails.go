@@ -58,14 +58,14 @@ func StartWatchdog() (*os.Process, error) {
 
 func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256 []byte) {
 	cfg, _ := config.LoadConfig()
-
-	appInstance := app.App(cfg)
-	leagueManager := manager.New()
+	watchdogLog := logger.New("watchdog", cfg)
+	appInstance := app.App(cfg, logger.New("App", cfg))
+	leagueManager := manager.New(logger.New("LeagueManager", cfg))
 	if !cfg.Debug {
 		if len(os.Args) >= 3 && os.Args[1] == "--watchdog" {
 			mainPID, err := strconv.Atoi(os.Args[2])
 			if err != nil {
-				log.Fatalf("Invalid PID: %v", err)
+				watchdogLog.Error(fmt.Sprintf("Invalid PID: %v", err))
 			}
 
 			newWatchdog := watchdog.New(mainPID, os.Args[0])
@@ -77,16 +77,16 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 				if err == nil && state.AccountActive {
 					err := leagueManager.ForceCloseAllClients()
 					if err != nil {
-						fmt.Println(fmt.Errorf("error closing clients: %v", err))
+						watchdogLog.Error(fmt.Sprintf("error closing clients: %v", err))
 						return
 					}
-					log.Println("Performing emergency league client logout for Nexus account")
+					watchdogLog.Info("Performing emergency league client logout for Nexus account")
 				}
 			})
 
 			// Start watchdog
 			if err := newWatchdog.Start(); err != nil {
-				log.Fatalf("Failed to start watchdog: %v", err)
+				watchdogLog.Error(fmt.Sprintf("Failed to start watchdog: %v", err))
 			}
 
 			// Instead of select{}, use a WaitGroup
@@ -101,7 +101,7 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 				defer wg.Done()
 				select {
 				case <-sigChan:
-					log.Println("Watchdog received termination signal")
+					watchdogLog.Info("Watchdog received termination signal")
 					newWatchdog.Stop() // Gracefully stop the watchdog
 				}
 			}()

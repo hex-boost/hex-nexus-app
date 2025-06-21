@@ -124,11 +124,11 @@ func NewMonitor(
 func (m *Monitor) OnStartup(ctx context.Context, options application.ServiceOptions) error {
 	m.ctx = ctx
 	m.Start(application.Get().GetWindowByName("Main"))
-	fmt.Println("STARTUP MONITOR", options.Name)
+	m.logger.Info("STARTUP MONITOR")
 	return nil
 }
 func (m *Monitor) OnShutdown(ctx context.Context, options application.ServiceOptions) error {
-	fmt.Println("ENDING MONITOR", options.Name)
+	m.logger.Info("ENDING MONITOR")
 	m.Stop()
 	return nil
 }
@@ -138,7 +138,7 @@ func (m *Monitor) SetWindow(window WindowEmitter) {
 }
 func (m *Monitor) Start(window WindowEmitter) {
 	m.window = window
-	fmt.Println("Starting account monitor")
+	m.logger.Info("Starting account monitor")
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 

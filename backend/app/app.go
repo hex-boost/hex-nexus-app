@@ -2,7 +2,7 @@ package app
 
 import (
 	"context"
-	"fmt"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"sync"
 
 	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
@@ -19,23 +19,23 @@ type app struct {
 	config     *config.Config
 }
 
-func App(cfg *config.Config) *app {
+func App(cfg *config.Config, logger *logger.Logger) *app {
 	if cfg == nil {
 		panic("nil config provided to App()")
 	}
 
-	fmt.Println("Config exists")
+	logger.Info("Config exists")
 	_app.once.Do(
 		func() {
-			fmt.Println("Starting NewLogger initialization...")
+			logger.Info("Starting NewLogger initialization...")
 			_app.log = NewLogger(cfg)
-			fmt.Println("Logger initialized successfully")
+			logger.Info("Logger initialized successfully")
 
 			_app.ctx = context.Background()
 			_app.oauthState = ""
 			_app.config = cfg
 			_app.stateMutex = sync.Mutex{}
-			fmt.Println("App initialization completed")
+			logger.Info("App initialization completed")
 		})
 	return _app
 }

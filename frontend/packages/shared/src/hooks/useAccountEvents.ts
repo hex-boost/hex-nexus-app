@@ -29,10 +29,7 @@ export function useAccountEvents() {
       return;
     }
 
-    // Mark this account as being processed
     processingAccounts.add(account.documentId);
-
-    // Clear any existing timeout
 
     queryClient.setQueryData(['accounts', 'rented'], (oldData: any) => {
       if (!oldData) {
@@ -49,7 +46,7 @@ export function useAccountEvents() {
       });
     });
 
-    await queryClient.refetchQueries({ queryKey: ['accounts', 'rented'] });
+    await queryClient.refetchQueries({ queryKey: ['accounts'] });
     console.log(`Queries refreshed for ${account.documentId}`);
     // Remove from processing set after refresh
     processingAccounts.delete(account.documentId);

@@ -27,10 +27,13 @@ func New(prefix string, config *config.Config) *Logger {
 	err := os.MkdirAll(config.LogsDirectory, os.ModePerm)
 
 	// Core configuration
-	encoderConfig := zap.NewProductionEncoderConfig()
+	encoderConfig := zap.NewDevelopmentEncoderConfig()
 	encoderConfig.TimeKey = "time"
-	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
+	encoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout("15:04:05") // Shorter time format
+	encoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder       // Color-coded log levels
+	encoderConfig.EncodeCaller = zapcore.ShortCallerEncoder            // Shorter caller path
+	encoderConfig.StacktraceKey = "stacktrace"
+
 	consoleEncoder := zapcore.NewConsoleEncoder(encoderConfig)
 
 	// Determine log level
