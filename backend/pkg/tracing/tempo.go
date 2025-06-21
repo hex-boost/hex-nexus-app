@@ -2,17 +2,15 @@ package tracing
 
 import (
 	"context"
-
 	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.20.0" // Updated to latest semconv
+	semconv "go.opentelemetry.io/otel/semconv/v1.20.0"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
-	"google.golang.org/grpc"
 )
 
 type Tracer struct {
@@ -28,14 +26,11 @@ func NewTracer(ctx context.Context, cfg *config.Config, logger *zap.Logger) (*Tr
 			logger: logger,
 		}, nil
 	}
-	// Create OTLP exporter
-	traceClient := otlptracegrpc.NewClient(
+	exporter, err := otlptracegrpc.New(ctx,
 		otlptracegrpc.WithInsecure(),
 		otlptracegrpc.WithEndpoint(cfg.Tempo.Endpoint),
-		otlptracegrpc.WithDialOption(grpc.WithBlock()),
+		otlptracegrpc.WithDialOption(),
 	)
-
-	exporter, err := otlptracegrpc.New(ctx, traceClient)
 	if err != nil {
 		return nil, err
 	}
