@@ -90,6 +90,11 @@ func (h *Handler) processEvents(ctx context.Context) {
 		case req := <-h.eventCh:
 			h.logger.Debug("Emitting event", zap.String("name", req.name))
 			h.eventMutex.Lock()
+			if h.app == nil {
+				h.logger.Error("App is not set, cannot emit event", zap.String("name", req.name))
+				h.eventMutex.Unlock()
+				continue
+			}
 			h.app.EmitEvent(req.name, req.data...)
 			h.eventMutex.Unlock()
 
@@ -242,6 +247,9 @@ func (h *Handler) GameflowPhase(event websocket.LCUWebSocketEvent) {
 
 		// Get current account state
 		currentAccount := h.accountState.Get()
+		if currentAccount != nil && currentAccount.Rankings != nil {
+
+		}
 
 		// Check if update is needed
 		needsUpdate := true
@@ -332,7 +340,10 @@ func (h *Handler) Restriction(event websocket.LCUWebSocketEvent) {
 
 	// Extract the current punished games count from existing account data
 	account := h.accountState.Get()
-
+	if account == nil || account.PartyRestriction == nil {
+		h.logger.Warn("No account data available or PartyRestriction is nil, skipping update")
+		return
+	}
 	if restriction.PunishedGamesRemaining != *account.PartyRestriction {
 		h.logger.Info("Updating leaver buster information",
 			zap.Int("oldPunishedGames", restriction.PunishedGamesRemaining),

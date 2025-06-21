@@ -142,12 +142,6 @@ func NewService(
 
 	return service
 }
-func (s *Service) OnStartup(ctx context.Context, options application.ServiceOptions) error {
-	s.Start(application.Get())
-	s.SubscribeToLeagueEvents()
-	// Any initialization code here
-	return nil
-}
 func (s *Service) OnShutdown(ctx context.Context, options application.ServiceOptions) error {
 	s.Stop()
 	return nil

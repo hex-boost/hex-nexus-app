@@ -335,6 +335,8 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 	captchaService.SetWindow(captchaWindow)
 	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(ctx *application.WindowEvent) {
 
+		websocketService.Start(mainApp)
+		websocketService.SubscribeToLeagueEvents()
 		accountMonitor.Start(mainWindow)
 		clientMonitor.Start(mainApp)
 		gameOverlayManager.Start()

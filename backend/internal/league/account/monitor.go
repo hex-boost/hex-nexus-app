@@ -285,6 +285,11 @@ func (m *Monitor) IsNexusAccount() bool {
 	return m.accountState.IsNexusAccount()
 }
 func (m *Monitor) processEvents() {
+	defer func() {
+		if r := recover(); r != nil {
+			h.logger.Error("Panic in processEvents", zap.Any("error", r))
+		}
+	}()
 	for {
 		select {
 		case event := <-m.eventChan:
