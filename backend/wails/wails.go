@@ -60,7 +60,7 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 	cfg, _ := config.LoadConfig()
 	watchdogLog := logger.New("watchdog", cfg)
 	appInstance := app.App(cfg, logger.New("App", cfg))
-
+	mainLogger := appInstance.Log().Wails()
 	mainLogger.Info("Initializing LeagueManager")
 	leagueManager := manager.New(logger.New("LeagueManager", cfg))
 	if !cfg.Debug {
