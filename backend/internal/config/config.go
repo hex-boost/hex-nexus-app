@@ -10,7 +10,7 @@ import (
 
 var (
 	Version       = "dev"
-	LogLevel      = "info"
+	LogLevel      = "debug"
 	BackendURL    = "http://127.0.0.1:1337"
 	RefreshApiKey = ""
 	Debug         = ""
