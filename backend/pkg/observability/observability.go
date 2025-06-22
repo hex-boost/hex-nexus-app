@@ -1,8 +1,12 @@
 package observability
 
 import (
+	"context"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 	"net/http"
+	"time"
 )
 
 type ObservabilityManager struct {

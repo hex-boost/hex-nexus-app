@@ -13,6 +13,8 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/lcu"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/manager"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/summoner"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/tools/lolskin"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket"
@@ -106,8 +108,13 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 	mainLogger := logger.New("Startup", cfg)
 
 	appMetrics := metrics.NewMetrics()
-	ctx, cancel := context.WithCancel(context.Background())
-
+	ctx, bgCancel := context.WithCancel(context.Background())
+	defer bgCancel()
+	mainLogger.Info("LOKI_TEST_LOG: Application starting - testing Loki integration",
+		zap.String("test_id", "loki-connection-test"),
+		zap.String("version", cfg.Version),
+		zap.Bool("loki_enabled", cfg.Loki.Enabled),
+		zap.String("loki_endpoint", cfg.Loki.Endpoint))
 	// Initialize tracer
 	tracer, err := tracing.NewTracer(context.Background(), cfg, mainLogger.Logger)
 	if err != nil {
@@ -124,11 +131,11 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 	metrics.InitializeObservability(ctx, appMetrics, tracer, mainLogger.Logger, cfg)
 
 	if cfg.Prometheus.Enabled {
-		promExporter, err := metrics.InitPrometheusExporter()
+		_, err := metrics.InitPrometheusExporter()
 		if err != nil {
 			mainLogger.Error("Failed to create Prometheus exporter", zap.Error(err))
 		} else {
-			http.Handle("/metrics", promExporter.Handler())
+			http.Handle("/metrics", promhttp.Handler())
 			go func() {
 				mainLogger.Info("Starting metrics server on :2112")
 				err := http.ListenAndServe(":2112", nil)
@@ -138,7 +145,6 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 			}()
 		}
 	}
-
 	mainLogger.Info("Starting application initialization")
 	mainLogger.Info("Initializing App instance")
 	appInstance := app.App(cfg, logger.New("App", cfg))
@@ -447,7 +453,7 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 		lockFilePath := filepath.Join(os.TempDir(), "Nexus.lock")
 		err := os.Remove(lockFilePath)
 		if err != nil {
-			return
+			mainApp.Logger.Error("Failed to remove lock file", zap.Error(err))
 		}
 	})
 
@@ -463,9 +469,10 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 		accountMonitor.Start(mainWindow)
 		clientMonitor.Start(mainApp)
 		//gameOverlayManager.Start()
+
 	})
 
-	err := mainApp.Run()
+	err = mainApp.Run()
 	if err != nil {
 		log.Fatal(err)
 		return

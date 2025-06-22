@@ -73,15 +73,26 @@ func New(prefix string, config *config.Config) *Logger {
 	if config.Loki.Enabled {
 		lokiHook := NewLokiHook(config)
 
-		lokiEncoder := zapcore.NewJSONEncoder(encoderConfig)
+		lokiWriter := NewLokiWriter(lokiHook, getLogLevel(config.LogLevel))
+
+		// Use a production-ready encoder for Loki with full timestamps
+		lokiEncoderConfig := zap.NewProductionEncoderConfig()
+		lokiEncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+		lokiEncoderConfig.TimeKey = "time"
+		lokiEncoderConfig.MessageKey = "msg"
+		lokiEncoderConfig.LevelKey = "level"
+
+		lokiEncoder := zapcore.NewJSONEncoder(lokiEncoderConfig)
 		lokiCore := zapcore.NewCore(
 			lokiEncoder,
-			zapcore.AddSync(lokiHook),
+			zapcore.AddSync(lokiWriter),
 			atomicLevel,
 		)
-
-		core = zapcore.NewTee(append(cores, lokiCore)...)
+		cores = append(cores, lokiCore)
 	}
+
+	core = zapcore.NewTee(cores...)
+	logger = zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
 
 	// Add prefix if provided
 	if prefix != "" {

@@ -75,7 +75,7 @@ func LoadConfig() (*Config, error) {
 			Endpoint string
 		}{
 			Enabled:  getEnv("LOKI_ENABLED", "true") == "true",
-			Endpoint: getEnv("LOKI_ENDPOINT", "https://loki-production-893b.up.railway.app"),
+			Endpoint: getEnv("LOKI_ENDPOINT", "https://loki-production-0e7b.up.railway.app/loki/api/v1/push"),
 		}),
 		Tempo: struct {
 			Enabled  bool   `json:"enabled"`

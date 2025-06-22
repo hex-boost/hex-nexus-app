@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
@@ -19,6 +22,24 @@ type LokiHook struct {
 	batchDelay time.Duration
 	logChan    chan *lokiEntry
 	stopChan   chan struct{}
+}
+
+type LokiWriter struct {
+	hook  *LokiHook
+	level zapcore.Level // Default level to use when writing
+}
+
+func NewLokiWriter(hook *LokiHook, level zapcore.Level) *LokiWriter {
+	return &LokiWriter{
+		hook:  hook,
+		level: level,
+	}
+}
+
+// Write implements io.Writer
+func (w *LokiWriter) Write(p []byte) (n int, err error) {
+	// Call the hook's Write method
+	return w.hook.Write(p)
 }
 
 type lokiEntry struct {
@@ -52,26 +73,43 @@ func NewLokiHook(cfg *config.Config) *LokiHook {
 	return hook
 }
 
-func (h *LokiHook) Write(p []byte, level zapcore.Level, t time.Time) (n int, err error) {
-	// Parse the log entry
+func (h *LokiHook) Write(p []byte) (n int, err error) {
 	var fields map[string]interface{}
 	if err := json.Unmarshal(p, &fields); err != nil {
-		// If parsing fails, send the raw message
+		// If parsing fails, send the raw message with current time.
 		h.logChan <- &lokiEntry{
-			timestamp: t,
-			level:     level,
-			message:   string(p),
+			timestamp: time.Now(),
+			level:     zapcore.WarnLevel,
+			message:   fmt.Sprintf("failed to unmarshal log: %s", string(p)),
+			fields:    map[string]interface{}{"error": err.Error()},
 		}
 		return len(p), nil
 	}
 
-	// Extract message field
+	// Extract message
 	msg, _ := fields["msg"].(string)
 	delete(fields, "msg")
 
+	// Extract and parse timestamp
+	entryTime := time.Now() // Default to now
+	if tsStr, ok := fields["time"].(string); ok {
+		// Using RFC3339 which is compatible with ISO8601TimeEncoder
+		if parsedTime, err := time.Parse(time.RFC3339, tsStr); err == nil {
+			entryTime = parsedTime
+		}
+	}
+	delete(fields, "time")
+
+	// Extract and parse level
+	entryLevel := zapcore.InfoLevel // Default to info
+	if lvlStr, ok := fields["level"].(string); ok {
+		_ = entryLevel.UnmarshalText([]byte(lvlStr))
+	}
+	delete(fields, "level")
+
 	h.logChan <- &lokiEntry{
-		timestamp: t,
-		level:     level,
+		timestamp: entryTime,
+		level:     entryLevel,
 		message:   msg,
 		fields:    fields,
 	}
@@ -109,6 +147,10 @@ func (h *LokiHook) batchProcessor() {
 func (h *LokiHook) sendBatch(batch []*lokiEntry) {
 	// Convert batch to Loki format
 	lokiBatch := h.convertToLokiBatch(batch)
+
+	if len(lokiBatch.Streams) == 0 {
+		return
+	}
 
 	// Serialize to JSON
 	jsonData, err := json.Marshal(lokiBatch)
@@ -195,25 +237,36 @@ type lokiEntryValue struct {
 	msg string
 }
 
+var labelRegex = regexp.MustCompile(`(\w+)="([^"]*)"`)
+
 func labelsToString(labels map[string]string) string {
-	// Simple implementation - in a real app, you'd want to escape values properly
-	result := "{"
-	first := true
-	for k, v := range labels {
-		if !first {
-			result += ","
-		}
-		result += fmt.Sprintf("%s=\"%s\"", k, v)
-		first = false
+	keys := make([]string, 0, len(labels))
+	for k := range labels {
+		keys = append(keys, k)
 	}
-	result += "}"
-	return result
+	sort.Strings(keys)
+
+	var b strings.Builder
+	b.WriteString("{")
+	for i, k := range keys {
+		if i > 0 {
+			b.WriteString(",")
+		}
+		fmt.Fprintf(&b, `%s="%s"`, k, labels[k])
+	}
+	b.WriteString("}")
+	return b.String()
 }
 
 func parseLabelsString(s string) map[string]string {
-	// For simplicity - in a real implementation this would properly parse the label string
-	// This is just a placeholder for the structure
-	return map[string]string{"app": "nexus-app"}
+	labels := make(map[string]string)
+	matches := labelRegex.FindAllStringSubmatch(s, -1)
+	for _, match := range matches {
+		if len(match) == 3 {
+			labels[match[1]] = match[2]
+		}
+	}
+	return labels
 }
 
 func (h *LokiHook) Stop() {
