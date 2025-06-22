@@ -45,7 +45,10 @@ export const useUserStore = create<AuthState>((set, get) => ({
 
     // Set logger context
     if (user && user.id && user.username) {
-      LogService.Info(logComponent, 'Setting user context for logging', { userId: user.id, username: user.username });
+      LogService.Info(logComponent, 'Setting user context for logging', {
+        userId: user.id,
+        username: user.username,
+      });
       LogService.SetUserContext(String(user.id), user.username).catch(err =>
         LogService.Error(logComponent, 'Failed to set user context', { error: err }),
       );
@@ -55,7 +58,7 @@ export const useUserStore = create<AuthState>((set, get) => ({
   },
 
   logout: () => {
-    LogService.Info(logComponent, 'User logging out. Clearing user context and local storage.');
+    LogService.Info(logComponent, 'User logging out. Clearing user context and local storage.', {});
     localStorage.clear();
     BaseClient.ClearJWT();
 

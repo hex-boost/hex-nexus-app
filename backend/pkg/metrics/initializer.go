@@ -47,7 +47,6 @@ func logStartupInfo(logger *zap.Logger, cfg *config.Config) {
 	logger.Info("Application started",
 		zap.String("version", cfg.Version),
 		zap.Bool("debug", cfg.Debug),
-		zap.String("auth_type", cfg.LeagueAuthType),
 		zap.Bool("loki_enabled", cfg.Loki.Enabled),
 		zap.Bool("tempo_enabled", cfg.Tempo.Enabled),
 		zap.Bool("prometheus_enabled", cfg.Prometheus.Enabled),

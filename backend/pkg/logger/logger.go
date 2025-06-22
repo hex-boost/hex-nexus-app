@@ -86,6 +86,9 @@ func New(prefix string, config *config.Config) *Logger {
 
 	// Create the logger
 	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
+
+	// This section was causing the issue - it was adding another Loki core and
+	// trying to reassign to core without properly wrapping it in a contextCore
 	if config.Loki.Enabled {
 		lokiHook := NewLokiHook(config)
 
@@ -96,7 +99,11 @@ func New(prefix string, config *config.Config) *Logger {
 			atomicLevel,
 		)
 
-		core = zapcore.NewTee(append(cores, lokiCore)...)
+		// Fix: Wrap the new tee in a contextCore struct
+		core = &contextCore{zapcore.NewTee(append(cores, lokiCore)...)}
+
+		// Update the logger with the new core
+		logger = zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
 	}
 
 	// Add prefix if provided
