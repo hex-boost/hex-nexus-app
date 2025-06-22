@@ -63,7 +63,6 @@ func New(prefix string, config *config.Config) *Logger {
 		fmt.Printf("Warning: Could not create logs directory: %v. Continuing with console logging only.\n", err)
 	}
 
-	// Loki core
 	if config.Loki.Enabled {
 		lokiHook := NewLokiHook(config)
 		lokiWriter := NewLokiWriter(lokiHook, getLogLevel(config.LogLevel))
@@ -94,24 +93,6 @@ func New(prefix string, config *config.Config) *Logger {
 
 	// This section was causing the issue - it was adding another Loki core and
 	// trying to reassign to core without properly wrapping it in a contextCore
-	if config.Loki.Enabled {
-		lokiHook := NewLokiHook(config)
-		lokiWriter := NewLokiWriter(lokiHook, getLogLevel(config.LogLevel))
-
-		lokiEncoderConfig := zap.NewProductionEncoderConfig()
-		lokiEncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-		lokiEncoderConfig.TimeKey = "time"
-		lokiEncoderConfig.MessageKey = "msg"
-		lokiEncoderConfig.LevelKey = "level"
-		lokiEncoder := zapcore.NewJSONEncoder(lokiEncoderConfig)
-
-		lokiCore := zapcore.NewCore(
-			lokiEncoder,
-			zapcore.AddSync(lokiWriter),
-			atomicLevel,
-		)
-		cores = append(cores, lokiCore)
-	}
 	// Add prefix if provided
 	if prefix != "" {
 		logger = logger.With(zap.String("module", prefix))
