@@ -9,21 +9,19 @@ import (
 )
 
 var (
-	Version        = "dev"
-	LogLevel       = "info"
-	BackendURL     = "http://127.0.0.1:1337"
-	RefreshApiKey  = ""
-	LeagueAuthType = "local"
-	Debug          = ""
+	Version       = "dev"
+	LogLevel      = "info"
+	BackendURL    = "http://127.0.0.1:1337"
+	RefreshApiKey = ""
+	Debug         = ""
 )
 
 type Config struct {
-	Version        string `json:"version"`
-	RefreshApiKey  string `json:"refresh_api_key"`
-	LeagueAuthType string `json:"auth_type"`
-	BackendURL     string `json:"backendUrl"`
-	Debug          bool   `json:"debug"`
-	ModToolsPath   string `json:"modToolsPath"`
+	Version       string `json:"version"`
+	RefreshApiKey string `json:"refresh_api_key"`
+	BackendURL    string `json:"backendUrl"`
+	Debug         bool   `json:"debug"`
+	ModToolsPath  string `json:"modToolsPath"`
 
 	LogsDirectory string `json:"logsDirectory"`
 
@@ -51,7 +49,6 @@ func LoadConfig() (*Config, error) {
 		log.Println("Error loading .env file")
 	}
 	var isDebug bool
-	Debug = getEnv("DEBUG", "false")
 	if Debug == "true" {
 		isDebug = true
 	} else {
@@ -59,14 +56,13 @@ func LoadConfig() (*Config, error) {
 	}
 
 	config := &Config{
-		Version:        getEnv("VERSION", Version),
-		RefreshApiKey:  getEnv("REFRESH_API_KEY", RefreshApiKey),
-		LeagueAuthType: getEnv("LOGS_DIR", LeagueAuthType),
-		BackendURL:     getEnv("API_URL", BackendURL),
-		Debug:          getBoolEnv("DEBUG", isDebug),
-		ModToolsPath:   getEnv("MOD_TOOLS_PATH", ""),
-		LogsDirectory:  getEnv("LOGS_DIR", "./logs"),
-		LogLevel:       getEnv("LOG_LEVEL", LogLevel),
+		Version:       getEnv("VERSION", Version),
+		RefreshApiKey: getEnv("REFRESH_API_KEY", RefreshApiKey),
+		BackendURL:    getEnv("API_URL", BackendURL),
+		Debug:         getBoolEnv("DEBUG", isDebug),
+		ModToolsPath:  getEnv("MOD_TOOLS_PATH", ""),
+		LogsDirectory: getEnv("LOGS_DIR", "./logs"),
+		LogLevel:      getEnv("LOG_LEVEL", LogLevel),
 		Loki: struct {
 			Enabled  bool   `json:"enabled"`
 			Endpoint string `json:"endpoint"`

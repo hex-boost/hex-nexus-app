@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"context"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/telemetry"
 	"time"
 
 	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
@@ -11,24 +12,11 @@ import (
 )
 
 // InitializeObservability sets up initial metrics, traces, and logs
-func InitializeObservability(ctx context.Context, metrics *Metrics, tracer *tracing.Tracer, logger *zap.Logger, cfg *config.Config) {
-	// Send startup metrics
-	sendStartupMetrics(ctx, metrics, cfg)
-
-	// Create initial trace
+func InitializeObservability(ctx context.Context, metrics telemetry.MetricsRecorder, tracer *tracing.Tracer, logger *zap.Logger, cfg *config.Config) {
 	sendInitialTraces(ctx, tracer, logger)
 
 	// Log startup information
 	logStartupInfo(logger, cfg)
-}
-
-func sendStartupMetrics(ctx context.Context, m *Metrics, cfg *config.Config) {
-	// Record app startup
-	m.AppStartupCounter.Add(ctx, 1)
-
-	// Record system info available at startup
-	m.SystemMemoryUsage.Record(ctx, float64(getSystemMemoryUsage()))
-	m.SystemCPUUsage.Record(ctx, float64(getSystemCPUUsage()))
 }
 
 func sendInitialTraces(ctx context.Context, tracer *tracing.Tracer, logger *zap.Logger) {
@@ -64,15 +52,4 @@ func logStartupInfo(logger *zap.Logger, cfg *config.Config) {
 		zap.Bool("tempo_enabled", cfg.Tempo.Enabled),
 		zap.Bool("prometheus_enabled", cfg.Prometheus.Enabled),
 	)
-}
-
-// Helper functions to get system metrics - implement these for your platform
-func getSystemMemoryUsage() int64 {
-	// Implement this based on your platform
-	return 1000 // Placeholder value
-}
-
-func getSystemCPUUsage() float64 {
-	// Implement this based on your platform
-	return 5.0 // Placeholder value
 }

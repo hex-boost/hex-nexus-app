@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"context"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/metric"
@@ -10,10 +11,12 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.20.0"
 )
 
-type Metrics struct {
+// OtelMetrics holds the OpenTelemetry metric instruments and implements the MetricsRecorder interface.
+type OtelMetrics struct {
 	// App metrics
 	AppStartupCounter metric.Int64Counter
 	AppInfo           metric.Int64ObservableGauge
+	AppPanics         metric.Int64Counter
 
 	// System metrics
 	SystemMemoryUsage metric.Float64Histogram
@@ -32,47 +35,26 @@ type Metrics struct {
 	UserActions  metric.Int64Counter
 }
 
-func NewMetrics() *Metrics {
+// NewOtelMetrics creates a new OtelMetrics instance.
+func NewOtelMetrics() *OtelMetrics {
 	meter := otel.GetMeterProvider().Meter("nexus-app")
 
-	// App metrics
-	appStartupCounter, _ := meter.Int64Counter("app.startup",
-		metric.WithDescription("Number of application startups"))
+	appStartupCounter, _ := meter.Int64Counter("app.startup", metric.WithDescription("Number of application startups"))
+	appInfo, _ := meter.Int64ObservableGauge("app.info", metric.WithDescription("Application information"))
+	appPanics, _ := meter.Int64Counter("app.panics", metric.WithDescription("Number of application panics"))
+	systemMemory, _ := meter.Float64Histogram("system.memory.usage", metric.WithDescription("System memory usage in MB"))
+	systemCPU, _ := meter.Float64Histogram("system.cpu.usage", metric.WithDescription("System CPU usage percentage"))
+	leagueClients, _ := meter.Int64Counter("league.clients.connected", metric.WithDescription("Number of League client connections"))
+	leagueErrors, _ := meter.Int64Counter("league.clients.errors", metric.WithDescription("Number of League client errors"))
+	httpDuration, _ := meter.Float64Histogram("http.request.duration", metric.WithDescription("Duration of HTTP requests"))
+	httpCount, _ := meter.Int64Counter("http.request.count", metric.WithDescription("Count of HTTP requests"))
+	userSessions, _ := meter.Int64UpDownCounter("user.sessions", metric.WithDescription("Number of active user sessions"))
+	userActions, _ := meter.Int64Counter("user.actions", metric.WithDescription("Count of user actions"))
 
-	appInfo, _ := meter.Int64ObservableGauge("app.info",
-		metric.WithDescription("Application information"))
-
-	// System metrics
-	systemMemory, _ := meter.Float64Histogram("system.memory.usage",
-		metric.WithDescription("System memory usage in MB"))
-
-	systemCPU, _ := meter.Float64Histogram("system.cpu.usage",
-		metric.WithDescription("System CPU usage percentage"))
-
-	// League metrics
-	leagueClients, _ := meter.Int64Counter("league.clients.connected",
-		metric.WithDescription("Number of League client connections"))
-
-	leagueErrors, _ := meter.Int64Counter("league.clients.errors",
-		metric.WithDescription("Number of League client errors"))
-
-	// Network metrics
-	httpDuration, _ := meter.Float64Histogram("http.request.duration",
-		metric.WithDescription("Duration of HTTP requests"))
-
-	httpCount, _ := meter.Int64Counter("http.request.count",
-		metric.WithDescription("Count of HTTP requests"))
-
-	// User metrics
-	userSessions, _ := meter.Int64UpDownCounter("user.sessions",
-		metric.WithDescription("Number of active user sessions"))
-
-	userActions, _ := meter.Int64Counter("user.actions",
-		metric.WithDescription("Count of user actions"))
-
-	return &Metrics{
+	return &OtelMetrics{
 		AppStartupCounter:       appStartupCounter,
 		AppInfo:                 appInfo,
+		AppPanics:               appPanics,
 		SystemMemoryUsage:       systemMemory,
 		SystemCPUUsage:          systemCPU,
 		LeagueClientConnections: leagueClients,
@@ -82,6 +64,36 @@ func NewMetrics() *Metrics {
 		UserSessions:            userSessions,
 		UserActions:             userActions,
 	}
+}
+
+// IncrementAppPanics increases the count of application panics.
+func (m *OtelMetrics) IncrementAppPanics(ctx context.Context) {
+	m.AppPanics.Add(ctx, 1)
+}
+
+// IncrementAppStartup increases the count of application startups.
+func (m *OtelMetrics) IncrementAppStartup(ctx context.Context) {
+	m.AppStartupCounter.Add(ctx, 1)
+}
+
+// RecordHttpRequestDuration records the duration of an HTTP request.
+func (m *OtelMetrics) RecordHttpRequestDuration(ctx context.Context, duration float64) {
+	m.HttpRequestDuration.Record(ctx, duration)
+}
+
+// IncrementHttpRequestCount increases the count of HTTP requests.
+func (m *OtelMetrics) IncrementHttpRequestCount(ctx context.Context) {
+	m.HttpRequestCount.Add(ctx, 1)
+}
+
+// IncrementUserSessions increases the count of active user sessions.
+func (m *OtelMetrics) IncrementUserSessions(ctx context.Context) {
+	m.UserSessions.Add(ctx, 1)
+}
+
+// DecrementUserSessions decreases the count of active user sessions.
+func (m *OtelMetrics) DecrementUserSessions(ctx context.Context) {
+	m.UserSessions.Add(ctx, -1)
 }
 
 func InitPrometheusExporter() (*prometheus.Exporter, error) {
@@ -97,13 +109,11 @@ func InitPrometheusExporter() (*prometheus.Exporter, error) {
 		semconv.ServiceName("nexus-app"),
 	)
 
-	// Set up the meter provider with the exporter and resource
 	provider := sdkmetric.NewMeterProvider(
 		sdkmetric.WithResource(res),
 		sdkmetric.WithReader(exporter),
 	)
 
-	// Set the global meter provider
 	otel.SetMeterProvider(provider)
 
 	return exporter, nil

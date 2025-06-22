@@ -2,15 +2,13 @@ package logger
 
 import (
 	"fmt"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-
-	"github.com/hex-boost/hex-nexus-app/backend/internal/config"
 )
 
 type Logger struct {
@@ -23,8 +21,6 @@ type Loggerer interface {
 }
 
 func New(prefix string, config *config.Config) *Logger {
-	// Try to create logs directory
-
 	// Core configuration
 	encoderConfig := zap.NewDevelopmentEncoderConfig()
 	encoderConfig.TimeKey = "time"
@@ -33,24 +29,23 @@ func New(prefix string, config *config.Config) *Logger {
 	encoderConfig.EncodeCaller = zapcore.ShortCallerEncoder            // Shorter caller path
 	encoderConfig.StacktraceKey = "stacktrace"
 
-	consoleEncoder := zapcore.NewConsoleEncoder(encoderConfig)
-
 	// Determine log level
 	zapLogLevel := getLogLevel(config.LogLevel)
 	atomicLevel := zap.NewAtomicLevelAt(zapLogLevel)
 
-	// Always have console logging
-	cores := []zapcore.Core{
-		zapcore.NewCore(
-			consoleEncoder,
-			zapcore.AddSync(os.Stdout),
-			atomicLevel,
-		),
-	}
+	var cores []zapcore.Core
 
+	// Console core
+	consoleEncoder := zapcore.NewConsoleEncoder(encoderConfig)
+	cores = append(cores, zapcore.NewCore(
+		consoleEncoder,
+		zapcore.AddSync(os.Stdout),
+		atomicLevel,
+	))
+
+	// File core
 	logFilePath := filepath.Join(config.LogsDirectory, "app.log")
-	err := os.MkdirAll(config.LogsDirectory, os.ModePerm)
-	if err == nil {
+	if err := os.MkdirAll(config.LogsDirectory, os.ModePerm); err == nil {
 		fileEncoder := zapcore.NewConsoleEncoder(encoderConfig)
 		cores = append(cores, zapcore.NewCore(
 			fileEncoder,
@@ -67,22 +62,18 @@ func New(prefix string, config *config.Config) *Logger {
 		fmt.Printf("Warning: Could not create logs directory: %v. Continuing with console logging only.\n", err)
 	}
 
-	// Create the logger with available cores
-	core := zapcore.NewTee(cores...)
-	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
+	// Loki core
 	if config.Loki.Enabled {
 		lokiHook := NewLokiHook(config)
-
 		lokiWriter := NewLokiWriter(lokiHook, getLogLevel(config.LogLevel))
 
-		// Use a production-ready encoder for Loki with full timestamps
 		lokiEncoderConfig := zap.NewProductionEncoderConfig()
 		lokiEncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 		lokiEncoderConfig.TimeKey = "time"
 		lokiEncoderConfig.MessageKey = "msg"
 		lokiEncoderConfig.LevelKey = "level"
-
 		lokiEncoder := zapcore.NewJSONEncoder(lokiEncoderConfig)
+
 		lokiCore := zapcore.NewCore(
 			lokiEncoder,
 			zapcore.AddSync(lokiWriter),
@@ -91,8 +82,10 @@ func New(prefix string, config *config.Config) *Logger {
 		cores = append(cores, lokiCore)
 	}
 
-	core = zapcore.NewTee(cores...)
-	logger = zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
+	core := &contextCore{zapcore.NewTee(cores...)}
+
+	// Create the logger
+	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
 
 	// Add prefix if provided
 	if prefix != "" {

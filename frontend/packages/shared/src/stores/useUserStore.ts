@@ -17,7 +17,8 @@ const getUserFromStorage = () => {
     return null;
   }
   try {
-    return JSON.parse(userStr);
+    const user = JSON.parse(userStr) as UserType;
+    return user;
   } catch (e) {
     console.error('Erro ao processar dados do usuário do localStorage', e);
     return null;
@@ -35,20 +36,38 @@ export const useUserStore = create<AuthState>((set, get) => ({
     set({ jwt });
     localStorage.setItem('authToken', jwt);
   },
-  login: (user: UserType, jwt: string) => {
-    localStorage.setItem('user', JSON.stringify(user));
-    localStorage.setItem('authToken', jwt);
-    BaseClient.SetJWT(jwt);
+    login: (user: UserType, jwt: string) => {
+        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('authToken', jwt);
+        BaseClient.SetJWT(jwt);
 
-    set({ user, jwt });
-  },
+        // Set logger context
+        if (user && user.id && user.username) {
+            logger.info('Setting user context for logging', { userId: user.id, username: user.username });
+            SetUserContext(String(user.id), user.username).catch((err) =>
+                logger.error('Failed to set user context', { error: err }),
+            );
+        }
 
-  logout: () => {
-    localStorage.clear();
-    BaseClient.ClearJWT();
+        set({ user, jwt });
+    },
 
-    set({ user: null, jwt: '' });
-  },
+    logout: () => {
+        logger.info('User logging out. Clearing user context and local storage.');
+        localStorage.clear();
+        BaseClient.ClearJWT();
 
+        // Clear logger context
+        ClearUserContext().catch((err) => logger.error('Failed to clear user context', { error: err }));
   isAuthenticated: () => get().user != null,
 }));
+const initialUser = useUserStore.getState().user;
+if (initialUser && initialUser.id && initialUser.username) {
+    logger.info('Setting initial user context from stored session', {
+        userId: initialUser.id,
+        username: initialUser.username,
+    });
+    SetUserContext(String(initialUser.id), initialUser.username).catch((err) =>
+        logger.error('Failed to set initial user context', { error: err }),
+    );
+}

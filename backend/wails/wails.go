@@ -20,6 +20,7 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/websocket/handler"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/systemtray"
+	"github.com/hex-boost/hex-nexus-app/backend/internal/telemetry"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/updater"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/command"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/hwid"
@@ -104,30 +105,26 @@ func RunWithRetry(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte
 }
 func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256 []byte) {
 	cfg, _ := config.LoadConfig()
+	logger.InitSession(cfg) // Initialize logger session context
 	watchdogLog := logger.New("watchdog", cfg)
 	mainLogger := logger.New("Startup", cfg)
-
-	appMetrics := metrics.NewMetrics()
 	ctx, bgCancel := context.WithCancel(context.Background())
 	defer bgCancel()
-	mainLogger.Info("LOKI_TEST_LOG: Application starting - testing Loki integration",
-		zap.String("test_id", "loki-connection-test"),
-		zap.String("version", cfg.Version),
-		zap.Bool("loki_enabled", cfg.Loki.Enabled),
-		zap.String("loki_endpoint", cfg.Loki.Endpoint))
-	// Initialize tracer
+
+	var appMetrics telemetry.MetricsRecorder = metrics.NewOtelMetrics()
+
 	tracer, err := tracing.NewTracer(context.Background(), cfg, mainLogger.Logger)
 	if err != nil {
 		mainLogger.Error("Failed to initialize tracer", zap.Error(err))
 	}
 
-	// Initialize observability manager
 	obsManager := observability.NewManager(cfg, mainLogger.Logger)
 	err = obsManager.Start()
 	if err != nil {
 		mainLogger.Error("Failed to start observability manager", zap.Error(err))
 	}
 
+	// The concrete metrics implementation is passed here, but could be used via interface
 	metrics.InitializeObservability(ctx, appMetrics, tracer, mainLogger.Logger, cfg)
 
 	if cfg.Prometheus.Enabled {
@@ -302,13 +299,16 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 	websocketRouter := websocket.NewRouter(appInstance.Log().League())
 	websocketManager := websocket.NewManager()
 	websocketService := websocket.NewService(appInstance.Log().League(), accountMonitor, leagueService, lcuConn, accountClient, websocketRouter, websocketHandler, websocketManager)
-
+	mainLogger.Info("Initializing logger service for frontend")
+	frontendLogger := logger.New("frontend", cfg)
+	logService := logger.NewLogService(frontendLogger)
 	mainLogger.Info("Creating main application with services")
 
 	mainApp := application.New(application.Options{
 		Name:        "Nexus",
 		Description: "Nexus",
 		PanicHandler: func(err any) {
+			appMetrics.IncrementAppPanics(ctx)
 			mainLogger.Error("Application panic occurred", zap.Any("error", err))
 			panic(fmt.Sprintf("Nexus panic: %v", err))
 		},
@@ -363,6 +363,7 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 			application.NewService(lcuConn),
 			application.NewService(baseClient),
 			application.NewService(accountClient),
+			application.NewService(logService),
 			application.NewService(accountMonitor),
 			application.NewService(leagueManager),
 			application.NewService(stripeService),
