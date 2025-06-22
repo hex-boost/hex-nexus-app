@@ -73,6 +73,10 @@ func New(prefix string, config *config.Config) *Logger {
 		lokiEncoderConfig.TimeKey = "time"
 		lokiEncoderConfig.MessageKey = "msg"
 		lokiEncoderConfig.LevelKey = "level"
+		lokiEncoderConfig.CallerKey = "caller"
+
+		lokiEncoderConfig.EncodeCaller = zapcore.ShortCallerEncoder
+		lokiEncoderConfig.StacktraceKey = "stacktrace"
 		lokiEncoder := zapcore.NewJSONEncoder(lokiEncoderConfig)
 
 		lokiCore := zapcore.NewCore(
