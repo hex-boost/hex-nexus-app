@@ -325,9 +325,9 @@ func (s *Service) Logout() error {
 
 func (s *Service) GetAuthenticationState() (*types.RiotIdentityResponse, error) {
 	s.clientMutex.RLock()
+	defer s.clientMutex.RUnlock()
 
 	if s.client == nil {
-		s.clientMutex.RUnlock()
 
 		return nil, errors.New("client is not initialized")
 	}
@@ -337,7 +337,6 @@ func (s *Service) GetAuthenticationState() (*types.RiotIdentityResponse, error) 
 		s.logger.Error("Authentication failed", zap.Error(err))
 		return nil, err
 	}
-	s.clientMutex.RUnlock()
 
 	if result.IsError() {
 		s.logger.Error("Authentication failed",

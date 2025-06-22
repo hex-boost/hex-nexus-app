@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -57,6 +58,46 @@ func StartWatchdog() (*os.Process, error) {
 	return watchdogProcess, nil
 }
 
+func RunWithRetry(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256 []byte, maxRetries int) {
+	retryCount := 0
+
+	for retryCount <= maxRetries {
+		func() {
+			defer func() {
+				cfg, err := config.LoadConfig()
+				if err != nil {
+					log.Printf("Error loading config: %v\n", err)
+					return
+				}
+				logger := logger.New("RunWithRetry", cfg)
+				if r := recover(); r != nil {
+					errorMsg := fmt.Sprint(r)
+
+					if strings.Contains(errorMsg, "[WebView2 Error] The parameter is incorrect") {
+						retryCount++
+						if retryCount <= maxRetries {
+							logger.Error(fmt.Sprintf("WebView2 initialization error detected. Retrying (%d/%d) after delay...\n",
+								retryCount, maxRetries))
+							time.Sleep(2 * time.Second) // Add a delay before retrying
+						} else {
+							logger.Error(fmt.Sprintf("Failed to start application after %d attempts. Giving up.\n", maxRetries))
+							panic(fmt.Sprintf("Failed to start after %d retries: %v", maxRetries, errorMsg))
+						}
+					} else {
+						logger.Fatal("panic recover:", zap.Error(err), zap.Error(fmt.Errorf("application panicked: %v", r)))
+						panic(fmt.Sprintf("recover panic %v", r))
+					}
+				}
+			}()
+
+			// Call the original Run function
+			Run(assets, csLolDLL, modToolsExe, catalog, icon16, icon256)
+
+			// If Run completes without panic, break out of the retry loop
+			retryCount = maxRetries + 1
+		}()
+	}
+}
 func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256 []byte) {
 	cfg, _ := config.LoadConfig()
 	watchdogLog := logger.New("watchdog", cfg)
