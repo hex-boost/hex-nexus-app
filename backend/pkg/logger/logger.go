@@ -86,6 +86,18 @@ func New(prefix string, config *config.Config) *Logger {
 
 	// Create the logger
 	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
+	if config.Loki.Enabled {
+		lokiHook := NewLokiHook(config)
+
+		lokiEncoder := zapcore.NewJSONEncoder(encoderConfig)
+		lokiCore := zapcore.NewCore(
+			lokiEncoder,
+			zapcore.AddSync(lokiHook),
+			atomicLevel,
+		)
+
+		core = zapcore.NewTee(append(cores, lokiCore)...)
+	}
 
 	// Add prefix if provided
 	if prefix != "" {
