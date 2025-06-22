@@ -296,7 +296,10 @@ func (m *Monitor) processEvents() {
 			if m.window != nil {
 				m.logger.Debug("Emitting event",
 					zap.String("event", event.EventName))
-				m.window.EmitEvent(event.EventName, event.Data...)
+
+				application.InvokeSync(func() {
+					m.window.EmitEvent(event.EventName, event.Data...)
+				})
 			}
 		case <-m.stopChan:
 			m.logger.Debug("Event processor stopping")

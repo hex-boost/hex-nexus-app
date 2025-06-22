@@ -8,6 +8,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/lcu"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
@@ -456,7 +457,7 @@ func (s *Client) GetGameflowSession() (*types.LolGameflowV1Session, error) {
 	return &lolGameflowSession, nil
 }
 
-func (s *Client) GetLeaverBuster() (*types.LeaverBusterResponse, error) {
+func (s *Client) GetLeaverBuster(currentPlatformId string) (*types.LeaverBusterResponse, error) {
 	s.logger.Debug("Fetching current leaver buster")
 	lcuClient, err := s.conn.GetClient()
 	if err != nil {
@@ -476,6 +477,14 @@ func (s *Client) GetLeaverBuster() (*types.LeaverBusterResponse, error) {
 		s.logger.Warn(errMsg)
 		return nil, errors.New(errMsg)
 	}
+	platformIdUpper := strings.ToUpper(currentPlatformId)
+	leagueEdgeURL, ok := types.LeagueEdgeURL[platformIdUpper]
+	if !ok {
+		errMsg := fmt.Sprintf("league edge URL not found for platform ID: %s", currentPlatformId)
+		s.logger.Error(errMsg)
+		return nil, errors.New(errMsg)
+	}
+	leaverBusterUrl := fmt.Sprintf("%s/leaverbuster-ledge/restrictionInfo", leagueEdgeURL)
 
 	var leaverBuster types.LeaverBusterResponse
 	riotGamesClient := resty.New()
@@ -483,7 +492,7 @@ func (s *Client) GetLeaverBuster() (*types.LeaverBusterResponse, error) {
 		SetResult(&leaverBuster).
 		SetAuthScheme("Bearer").
 		SetAuthToken(leaverBusterToken).
-		Get("https://euw-red.lol.sgp.pvp.net/leaverbuster-ledge/restrictionInfo")
+		Get(leaverBusterUrl)
 
 	if err != nil {
 		s.logger.Error("Error fetching current leaver buster data", zap.Error(err))

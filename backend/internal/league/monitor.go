@@ -400,7 +400,11 @@ func (cm *Monitor) emitEvent(name string, data ...any) {
 	defer cm.eventMutex.Unlock()
 
 	if cm.app != nil {
-		cm.app.EmitEvent(name, data...)
+		application.InvokeSync(func() {
+			cm.app.EmitEvent(name, data...)
+		},
+		)
+
 	}
 
 }

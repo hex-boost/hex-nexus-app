@@ -2,6 +2,7 @@ package logger
 
 import (
 	"fmt"
+	"gopkg.in/natefinch/lumberjack.v2"
 	"os"
 	"path/filepath"
 	"strings"
@@ -23,8 +24,6 @@ type Loggerer interface {
 
 func New(prefix string, config *config.Config) *Logger {
 	// Try to create logs directory
-	logFilePath := filepath.Join(config.LogsDirectory, "app.log")
-	err := os.MkdirAll(config.LogsDirectory, os.ModePerm)
 
 	// Core configuration
 	encoderConfig := zap.NewDevelopmentEncoderConfig()
@@ -71,6 +70,18 @@ func New(prefix string, config *config.Config) *Logger {
 	// Create the logger with available cores
 	core := zapcore.NewTee(cores...)
 	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
+	//if config.Loki != nil && config.Loki.Enabled {
+	//	lokiHook := NewLokiHook(config)
+	//
+	//	lokiEncoder := zapcore.NewJSONEncoder(encoderConfig)
+	//	lokiCore := zapcore.NewCore(
+	//		lokiEncoder,
+	//		zapcore.AddSync(lokiHook),
+	//		atomicLevel,
+	//	)
+	//
+	//	core = zapcore.NewTee(append(cores, lokiCore)...)
+	//}
 
 	// Add prefix if provided
 	if prefix != "" {

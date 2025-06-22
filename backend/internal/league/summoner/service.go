@@ -35,8 +35,10 @@ func (l *Service) UpdateFromLCU() (*types.PartialSummonerRented, error) {
 		partyRestrictions int
 	)
 
+	platformId := make(chan string)
 	eg, _ := errgroup.WithContext(context.Background())
 	eg.Go(func() error {
+		defer close(platformId) // Ensure channel is closed to prevent receiver deadlock
 		userinfoResponse, err := l.client.GetUserInfo()
 		if err != nil {
 			l.logger.Error("Failed to get current summoner")
@@ -44,11 +46,29 @@ func (l *Service) UpdateFromLCU() (*types.PartialSummonerRented, error) {
 		}
 		mu.Lock()
 		userinfo = *userinfoResponse
+		platformId <- userinfo.LOL.CPID
 		mu.Unlock()
 		return nil
 	})
 
 	eg.Go(func() error {
+		cpid, ok := <-platformId
+		if !ok {
+			l.logger.Error("Failed to get platform id from user info")
+			return nil
+		}
+		leaverBusterResponse, err := l.client.GetLeaverBuster(cpid)
+		if err != nil {
+			l.logger.Error("Failed to get leaver buster")
+			return err
+		}
+		mu.Lock()
+		leaverBuster = *leaverBusterResponse
+		mu.Unlock()
+		return nil
+	})
+	eg.Go(func() error {
+
 		partyRestriction, err := l.client.GetPartyRestrictions()
 		if err != nil {
 			l.logger.Error("Failed to get current summoner")
@@ -56,17 +76,6 @@ func (l *Service) UpdateFromLCU() (*types.PartialSummonerRented, error) {
 		}
 		mu.Lock()
 		partyRestrictions = partyRestriction.PunishedGamesRemaining
-		mu.Unlock()
-		return nil
-	})
-	eg.Go(func() error {
-		leaverBusterResponse, err := l.client.GetLeaverBuster()
-		if err != nil {
-			l.logger.Error("Failed to get leaver buster")
-			return err
-		}
-		mu.Lock()
-		leaverBuster = *leaverBusterResponse
 		mu.Unlock()
 		return nil
 	})
