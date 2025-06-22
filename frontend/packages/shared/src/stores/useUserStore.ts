@@ -47,7 +47,7 @@ export const useUserStore = create<AuthState>((set, get) => ({
     if (user && user.id && user.username) {
       LogService.Info(logComponent, 'Setting user context for logging', { userId: user.id, username: user.username });
       LogService.SetUserContext(String(user.id), user.username).catch(err =>
-        new LogService.Error(logComponent, 'Failed to set user context', { error: err }),
+        LogService.Error(logComponent, 'Failed to set user context', { error: err }),
       );
     }
 
@@ -60,7 +60,7 @@ export const useUserStore = create<AuthState>((set, get) => ({
     BaseClient.ClearJWT();
 
     // Clear LogService context
-    LogService.ClearUserContext().catch(err => new LogService.Error(logComponent, 'Failed to clear user context', { error: err }));
+    LogService.ClearUserContext().catch(err => LogService.Error(logComponent, 'Failed to clear user context', { error: err }));
   },
   isAuthenticated: () => get().user != null,
 
@@ -72,6 +72,6 @@ if (initialUser && initialUser.id && initialUser.username) {
     username: initialUser.username,
   });
   LogService.SetUserContext(String(initialUser.id), initialUser.username).catch(err =>
-    new LogService.Error(logComponent, 'Failed to set initial user context', { error: err }),
+    LogService.Error(logComponent, 'Failed to set initial user context', { error: err }),
   );
 }

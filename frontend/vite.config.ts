@@ -1,11 +1,11 @@
-import path, {dirname} from 'node:path';
+import path, { dirname } from 'node:path';
 
-import {fileURLToPath} from 'node:url';
+import { fileURLToPath } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 import TanStackRouterVite from '@tanstack/router-plugin/vite';
 
 import react from '@vitejs/plugin-react';
-import {defineConfig} from 'vite';
+import { defineConfig } from 'vite';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -23,6 +23,7 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'packages/shared/src'),
       '@summonerClient': path.resolve(__dirname, 'packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/internal/league/summoner'),
 
+      '@logger': path.resolve(__dirname, 'packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/pkg/logger'),
       '@types': path.resolve(__dirname, 'packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/types'),
       '@shared': path.resolve(__dirname, 'packages/shared'),
       '@app': path.resolve(__dirname, 'packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/app'),

@@ -8,6 +8,9 @@
         "shared/src/*"
       ],
 
+      "@logger": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
+      ],
       "@types": [
         "main/bindings/github.com/hex-boost/hex-nexus-app/backend/types"
       ],

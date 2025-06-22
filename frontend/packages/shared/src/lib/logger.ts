@@ -65,7 +65,7 @@ export const logger = {
 
     // Send logs to the backend, ensuring error is serializable
     const data = error ? { error: serializeError(error) } : null;
-    new LogService.Error(component, message, data ?? null).catch((err) => {
+    LogService.Error(component, message, data ?? null).catch((err) => {
       console.error(`[logger] Failed to send ERROR log to backend for component ${component}:`, err);
     });
   },
