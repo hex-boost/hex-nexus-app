@@ -21,14 +21,15 @@ type Loggerer interface {
 }
 
 func New(prefix string, config *config.Config) *Logger {
-	// Core configuration
-	encoderConfig := zap.NewDevelopmentEncoderConfig()
-	encoderConfig.TimeKey = "time"
-	encoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout("15:04:05") // Shorter time format
-	encoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder       // Color-coded log levels
-	encoderConfig.EncodeCaller = zapcore.ShortCallerEncoder            // Shorter caller path
-	encoderConfig.StacktraceKey = "stacktrace"
+	consoleEncoderConfig := zap.NewDevelopmentEncoderConfig()
+	consoleEncoderConfig.TimeKey = "time"
+	consoleEncoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout("15:04:05") // Shorter time format
+	consoleEncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder       // Color-coded log levels
+	consoleEncoderConfig.EncodeCaller = zapcore.ShortCallerEncoder            // Shorter caller path
+	consoleEncoderConfig.StacktraceKey = "stacktrace"
 
+	fileEncoderConfig := consoleEncoderConfig
+	fileEncoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder // No color
 	// Determine log level
 	zapLogLevel := getLogLevel(config.LogLevel)
 	atomicLevel := zap.NewAtomicLevelAt(zapLogLevel)
@@ -36,7 +37,7 @@ func New(prefix string, config *config.Config) *Logger {
 	var cores []zapcore.Core
 
 	// Console core
-	consoleEncoder := zapcore.NewConsoleEncoder(encoderConfig)
+	consoleEncoder := zapcore.NewConsoleEncoder(consoleEncoderConfig)
 	cores = append(cores, zapcore.NewCore(
 		consoleEncoder,
 		zapcore.AddSync(os.Stdout),
@@ -46,7 +47,7 @@ func New(prefix string, config *config.Config) *Logger {
 	// File core
 	logFilePath := filepath.Join(config.LogsDirectory, "app.log")
 	if err := os.MkdirAll(config.LogsDirectory, os.ModePerm); err == nil {
-		fileEncoder := zapcore.NewConsoleEncoder(encoderConfig)
+		fileEncoder := zapcore.NewConsoleEncoder(fileEncoderConfig) // Use non-colored encoder
 		cores = append(cores, zapcore.NewCore(
 			fileEncoder,
 			zapcore.AddSync(&lumberjack.Logger{
@@ -91,21 +92,22 @@ func New(prefix string, config *config.Config) *Logger {
 	// trying to reassign to core without properly wrapping it in a contextCore
 	if config.Loki.Enabled {
 		lokiHook := NewLokiHook(config)
+		lokiWriter := NewLokiWriter(lokiHook, getLogLevel(config.LogLevel))
 
-		lokiEncoder := zapcore.NewJSONEncoder(encoderConfig)
+		lokiEncoderConfig := zap.NewProductionEncoderConfig()
+		lokiEncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+		lokiEncoderConfig.TimeKey = "time"
+		lokiEncoderConfig.MessageKey = "msg"
+		lokiEncoderConfig.LevelKey = "level"
+		lokiEncoder := zapcore.NewJSONEncoder(lokiEncoderConfig)
+
 		lokiCore := zapcore.NewCore(
 			lokiEncoder,
-			zapcore.AddSync(lokiHook),
+			zapcore.AddSync(lokiWriter),
 			atomicLevel,
 		)
-
-		// Fix: Wrap the new tee in a contextCore struct
-		core = &contextCore{zapcore.NewTee(append(cores, lokiCore)...)}
-
-		// Update the logger with the new core
-		logger = zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
+		cores = append(cores, lokiCore)
 	}
-
 	// Add prefix if provided
 	if prefix != "" {
 		logger = logger.With(zap.String("module", prefix))
