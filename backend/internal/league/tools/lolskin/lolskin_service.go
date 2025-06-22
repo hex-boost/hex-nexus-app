@@ -20,9 +20,6 @@ type AccountClient interface {
 	UserMe() (*types.User, error)
 }
 
-type App interface {
-	EmitEvent(name string, data ...any)
-}
 type SummonerClient interface {
 	GetRanking() (*types.RankedStatsRefresh, error)
 	GetLeaverBuster() (*types.LeaverBusterResponse, error)
@@ -40,18 +37,15 @@ type eventRequest struct {
 }
 
 type Service struct {
-	logger                   logger.Loggerer
-	accountClient            AccountClient
-	accountState             AccountState
-	lolSkin                  *LolSkin
-	isLolSkinEnabled         bool
-	eventCh                  chan eventRequest
-	lolSkinState             LolSkinState
-	previousChampionInjected int
-	app                      App
-	eventMutex               sync.Mutex
-	ctx                      context.Context
-	lolSkinService           *Service
+	logger           logger.Loggerer
+	accountClient    AccountClient
+	accountState     AccountState
+	lolSkin          *LolSkin
+	isLolSkinEnabled bool
+	lolSkinState     LolSkinState
+	eventMutex       sync.Mutex
+	ctx              context.Context
+	lolSkinService   *Service
 }
 
 func NewService(logger logger.Loggerer, accountState AccountState, accountClient AccountClient, lolSkin *LolSkin, state LolSkinState) *Service {
@@ -61,7 +55,6 @@ func NewService(logger logger.Loggerer, accountState AccountState, accountClient
 		accountState:     accountState,  // Should be set externally
 		lolSkin:          lolSkin,
 		isLolSkinEnabled: false,
-		eventCh:          make(chan eventRequest, 10),
 		lolSkinState:     state,
 		ctx:              context.Background(),
 	}
@@ -70,7 +63,6 @@ func (h *Service) ToggleLolSkinEnabled(enabled bool) {
 	h.isLolSkinEnabled = enabled
 	if !enabled {
 		h.lolSkin.StopRunningPatcher()
-		h.previousChampionInjected = 0 // Reset if skin feature is disabled
 	} else {
 		h.StartInjection()
 	}

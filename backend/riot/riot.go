@@ -27,7 +27,7 @@ import (
 
 type Service struct {
 	client      *resty.Client
-	clientMutex sync.Mutex // Add this mutex
+	clientMutex sync.RWMutex // Add this mutex
 
 	logger        *logger.Logger
 	captcha       *captcha.Captcha
@@ -50,6 +50,8 @@ func NewService(logger *logger.Logger, captcha *captcha.Captcha, accountClient *
 }
 
 func (s *Service) ResetRestyClient() {
+	s.clientMutex.Lock()
+	defer s.clientMutex.Unlock()
 	s.client = nil
 }
 
@@ -103,6 +105,8 @@ func (s *Service) getCredentials(riotClientPid int) (port string, authToken stri
 }
 
 func (s *Service) LoginWithCaptcha(ctx context.Context, username, password, captchaToken string) (string, error) {
+	s.clientMutex.RLock()
+	defer s.clientMutex.RUnlock()
 	s.logger.Info("Authenticating with captcha token", zap.String("token_length", fmt.Sprintf("%d", len(captchaToken))))
 
 	authPayload := types.Authentication{
@@ -172,6 +176,7 @@ func (s *Service) LoginWithCaptcha(ctx context.Context, username, password, capt
 	return "", errors.New("authentication with captcha failed")
 }
 func (s *Service) Launch() error {
+
 	s.ResetRestyClient()
 	s.logger.Info("Attempting to launch Riot client")
 	var riotClientPath string
@@ -254,6 +259,9 @@ func (s *Service) SetupCaptchaVerification() error {
 }
 
 func (s *Service) completeAuthentication(loginToken string) error {
+	s.clientMutex.RLock()
+	defer s.clientMutex.RUnlock()
+
 	var loginTokenResp types.LoginTokenResponse
 	putResp, err := s.client.R().
 		SetBody(types.LoginTokenRequest{
@@ -281,6 +289,8 @@ func (s *Service) completeAuthentication(loginToken string) error {
 }
 
 func (s *Service) getAuthorization() (map[string]interface{}, error) {
+	s.clientMutex.RLock()
+	defer s.clientMutex.RUnlock()
 	var authResult map[string]interface{}
 	postResp, err := s.client.R().
 		SetBody(getAuthorizationRequestPayload()).
@@ -314,7 +324,11 @@ func (s *Service) Logout() error {
 }
 
 func (s *Service) GetAuthenticationState() (*types.RiotIdentityResponse, error) {
+	s.clientMutex.RLock()
+
 	if s.client == nil {
+		s.clientMutex.RUnlock()
+
 		return nil, errors.New("client is not initialized")
 	}
 	var getCurrentAuthResult types.RiotIdentityResponse
@@ -323,6 +337,7 @@ func (s *Service) GetAuthenticationState() (*types.RiotIdentityResponse, error) 
 		s.logger.Error("Authentication failed", zap.Error(err))
 		return nil, err
 	}
+	s.clientMutex.RUnlock()
 
 	if result.IsError() {
 		s.logger.Error("Authentication failed",

@@ -1,6 +1,7 @@
 package wails
 
 import (
+	"context"
 	"embed"
 	"fmt"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/tools/lolskin"
@@ -340,8 +341,6 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 		},
 	)
 
-	websocketHandler.SetApp(mainApp)
-
 	//overlayWindow := gameOverlay.CreateGameOverlay(mainApp)
 	//gameOverlayManager.SetWindow(overlayWindow)
 	mainWindow.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
@@ -365,10 +364,11 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 	})
 
 	systemTray := systemtray.New(mainWindow, icon16, accountMonitor, leagueManager, logger.New("SystemTray", cfg))
-	appProtocol.SetWindow(mainWindow)
-	captchaService.SetWindow(captchaWindow)
 	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(ctx *application.WindowEvent) {
-
+		go websocketHandler.ProcessEvents(context.Background())
+		appProtocol.SetWindow(mainWindow)
+		captchaService.SetWindow(captchaWindow)
+		websocketHandler.SetApp(mainApp)
 		websocketService.Start(mainApp)
 		systemTray.Setup()
 		websocketService.SubscribeToLeagueEvents()

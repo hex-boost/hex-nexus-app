@@ -39,8 +39,6 @@ func NewService(logger *logger.Logger, api *account.Client, summonerService *sum
 func (s *Service) GetPath() string {
 	programData := os.Getenv("PROGRAMDATA")
 	if programData == "" {
-		// Defaulting, though on Windows PROGRAMDATA should usually be set.
-		// Consider if a more robust default or error handling is needed if it's critical.
 		programData = "C:\\ProgramData"
 	}
 

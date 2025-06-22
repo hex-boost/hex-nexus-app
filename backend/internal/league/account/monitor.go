@@ -123,7 +123,7 @@ func NewMonitor(
 }
 func (m *Monitor) OnStartup(ctx context.Context, options application.ServiceOptions) error {
 	m.ctx = ctx
-	m.Start(application.Get().GetWindowByName("Main"))
+	m.Start(application.Get())
 	m.logger.Info("STARTUP MONITOR")
 	return nil
 }

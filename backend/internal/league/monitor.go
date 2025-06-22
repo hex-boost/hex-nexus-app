@@ -483,6 +483,7 @@ func (cm *Monitor) Stop() {
 }
 
 // OpenWebviewAndGetToken opens a webview for captcha and returns the token
+// OpenWebviewAndGetToken opens a webview for captcha and returns the token
 func (cm *Monitor) OpenWebviewAndGetToken() (string, error) {
 	// Check if captcha flow is already in progress
 	if !cm.captchaFlowInProgress.CompareAndSwap(false, true) {
@@ -511,11 +512,15 @@ func (cm *Monitor) OpenWebviewAndGetToken() (string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	var showOnce sync.Once
 	cancelEvent := webview.OnWindowEvent(events.Windows.WebViewNavigationCompleted, func(event *application.WindowEvent) {
-		cm.logger.Info("Webview navigation completed")
-		time.Sleep(500 * time.Millisecond)
-		webview.Show()
-		webview.Focus()
+		showOnce.Do(func() {
+			cm.logger.Info("Webview navigation completed")
+			time.Sleep(500 * time.Millisecond)
+			webview.Show()
+			webview.Focus()
+		})
 	})
 	defer cancelEvent()
 

@@ -62,10 +62,17 @@ func (s *Service) IsAuthenticationReady() bool {
 }
 
 func (s *Service) IsClientInitialized() bool {
+	s.clientMutex.RLock()
+	defer s.clientMutex.RUnlock()
 	return s.client != nil
 }
 
 func (s *Service) GetUserinfo() (*types.UserInfo, error) {
+	s.clientMutex.RLock()
+	defer s.clientMutex.RUnlock()
+	if s.client == nil {
+		return nil, errors.New("client is not initialized")
+	}
 	var rawResponse types.RCUUserinfo
 	resp, err := s.client.R().SetResult(&rawResponse).Get("/rso-auth/v1/authorization/userinfo")
 	if err != nil {

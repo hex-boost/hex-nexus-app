@@ -78,24 +78,18 @@ func New(logger logger.Loggerer, accountState AccountState, accountClient Accoun
 	}
 
 }
-func (h *Handler) OnStartup(ctx context.Context, options application.ServiceOptions) error {
-	h.ctx = ctx
-	go h.processEvents(ctx)
-
-	return nil
-}
-func (h *Handler) processEvents(ctx context.Context) {
+func (h *Handler) ProcessEvents(ctx context.Context) {
 	for {
 		select {
 		case req := <-h.eventCh:
-			h.logger.Debug("Emitting event", zap.String("name", req.name))
 			h.eventMutex.Lock()
-			if h.app == nil {
+			if h.app != nil {
+				h.logger.Debug("Emitting event", zap.String("name", req.name))
+				h.app.EmitEvent(req.name, req.data...)
+			} else {
+				h.app = application.Get()
 				h.logger.Error("App is not set, cannot emit event", zap.String("name", req.name))
-				h.eventMutex.Unlock()
-				continue
 			}
-			h.app.EmitEvent(req.name, req.data...)
 			h.eventMutex.Unlock()
 
 		case <-ctx.Done():
@@ -104,7 +98,10 @@ func (h *Handler) processEvents(ctx context.Context) {
 		}
 	}
 }
+
 func (h *Handler) SetApp(app App) {
+	h.eventMutex.Lock()
+	defer h.eventMutex.Unlock()
 	h.app = app
 }
 func (h *Handler) ProcessAccountUpdate(update *types.PartialSummonerRented) error {
