@@ -1,3 +1,25 @@
+import { LogService } from '@logger';
+
+// Helper to serialize error objects for logging
+function serializeError(error: any) {
+  if (error instanceof Error) {
+    // Standard Error object
+    return {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+    };
+  }
+  // For other object-like errors
+  if (typeof error === 'object' && error !== null) {
+    return error;
+  }
+  // For primitive types
+  return {
+    value: String(error),
+  };
+}
+
 export const logger = {
   info: (component: string, message: any, data?: any) => {
     const logEntry = {
@@ -9,8 +31,10 @@ export const logger = {
     };
     console.log(`[${logEntry.timestamp}] [${logEntry.level}] [${component}] ${message}`, data || '');
 
-    // You can also send logs to the backend if needed
-    // app.Log.Info(`[${component}] ${message} ${data ? JSON.stringify(data) : ''}`);
+    // Send logs to the backend
+    LogService.Info(component, String(message), data ?? null).catch((err) => {
+      console.error(`[logger] Failed to send INFO log to backend for component ${component}:`, err);
+    });
   },
 
   warn: (component: string, message: string, data?: any) => {
@@ -23,7 +47,10 @@ export const logger = {
     };
     console.warn(`[${logEntry.timestamp}] [${logEntry.level}] [${component}] ${message}`, data || '');
 
-    // app.Log.Warning(`[${component}] ${message} ${data ? JSON.stringify(data) : ''}`);
+    // Send logs to the backend
+    LogService.Warn(component, message, data ?? null).catch((err) => {
+      console.error(`[logger] Failed to send WARN log to backend for component ${component}:`, err);
+    });
   },
 
   error: (component: string, message: string, error?: any) => {
@@ -36,6 +63,10 @@ export const logger = {
     };
     console.error(`[${logEntry.timestamp}] [${logEntry.level}] [${component}] ${message}`, error || '');
 
-    // app.Log.Error(`[${component}] ${message} ${error ? JSON.stringify(error) : ''}`);
+    // Send logs to the backend, ensuring error is serializable
+    const data = error ? { error: serializeError(error) } : null;
+    new LogService.Error(component, message, data ?? null).catch((err) => {
+      console.error(`[logger] Failed to send ERROR log to backend for component ${component}:`, err);
+    });
   },
 };

@@ -20,8 +20,11 @@ func InitSession(config *config.Config) {
 	defer contextMu.Unlock()
 	contextFields["sessionID"] = uuid.New().String()
 	contextFields["appVersion"] = config.Version
-
-	contextFields["debug"] = string(config.Debug)
+	if config.Debug {
+		contextFields["debug"] = "true"
+	} else {
+		contextFields["debug"] = "false"
+	}
 }
 
 // SetUser sets the user for the current logging context. Call with an empty string on logout.

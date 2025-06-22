@@ -10,6 +10,10 @@
       "@types": [
         "main/bindings/github.com/hex-boost/hex-nexus-app/backend/types"
       ],
+
+      "@logger": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
+      ],
       "@summonerClient": [
         "main/bindings/github.com/hex-boost/hex-nexus-app/backend/internal/league/summoner"
       ],
