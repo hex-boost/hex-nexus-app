@@ -1,4 +1,5 @@
 import { ErrorPage } from '@/components/error-page.tsx';
+import { Button } from '@/components/ui/button.tsx';
 import { PremiumPaymentModal } from '@/features/payment/PremiumPaymentModal.tsx';
 import { useLocalStorage } from '@/hooks/use-local-storage.tsx';
 import { useGoState } from '@/hooks/useGoBindings.ts';
@@ -104,7 +105,16 @@ function RootLayout() {
   }, [isAuthenticated, user, isLolskinEnabled]);
   return (
     <>
-
+      {
+        import.meta.env.VITE_NODE_ENV === 'development' && (
+          <Button onClick={() => {
+            throw new Error('Sentry test error');
+          }}
+          >
+            Send Sentry Error
+          </Button>
+        )
+      }
       <PremiumPaymentModal currency={currency} isOpen={isOpen} tier={tier} paymentMethod={paymentMethod} amount={amount} onClose={close} />
       <Outlet />
     </>
