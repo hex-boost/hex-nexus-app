@@ -65,7 +65,7 @@ export const useUserStore = create<AuthState>((set, get) => ({
     // Clear LogService context
     LogService.ClearUserContext().catch(err => LogService.Error(logComponent, 'Failed to clear user context', { error: err }));
   },
-  isAuthenticated: () => get().user != null,
+  isAuthenticated: () => (get().jwt != null || get().jwt !== ''),
 
 }));
 const initialUser = useUserStore.getState().user;
