@@ -7,7 +7,7 @@ import { RouterProvider } from '@tanstack/react-router';
 import { FlagProvider } from '@unleash/proxy-client-react';
 import React, { lazy, Suspense, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom/client';
-import { router } from './instrument.ts';
+import { router, unleashClient } from './instrument.ts';
 import '@/index.css';
 
 // Lazy load the production version of devtools
@@ -25,14 +25,6 @@ const queryClient = new QueryClient({
     },
   },
 });
-
-const client = {
-  url: 'https://primary-production-8693.up.railway.app/api/frontend',
-  clientKey: '*:production.825408eb4a39c1335a6a4c258a24fe77e93c547a38209badd5ee2f6a',
-  appName: 'my-frontend-app',
-  environment: 'production',
-  refreshInterval: 15, // seconds
-};
 
 // Create a wrapper component to handle the devtools
 function App() {
@@ -56,7 +48,7 @@ function App() {
       />
       <QueryClientProvider client={queryClient}>
 
-        <FlagProvider config={client}>
+        <FlagProvider unleashClient={unleashClient}>
           <RouterProvider router={router} />
         </FlagProvider>
         {/* Development devtools - automatically excluded in production */}

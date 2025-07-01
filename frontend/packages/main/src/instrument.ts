@@ -1,8 +1,16 @@
 import { useUserStore } from '@/stores/useUserStore.ts';
 import * as Sentry from '@sentry/react';
 import { createRouter } from '@tanstack/react-router';
+import { UnleashClient } from 'unleash-proxy-client';
 import { routeTree } from './routeTree.gen.ts';
 
+export const unleashClient = new UnleashClient({
+  url: 'https://primary-production-8693.up.railway.app/api/frontend',
+  clientKey: '*:production.825408eb4a39c1335a6a4c258a24fe77e93c547a38209badd5ee2f6a',
+  appName: 'my-frontend-app',
+  environment: 'production',
+  refreshInterval: 15, // seconds
+});
 export const router = createRouter({
   routeTree,
   context: {
@@ -16,6 +24,8 @@ Sentry.init({
   dsn: 'https://57f976075a4fde7d718f64a14383e365@o4509556130578433.ingest.us.sentry.io/4509585352097792', // <-- Paste your DSN here
   integrations: [
     Sentry.tanstackRouterBrowserTracingIntegration(router),
+    Sentry.unleashIntegration({ featureFlagClientClass: UnleashClient }),
+
     Sentry.breadcrumbsIntegration({
       fetch: true,
       xhr: true,
