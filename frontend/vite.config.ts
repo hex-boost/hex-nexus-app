@@ -1,6 +1,7 @@
 import path, { dirname } from 'node:path';
-
 import { fileURLToPath } from 'node:url';
+
+import { sentryVitePlugin } from '@sentry/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import TanStackRouterVite from '@tanstack/router-plugin/vite';
 
@@ -15,8 +16,18 @@ export default defineConfig({
     TanStackRouterVite({ target: 'react', autoCodeSplitting: true }),
     react(),
     tailwindcss(),
+    sentryVitePlugin({
+      org: 'nexus-cj',
+      project: 'javascript-react',
+      authToken: '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',
+      release: {
+        name: process.env.VITE_APP_VERSION || 'development',
+        dist: 'app-frontend',
+      },
 
+    }),
   ],
+
   resolve: {
     alias: {
       // This is the key change - ensure this works for imports from both packages
@@ -46,4 +57,5 @@ export default defineConfig({
       '@time': path.resolve(__dirname, 'packages/main/bindings/time'),
     },
   },
+
 });

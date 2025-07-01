@@ -1,4 +1,5 @@
 import type { UserType } from '@/types/types';
+import { Button } from '@/components/ui/button.tsx';
 import { Separator } from '@/components/ui/separator.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import FavoriteAccounts from '@/features/favorite-account/components/FavoriteAccounts.tsx';
@@ -69,6 +70,16 @@ export default function Dashboard({ user }: { user: UserType | null }) {
   return (
     <div className="space-y-6">
 
+      {
+        import.meta.env.MODE === 'development' && (
+          <Button onClick={() => {
+            throw new Error('Sentry test error');
+          }}
+          >
+            Send Sentry Error
+          </Button>
+        )
+      }
       {
         import.meta.env.MODE === 'development' && (
           <Link to="/overlay">FOASDKOASKDOASK</Link>

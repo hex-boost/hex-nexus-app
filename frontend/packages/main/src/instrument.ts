@@ -3,7 +3,7 @@ import * as Sentry from '@sentry/react';
 import { createRouter } from '@tanstack/react-router';
 import { routeTree } from './routeTree.gen.ts';
 
-const router = createRouter({
+export const router = createRouter({
   routeTree,
   context: {
     auth: {
@@ -11,25 +11,30 @@ const router = createRouter({
     },
   },
 });
+const release = import.meta.env.VITE_APP_VERSION || 'development';
 Sentry.init({
-  dsn: 'https://fb7a9853fa49781ef802ebe56bb0a1f1@o4509556130578433.ingest.us.sentry.io/4509556317093888', // <-- Paste your DSN here
+  dsn: 'https://57f976075a4fde7d718f64a14383e365@o4509556130578433.ingest.us.sentry.io/4509585352097792', // <-- Paste your DSN here
   integrations: [
     Sentry.tanstackRouterBrowserTracingIntegration(router),
     Sentry.breadcrumbsIntegration({
+      fetch: true,
+      xhr: true,
+      history: true,
+
       console: true,
       dom: true,
-      fetch: true,
-      history: true,
-      xhr: true,
     }),
     Sentry.consoleLoggingIntegration({ levels: ['log', 'error', 'warn'] }),
+    Sentry.replayIntegration(),
 
   ],
+  release,
+  replaysSessionSampleRate: 1.0, // Sample 10% of sessions for general analysis
+  replaysOnErrorSampleRate: 1.0,
+  _experiments: { enableLogs: true },
+  tracePropagationTargets: [import.meta.env.VITE_API_URL || 'http://localhost:1337', /^\/api\//],
 
-  // We recommend adjusting this value in production, or using tracesSampler
-  // for finer control
-  tracesSampleRate: 1.0,
+  tracesSampleRate: 0, // Disable performance monitoring
   sendDefaultPii: true,
-  // Set an environment
-  environment: process.env.NODE_ENV,
+  environment: import.meta.env.VITE_NODE_ENV || 'development',
 });
