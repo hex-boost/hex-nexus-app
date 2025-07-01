@@ -39,7 +39,7 @@ Sentry.init({
 
   ],
   release,
-  replaysSessionSampleRate: 1.0, // Sample 10% of sessions for general analysis
+  replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1.0,
   _experiments: { enableLogs: true },
   tracePropagationTargets: [import.meta.env.VITE_API_URL || 'http://localhost:1337', /^\/api\//],
