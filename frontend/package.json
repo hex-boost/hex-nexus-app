@@ -46,6 +46,7 @@
     "@tanstack/react-router": "^1.114.17",
     "@tanstack/react-virtual": "^3.13.4",
     "@types/howler": "^2.2.12",
+    "@unleash/proxy-client-react": "^5.0.0",
     "@wailsio/runtime": "^3.0.0-alpha.66",
     "axios": "^1.10.0",
     "class-variance-authority": "^0.7.1",

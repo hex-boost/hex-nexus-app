@@ -9,6 +9,7 @@ import { useUserStore } from '@/stores/useUserStore';
 import { BaseClient } from '@client';
 import { State as LolSkinState, Service } from '@lolskin';
 import { createRootRouteWithContext, Outlet, redirect } from '@tanstack/react-router';
+import { useFlag } from '@unleash/proxy-client-react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 import '@wailsio/runtime';
@@ -47,6 +48,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 function RootLayout() {
   const { isOpen, tier, paymentMethod, amount, close, currency } = usePremiumPaymentModalStore();
   const [isLolskinEnabled] = useLocalStorage<boolean>('lolskin-enabled', false);
+  const isNewPayment = useFlag('is-new-payment');
   const { jwt, user, isAuthenticated } = useUserStore();
 
   useGoState();
@@ -57,6 +59,7 @@ function RootLayout() {
       BaseClient.ClearJWT();
     }
   }, [jwt]);
+  console.log('isNewPayment', isNewPayment);
   useEffect(() => {
     // Only run if user is authenticated and premium features are available
     if (!isAuthenticated() || !user) {

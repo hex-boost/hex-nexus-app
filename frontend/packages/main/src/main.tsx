@@ -1,11 +1,12 @@
 import { Toaster } from '@/components/ui/sonner.tsx';
 import * as Sentry from '@sentry/react';
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { RouterProvider } from '@tanstack/react-router';
+import { FlagProvider } from '@unleash/proxy-client-react';
 import React, { lazy, Suspense, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom/client';
-import { UnleashClient } from 'unleash-proxy-client';
 import { router } from './instrument.ts';
 import '@/index.css';
 
@@ -25,30 +26,13 @@ const queryClient = new QueryClient({
   },
 });
 
-const client = new UnleashClient({
-  url: 'https://primary-production-8693.up.railway.app/api/frontend/',
+const client = {
+  url: 'https://primary-production-8693.up.railway.app/api/frontend',
   clientKey: '*:production.825408eb4a39c1335a6a4c258a24fe77e93c547a38209badd5ee2f6a',
   appName: 'my-frontend-app',
   environment: 'production',
   refreshInterval: 15, // seconds
-});
-client.start();
-
-client.on('synchronized', () => {
-  console.log('Unleash client is synchronized with the server.');
-
-  // Check a feature flag
-  if (client.isEnabled('some-flag')) {
-    // do cool new things when the flag is enabled
-  }
-});
-client.on('ready', () => {
-  if (client.isEnabled('is-new-payment')) {
-    console.log('Feature flag \'your-feature-flag\' is enabled');
-  } else {
-    console.log('Feature flag \'your-feature-flag\' is disabled');
-  }
-});
+};
 
 // Create a wrapper component to handle the devtools
 function App() {
@@ -71,8 +55,10 @@ function App() {
         }}
       />
       <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
 
+        <FlagProvider config={client}>
+          <RouterProvider router={router} />
+        </FlagProvider>
         {/* Development devtools - automatically excluded in production */}
         <ReactQueryDevtools initialIsOpen={false} />
 
@@ -93,4 +79,6 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement, {
   }),
   onCaughtError: Sentry.reactErrorHandler(),
   onRecoverableError: Sentry.reactErrorHandler(),
-}).render(<App />);
+}).render(
+  <App />,
+);
