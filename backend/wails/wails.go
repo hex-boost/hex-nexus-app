@@ -13,7 +13,6 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/lcu"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/manager"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log/slog"
 	"strings"
 
@@ -28,7 +27,6 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/hwid"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/metrics"
-	"github.com/hex-boost/hex-nexus-app/backend/pkg/observability"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/process"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/tracing"
 	"github.com/hex-boost/hex-nexus-app/backend/protocol"
@@ -37,7 +35,6 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/stripe"
 	"github.com/hex-boost/hex-nexus-app/backend/watchdog"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
@@ -119,30 +116,30 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 		mainLogger.Error("Failed to initialize tracer", zap.Error(err))
 	}
 
-	obsManager := observability.NewManager(cfg, mainLogger.Logger)
-	err = obsManager.Start()
-	if err != nil {
-		mainLogger.Error("Failed to start observability manager", zap.Error(err))
-	}
+	//obsManager := observability.NewManager(cfg, mainLogger.Logger)
+	//err = obsManager.Start()
+	//if err != nil {
+	//	mainLogger.Error("Failed to start observability manager", zap.Error(err))
+	//}
 
 	// The concrete metrics implementation is passed here, but could be used via interface
-	metrics.InitializeObservability(ctx, appMetrics, tracer, mainLogger.Logger, cfg)
-
-	if cfg.Prometheus.Enabled {
-		_, err := metrics.InitPrometheusExporter()
-		if err != nil {
-			mainLogger.Error("Failed to create Prometheus exporter", zap.Error(err))
-		} else {
-			http.Handle("/metrics", promhttp.Handler())
-			go func() {
-				mainLogger.Info("Starting metrics server on :2112")
-				err := http.ListenAndServe(":2112", nil)
-				if err != nil {
-					mainLogger.Error("Metrics server error", zap.Error(err))
-				}
-			}()
-		}
-	}
+	//metrics.InitializeObservability(ctx, appMetrics, tracer, mainLogger.Logger, cfg)
+	//
+	//if cfg.Prometheus.Enabled {
+	//	_, err := metrics.InitPrometheusExporter()
+	//	if err != nil {
+	//		mainLogger.Error("Failed to create Prometheus exporter", zap.Error(err))
+	//	} else {
+	//		http.Handle("/metrics", promhttp.Handler())
+	//		go func() {
+	//			mainLogger.Info("Starting metrics server on :2112")
+	//			err := http.ListenAndServe(":2112", nil)
+	//			if err != nil {
+	//				mainLogger.Error("Metrics server error", zap.Error(err))
+	//			}
+	//		}()
+	//	}
+	//}
 	mainLogger.Info("Starting application initialization")
 	mainLogger.Info("Initializing App instance")
 	appInstance := app.App(cfg, logger.New("App", cfg))
@@ -452,9 +449,9 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 		if tracer != nil {
 			_ = tracer.Shutdown(ctx)
 		}
-		if obsManager != nil {
-			_ = obsManager.Stop()
-		}
+		//if obsManager != nil {
+		//	_ = obsManager.Stop()
+		//}
 		mainApp.Logger.Info("Forced close requested, shutting down")
 		clientMonitor.Stop()
 		//gameOverlayManager.Stop() // Stop the overlay manager
