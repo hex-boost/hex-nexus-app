@@ -88,12 +88,8 @@ func New(prefix string, config *config.Config) *Logger {
 
 	core := &contextCore{zapcore.NewTee(cores...)}
 
-	// Create the logger
 	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
 
-	// This section was causing the issue - it was adding another Loki core and
-	// trying to reassign to core without properly wrapping it in a contextCore
-	// Add prefix if provided
 	if prefix != "" {
 		logger = logger.With(zap.String("module", prefix))
 	}

@@ -14,6 +14,7 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/lcu"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/manager"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"log/slog"
 	"strings"
 
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/summoner"
@@ -280,6 +281,7 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 		accountClient,
 		accountState,
 	)
+	wailsLogger := logger.NewWailsAdapter(appInstance.Log().Wails())
 
 	mainLogger.Debug("Initializing discord service")
 	discordService := discord.New(appInstance.Log().Discord(), cfg)
@@ -350,6 +352,8 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 				}
 			},
 		},
+		Logger:   wailsLogger,
+		LogLevel: slog.LevelInfo,
 		Services: []application.Service{
 			application.NewService(riotService, application.ServiceOptions{
 				Name: "RiotService",
