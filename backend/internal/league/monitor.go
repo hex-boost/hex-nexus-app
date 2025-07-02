@@ -109,7 +109,7 @@ type Monitor struct {
 
 func NewMonitor(logger *logger.Logger, accountMonitor AccountMonitorer, leagueService LeagueServicer, riotAuth Authenticator, captcha Captcha, accountState AccountState, riotService RiotServicer, accountClient *account.Client) *Monitor {
 
-	logger.Info("Creating new client monitor")
+	logger.Debug("Creating new client monitor")
 	initialState := &LeagueClientState{
 		ClientState: ClientStateNone,
 	}
@@ -132,7 +132,6 @@ func NewMonitor(logger *logger.Logger, accountMonitor AccountMonitorer, leagueSe
 	}
 	monitor.isCheckingState.Store(false)
 
-	logger.Info("Creating new client monitor")
 	return monitor
 }
 

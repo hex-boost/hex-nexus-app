@@ -124,11 +124,11 @@ func NewMonitor(
 func (m *Monitor) OnStartup(ctx context.Context, options application.ServiceOptions) error {
 	m.ctx = ctx
 	m.Start(application.Get())
-	m.logger.Info("STARTUP MONITOR")
+	m.logger.Debug("STARTUP MONITOR")
 	return nil
 }
 func (m *Monitor) OnShutdown(ctx context.Context, options application.ServiceOptions) error {
-	m.logger.Info("ENDING MONITOR")
+	m.logger.Debug("ENDING MONITOR")
 	m.Stop()
 	return nil
 }
@@ -138,7 +138,7 @@ func (m *Monitor) SetWindow(window WindowEmitter) {
 }
 func (m *Monitor) Start(window WindowEmitter) {
 	m.window = window
-	m.logger.Info("Starting account monitor")
+	m.logger.Debug("Starting account monitor")
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -150,7 +150,7 @@ func (m *Monitor) Start(window WindowEmitter) {
 	m.stopChan = make(chan struct{})
 
 	go m.monitorLoop()
-	m.logger.Info("State monitor started")
+	m.logger.Debug("State monitor started")
 }
 
 func (m *Monitor) Stop() {
@@ -170,14 +170,14 @@ func (m *Monitor) monitorLoop() {
 	ticker := time.NewTicker(m.checkInterval)
 	defer ticker.Stop()
 
-	m.logger.Info("State monitor loop started", zap.Duration("checkInterval", m.checkInterval))
+	m.logger.Debug("State monitor loop started", zap.Duration("checkInterval", m.checkInterval))
 
 	for {
 		select {
 		case <-ticker.C:
 			m.checkCurrentAccount()
 		case <-m.stopChan:
-			m.logger.Info("State monitor loop terminated via stop channel")
+			m.logger.Debug("State monitor loop terminated via stop channel")
 			return
 		}
 	}

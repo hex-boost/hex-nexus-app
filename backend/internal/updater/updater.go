@@ -6,6 +6,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -151,7 +153,188 @@ func (u *UpdateManager) CheckForUpdates() (bool, string) {
 	// Just return data without managing UI state
 	return result.NeedsUpdate, result.Version
 }
+func (u *UpdateManager) getLatestVersionWithUpdater(versions []struct {
+	Version string
+	Updater *struct {
+		Url string `json:"url"`
+	}
+}) (string, error) {
+	if len(versions) == 0 {
+		return "", fmt.Errorf("no versions available")
+	}
 
+	type Version struct {
+		versionStr          string
+		updaterUrl          string
+		major, minor, patch int
+	}
+
+	var validVersions []Version
+
+	// Parse and filter versions that have updaters
+	for _, v := range versions {
+		if v.Updater == nil {
+			continue
+		}
+
+		parts := strings.Split(v.Version, ".")
+		if len(parts) != 3 {
+			continue
+		}
+
+		major, err1 := strconv.Atoi(parts[0])
+		minor, err2 := strconv.Atoi(parts[1])
+		patch, err3 := strconv.Atoi(parts[2])
+
+		if err1 != nil || err2 != nil || err3 != nil {
+			continue
+		}
+
+		validVersions = append(validVersions, Version{
+			versionStr: v.Version,
+			updaterUrl: v.Updater.Url,
+			major:      major,
+			minor:      minor,
+			patch:      patch,
+		})
+	}
+
+	if len(validVersions) == 0 {
+		return "", fmt.Errorf("no versions with updaters found")
+	}
+
+	// Sort versions in descending order (highest first)
+	sort.Slice(validVersions, func(i, j int) bool {
+		if validVersions[i].major != validVersions[j].major {
+			return validVersions[i].major > validVersions[j].major
+		}
+		if validVersions[i].minor != validVersions[j].minor {
+			return validVersions[i].minor > validVersions[j].minor
+		}
+		return validVersions[i].patch > validVersions[j].patch
+	})
+
+	// Return the URL of the highest version with updater
+	return validVersions[0].updaterUrl, nil
+}
+
+// CheckAndDownloadUpdater ensures the updater.exe exists, downloads it if missing
+func (u *UpdateManager) CheckAndDownloadUpdater() error {
+	execPath, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("failed to get executable path: %w", err)
+	}
+
+	execPath, err = filepath.Abs(execPath)
+	if err != nil {
+		return fmt.Errorf("failed to get absolute executable path: %w", err)
+	}
+
+	parentPath := filepath.Dir(execPath)
+	updaterPath := filepath.Join(filepath.Dir(parentPath), "updater.exe")
+
+	// Check if updater already exists
+	if _, err := os.Stat(updaterPath); err == nil {
+		u.logger.Info("Updater already exists", zap.String("path", updaterPath))
+		return nil
+	}
+
+	u.logger.Info("Updater not found, downloading...", zap.String("path", updaterPath))
+
+	// Download updater
+	return u.downloadUpdater(updaterPath)
+}
+
+// downloadUpdater downloads the updater executable from the API
+func (u *UpdateManager) downloadUpdater(targetPath string) error {
+	// Get updater download information
+	resp, err := u.client.R().Get(fmt.Sprintf("%s/api/versions?populate=*", u.config.BackendURL))
+	if err != nil {
+		u.logger.Error("Failed to get updater information", zap.Error(err))
+		return fmt.Errorf("failed to get updater information: %w", err)
+	}
+
+	var updaterResp VersionResponse
+
+	if err := json.Unmarshal(resp.Body(), &updaterResp); err != nil {
+		u.logger.Error("Failed to parse updater information", zap.Error(err))
+		return fmt.Errorf("failed to parse updater information: %w", err)
+	}
+
+	// Convert to format expected by GetLatestVersionWithUpdater
+	versions := make([]struct {
+		Version string
+		Updater *struct {
+			Url string `json:"url"`
+		}
+	}, len(updaterResp.Data))
+
+	for i, item := range updaterResp.Data {
+		versions[i].Version = item.Version
+		if item.Updater != nil {
+			versions[i].Updater = &struct {
+				Url string `json:"url"`
+			}{
+				Url: item.Updater.Url,
+			}
+		}
+	}
+
+	// Find the highest version with updater available
+	fileURL, err := u.getLatestVersionWithUpdater(versions)
+	if err != nil {
+		u.logger.Error("No updater found", zap.Error(err))
+		return fmt.Errorf("no updater found: %w", err)
+	}
+
+	// Add base domain if needed
+	if fileURL[0] == '/' {
+		fileURL = u.config.BackendURL + fileURL
+	}
+
+	u.logger.Info("Downloading updater from", zap.String("url", fileURL))
+
+	// Download updater
+	respDownload, err := u.client.R().
+		SetDoNotParseResponse(true).
+		Get(fileURL)
+	if err != nil {
+		u.logger.Error("Failed to download updater", zap.Error(err))
+		return fmt.Errorf("failed to download updater: %w", err)
+	}
+	defer respDownload.RawBody().Close()
+
+	// Ensure target directory exists
+	targetDir := filepath.Dir(targetPath)
+	if err := os.MkdirAll(targetDir, 0755); err != nil {
+		u.logger.Error("Failed to create target directory", zap.Error(err))
+		return fmt.Errorf("failed to create target directory: %w", err)
+	}
+
+	// Create the target file
+	outFile, err := os.Create(targetPath)
+	if err != nil {
+		u.logger.Error("Failed to create updater file", zap.Error(err))
+		return fmt.Errorf("failed to create updater file: %w", err)
+	}
+	defer outFile.Close()
+
+	// Copy the downloaded content
+	written, err := io.Copy(outFile, respDownload.RawBody())
+	if err != nil {
+		u.logger.Error("Failed to save updater file", zap.Error(err))
+		return fmt.Errorf("failed to save updater file: %w", err)
+	}
+
+	// Ensure file is written to disk
+	outFile.Sync()
+
+	u.logger.Info("Downloaded updater successfully",
+		zap.String("path", targetPath),
+		zap.Int64("bytes", written))
+
+	return nil
+}
 func (u *UpdateManager) DownloadUpdate() (downloadPath string, version string, err error) {
 	// Get update information
 	resp, err := u.client.R().Get(fmt.Sprintf("%s/api/versions/latest", u.config.BackendURL))

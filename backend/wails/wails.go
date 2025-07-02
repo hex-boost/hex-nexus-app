@@ -270,6 +270,10 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 	newUpdaterUtils := updaterUtils.New(appInstance.Log().Wails())
 	updateManager := updater.NewUpdateManager(cfg, newUpdaterUtils, appInstance.Log().League())
 
+	if err := updateManager.CheckAndDownloadUpdater(); err != nil {
+		mainLogger.Error("Failed to ensure updater exists", zap.Error(err))
+	}
+
 	mainLogger.Debug("Initializing account monitor")
 	accountMonitor := account.NewMonitor(
 		appInstance.Log().Riot(),
