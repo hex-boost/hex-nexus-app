@@ -21,7 +21,7 @@ export const router = createRouter({
 });
 const release = import.meta.env.VITE_APP_VERSION || 'development';
 Sentry.init({
-  dsn: 'https://57f976075a4fde7d718f64a14383e365@o4509556130578433.ingest.us.sentry.io/4509585352097792', // <-- Paste your DSN here
+  dsn: 'https://57f976075a4fde7d718f64a14383e365@o4509556130578433.ingest.us.sentry.io/4509585352097792',
   integrations: [
     Sentry.tanstackRouterBrowserTracingIntegration(router),
     Sentry.unleashIntegration({ featureFlagClientClass: UnleashClient }),

@@ -37,7 +37,7 @@ func NewClient(logger *logger.Logger, conn *lcu.Connection) *Client {
 func (s *Client) GetLoginSession() (*types.LoginSession, error) {
 	lcuClient, err := s.conn.GetClient()
 	if err != nil {
-		s.logger.Error("Failed to get LCU client for GetLoginSession", zap.Error(err))
+		s.logger.Warn("Failed to get LCU client for GetLoginSession", zap.Error(err))
 		return nil, fmt.Errorf("LCU client unavailable for GetLoginSession: %w", err)
 	}
 
@@ -61,7 +61,7 @@ func (s *Client) GetCurrentSummoner() (*types.CurrentSummoner, error) {
 	s.logger.Debug("Fetching summoner data")
 	lcuClient, err := s.conn.GetClient()
 	if err != nil {
-		s.logger.Error("Failed to get LCU client for GetCurrentSummoner", zap.Error(err))
+		s.logger.Warn("Failed to get LCU client for GetCurrentSummoner", zap.Error(err))
 		return nil, fmt.Errorf("LCU client unavailable for GetCurrentSummoner: %w", err)
 	}
 
@@ -266,7 +266,7 @@ func (s *Client) GetRanking() (*types.RankedStatsRefresh, error) {
 	s.logger.Info("Fetching ranking data")
 	lcuClient, err := s.conn.GetClient()
 	if err != nil {
-		s.logger.Error("Failed to get LCU client for GetRanking", zap.Error(err))
+		s.logger.Warn("Failed to get LCU client for GetRanking", zap.Error(err))
 		return nil, fmt.Errorf("LCU client unavailable for GetRanking: %w", err)
 	}
 
@@ -330,14 +330,14 @@ func (s *Client) GetLolChat() (*types.FriendPresence, error) {
 	s.logger.Debug("Fetching account region (via lol-chat)")
 	lcuClient, err := s.conn.GetClient()
 	if err != nil {
-		s.logger.Error("Failed to get LCU client for GetLolChat", zap.Error(err))
+		s.logger.Warn("Failed to get LCU client for GetLolChat", zap.Error(err))
 		return nil, fmt.Errorf("LCU client unavailable for GetLolChat: %w", err)
 	}
 
 	var friendPresence types.FriendPresence
 	resp, err := lcuClient.R().SetResult(&friendPresence).Get("/lol-chat/v1/me")
 	if err != nil {
-		s.logger.Error("Error fetching lol-chat data", zap.Error(err))
+		s.logger.Warn("Error fetching lol-chat data", zap.Error(err))
 		return nil, err
 	}
 
@@ -423,14 +423,14 @@ func (s *Client) GetGameflowSession() (*types.LolGameflowV1Session, error) {
 	s.logger.Debug("Fetching gameflow session")
 	lcuClient, err := s.conn.GetClient()
 	if err != nil {
-		s.logger.Error("Failed to get LCU client for GetGameflowSession", zap.Error(err))
+		s.logger.Warn("Failed to get LCU client for GetGameflowSession", zap.Error(err))
 		return nil, fmt.Errorf("LCU client unavailable for GetGameflowSession: %w", err)
 	}
 
 	var lolGameflowSession types.LolGameflowV1Session
 	resp, err := lcuClient.R().SetResult(&lolGameflowSession).Get("/lol-gameflow/v1/session")
 	if err != nil {
-		s.logger.Error("Error fetching gameflow data", zap.Error(err))
+		s.logger.Warn("Error fetching gameflow data", zap.Error(err))
 		return nil, err
 	}
 

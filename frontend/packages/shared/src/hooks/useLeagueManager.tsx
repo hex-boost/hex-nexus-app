@@ -69,7 +69,7 @@ export function useLeagueManager({
     onError: async (error: any) => {
       setIsNexusAccount(false);
       if (error) {
-        logger.error(logContext, 'Login with captcha failed', error);
+        logger.warn(logContext, 'Login with captcha failed', error);
 
         if (error.message.includes('captcha_already_in_progress')) {
           logger.warn(logContext, 'Another captcha flow is already in progress');
@@ -97,7 +97,7 @@ export function useLeagueManager({
           return;
         }
         if (error.message.includes('captcha_cancelled')) {
-          logger.warn(logContext, 'Captcha cancelled by user');
+          logger.info(logContext, 'Captcha cancelled by user');
           toast.info('Window has been closed', {
             description: 'Do you want to try again?',
             action: {

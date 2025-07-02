@@ -236,8 +236,7 @@ func (s *Service) Subscribe(eventPath string) error {
 	}
 
 	// Don't report immediate success if we haven't actually subscribed yet
-	s.logger.Info("Queued subscription for when connection is established",
-		zap.String("event", eventPath))
+	s.logger.Debug(fmt.Sprintf("Queued subscription for when connection is established eventpath: %s", eventPath))
 	return nil
 }
 
@@ -269,7 +268,7 @@ func (s *Service) sendSubscriptionImpl(eventPath string) error {
 		return err
 	}
 
-	s.logger.Info("Subscribed to event", zap.String("event", eventPath))
+	s.logger.Debug("Subscribed to event", zap.String("event", eventPath))
 	return nil
 }
 
@@ -433,7 +432,7 @@ func (s *Service) readMessages() {
 	for {
 		_, message, err := currentConn.ReadMessage()
 		if err != nil {
-			s.logger.Error("WebSocket read error", zap.Error(err))
+			s.logger.Debug("WebSocket read error", zap.Error(err))
 
 			s.mutex.Lock()
 			if s.conn == currentConn {

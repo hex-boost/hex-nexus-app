@@ -93,7 +93,7 @@ func (s *Client) UsernameExistsInDatabase(username string) (bool, error) {
 		if response.StatusCode() == 404 {
 			return false, nil
 		}
-		s.logger.Error("error checking if username exists in database", zap.Int("statusCode", response.StatusCode()), zap.Any("body", response.String()))
+		s.logger.Warn("error checking if username exists in database", zap.Int("statusCode", response.StatusCode()), zap.Any("body", response.String()))
 		return false, fmt.Errorf("error checking if username exists in database: %d - %s", response.StatusCode(), response.String())
 	}
 	return result, nil

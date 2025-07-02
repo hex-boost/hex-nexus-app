@@ -196,7 +196,7 @@ func (cm *Monitor) checkClientState() {
 			cm.logger.Debug("Riot client running but not initialized, attempting initialization...")
 			initErr := cm.riotAuth.InitializeClient()
 			if initErr != nil {
-				cm.logger.Error("Error initializing Riot client during check", zap.Error(initErr))
+				cm.logger.Warn("Error initializing Riot client during check", zap.Error(initErr))
 				// Proceed, but auth state might be unreliable
 			} else {
 				cm.logger.Info("Riot client initialized successfully during check")

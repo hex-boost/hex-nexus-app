@@ -225,12 +225,12 @@ func (s *Service) InitializeClient() error {
 	defer s.clientMutex.Unlock()
 	riotClientPid, err := s.getProcess()
 	if err != nil {
-		s.logger.Error("Failed to get Riot client pid", zap.Error(err))
+		s.logger.Warn("Failed to get Riot client pid", zap.Error(err))
 		return err
 	}
 	port, authToken, err := s.getCredentials(riotClientPid)
 	if err != nil {
-		s.logger.Error("Failed to get client credentials", zap.Error(err))
+		s.logger.Warn("Failed to get client credentials", zap.Error(err))
 		return err
 	}
 	s.logger.Debug("Credentials obtained", zap.String("port", port), zap.Any("authToken", authToken))

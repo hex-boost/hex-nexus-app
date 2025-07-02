@@ -226,7 +226,7 @@ func (m *Monitor) getUsernameByLeagueClient() (string, error) {
 
 	currentSummoner, err := m.summonerClient.GetLoginSession()
 	if err != nil {
-		m.logger.Debug("Failed to get current summoner",
+		m.logger.Warn("Failed to get current summoner",
 			zap.Error(err),
 			zap.String("errorType", fmt.Sprintf("%T", err)))
 		return "", errors.New("failed to get current summoner")
@@ -272,7 +272,7 @@ func (m *Monitor) checkCurrentAccount() {
 
 	isNexusAccount, err := m.accountClient.UsernameExistsInDatabase(strings.ToLower(currentAccount.Username))
 	if err != nil {
-		m.logger.Error("Failed to check if username exists in database", zap.Error(err))
+		m.logger.Warn("Failed to check if username exists in database", zap.Error(err))
 		return
 	}
 
