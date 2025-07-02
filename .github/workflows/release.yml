@@ -212,6 +212,33 @@ jobs:
             exit 1
           fi
           echo "✅ Installer upload completed successfully"
+          
+          echo "Uploading updater binary..."
+          UPDATER_PATH=$(find . -name "updater.exe" -type f | head -1)
+          
+          if [ -z "$UPDATER_PATH" ]; then
+            echo "❌ No updater executable found (updater.exe)"
+            exit 1
+          fi
+          
+          echo "Found updater at: $UPDATER_PATH"
+          
+          UPDATER_UPLOAD_RESULT=$(curl -v -X POST "${{env.API_URL}}/api/upload" \
+          -H "Authorization: Bearer ${{ env.API_KEY }}" \
+          -F "files=@$UPDATER_PATH" \
+          -F "refId=$VERSION_ID" \
+          -F "ref=api::version.version" \
+          -F "field=updater" \
+          -w "\nStatus code: %{http_code}" \
+          -L)
+
+          echo "Updater Upload Result:"
+          echo "$UPDATER_UPLOAD_RESULT"
+          if ! echo "$UPDATER_UPLOAD_RESULT" | grep -q "Status code: 2[0-9][0-9]"; then
+            echo "❌ Updater upload failed"
+            exit 1
+          fi
+          echo "✅ Updater upload completed successfully"
 
       - name: Configure Git User
         run: |
