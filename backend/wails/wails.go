@@ -39,7 +39,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"strconv"
 	"sync"
 	"syscall"
@@ -218,59 +217,59 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 	}
 
 	// Create a watchdog client for communication with the watchdog process
-	mainLogger.Info("Initializing WatchdogClient")
+	mainLogger.Debug("Initializing WatchdogClient")
 	watchdogClient := watchdog.NewWatchdogClient()
 
 	mainLogger = appInstance.Log().Wails()
-	mainLogger.Info("Initializing protocol handling")
+	mainLogger.Debug("Initializing protocol handling")
 	appProtocol := protocol.New(appInstance.Log().Protocol())
 	if err := appProtocol.Register(); err != nil {
-		mainLogger.Info("Warning: Failed to register custom protocol", zap.Error(err))
+		mainLogger.Debug("Warning: Failed to register custom protocol", zap.Error(err))
 	}
 	if isAdmin, _ := protocol.IsRunningAsAdmin(); isAdmin {
-		mainLogger.Info("Running as admin")
+		mainLogger.Debug("Running as admin")
 	} else {
-		mainLogger.Info("Not running as admin")
+		mainLogger.Debug("Not running as admin")
 	}
 	var mainWindow *application.WebviewWindow
 	accountState := account.NewState()
 
-	mainLogger.Info("Initializing stripeService")
+	mainLogger.Debug("Initializing stripeService")
 	stripeService := stripe.New(appInstance.Log().Stripe())
 
-	mainLogger.Info("Initializing command and process utilities")
+	mainLogger.Debug("Initializing command and process utilities")
 	cmd := command.New()
 	procs := process.New(cmd)
 
-	mainLogger.Info("Initializing LCU connection")
+	mainLogger.Debug("Initializing LCU connection")
 	lcuConn := lcu.NewConnection(appInstance.Log().League(), procs)
 
-	mainLogger.Info("Initializing clients")
+	mainLogger.Debug("Initializing clients")
 	baseClient := client.NewBaseClient(appInstance.Log().Repo(), cfg)
 	httpClient := client.NewHTTPClient(baseClient)
 	accountClient := account.NewClient(appInstance.Log().Web(), cfg, httpClient)
 	summonerClient := summoner.NewClient(appInstance.Log().League(), lcuConn)
 
-	mainLogger.Info("Initializing summoner service")
+	mainLogger.Debug("Initializing summoner service")
 	summonerService := summoner.NewService(appInstance.Log().League(), summonerClient)
 
-	mainLogger.Info("Initializing captcha service")
+	mainLogger.Debug("Initializing captcha service")
 	captchaService := captcha.New(appInstance.Log().Riot())
 
-	mainLogger.Info("Initializing league service")
+	mainLogger.Debug("Initializing league service")
 	leagueService := league.NewService(appInstance.Log().Riot(), accountClient, summonerService, lcuConn, accountState)
 
-	mainLogger.Info("Initializing lolskin injector")
+	mainLogger.Debug("Initializing lolskin injector")
 	lolskinInjector := lolskin.New(appInstance.Log().League(), leagueService.GetPath(), catalog, csLolDLL, modToolsExe)
 
-	mainLogger.Info("Initializing riot service")
+	mainLogger.Debug("Initializing riot service")
 	riotService := riot.NewService(appInstance.Log().Riot(), captchaService, accountClient)
 
-	mainLogger.Info("Initializing updater")
+	mainLogger.Debug("Initializing updater")
 	newUpdaterUtils := updaterUtils.New(appInstance.Log().Wails())
 	updateManager := updater.NewUpdateManager(cfg, newUpdaterUtils, appInstance.Log().League())
 
-	mainLogger.Info("Initializing account monitor")
+	mainLogger.Debug("Initializing account monitor")
 	accountMonitor := account.NewMonitor(
 		appInstance.Log().Riot(),
 		leagueService,
@@ -282,27 +281,27 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 		accountState,
 	)
 
-	mainLogger.Info("Initializing discord service")
+	mainLogger.Debug("Initializing discord service")
 	discordService := discord.New(appInstance.Log().Discord(), cfg)
 
 	debugMode := cfg.Debug
 
-	mainLogger.Info("Initializing client monitor")
+	mainLogger.Debug("Initializing client monitor")
 	clientMonitor := league.NewMonitor(appInstance.Log().League(), accountMonitor, leagueService, riotService, captchaService, accountState, riotService, accountClient)
 
-	mainLogger.Info("Initializing lolskin services")
+	mainLogger.Debug("Initializing lolskin services")
 	lolSkinState := lolskin.NewState()
 	lolSkinService := lolskin.NewService(appInstance.Log().League(), accountState, accountClient, lolskinInjector, lolSkinState)
 
-	mainLogger.Info("Initializing websocket services")
+	mainLogger.Debug("Initializing websocket services")
 	websocketHandler := handler.New(appInstance.Log().League(), accountState, accountClient, summonerClient, lolSkinState, lolSkinService)
 	websocketRouter := websocket.NewRouter(appInstance.Log().League())
 	websocketManager := websocket.NewManager()
 	websocketService := websocket.NewService(appInstance.Log().League(), accountMonitor, leagueService, lcuConn, accountClient, websocketRouter, websocketHandler, websocketManager)
-	mainLogger.Info("Initializing logger service for frontend")
+	mainLogger.Debug("Initializing logger service for frontend")
 	frontendLogger := logger.New("frontend", cfg)
 	logService := logger.NewLogService(frontendLogger)
-	mainLogger.Info("Creating main application with services")
+	mainLogger.Debug("Creating main application with services")
 
 	mainApp := application.New(application.Options{
 		Name:        "Nexus",
@@ -451,10 +450,8 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 		mainApp.Logger.Info("Forced close requested, shutting down")
 		clientMonitor.Stop()
 		//gameOverlayManager.Stop() // Stop the overlay manager
-		lockFilePath := filepath.Join(os.TempDir(), "Nexus.lock")
-		err := os.Remove(lockFilePath)
-		if err != nil {
-			mainApp.Logger.Error("Failed to remove lock file", zap.Error(err))
+		if updateManager != nil {
+			mainApp.Logger.Info("Stopping update manager error %v", updateManager.ReleaseMutex())
 		}
 	})
 

@@ -56,14 +56,14 @@ func main() {
 	}
 
 	// Check if another instance is already running
-	if updateManager.IsAnotherInstanceRunning() {
-		newLogger.Info("Outra instância já está em execução. Iniciando aplicação diretamente.")
-		err := updateManager.StartMainApplication("Nexus") // Replace with your default process name
-		if err != nil {
-			newLogger.Error("Erro ao iniciar o processo principal:", zap.Error(err))
-		}
-		return
-	}
+	//if updateManager.IsAnotherInstanceRunning() {
+	//	newLogger.Info("Outra instância já está em execução. Iniciando aplicação diretamente.")
+	//	err := updateManager.StartMainApplication("Nexus") // Replace with your default process name
+	//	if err != nil {
+	//		newLogger.Error("Erro ao iniciar o processo principal:", zap.Error(err))
+	//	}
+	//	return
+	//}
 
 	// Normal first instance flow - proceed with update window
 	updateWindow := updater.NewUpdaterWindow(assets, updateManager)

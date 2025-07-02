@@ -7,6 +7,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
+	"time"
+	"unsafe"
 
 	"github.com/go-resty/resty/v2"
 	updaterUtils "github.com/hex-boost/hex-nexus-app/backend/cmd/updater/utils"
@@ -24,13 +27,15 @@ type BackendUpdateStatus struct {
 }
 
 type UpdateManager struct {
-	client       *resty.Client
-	currentVer   string
-	command      *command.Command
-	updaterUtils *updaterUtils.UpdaterUtils
-	config       *config.Config
-	logger       *logger.Logger
-	app          *application.App // Added for emitting events
+	client        *resty.Client
+	currentVer    string
+	command       *command.Command
+	updaterUtils  *updaterUtils.UpdaterUtils
+	config        *config.Config
+	instanceMutex syscall.Handle
+
+	logger *logger.Logger
+	app    *application.App // Added for emitting events
 }
 
 func NewUpdateManager(config *config.Config, updaterUtils *updaterUtils.UpdaterUtils, logger *logger.Logger) *UpdateManager {
@@ -49,6 +54,62 @@ func (u *UpdateManager) emitProgress(progress float64, errorMsg string) {
 			Progress: progress,
 			Error:    errorMsg,
 		})
+	}
+}
+func (u *UpdateManager) createNamedMutex(name string) (syscall.Handle, error) {
+	kernel32 := syscall.NewLazyDLL("kernel32.dll")
+	createMutex := kernel32.NewProc("CreateMutexW")
+
+	namePtr, err := syscall.UTF16PtrFromString(name)
+	if err != nil {
+		return 0, err
+	}
+
+	handle, _, err := createMutex.Call(
+		0,                                // lpMutexAttributes
+		1,                                // bInitialOwner
+		uintptr(unsafe.Pointer(namePtr)), // lpName
+	)
+
+	if handle == 0 {
+		return 0, err
+	}
+
+	return syscall.Handle(handle), nil
+}
+func (u *UpdateManager) ReleaseMutex() error {
+	if u.instanceMutex != 0 {
+		kernel32 := syscall.NewLazyDLL("kernel32.dll")
+		releaseMutex := kernel32.NewProc("ReleaseMutex")
+		closeHandle := kernel32.NewProc("CloseHandle")
+
+		releaseMutex.Call(uintptr(u.instanceMutex))
+		closeHandle.Call(uintptr(u.instanceMutex))
+		u.instanceMutex = 0
+	}
+	return nil
+}
+func (u *UpdateManager) tryAcquireMutex(mutex syscall.Handle, timeout time.Duration) (bool, error) {
+	kernel32 := syscall.NewLazyDLL("kernel32.dll")
+	waitForSingleObject := kernel32.NewProc("WaitForSingleObject")
+
+	timeoutMs := uint32(timeout.Milliseconds())
+	if timeout == 0 {
+		timeoutMs = 0xFFFFFFFF // INFINITE
+	}
+
+	result, _, err := waitForSingleObject.Call(
+		uintptr(mutex),
+		uintptr(timeoutMs),
+	)
+
+	switch result {
+	case 0: // WAIT_OBJECT_0 - success
+		return true, nil
+	case 258: // WAIT_TIMEOUT
+		return false, nil
+	default:
+		return false, err
 	}
 }
 
@@ -281,24 +342,23 @@ func (u *UpdateManager) StartMainApplication(exeName string) error {
 }
 
 func (u *UpdateManager) IsAnotherInstanceRunning() bool {
-	// Option 1: Check for a lock file
-	lockFilePath := filepath.Join(os.TempDir(), "Nexus.lock")
+	mutexName := "Global\\NexusAppMutex"
 
-	// Try to create/open the lock file
-	file, err := os.OpenFile(lockFilePath, os.O_CREATE|os.O_EXCL|os.O_RDWR, 0o666)
+	// Platform-specific mutex creation
+	mutex, err := u.createNamedMutex(mutexName)
 	if err != nil {
-		// If we can't create the file, another instance is likely running
+		u.logger.Error("Failed to create mutex", zap.Error(err))
 		return true
 	}
 
-	// If we created the file, clean it up when the app exits
-	pid := os.Getpid()
-	_, err = fmt.Fprintf(file, "%d", pid)
-	if err != nil {
-		file.Close()
-		return false
+	// Try to acquire mutex
+	acquired, err := u.tryAcquireMutex(mutex, 100*time.Millisecond)
+	if err != nil || !acquired {
+		return true
 	}
 
+	// Store mutex reference for cleanup
+	u.instanceMutex = mutex
 	return false
 }
 
@@ -308,19 +368,15 @@ func (u *UpdateManager) StartUpdate() error {
 		return fmt.Errorf("failed to get executable path: %w", err)
 	}
 
-	// Ensure we have the absolute path
 	execPath, err = filepath.Abs(execPath)
 	if err != nil {
 		return fmt.Errorf("failed to get absolute executable path: %w", err)
 	}
 
 	parentPath := filepath.Dir(execPath)
-	// Instead of calculating grandparent path, use a hardcoded relative path or check both locations
 	updatePath := filepath.Join(filepath.Dir(parentPath), "updater.exe")
 
-	// Check if updater exists at calculated path
 	if _, err := os.Stat(updatePath); os.IsNotExist(err) {
-		// Try alternate location - same directory as the app
 		alternativePath := filepath.Join(filepath.Dir(parentPath), "updater.exe")
 		if _, err := os.Stat(alternativePath); err == nil {
 			updatePath = alternativePath
@@ -328,13 +384,18 @@ func (u *UpdateManager) StartUpdate() error {
 			return fmt.Errorf("updater.exe not found at either %s or %s", updatePath, alternativePath)
 		}
 	}
+
 	_, err = u.command.Start(updatePath, execPath)
 	if err != nil {
 		return fmt.Errorf("failed to start update process: %w", err)
 	}
 
-	lockFilePath := filepath.Join(os.TempDir(), "Nexus.lock")
-	os.Remove(lockFilePath)
+	// Release mutex before exiting
+	err = u.ReleaseMutex()
+	if err != nil {
+		u.logger.Error("Failed to release mutex", zap.Error(err))
+		return fmt.Errorf("failed to release mutex: %w", err)
+	}
 
 	os.Exit(0)
 	return nil
