@@ -506,14 +506,14 @@ func (s *Service) SubscribeToLeagueEvents() {
 			if err != nil {
 				s.logger.Error("Failed to subscribe to endpoint", zap.String("path", path), zap.Error(err))
 			}
-			s.logger.Info("Successfully subscribed to endpoint", zap.String("path", path))
+			s.logger.Debug(fmt.Sprintf("Successfully subscribed to %s endpoint ", path))
 
 		}
 	})
 
 	s.app.OnEvent(websocketEvent.LeagueWebsocketStop, func(event *application.CustomEvent) {
 		if event.Cancelled {
-			s.logger.Info("WebSocket service already stopped")
+			s.logger.Debug("WebSocket service already stopped")
 			return
 		}
 		s.isSubscribed = false
@@ -531,7 +531,7 @@ func (s *Service) SubscribeToLeagueEvents() {
 			if err != nil {
 				s.logger.Error("Failed to unsubscribe from endpoint", zap.String("path", path), zap.Error(err))
 			} else {
-				s.logger.Info("Successfully unsubscribed from endpoint", zap.String("path", path))
+				s.logger.Debug("Successfully unsubscribed from endpoint", zap.String("path", path))
 			}
 		}
 	})

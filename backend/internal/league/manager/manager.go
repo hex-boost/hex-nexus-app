@@ -103,13 +103,9 @@ func (m *Manager) ForceCloseAllClients() error {
 				err := m.cmd.Run("taskkill", "/F", "/PID", fmt.Sprintf("%d", pid))
 				if err != nil {
 					failedKills++
-					m.logger.Error("Failed to kill process",
-						zap.String("process", processName),
-						zap.Int("pid", pid),
-						zap.Error(err))
 				} else {
 					killedProcesses++
-					m.logger.Info("Successfully killed process",
+					m.logger.Debug("Successfully killed process",
 						zap.String("process", processName),
 						zap.Int("pid", pid))
 				}
@@ -118,7 +114,7 @@ func (m *Manager) ForceCloseAllClients() error {
 		}
 	}
 
-	m.logger.Info("ForceCloseAllClients completed",
+	m.logger.Debug("ForceCloseAllClients completed",
 		zap.Int("processesFound", riotProcessesFound),
 		zap.Int("processesKilled", killedProcesses),
 		zap.Int("failedKills", failedKills))

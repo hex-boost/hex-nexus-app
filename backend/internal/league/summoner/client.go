@@ -69,7 +69,7 @@ func (s *Client) GetCurrentSummoner() (*types.CurrentSummoner, error) {
 	resp, err := lcuClient.R().SetResult(&result).
 		Get("/lol-summoner/v1/current-summoner")
 	if err != nil {
-		s.logger.Error("Error fetching summoner data", zap.Error(err))
+		s.logger.Warn("Error fetching summoner data", zap.Error(err))
 		return nil, err
 	}
 

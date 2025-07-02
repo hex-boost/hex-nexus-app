@@ -154,7 +154,7 @@ func (cm *Monitor) updateState(newState *LeagueClientState) {
 	stateChanged := cm.currentState.ClientState != newState.ClientState
 
 	if stateChanged {
-		cm.logger.Sugar().Infow("State changed",
+		cm.logger.Sugar().Debugw("State changed",
 			"prevClientState", cm.currentState.ClientState,
 			"newClientState", newState.ClientState,
 		)
