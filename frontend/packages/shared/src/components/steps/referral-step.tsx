@@ -1,59 +1,61 @@
-"use client"
+import { Button } from '@/components/ui/button';
+import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Gift } from 'lucide-react';
+import { useState } from 'react';
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Gift } from "lucide-react"
-
-interface ReferralStepProps {
-  onNext: (referralCode?: string) => void
-}
+type ReferralStepProps = {
+  onNext: (referralCode?: string) => void;
+};
 
 export function ReferralStep({ onNext }: ReferralStepProps) {
-  const [referralCode, setReferralCode] = useState("")
+  const [referralCode, setReferralCode] = useState('');
 
   const handleNext = () => {
-    onNext(referralCode.trim() || undefined)
-  }
+    onNext(referralCode || undefined);
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="text-center">
+    <>
+      <DialogHeader className="text-center">
         <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
           <Gift className="w-6 h-6 text-primary" />
         </div>
-        <h2 className="text-lg font-semibold">Got a Referral Code?</h2>
-        <p className="text-sm text-muted-foreground mt-2">
-          Enter your referral code to unlock exclusive discounts on premium League of Legends accounts
-        </p>
-      </div>
+        <DialogTitle>Welcome! Do you have a referral code?</DialogTitle>
+        <DialogDescription>
+          Enter a referral code to unlock exclusive benefits (optional)
+        </DialogDescription>
+      </DialogHeader>
 
-      <div className="space-y-4">
+      <div className="space-y-4 py-4">
         <div className="space-y-2">
-          <Label htmlFor="referral">Referral Code (Optional)</Label>
+          <Label htmlFor="referral">Referral Code</Label>
           <Input
             id="referral"
-            placeholder="Enter your referral code"
             value={referralCode}
-            onChange={(e) => setReferralCode(e.target.value)}
-            className="text-center font-mono"
+            onChange={e => setReferralCode(e.target.value)}
+            placeholder="Enter referral code"
           />
         </div>
 
         <div className="bg-muted/50 p-3 rounded-lg">
           <p className="text-sm text-muted-foreground">
-            💡 <strong>Tip:</strong> Referral codes provide instant discounts on your first purchase and access to
-            exclusive account tiers.
+            💡
+            {' '}
+            <strong>Tip:</strong>
+            {' '}
+            Referral codes can provide access to premium features,
+            discounts, or exclusive content.
           </p>
         </div>
       </div>
 
       <div className="flex justify-end">
-        <Button onClick={handleNext} className="w-full">
-          Continue
+        <Button onClick={handleNext}>
+          {referralCode ? 'Apply Code & Continue' : 'Skip for now'}
         </Button>
       </div>
-    </div>
-  )
+    </>
+  );
 }

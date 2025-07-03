@@ -280,7 +280,21 @@ export function useMapping() {
         );
     }
   };
+    // Update the getCompanyIcon function in useMapping.tsx
+  const getCompanyIconNode = (company: string): React.ReactNode => {
+    switch (company) {
+      case 'boostroyal':
+        return <img src={logoBoostRoyal} alt="Boost Royal" className="h-8 w-8" />;
+      case 'turboboost':
+        return <img src={logoTurboBoost} alt="Turbo Boost" className="h-8 w-8" />;
+      case 'private':
+        return <EarthLock className="h-8 w-8" />;
+      default:
+        return <img src={nexusIcon} alt="Company" className="h-8 w-8" />;
+    }
+  };
 type CompanyIcon = string | typeof EarthLock;
+
 const getCompanyIcon = (company: string): CompanyIcon => {
   if (company === 'boostroyal') {
     return logoBoostRoyal;
@@ -381,5 +395,6 @@ return {
   getFormattedServer,
   getWinrateColorClass,
   getRankBackground,
+  getCompanyIconNode,
 };
 }

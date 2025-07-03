@@ -59,7 +59,8 @@ export const useUserStore = create<AuthState>((set, get) => ({
 
   logout: () => {
     LogService.Info(logComponent, 'User logging out. Clearing user context and local storage.', {});
-    localStorage.clear();
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
     BaseClient.ClearJWT();
 
     // Clear LogService context

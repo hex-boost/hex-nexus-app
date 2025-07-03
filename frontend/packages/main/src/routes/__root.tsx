@@ -1,4 +1,5 @@
 import { ErrorPage } from '@/components/error-page.tsx';
+import { OnboardingDialog } from '@/components/onboarding-dialog.tsx';
 import { PremiumPaymentModal } from '@/features/payment/PremiumPaymentModal.tsx';
 import { useLocalStorage } from '@/hooks/use-local-storage.tsx';
 import { useGoState } from '@/hooks/useGoBindings.ts';
@@ -107,6 +108,7 @@ function RootLayout() {
   }, [isAuthenticated, user, isLolskinEnabled]);
   return (
     <>
+      <OnboardingDialog />
       <PremiumPaymentModal currency={currency} isOpen={isOpen} tier={tier} paymentMethod={paymentMethod} amount={amount} onClose={close} />
       <Outlet />
     </>

@@ -1,6 +1,5 @@
 import type { UserType } from '@/types/types';
 import type { StrapiDefaultOptions } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
-
 import { ProviderAuth, Strapi, UserAuth, UserBase } from 'strapi-ts-sdk';
 
 const defaults: StrapiDefaultOptions = {

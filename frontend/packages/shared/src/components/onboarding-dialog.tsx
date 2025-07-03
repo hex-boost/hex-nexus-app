@@ -1,120 +1,102 @@
-import { useState } from "react"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
-import { ReferralStep } from "./steps/referral-step"
-import { CompanyDetectionStep } from "./steps/company-detection-step"
-import { NoCompanyStep } from "./steps/no-company-step"
-import { Progress } from "@/components/ui/progress"
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Progress } from '@/components/ui/progress';
+import { strapiClient } from '@/lib/strapi.ts';
+import { useMapping } from '@/lib/useMapping.tsx';
+import { useUserStore } from '@/stores/useUserStore.ts';
+import { useMutation } from '@tanstack/react-query';
+import React, { useState } from 'react';
+import { CompanyDetectionStep } from './steps/company-detection-step';
+import { ReferralStep } from './steps/referral-step';
 
-export interface OnboardingData {
-  referralCode?: string
-  detectedCompany?: DetectedCompany
-  noCompanyAcknowledged?: boolean
-}
+export type OnboardingData = {
+  referralCode?: string;
+  detectedCompany?: DetectedCompany;
+};
 
-export interface DetectedCompany {
-  name: string
-  description: string
-  benefits: string[]
-}
+export type DetectedCompany = {
+  name: string;
+  description: string;
+  benefits: string[];
+};
 
-export interface SupportedCompany {
-  name: string
-  description: string
-  logo?: string
-  tier: "premium" | "standard" | "partner"
-}
+export type SupportedCompany = {
+  name: string;
+  description: string;
+  logo: React.ReactNode;
+  userHasPermission?: boolean;
+};
 
-export interface SupportContact {
-  platform: string
-  handle: string
-  displayText: string
-}
+export type SupportContact = {
+  platform: string;
+  handle: string;
+  displayText: string;
+};
 
-interface OnboardingDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onComplete: (data: OnboardingData) => void
-  detectedCompanies?: DetectedCompany[]
-  supportedCompanies?: SupportedCompany[]
-  supportContact?: SupportContact
-  hasCompanyDetection?: boolean
-}
+export function OnboardingDialog() {
+  const [currentStep, setCurrentStep] = useState(1);
+  const [data, setData] = useState<OnboardingData>({});
+  const { user } = useUserStore();
+  const [open, setOpen] = useState(user?.configuration?.isNewUser);
+  const { mutate: onCompleteOnboarding } = useMutation({
+    mutationFn: async () => {
+      const res = await strapiClient.axios.put(`/users/${user?.id}`, {
+        configuration: {
+          isNewUser: false,
+          referralCode: data.referralCode,
+        },
+      });
+      return res.data;
+    },
+  });
+    // Internal configuration - no longer passed as props
+  const supportContact: SupportContact = {
+    platform: 'Discord',
+    handle: '@naratios',
+    displayText: 'Contact us on Discord: @naratios',
+  };
 
-export function OnboardingDialog({
-  open,
-  onOpenChange,
-  onComplete,
-  detectedCompanies = [
+  const { getCompanyIconNode } = useMapping();
+
+  const supportedCompanies: SupportedCompany[] = [
     {
-      name: "Boost Royal",
-      description: "Premium boosting service with exclusive high-tier accounts",
-      benefits: ["Exclusive Diamond+ accounts", "Priority support", "Custom rank packages"],
+      name: 'Boost Royal',
+      description: 'Premium exclusive accounts for employees',
+      logo: getCompanyIconNode('boostroyal'),
+      userHasPermission: user?.accountPermissions?.includes('boostroyal'),
     },
     {
-      name: "Turbo Boost",
-      description: "Fast and reliable account services for competitive players",
-      benefits: ["Verified accounts", "24/7 availability", "Money-back guarantee"],
+      name: 'Turbo Boost',
+      description: 'Premium exclusive accounts for employees',
+      logo: getCompanyIconNode('turboboost'),
+      userHasPermission: user?.accountPermissions?.includes('turboboost'),
     },
-  ],
-  supportedCompanies = [
-    {
-      name: "Boost Royal",
-      description: "Premium boosting service with exclusive high-tier accounts",
-      tier: "premium",
-    },
-    {
-      name: "Turbo Boost",
-      description: "Fast and reliable account services for competitive players",
-      tier: "premium",
-    },
-    {
-      name: "Elite Gaming",
-      description: "Professional esports organization with competitive accounts",
-      tier: "partner",
-    },
-    {
-      name: "Rank Masters",
-      description: "Specialized in high-rank account services",
-      tier: "standard",
-    },
-    {
-      name: "Pro Gamers Hub",
-      description: "Community-driven gaming service provider",
-      tier: "standard",
-    },
-  ],
-  supportContact = {
-    platform: "Discord",
-    handle: "@naratios",
-    displayText: "Contact us on Discord: @naratios",
-  },
-  hasCompanyDetection = false,
-}: OnboardingDialogProps) {
-  const [currentStep, setCurrentStep] = useState(1)
-  const [data, setData] = useState<OnboardingData>({})
+  ];
 
-  // Simulate company detection - in real app, this would be actual detection logic
-  const isCompanyDetected = hasCompanyDetection && detectedCompanies.length > 0
-
-  const totalSteps = isCompanyDetected ? 2 : 3
-
+  const userCompanies = user?.accountPermissions || [];
+  const totalSteps = 2;
   const handleReferralNext = (referralCode?: string) => {
-    setData((prev) => ({ ...prev, referralCode }))
-    setCurrentStep(2)
-  }
+    setData(prev => ({ ...prev, referralCode }));
+    setCurrentStep(2);
+  };
 
   const handleCompanyNext = (detectedCompany?: DetectedCompany) => {
-    const finalData = { ...data, detectedCompany }
-    onComplete(finalData)
-  }
-
-  const handleNoCompanyNext = () => {
-    const finalData = { ...data, noCompanyAcknowledged: true }
-    onComplete(finalData)
-  }
+    setData(prev => ({ ...prev, detectedCompany }));
+    // Complete the onboarding process
+    onCompleteOnboarding();
+    // Close the dialog
+    setOpen(false);
+  };
 
   const handleBack = () => {
-    setCurrentStep((prev) => Math.max(1, prev - 1))
+    setCurrentStep(prev => Math.max(1, prev - 1));
+  };
+
+  function onOpenChange(open: boolean) {
+    // Only allow closing when we're explicitly setting it to false
+    // This prevents users from skipping the onboarding process
+    if (!open) {
+      setOpen(false);
+    }
   }
 
   return (
@@ -123,28 +105,38 @@ export function OnboardingDialog({
         <div className="px-6 pt-6">
           <div className="flex justify-between text-sm text-muted-foreground mb-2">
             <span>
-              Step {currentStep} of {totalSteps}
+              Step
+              {' '}
+              {currentStep}
+              {' '}
+              of
+              {' '}
+              {totalSteps}
             </span>
-            <span>{Math.round((currentStep / totalSteps) * 100)}%</span>
+            <span>
+              {Math.round((currentStep / totalSteps) * 100)}
+              %
+            </span>
           </div>
           <Progress value={(currentStep / totalSteps) * 100} className="h-2" />
         </div>
 
         <div className="px-6 pb-6">
-          {currentStep === 1 && <ReferralStep onNext={handleReferralNext} />}
-          {currentStep === 2 && isCompanyDetected && (
-            <CompanyDetectionStep companies={detectedCompanies} onNext={handleCompanyNext} onBack={handleBack} />
+          {currentStep === 1 && (
+            <ReferralStep onNext={handleReferralNext} />
           )}
-          {currentStep === 2 && !isCompanyDetected && (
-            <NoCompanyStep
+
+          {currentStep === 2 && (
+            <CompanyDetectionStep
               supportedCompanies={supportedCompanies}
               supportContact={supportContact}
-              onNext={handleNoCompanyNext}
+              userCompanies={userCompanies}
+              onNext={handleCompanyNext}
               onBack={handleBack}
             />
           )}
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
