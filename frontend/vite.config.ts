@@ -21,7 +21,7 @@ export default defineConfig({
       project: 'javascript-react',
       authToken: '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',
       release: {
-        name: process.env.VITE_APP_VERSION || 'development',
+        name: process.env.NODE_ENV || 'development',
         dist: 'app-frontend',
       },
 
