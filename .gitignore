@@ -22,3 +22,4 @@ dist
 **/mocks/
 /frontend/.pnpm-store
 /lolskin/
+/updater.exe
