@@ -1,4 +1,5 @@
 // src/store/nexusAccountStore.ts
+import { logger } from '@lib/logger.ts';
 import { create } from 'zustand';
 
 type useAccountStoreReturn = {
@@ -11,6 +12,6 @@ export const useAccountStore = create<useAccountStoreReturn>(set => ({
   isNexusAccount: false,
   setIsNexusAccount: (value: boolean) => {
     set({ isNexusAccount: value });
-    console.log('isNexusAcountUpdated', value);
+    logger.info('useAccountStore', 'isNexusAcountUpdated', value);
   },
 }));

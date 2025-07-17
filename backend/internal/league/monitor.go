@@ -171,78 +171,118 @@ func (cm *Monitor) updateState(newState *LeagueClientState) {
 }
 
 // checkClientState coordinates the client state checking process
+// checkClientState coordinates the client state checking process
 func (cm *Monitor) checkClientState() {
+	// Prevent concurrent executions
 	if !cm.isCheckingState.CompareAndSwap(false, true) {
 		return
 	}
 	defer cm.isCheckingState.Store(false)
+
+	// Get current state for comparison
 	previousState := cm.GetCurrentState()
+	currentState := previousState.ClientState
 
-	// Get system state
-	isRiotClientRunning := cm.riotService.IsRunning()
-	isLeagueClientRunning := cm.leagueService.IsRunning()
-	isPlayingLeague := cm.leagueService.IsPlaying()
-
-	var authState *types.RiotIdentityResponse
-	var authStateErr error
-	var isRiotClientInitialized bool
-	authType := "unknown" // Default
-
-	if isRiotClientRunning {
-		isRiotClientInitialized = cm.riotAuth.IsClientInitialized()
-		if !isRiotClientInitialized {
-			// Attempt initialization only if needed
-			cm.logger.Debug("Riot client running but not initialized, attempting initialization...")
-			initErr := cm.riotAuth.InitializeClient()
-			if initErr != nil {
-				cm.logger.Warn("Error initializing Riot client during check", zap.Error(initErr))
-				// Proceed, but auth state might be unreliable
-			} else {
-				cm.logger.Info("Riot client initialized successfully during check")
-				isRiotClientInitialized = true // Update status after successful init
-			}
-		}
-
-		// Only check auth state if client is (now) initialized
-		if isRiotClientInitialized {
-			authState, authStateErr = cm.riotAuth.GetAuthenticationState()
-			if authStateErr != nil {
-				cm.logger.Warn("Error getting Riot authentication state", zap.Error(authStateErr))
-				// Continue, authType remains "unknown" or based on previous state logic
-			} else if authState != nil {
-				authType = authState.Type // e.g., "success", "pending", "error"
-			} else {
-				cm.logger.Warn("GetAuthenticationState returned nil response and nil error")
-				// authType remains "unknown"
-			}
-		} else {
-			cm.logger.Debug("Riot client not initialized, skipping auth state checks")
-		}
+	// Handle special states first
+	if currentState == ClientStateWaitingCaptcha {
+		return // No change needed
 	}
-	isLoggedIn := isPlayingLeague || isLeagueClientRunning || authType == "success"
-	isLoginReady := isRiotClientRunning && cm.riotAuth.IsAuthStateValid() == nil && !isLoggedIn
 
-	// Determine client state
-	newState := cm.determineClientState(
-		isRiotClientRunning,
-		isLeagueClientRunning,
-		isLoggedIn,
-		isLoginReady,
-		isPlayingLeague,
-		previousState,
-	)
+	if currentState == ClientStateWaitingLogin {
+		// Only check if login succeeded
+		if cm.riotAuth.IsClientInitialized() || cm.initializeRiotClientIfNeeded() {
+			authState, err := cm.riotAuth.GetAuthenticationState()
+			if err == nil && authState != nil && authState.Type == "success" {
+				cm.logger.Info("Auth state success, user is logged in")
+				cm.updateState(&LeagueClientState{ClientState: ClientStateLoggedIn})
+				if cm.leagueService.IsLCUConnectionReady() && !cm.isFirstUpdated {
+					cm.checkAndUpdateAccount()
+				}
+			}
+		}
+		return
+	}
 
-	cm.updateState(newState)
+	// OPTIMIZATION: Check for League client first since it guarantees logged in state
+	isLeagueClientRunning := cm.leagueService.IsRunning()
+	if isLeagueClientRunning {
+		// League client running means user is definitely logged in
+		if currentState != ClientStateLoggedIn {
+			cm.updateState(&LeagueClientState{ClientState: ClientStateLoggedIn})
+		}
 
-	// Handle account state updates based on client state changes
-	if newState.ClientState == ClientStateLoggedIn && isLeagueClientRunning && !cm.isFirstUpdated {
-		cm.checkAndUpdateAccount()
-	} else if newState.ClientState != ClientStateLoggedIn && cm.isFirstUpdated {
-		// Reset when logged out
-		cm.resetAccountUpdateStatus()
+		// Update account if needed
+		if !cm.isFirstUpdated && cm.leagueService.IsLCUConnectionReady() {
+			cm.checkAndUpdateAccount()
+		}
+		return // Early return - no need for further checks
+	}
+
+	// If we're here, League client is not running
+	// Check if Riot client is running
+	isRiotClientRunning := cm.riotService.IsRunning()
+	if !isRiotClientRunning {
+		// No clients running, must be closed
+		if currentState != ClientStateClosed {
+			cm.updateState(&LeagueClientState{ClientState: ClientStateClosed})
+			if cm.isFirstUpdated {
+				cm.resetAccountUpdateStatus()
+			}
+		}
+		return
+	}
+
+	// Riot client is running but League isn't
+	// Check if playing (which is another way to be logged in)
+	isPlayingLeague := cm.leagueService.IsPlaying()
+	if isPlayingLeague {
+		if currentState != ClientStateLoggedIn {
+			cm.updateState(&LeagueClientState{ClientState: ClientStateLoggedIn})
+		}
+		return
+	}
+
+	// Not playing and no League client, check if login ready
+	isClientInitialized := cm.riotAuth.IsClientInitialized() || cm.initializeRiotClientIfNeeded()
+	if !isClientInitialized {
+		// Can't initialize client, consider closed
+		if currentState != ClientStateClosed {
+			cm.updateState(&LeagueClientState{ClientState: ClientStateClosed})
+		}
+		return
+	}
+
+	// Client is initialized, check auth state
+	isAuthStateValid := cm.riotAuth.IsAuthStateValid() == nil
+	if isAuthStateValid {
+		// Auth state valid means login ready
+		if currentState != ClientStateLoginReady {
+			cm.updateState(&LeagueClientState{ClientState: ClientStateLoginReady})
+		}
+		return
+	}
+
+	// Default case - if nothing else matched
+	if currentState != ClientStateClosed {
+		cm.updateState(&LeagueClientState{ClientState: ClientStateClosed})
+		if cm.isFirstUpdated {
+			cm.resetAccountUpdateStatus()
+		}
 	}
 }
-
+func (cm *Monitor) initializeRiotClientIfNeeded() bool {
+	if !cm.riotAuth.IsClientInitialized() && cm.riotService.IsRunning() {
+		cm.logger.Debug("Client running but not initialized, initializing...")
+		err := cm.riotAuth.InitializeClient()
+		if err != nil {
+			cm.logger.Error("Error initializing client", zap.Error(err))
+			return false
+		}
+		cm.logger.Info("Client initialized successfully")
+		return true
+	}
+	return false
+}
 func (cm *Monitor) WaitUntilAuthenticationIsReady(timeout time.Duration) error {
 	deadline := time.Now().Add(timeout)
 	checkInterval := 100 * time.Millisecond
@@ -257,75 +297,6 @@ func (cm *Monitor) WaitUntilAuthenticationIsReady(timeout time.Duration) error {
 	}
 
 	return errors.New("timeout waiting for Riot client to initialize")
-}
-
-// determineClientState determines the current client state based on system conditions
-func (cm *Monitor) determineClientState(
-	isRiotClientRunning bool,
-	isLeagueClientRunning bool,
-	isLoggedIn bool,
-	isLoginReady bool,
-	isPlayingLeague bool,
-	previousState *LeagueClientState,
-) *LeagueClientState {
-	currentState := cm.GetCurrentState()
-	newState := &LeagueClientState{
-		ClientState: currentState.ClientState,
-	}
-
-	newState.ClientState = cm.calculateClientState(
-		isRiotClientRunning,
-		isLeagueClientRunning,
-		isLoggedIn,
-		isPlayingLeague,
-		isLoginReady,
-		currentState,
-		previousState,
-	)
-
-	return newState
-}
-
-// calculateClientState determines the client state based on inputs
-func (cm *Monitor) calculateClientState(
-	isRiotClientRunning bool,
-
-	isLeagueClientRunning bool,
-	isLoggedIn bool,
-	isPlayingLeague bool,
-	isLoginReady bool,
-	currentState *LeagueClientState,
-	previousState *LeagueClientState,
-) LeagueClientStateType {
-	if currentState.ClientState == ClientStateWaitingLogin {
-		if isRiotClientRunning && !cm.riotAuth.IsClientInitialized() {
-			err := cm.riotAuth.InitializeClient()
-			if err != nil {
-				cm.logger.Error("Error initializing client", zap.Error(err))
-				return ClientStateWaitingLogin
-			}
-		}
-		authState, err := cm.riotAuth.GetAuthenticationState()
-		if err != nil {
-			return ClientStateWaitingLogin
-		}
-		if authState.Type == "success" {
-			cm.logger.Info("Auth state success, user is logged in")
-			return ClientStateLoggedIn
-		}
-
-	}
-	if currentState.ClientState == ClientStateWaitingCaptcha {
-		return ClientStateWaitingCaptcha
-	}
-	if isLoggedIn || isPlayingLeague || isLeagueClientRunning {
-		return ClientStateLoggedIn
-	}
-
-	if isLoginReady {
-		return ClientStateLoginReady
-	}
-	return ClientStateClosed
 }
 
 // initializeRiotClient initializes the Riot client if needed

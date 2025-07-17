@@ -11,6 +11,7 @@ import { useLocalStorage } from '@/hooks/use-local-storage.tsx';
 import { useWebSocket } from '@/hooks/use-websocket.tsx';
 import { useMembership } from '@/hooks/useMembership.ts';
 import { useUpdate } from '@/hooks/useUpdate/useUpdate.tsx';
+import { logger } from '@/lib/logger.ts';
 import { strapiClient } from '@/lib/strapi.ts';
 import { useAccountStore } from '@/stores/useAccountStore.ts';
 import { usePremiumPaymentModalStore } from '@/stores/usePremiumPaymentModalStore.ts';
@@ -259,6 +260,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         markAsRead(notification.documentId);
       }
       if (notification.event === NOTIFICATION_EVENTS.ACCOUNT_EXPIRED) {
+        logger.info('notification-provider', 'Account expired notification received', notification.event);
         if (isNexusAccount) {
           Manager.ForceCloseAllClients().then(() => {
             toast.info('Your account has expired, and the league has been closed.');

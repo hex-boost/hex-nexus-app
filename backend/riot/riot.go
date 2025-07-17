@@ -334,7 +334,7 @@ func (s *Service) GetAuthenticationState() (*types.RiotIdentityResponse, error) 
 	var getCurrentAuthResult types.RiotIdentityResponse
 	result, err := s.client.R().SetResult(&getCurrentAuthResult).Get("/rso-authenticator/v1/authentication")
 	if err != nil {
-		s.logger.Error("Authentication failed", zap.Error(err))
+		s.logger.Error(fmt.Sprintf("Failed while trying to get authentication state %v", err))
 		return nil, err
 	}
 
@@ -364,7 +364,7 @@ func (s *Service) GetAuthenticationState() (*types.RiotIdentityResponse, error) 
 func (s *Service) IsAuthStateValid() error {
 	currentAuth, err := s.GetAuthenticationState()
 	if err != nil {
-		s.logger.Error("Failed to get authentication state", zap.Error(err))
+		s.logger.Sugar().Errorf("Failed to get authentication state %v", err)
 		return err
 	}
 	if currentAuth.Type == "auth" {

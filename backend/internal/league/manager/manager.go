@@ -119,9 +119,5 @@ func (m *Manager) ForceCloseAllClients() error {
 		zap.Int("processesKilled", killedProcesses),
 		zap.Int("failedKills", failedKills))
 
-	if failedKills > 0 {
-		return fmt.Errorf("failed to kill %d Riot/League processes", failedKills)
-	}
-
 	return nil
 }
