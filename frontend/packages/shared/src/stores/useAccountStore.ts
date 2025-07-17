@@ -1,5 +1,5 @@
 // src/store/nexusAccountStore.ts
-import { logger } from '@lib/logger.ts';
+import { logger } from '@/lib/logger.ts';
 import { create } from 'zustand';
 
 type useAccountStoreReturn = {

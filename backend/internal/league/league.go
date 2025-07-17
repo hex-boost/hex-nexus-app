@@ -101,7 +101,6 @@ func (s *Service) IsRunning() bool {
 	leagueProcessNames := []string{
 		"LeagueClient.exe",   // Main client process
 		"LeagueClientUx.exe", // Client UX process
-		// "RiotClientServices.exe", // Optional: Riot Client, might be running even if League isn't fully up.
 	}
 
 	for _, process := range processes {
