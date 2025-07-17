@@ -51,6 +51,7 @@ export const NotificationContext = createContext<NotificationContextType | undef
 
 export const DEFAULT_PREFERENCES: NotificationPreferences = {
   enabledTypes: {
+    budget_restart: true,
     account_rented: true,
     new_update: true,
     membership_ended: true,
