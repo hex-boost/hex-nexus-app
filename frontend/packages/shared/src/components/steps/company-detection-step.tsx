@@ -78,10 +78,10 @@ export function CompanyDetectionStep({
                 <div className="border rounded-lg p-4 bg-primary/5">
                   <div className="flex items-center gap-2 mb-2">
                     <CheckCircle className="w-5 h-5 text-primary" />
-                    <h3 className="font-semibold">{detectedCompany.name}</h3>
+                    <h3 className="font-semibold">{detectedCompany?.name}</h3>
                     <Badge variant="secondary">Verified</Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-3">{detectedCompany.description}</p>
+                  <p className="text-sm text-muted-foreground mb-3">{detectedCompany?.description}</p>
                 </div>
 
                 <div className="bg-muted/50 p-3 rounded-lg">
