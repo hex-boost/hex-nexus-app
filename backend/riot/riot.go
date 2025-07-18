@@ -328,7 +328,6 @@ func (s *Service) GetAuthenticationState() (*types.RiotIdentityResponse, error) 
 	defer s.clientMutex.RUnlock()
 
 	if s.client == nil {
-
 		return nil, errors.New("client is not initialized")
 	}
 	var getCurrentAuthResult types.RiotIdentityResponse
@@ -362,6 +361,13 @@ func (s *Service) GetAuthenticationState() (*types.RiotIdentityResponse, error) 
 }
 
 func (s *Service) IsAuthStateValid() error {
+	if !s.IsClientInitialized() {
+		err := s.InitializeClient()
+		if err != nil {
+			s.logger.Error("Failed to initialize client", zap.Error(err))
+			return err
+		}
+	}
 	currentAuth, err := s.GetAuthenticationState()
 	if err != nil {
 		s.logger.Sugar().Errorf("Failed to get authentication state %v", err)
