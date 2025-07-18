@@ -191,8 +191,7 @@ func (cm *Monitor) checkClientState() {
 		return
 	}
 
-	isLeagueClientRunning := cm.leagueService.IsRunning()
-	if isLeagueClientRunning {
+	if cm.leagueService.IsRunning() || cm.leagueService.IsPlaying() {
 
 		if currentState != ClientStateLoggedIn {
 			cm.updateState(&LeagueClientState{ClientState: ClientStateLoggedIn})
@@ -204,42 +203,14 @@ func (cm *Monitor) checkClientState() {
 		return
 	}
 
-	isRiotClientRunning := cm.riotService.IsRunning()
-	if !isRiotClientRunning {
-
-		if currentState != ClientStateClosed {
-			cm.updateState(&LeagueClientState{ClientState: ClientStateClosed})
-			if cm.isFirstUpdated {
-				cm.resetAccountUpdateStatus()
+	if cm.riotService.IsRunning() {
+		isAuthStateValid := cm.riotAuth.IsAuthStateValid() == nil
+		if isAuthStateValid {
+			if currentState != ClientStateLoginReady {
+				cm.updateState(&LeagueClientState{ClientState: ClientStateLoginReady})
 			}
+			return
 		}
-		return
-	}
-
-	isPlayingLeague := cm.leagueService.IsPlaying()
-	if isPlayingLeague {
-		if currentState != ClientStateLoggedIn {
-			cm.updateState(&LeagueClientState{ClientState: ClientStateLoggedIn})
-		}
-		return
-	}
-
-	isClientInitialized := cm.riotAuth.IsClientInitialized() || cm.initializeRiotClientIfNeeded()
-	if !isClientInitialized {
-
-		if currentState != ClientStateClosed {
-			cm.updateState(&LeagueClientState{ClientState: ClientStateClosed})
-		}
-		return
-	}
-
-	isAuthStateValid := cm.riotAuth.IsAuthStateValid() == nil
-	if isAuthStateValid {
-
-		if currentState != ClientStateLoginReady {
-			cm.updateState(&LeagueClientState{ClientState: ClientStateLoginReady})
-		}
-		return
 	}
 
 	if currentState != ClientStateClosed {
