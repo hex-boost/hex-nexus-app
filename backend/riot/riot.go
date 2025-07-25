@@ -2,12 +2,16 @@ package riot
 
 import (
 	"context"
+	"github.com/StackExchange/wmi"
+	"runtime"
+
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account"
+	"net"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -21,7 +25,6 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/sysquery"
 	"github.com/hex-boost/hex-nexus-app/backend/riot/captcha"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
-	"github.com/mitchellh/go-ps"
 	"go.uber.org/zap"
 )
 
@@ -55,55 +58,97 @@ func (s *Service) ResetRestyClient() {
 	s.client = nil
 }
 
-func (s *Service) getProcess() (pid int, err error) {
-	processes, err := ps.Processes()
-	if err != nil {
-		return 0, fmt.Errorf("failed to list processes: %w", err)
-	}
-	riotProcessNames := []string{
-		"Riot Client",
-		"Riot Client.exe",
-	}
-
-	for _, process := range processes {
-		exe := process.Executable()
-		for _, name := range riotProcessNames {
-			if exe == name {
-				return process.Pid(), nil
-			}
-		}
-	}
-	return 0, errors.New("unable to find League Service or Riot Service process")
+type Win32_Process struct {
+	ProcessID   uint32
+	CommandLine *string
 }
 
-func (s *Service) getCredentials(riotClientPid int) (port string, authToken string, err error) {
-	var cmdLine string
+func (s *Service) getProcess() (pid int, err error) {
+	var processes []Win32_Process
+	// The WMI query is the primary bottleneck. It's already a bulk operation.
+	q := wmi.CreateQuery(&processes, "")
+	if err := wmi.Query(q, &processes); err != nil {
+		return 0, fmt.Errorf("failed to query processes with WMI: %w", err)
+	}
 
+	// Use a context to signal early exit to all workers once a result is found.
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Channel to receive the found PID. Buffered to prevent blocking.
+	foundPID := make(chan int, 1)
+	var wg sync.WaitGroup
+
+	numWorkers := runtime.NumCPU()
+	chunkSize := (len(processes) + numWorkers - 1) / numWorkers
+
+	for i := 0; i < numWorkers; i++ {
+		start := i * chunkSize
+		end := start + chunkSize
+		if end > len(processes) {
+			end = len(processes)
+		}
+		if start >= end {
+			continue
+		}
+
+		wg.Add(1)
+		go func(procs []Win32_Process) {
+			defer wg.Done()
+			for _, p := range procs {
+				select {
+				case <-ctx.Done(): // Check if another worker has found the process.
+					return
+				default:
+					if p.CommandLine != nil {
+						cmdLine := *p.CommandLine
+						if strings.Contains(cmdLine, "--app-port=") && strings.Contains(cmdLine, "--remoting-auth-token=") {
+							// Found it. Send the PID and cancel other workers.
+							foundPID <- int(p.ProcessID)
+							cancel()
+							return
+						}
+					}
+				}
+			}
+		}(processes[start:end])
+	}
+
+	// Wait for all workers to finish in a separate goroutine to not block receiving from the channel.
+	go func() {
+		wg.Wait()
+		close(foundPID)
+	}()
+
+	// Wait for the first PID to come through.
+	if pid, ok := <-foundPID; ok {
+		s.logger.Info("Found Riot Client process via parallel WMI scan", zap.Int("pid", pid))
+		return pid, nil
+	}
+
+	return 0, errors.New("unable to find Riot Client process")
+}
+func (s *Service) getCredentials(riotClientPid int) (port string, authToken string, err error) {
 	cmdlineOutput, err := s.sysquery.GetProcessCommandLineByPID(uint32(riotClientPid))
 	if err != nil {
 		return "", "", fmt.Errorf("failed to get command line: %w", err)
 	}
-	cmdLine = cmdlineOutput
 
-	// Keep the existing parsing logic
-	cmdLineParts := strings.SplitN(cmdLine, "=", 2)
-	if len(cmdLineParts) > 1 {
-		cmdLine = strings.TrimSpace(cmdLineParts[1])
-	}
+	// Make the extraction more robust
+	portRegex := regexp.MustCompile(`--app-port[=\s](\d+)`)
+	authRegex := regexp.MustCompile(`--remoting-auth-token[=\s]([\w-]+)`)
 
-	portRegex := regexp.MustCompile(`--app-port=(\d+)`)
-	authRegex := regexp.MustCompile(`--remoting-auth-token=([\w-]+)`)
+	portMatch := portRegex.FindStringSubmatch(cmdlineOutput)
+	authMatch := authRegex.FindStringSubmatch(cmdlineOutput)
 
-	portMatch := portRegex.FindStringSubmatch(cmdLine)
-	authMatch := authRegex.FindStringSubmatch(cmdLine)
 	if len(portMatch) > 1 && len(authMatch) > 1 {
 		token := authMatch[1]
 		authHeader := base64.StdEncoding.EncodeToString([]byte("riot:" + token))
 		return portMatch[1], authHeader, nil
 	}
+
 	return "", "", fmt.Errorf("unable to extract credentials from process (PID: %d)", riotClientPid)
 }
-
 func (s *Service) LoginWithCaptcha(ctx context.Context, username, password, captchaToken string) (string, error) {
 	s.clientMutex.RLock()
 	defer s.clientMutex.RUnlock()
@@ -236,12 +281,12 @@ func (s *Service) InitializeClient() error {
 	s.logger.Debug("Credentials obtained", zap.String("port", port), zap.Any("authToken", authToken))
 	client := resty.New().
 		SetBaseURL("https://127.0.0.1:"+port).
-		SetHeader("Authorization", "Basic "+authToken)
+		SetHeader("Authorization", "Basic "+authToken).
+		SetTimeout(10 * time.Second) // Add a 10-second timeout
 	client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 	s.client = client
 	return nil
 }
-
 func (s *Service) SetupCaptchaVerification() error {
 	if err := s.InitializeClient(); err != nil {
 		return err
@@ -325,15 +370,27 @@ func (s *Service) Logout() error {
 
 func (s *Service) GetAuthenticationState() (*types.RiotIdentityResponse, error) {
 	s.clientMutex.RLock()
-	defer s.clientMutex.RUnlock()
-
 	if s.client == nil {
+		s.clientMutex.RUnlock()
 		return nil, errors.New("client is not initialized")
 	}
+
 	var getCurrentAuthResult types.RiotIdentityResponse
 	result, err := s.client.R().SetResult(&getCurrentAuthResult).Get("/rso-authenticator/v1/authentication")
+	s.clientMutex.RUnlock() // Release the lock after the request is made
+
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("Failed while trying to get authentication state %v", err))
+		// Check for network errors, including timeouts
+		var netErr net.Error
+		if errors.As(err, &netErr) && netErr.Timeout() {
+			s.logger.Info("Detected network timeout, attempting to re-initialize client")
+			if initErr := s.InitializeClient(); initErr != nil {
+				return nil, fmt.Errorf("failed to re-initialize client after timeout: %w", initErr)
+			}
+			// Return a specific error to indicate re-initialization happened
+			return nil, errors.New("client re-initialized after network timeout")
+		}
 		return nil, err
 	}
 
@@ -342,13 +399,12 @@ func (s *Service) GetAuthenticationState() (*types.RiotIdentityResponse, error) 
 			zap.String("message", string(result.Body())),
 			zap.Int("status_code", result.StatusCode()))
 
-		// Parse error response to check for CREDENTIALS_INVALID
 		var errorResponse types.ErrorResponse
 		if err := json.Unmarshal(result.Body(), &errorResponse); err == nil {
 			if errorResponse.ErrorCode == "CREDENTIALS_INVALID" {
 				s.logger.Info("Detected invalid credentials, attempting to re-initialize client")
-				if err := s.InitializeClient(); err != nil {
-					return nil, fmt.Errorf("failed to re-initialize client: %w", err)
+				if initErr := s.InitializeClient(); initErr != nil {
+					return nil, fmt.Errorf("failed to re-initialize client: %w", initErr)
 				}
 				return nil, errors.New("client re-initialized after invalid credentials")
 			}
@@ -373,11 +429,11 @@ func (s *Service) IsAuthStateValid() error {
 		s.logger.Sugar().Errorf("Failed to get authentication state %v", err)
 		return err
 	}
-	if currentAuth.Type == "auth" {
-		return nil
+	if currentAuth.Type != "auth" {
+		return errors.New("authentication in invalid state: " + currentAuth.Type)
 	}
-	if currentAuth.Type == "error" && currentAuth.Captcha.Hcaptcha.Data != "" {
-		return nil
+	if currentAuth.Type == "error" && currentAuth.Captcha.Hcaptcha.Data == "" {
+		return errors.New("authentication error without captcha data")
 	}
 
 	return nil
