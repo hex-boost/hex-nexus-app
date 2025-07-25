@@ -1,8 +1,8 @@
 package riot
 
 import (
+	"bytes"
 	"context"
-	"github.com/StackExchange/wmi"
 	"runtime"
 
 	"crypto/tls"
@@ -63,12 +63,32 @@ type Win32_Process struct {
 	CommandLine *string
 }
 
-func (s *Service) getProcess() (pid int, err error) {
+func (s *Service) getProcessesWithCim() ([]Win32_Process, error) {
+	cmdRaw := `Get-CimInstance -ClassName Win32_Process -Property ProcessId,CommandLine -ErrorAction SilentlyContinue | Select-Object ProcessId,CommandLine | ConvertTo-Json`
+
+	// Execute the PowerShell command.
+	var stdout, stderr bytes.Buffer
+	cmd := command.New()
+	ps := cmd.Exec("powershell", "-NoProfile", "-NonInteractive", "-Command", cmdRaw)
+	ps.Stdout = &stdout
+	ps.Stderr = &stderr
+
+	if err := ps.Run(); err != nil {
+		return nil, fmt.Errorf("failed to execute PowerShell command: %w, stderr: %s", err, stderr.String())
+	}
+
+	// Unmarshal the JSON output into our struct slice.
 	var processes []Win32_Process
-	// The WMI query is the primary bottleneck. It's already a bulk operation.
-	q := wmi.CreateQuery(&processes, "")
-	if err := wmi.Query(q, &processes); err != nil {
-		return 0, fmt.Errorf("failed to query processes with WMI: %w", err)
+	if err := json.Unmarshal(stdout.Bytes(), &processes); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal JSON from PowerShell: %w", err)
+	}
+
+	return processes, nil
+}
+func (s *Service) getProcess() (pid int, err error) {
+	processes, err := s.getProcessesWithCim()
+	if err != nil {
+		return 0, fmt.Errorf("failed to get processes using Get-CimInstance: %w", err)
 	}
 
 	// Use a context to signal early exit to all workers once a result is found.
