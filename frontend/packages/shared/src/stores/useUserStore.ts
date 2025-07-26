@@ -1,5 +1,7 @@
 import type { UserType } from '@/types/types';
+import { Monitor as AccountMonitor } from '@account';
 import { BaseClient } from '@client';
+import { Manager } from '@leagueManager';
 import { LogService } from '@logger';
 import { create } from 'zustand';
 
@@ -62,9 +64,18 @@ export const useUserStore = create<AuthState>((set, get) => ({
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
     BaseClient.ClearJWT();
+    set({ user: null, jwt: null });
 
     // Clear LogService context
     LogService.ClearUserContext().catch(err => LogService.Error(logComponent, 'Failed to clear user context', { error: err }));
+    AccountMonitor.IsNexusAccount().then((isNexus) => {
+      if (isNexus) {
+        Manager.ForceCloseAllClients();
+        LogService.Info(logComponent, 'User is a Nexus account. Forcing close all clients by logout', {});
+      } else {
+        LogService.Info(logComponent, 'User is not a Nexus account. Not forcing close on logout', {});
+      }
+    });
   },
   isAuthenticated: () => get().jwt != null,
 

@@ -27,7 +27,7 @@ function RouteComponent() {
   const router = useRouter();
   const [isLolskinEnabled, toggleLolSkinEnabled] = useLocalStorage<boolean>('lolskin-enabled', false);
   const handleSelectSkin = (champion: FormattedChampion, skin: FormattedSkin, chroma: any | null = null) => {
-    if (user?.premium.tier !== 'pro') {
+    if (user?.premium.tier !== 'pro' || !isLolskinEnabled) {
       logger.info('lolskin', 'User is not a premium user blocking skin changer');
       return;
     }
