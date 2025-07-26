@@ -46,6 +46,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     return { isAuthenticated };
   },
 });
+
 function RootLayout() {
   const { isOpen, tier, paymentMethod, amount, close, currency } = usePremiumPaymentModalStore();
   const [isLolskinEnabled] = useLocalStorage<boolean>('lolskin-enabled', false);
@@ -71,7 +72,11 @@ function RootLayout() {
       if (user?.premium?.tier !== 'pro' || !isLolskinEnabled) {
         return;
       }
-
+      const isBackLolSkinEnabled = await Service.IsLolSkinEnabled();
+      if (!isBackLolSkinEnabled) {
+        logger.warn('lolskin', 'LolSkin service is not available');
+        return;
+      }
       logger.info('lolskin', 'Loading saved skin selections at application start');
 
       try {
@@ -109,7 +114,14 @@ function RootLayout() {
   return (
     <>
       <OnboardingDialog />
-      <PremiumPaymentModal currency={currency} isOpen={isOpen} tier={tier} paymentMethod={paymentMethod} amount={amount} onClose={close} />
+      <PremiumPaymentModal
+        currency={currency}
+        isOpen={isOpen}
+        tier={tier}
+        paymentMethod={paymentMethod}
+        amount={amount}
+        onClose={close}
+      />
       <Outlet />
     </>
   );

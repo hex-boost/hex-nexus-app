@@ -318,6 +318,17 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 		Windows: application.WindowsOptions{
 			DisableQuitOnLastWindowClosed: true,
 		},
+		OnShutdown: func() {
+			if leagueManager.ShouldForceClose() && accountMonitor.IsNexusAccount() {
+				err := leagueManager.ForceCloseAllClients()
+				if err != nil {
+					mainLogger.Error("Error force closing all clients", zap.Error(err))
+				} else {
+					mainLogger.Info("Force closed all clients successfully")
+				}
+				return
+			}
+		},
 		KeyBindings: map[string]func(window *application.WebviewWindow){
 			"ctrl+shift+i": func(window *application.WebviewWindow) {
 				if window != nil {
@@ -471,6 +482,7 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 		websocketService.SubscribeToLeagueEvents()
 		accountMonitor.Start(mainWindow)
 		clientMonitor.Start(mainApp)
+		leagueManager.SetApp(mainApp)
 		//gameOverlayManager.Start()
 
 	})

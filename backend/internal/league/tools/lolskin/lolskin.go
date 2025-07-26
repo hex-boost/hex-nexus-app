@@ -318,16 +318,28 @@ func (c *LolSkin) runPatcher(args []string) {
 
 	// Wait for process completion
 	go func() {
-		err := c.patcherProcess.Wait()
+		processToWait := c.patcherProcess
+		if processToWait == nil {
+			return // Process was already cleaned up
+		}
+
+		err := processToWait.Wait()
 		if err != nil {
-			c.logger.Error("Patcher process failed", zap.Error(err))
+			// Avoid logging "exec: not started" if the process was killed intentionally
+			if exitErr, ok := err.(*exec.ExitError); !ok || !strings.Contains(exitErr.Error(), "killed") {
+				c.logger.Error("Patcher process failed", zap.Error(err))
+			}
 		}
 		c.logger.Info("Patcher process completed")
 
-		c.patcherProcess = nil
-		c.patcherStdin = nil
+		c.mutex.Lock()
+		// Only clear the main struct's fields if they still refer to the same process
+		if c.patcherProcess == processToWait {
+			c.patcherProcess = nil
+			c.patcherStdin = nil
+		}
+		c.mutex.Unlock()
 	}()
-
 	// Wait for completion signal or timeout
 	select {
 	case <-completed:

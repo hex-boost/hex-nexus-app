@@ -25,7 +25,6 @@ type Manager struct {
 func New(logger *logger.Logger) *Manager {
 	return &Manager{
 		cmd:    command.New(),
-		app:    application.Get(),
 		logger: logger,
 	}
 }
@@ -39,6 +38,11 @@ func (m *Manager) SetForceClose(force bool) {
 	defer m.mutex.Unlock()
 	m.forceCloseFlag = force
 	m.logger.Info("ForceClose flag updated", zap.Bool("value", m.forceCloseFlag))
+}
+
+func (m *Manager) SetApp(app *application.App) {
+	m.logger.Info("SetApp called, setting application instance")
+	m.app = app
 }
 
 // ShouldForceClose returns the current state of the force close flag
