@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -272,7 +271,6 @@ func (cm *Monitor) checkAndUpdateAccount() {
 		cm.logger.Info("No username detected via accountMonitor, skipping account update")
 		return
 	}
-	loggedInUsername = strings.ToLower(loggedInUsername)
 
 	if accountState.Username == loggedInUsername && cm.isFirstUpdated {
 		cm.logger.Debug("Username already matches and first update done, skipping redundant account update", zap.String("username", loggedInUsername))

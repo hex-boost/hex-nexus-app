@@ -154,7 +154,6 @@ func (s *Service) getCredentials(riotClientPid int) (port string, authToken stri
 		return "", "", fmt.Errorf("failed to get command line: %w", err)
 	}
 
-	// Make the extraction more robust
 	portRegex := regexp.MustCompile(`--app-port[=\s](\d+)`)
 	authRegex := regexp.MustCompile(`--remoting-auth-token[=\s]([\w-]+)`)
 
