@@ -263,8 +263,6 @@ func (c *LolSkin) executeCommand(executable string, args []string, logPrefix str
 }
 
 // RunPatcher starts the patcher process with the specified arguments
-// RunPatcher starts the patcher process with the specified arguments
-// Returns a channel that receives a signal when the injection is successful
 func (c *LolSkin) runPatcher(args []string) {
 	// Create a completion channel
 	completed := make(chan struct{})

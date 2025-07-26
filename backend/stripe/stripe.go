@@ -161,7 +161,7 @@ func (s *Stripe) StopServer() error {
 // renderTemplate serves an HTML template from the embedded filesystem
 func (s *Stripe) renderTemplate(w http.ResponseWriter, tmplName string) error {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	tmplPath := "templates/" + tmplName
+	tmplPath := "web/templates/" + tmplName
 	tmpl, err := template.ParseFS(backend.TemplatesFS, tmplPath)
 	if err != nil {
 		s.logger.Error("Error parsing template", zap.String("template", tmplPath), zap.Error(err))
