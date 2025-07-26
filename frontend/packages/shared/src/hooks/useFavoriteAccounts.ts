@@ -45,7 +45,7 @@ export function useFavoriteAccounts() {
   };
 
   const handleEditNote = (account: AccountType) => {
-    const favorite = user?.favoriteAccounts?.find(fav => fav.riot_account.id === account.id);
+    const favorite = user?.favoriteAccounts?.find(fav => fav.riotAccount.id === account.id);
     if (favorite) {
       setNoteText(favorite.note || '');
       setFavoriteAccountId(favorite.documentId);
@@ -62,7 +62,7 @@ export function useFavoriteAccounts() {
       // Step 1: Create the favorite account
       const createdFavorite = await strapiClient.create<FavoriteAccounts>('favorite-accounts', {
         data: {
-          riot_account: account.id,
+          riotAccount: account.id,
           user: user.id,
         },
       });
@@ -165,7 +165,7 @@ export function useFavoriteAccounts() {
   });
 
   const handleDeleteNote = async (account: AccountType) => {
-    const favorite = user?.favoriteAccounts?.find(fav => fav.riot_account.id === account.id);
+    const favorite = user?.favoriteAccounts?.find(fav => fav.riotAccount.id === account.id);
     if (favorite?.documentId) {
       // Optimistic update
       const currentUser = getCurrentUserData();
@@ -197,7 +197,7 @@ export function useFavoriteAccounts() {
   };
 
   function getFavoriteAccount(account: AccountType): FavoriteAccounts | undefined {
-    return user?.favoriteAccounts?.find(fav => fav.riot_account.id === account.id);
+    return user?.favoriteAccounts?.find(fav => fav.riotAccount.id === account.id);
   }
 
   return {

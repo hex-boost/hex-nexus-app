@@ -40,7 +40,7 @@ export default function FavoriteAccounts({
             ? (
                 <div className="space-y-3 px-6 overflow-y-auto max-h-[350px]">
                   {user.favoriteAccounts.map((favorite) => {
-                    const account = favorite.riot_account;
+                    const account = favorite.riotAccount;
                     if (!account) {
                       return null;
                     }
