@@ -11,7 +11,7 @@ import { BaseClient } from '@client';
 import { State as LolSkinState, Service } from '@lolskin';
 import { createRootRouteWithContext, Outlet, redirect } from '@tanstack/react-router';
 import { useFlag } from '@unleash/proxy-client-react';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { toast } from 'sonner';
 import '@wailsio/runtime';
 
@@ -52,7 +52,6 @@ function RootLayout() {
   const [isLolskinEnabled] = useLocalStorage<boolean>('lolskin-enabled', false);
   const isNewPayment = useFlag('is-new-payment');
   const { jwt, user, isAuthenticated } = useUserStore();
-  const skinsLoadedRef = useRef(false);
 
   useGoState();
   useEffect(() => {
@@ -65,12 +64,12 @@ function RootLayout() {
   console.log('isNewPayment', isNewPayment);
   useEffect(() => {
     // Only run if user is authenticated and premium features are available
-    if (!isAuthenticated() || !user || !isLolskinEnabled || skinsLoadedRef.current) {
+    if (!isAuthenticated() || !user) {
       return;
     }
 
     const loadSavedSkins = async () => {
-      if (user?.premium?.tier !== 'pro') {
+      if (user?.premium?.tier !== 'pro' || !isLolskinEnabled) {
         return;
       }
       const isBackLolSkinEnabled = await Service.IsLolSkinEnabled();
@@ -81,7 +80,6 @@ function RootLayout() {
       logger.info('lolskin', 'Loading saved skin selections at application start');
 
       try {
-        skinsLoadedRef.current = true;
         await Service.ToggleLolSkinEnabled(true);
 
         const savedSelections = await getSkinSelections();
@@ -102,14 +100,16 @@ function RootLayout() {
           logger.info('lolskin', `Applied ${savedSelections.length} saved skin selections`);
         }
       } catch (error) {
-        skinsLoadedRef.current = false; // Allow retry on error
         console.error('Failed to load saved skin selections:', error);
         toast.error('Failed to load your saved skin selections');
         logger.error('lolskin', 'Failed to load saved skin selections', error);
       }
     };
 
-    loadSavedSkins();
+    // Load skins after auth is confirmed and if feature is enabled
+    if (isLolskinEnabled) {
+      loadSavedSkins();
+    }
   }, [isAuthenticated, user, isLolskinEnabled]);
   return (
     <>
