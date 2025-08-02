@@ -5,12 +5,10 @@ import { GameRankDisplay } from '@/components/GameRankDisplay.tsx';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { FavoriteAccountNote } from '@/features/favorite-account/components/FavoriteAccountNote.tsx';
 import { FavoriteStar } from '@/features/favorite-account/components/FavoriteStar.tsx';
 import { useDateTime } from '@/hooks/useDateTime.ts';
 import { useFavoriteAccounts } from '@/hooks/useFavoriteAccounts.ts';
-import { usePrice } from '@/hooks/usePrice.ts';
 import { useRiotAccount } from '@/hooks/useRiotAccount.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
 import { cn } from '@/lib/utils';
@@ -44,14 +42,18 @@ export function AccountCard({
   const { getFormattedServer } = useMapping();
   const { getFormattedTimeRemaining } = useDateTime();
   const { getStatusColor } = useMapping();
-  const { getFavoriteAccount, handleEditNote, handleDeleteNote, handleAddToFavorites, handleRemoveFromFavorites } = useFavoriteAccounts();
+  const {
+    getFavoriteAccount,
+    handleEditNote,
+    handleDeleteNote,
+    handleAddToFavorites,
+    handleRemoveFromFavorites,
+  } = useFavoriteAccounts();
   const favoriteAccount = getFavoriteAccount(riotAccount);
   const isFavorite = !!favoriteAccount;
   const [_, setIsHovering] = useState(false);
 
   const note = favoriteAccount?.note;
-
-  const { price, getAccountPrice, isPriceLoading } = usePrice();
 
   const cardContent = (
     <div
@@ -77,7 +79,9 @@ export function AccountCard({
               </h3>
 
               {isFavorite && showPrice && (
-                <Badge className={cn('text-[10px] px-1.5 py-0', getStatusColor(riotAccount.user ? 'Rented' : 'Available'))}>
+                <Badge
+                  className={cn('text-[10px] px-1.5 py-0', getStatusColor(riotAccount.user ? 'Rented' : 'Available'))}
+                >
                   {riotAccount.user ? 'Rented' : 'Available'}
                 </Badge>
               )}
@@ -95,25 +99,21 @@ export function AccountCard({
                   </span>
                 </div>
               )}
-              {showPrice && (
-                isPriceLoading
-                  ? (
-                      <Skeleton />
-                    )
-                  : (
-                      isFavorite && (
-                        <div className="flex items-center gap-1 text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                          <CoinIcon className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
-                          {getAccountPrice(price!, currentRanking?.elo)[0].price}
-                        </div>
-                      )
-                    )
+              {showPrice && isFavorite && (
+                <div
+                  className="flex items-center gap-1 text-sm font-medium text-zinc-900 dark:text-zinc-100"
+                >
+                  <CoinIcon className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
+                  {/* {getAccountPrice(price!, currentRanking?.elo)[0].price} */}
+                </div>
               )}
             </div>
           </div>
 
           {/* Bottom row: rank, server, champions, skins */}
-          <div className="text-xs font-medium justify-between w-full items-center text-zinc-600 dark:text-zinc-400 flex gap-2">
+          <div
+            className="text-xs font-medium justify-between w-full items-center text-zinc-600 dark:text-zinc-400 flex gap-2"
+          >
             <div className="min-w-fit flex gap-2 items-center">
               <GameRankDisplay imageClass="w-4.5 h-4.5" showLP={false} ranking={currentRanking} />
               <div className="w-1 h-1 rounded-full bg-shade4"></div>

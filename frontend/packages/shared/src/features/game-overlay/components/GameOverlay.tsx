@@ -122,7 +122,7 @@ export function GameOverlay({
 
     setLastExtension({ seconds, cost }); // Keep track for time animation
 
-    handleExtendAccount(option.index);
+    handleExtendAccount('' as any);
   };
   const isLoading = isUsernameLoading || isAccountLoading || isPriceLoading;
   if (isLoading) {

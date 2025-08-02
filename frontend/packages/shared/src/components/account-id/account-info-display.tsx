@@ -31,18 +31,14 @@ function RankDisplay({
   getTierIcon,
 }: {
   title: string;
-  rank?: {
-    elo: string;
-    division: string;
-    points: number;
-  };
+  rank?: RankingType;
   previousSeasonRank?: {
     tier: string;
     rank: string;
     season: number;
   };
   getRankColor: (tier: string) => string;
-  getEloIcon: (elo: string) => string;
+  getEloIcon: (elo?: string) => string;
   getTierIcon?: (tier: string) => string;
 }) {
   return (
@@ -53,15 +49,15 @@ function RankDisplay({
         ? (
             <div className="flex justify-center flex-col items-center gap-4">
               <img
-                src={getEloIcon(rank.elo) || '/placeholder.svg'}
-                alt={rank.elo}
+                src={getEloIcon(rank.elo?.name) || '/placeholder.svg'}
+                alt={rank.elo?.name || 'Unranked'}
                 className="w-16 h-16"
               />
               <div className="flex flex-col gap-2">
                 <div className="flex gap-1 items-end">
 
                   <p className="text-sm font-medium">
-                    {rank.elo ? `${rank.elo[0].toUpperCase()}${rank.elo?.slice(1).toLowerCase()}` : 'Unranked'}
+                    {rank.elo?.name ? `${rank.elo?.name[0]?.toUpperCase()}${rank.elo?.name?.slice(1).toLowerCase()}` : 'Unranked'}
                     {' '}
                     {rank.division}
                   </p>
@@ -143,13 +139,6 @@ export default function AccountInfoDisplay({
 
       </div>
 
-      {}
-      {}
-      {}
-      {}
-      {}
-      {}
-      {}
     </div>
   );
 }

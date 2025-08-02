@@ -20,7 +20,6 @@ import { ResultsCount } from '@/features/accounts-table/components/results-count
 import { SearchBar } from '@/features/accounts-table/components/search-query.tsx';
 import { useAccounts } from '@/features/accounts-table/hooks/useAccounts.tsx';
 import { useAllDataDragon } from '@/hooks/useDataDragon/useDataDragon.ts';
-import { usePrice } from '@/hooks/usePrice.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
 import { cn } from '@/lib/utils.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
@@ -65,9 +64,7 @@ export function AccountsTablePage() {
 
   const { getCompanyIcon, getFormattedServer } = useMapping();
   const { allChampions, allSkins, isLoading: isDataDragonLoading } = useAllDataDragon();
-  const { price, isPriceLoading } = usePrice();
 
-  // Reset to first page when filters change
   // @ts-ignore
   useEffect(() => {
     // @ts-ignore
@@ -533,8 +530,6 @@ export function AccountsTablePage() {
           filters={filters}
           isLoading={isLoading}
           filteredAccounts={filteredAccounts}
-          isPriceLoading={isPriceLoading}
-          price={price}
           requestSort={requestSort}
           SortIndicator={SortIndicator}
           handleViewAccountDetails={handleViewAccountDetails}

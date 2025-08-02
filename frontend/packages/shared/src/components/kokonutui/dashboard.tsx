@@ -66,7 +66,6 @@ const CurrentlyRentedAccountsSkeleton = () => (
 );
 
 export default function Dashboard({ user }: { user: UserType | null }) {
-  console.log('mode', import.meta.env.MODE);
   return (
     <div className="space-y-6">
 
@@ -115,7 +114,7 @@ export default function Dashboard({ user }: { user: UserType | null }) {
           {
             !user
               ? <CurrentlyRentedAccountsSkeleton />
-              : <CurrentlyRentedAccounts accounts={user.rentedAccounts} />
+              : <CurrentlyRentedAccounts accounts={user.rentals} />
           }
         </div>
         <div className="bg-white dark:bg-black/20 flex flex-col items-start rounded-xl border border-gray-200 dark:border-[#1F1F23]">

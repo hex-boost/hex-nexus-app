@@ -19,17 +19,11 @@ export const Route = createFileRoute('/_protected/accounts/$id')({
 function AccountByID() {
   const { id } = useParams({ from: '/_protected/accounts/$id' });
   const queryClient = useQueryClient();
-  const { rentedAccounts, isRentedLoading, isAvailableLoading, availableAccounts } = useAccountByID({ documentId: id });
+  const { isAvailableLoading: isLoading, accountById } = useAccountByID({ documentId: id });
   const refetchAccount = async () => {
     // Invalidate all queries that start with 'accounts' with a single call
     await queryClient.invalidateQueries({ queryKey: ['accounts'] });
   };
-
-  const account = rentedAccounts?.find(acc => acc.documentId === id)
-    || availableAccounts?.find(acc => acc.documentId === id)
-    || null;
-
-  const isLoading = isAvailableLoading || isRentedLoading;
 
   return (
     <>
@@ -44,7 +38,7 @@ function AccountByID() {
       </div>
 
       <div className="space-y-8">
-        {isLoading || !account
+        {isLoading || !accountById
           ? (
               <div className="grid grid-cols-5 gap-6">
                 <div className="col-span-3 grid grid-flow-row w-full space-y-6">
@@ -124,7 +118,7 @@ function AccountByID() {
           : (
               <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                 <AccountDetails
-                  account={account}
+                  accountWithPrice={accountById}
                   onAccountChange={refetchAccount}
                 />
               </div>

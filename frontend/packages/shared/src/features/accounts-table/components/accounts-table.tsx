@@ -1,14 +1,19 @@
-import type { FilterState } from '@/features/accounts-table/hooks/useAccounts.tsx';
+import type { AccountWithPrice, FilterState } from '@/features/accounts-table/hooks/useAccounts.tsx';
 import type { ArrowUpIcon } from 'lucide-react';
 import { AccountRow } from '@/features/accounts-table/components/account-row.tsx';
 import { AccountTableSkeleton } from '@/features/accounts-table/components/account-table-skeleton.tsx';
 import React from 'react';
 
+export type TimeOption = {
+  id: number;
+  documentId: string;
+  multiplier: number;
+  milliseconds: number;
+  accountPrice: number;
+};
 type AccountsTableProps = {
   isLoading: boolean;
-  filteredAccounts: any[];
-  isPriceLoading: boolean;
-  price: any;
+  filteredAccounts: AccountWithPrice[];
   filters: FilterState;
   requestSort: (column: string) => void;
   SortIndicator: React.FC<{ column: string }>;
@@ -23,8 +28,6 @@ export function AccountsTable({
   filters,
   isLoading,
   filteredAccounts,
-  isPriceLoading,
-  price,
   requestSort,
   SortIndicator,
   handleViewAccountDetails,
@@ -108,10 +111,9 @@ export function AccountsTable({
                 filteredAccounts.map(account => (
                   <AccountRow
                     filters={filters}
-                    key={account.id}
-                    account={account}
-                    isPriceLoading={isPriceLoading}
-                    price={price}
+                    key={account.account.id}
+                    account={account.account}
+                    price={account['time-options']}
                     onViewDetails={handleViewAccountDetails}
                     getEloIcon={getEloIcon}
                     getRegionIcon={getRegionIcon}

@@ -1,26 +1,38 @@
-import type { Price } from '@/types/price.ts';
-import type { RankingType } from '@/types/types.ts';
+import type { TimeOptionWithPrice } from '@/features/accounts-table/hooks/useAccounts.tsx';
 import { CoinIcon } from '@/components/coin-icon.tsx';
-import { Skeleton } from '@/components/ui/skeleton.tsx';
 
 type PriceDisplayProps = {
-  isPriceLoading: boolean;
-  price: Price;
-  ranking: RankingType;
+  price: TimeOptionWithPrice[];
 };
+export function formatMilliseconds(ms: number): string {
+  if (ms <= 0) {
+    return '0m';
+  }
 
-export function PriceDisplay({ isPriceLoading, price, ranking }: PriceDisplayProps) {
+  const totalMinutes = Math.floor(ms / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours > 0) {
+    if (minutes > 0) {
+      return `${hours}:${String(minutes).padStart(2, '0')}h`;
+    }
+    return `${hours}h`;
+  }
+
+  return `${minutes}m`;
+}
+
+export function PriceDisplay({ price }: PriceDisplayProps) {
+  const firstPrice = price[0];
   return (
     <div className="flex items-center gap-1 text-sm font-medium text-zinc-900 dark:text-zinc-100">
       <CoinIcon className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
-      {isPriceLoading
-        ? (
-            <Skeleton className="h-5 w-12" />
-          )
-        : (
-            price?.league[(ranking.elo.charAt(0).toUpperCase() + ranking.elo.slice(1).toLowerCase()) || 'Unranked']
-          )}
-      <span className="text-[10px] text-muted-foreground">/1h</span>
+      {firstPrice.accountPrice}
+      <span className="text-[10px] text-muted-foreground">
+        /
+        {formatMilliseconds(firstPrice.milliseconds)}
+      </span>
     </div>
   );
 }

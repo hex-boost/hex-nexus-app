@@ -372,36 +372,6 @@ export type AdminUser = {
   };
 } & Struct.CollectionTypeSchema;
 
-export type ApiAccountPriceAccountPrice = {
-  collectionName: 'account_prices';
-  info: {
-    displayName: 'Account Price';
-    pluralName: 'account-prices';
-    singularName: 'account-price';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  attributes: {
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    elo: Schema.Attribute.Relation<'manyToOne', 'api::elo.elo'>;
-    game: Schema.Attribute.Relation<'oneToOne', 'api::game.game'>;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::account-price.account-price'
-    > &
-    Schema.Attribute.Private;
-    price: Schema.Attribute.Integer;
-    publishedAt: Schema.Attribute.DateTime;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-} & Struct.CollectionTypeSchema;
-
 export type ApiAccountAccount = {
   collectionName: 'accounts';
   info: {
@@ -414,11 +384,6 @@ export type ApiAccountAccount = {
     draftAndPublish: false;
   };
   attributes: {
-    actionHistory: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::action.action'
-    > &
-    Schema.Attribute.Private;
     ban: Schema.Attribute.JSON;
     blueEssence: Schema.Attribute.Integer;
     createdAt: Schema.Attribute.DateTime;
@@ -441,8 +406,8 @@ export type ApiAccountAccount = {
     partyRestriction: Schema.Attribute.Integer;
     password: Schema.Attribute.String & Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
-    PUUID: Schema.Attribute.String;
     rankings: Schema.Attribute.Relation<'oneToMany', 'api::ranking.ranking'>;
+    rentals: Schema.Attribute.Relation<'oneToMany', 'api::rental.rental'>;
     riotPoints: Schema.Attribute.Integer;
     server: Schema.Attribute.Enumeration<
       [
@@ -471,23 +436,18 @@ export type ApiAccountAccount = {
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    user: Schema.Attribute.Relation<
-      'manyToOne',
-      'plugin::users-permissions.user'
-    >;
     username: Schema.Attribute.String &
       Schema.Attribute.Private &
       Schema.Attribute.Unique;
   };
 } & Struct.CollectionTypeSchema;
 
-export type ApiActionAction = {
-  collectionName: 'actions';
+export type ApiClaimClaim = {
+  collectionName: 'claims';
   info: {
-    description: '';
-    displayName: 'Action';
-    pluralName: 'actions';
-    singularName: 'action';
+    displayName: 'Claim';
+    pluralName: 'claims';
+    singularName: 'claim';
   };
   options: {
     draftAndPublish: false;
@@ -496,29 +456,24 @@ export type ApiActionAction = {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    expirationDate: Schema.Attribute.DateTime;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::action.action'
-    > &
-    Schema.Attribute.Private;
-    notified1Hour: Schema.Attribute.Boolean;
-    notified30Minutes: Schema.Attribute.Boolean;
-    notified5Minutes: Schema.Attribute.Boolean;
+    localizations: Schema.Attribute.Relation<'oneToMany', 'api::claim.claim'> &
+      Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
-    riotAccount: Schema.Attribute.Relation<'manyToOne', 'api::account.account'>;
-    timeEnum: Schema.Attribute.Integer;
+    rental: Schema.Attribute.Relation<'oneToOne', 'api::rental.rental'>;
+    timeOption: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::time-option.time-option'
+    >;
     transaction: Schema.Attribute.Relation<
       'oneToOne',
       'api::transaction.transaction'
     >;
-    type: Schema.Attribute.Enumeration<['claim', 'drop']>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     user: Schema.Attribute.Relation<
-      'manyToOne',
+      'oneToOne',
       'plugin::users-permissions.user'
     >;
   };
@@ -532,13 +487,12 @@ export type ApiConfigurationConfiguration = {
     singularName: 'configuration';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    isNewUser: Schema.Attribute.Boolean;
     isSkinChangerEnabled: Schema.Attribute.Boolean;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
@@ -547,7 +501,6 @@ export type ApiConfigurationConfiguration = {
     > &
     Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
-
     selectedSkins: Schema.Attribute.JSON;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -596,7 +549,7 @@ export type ApiDiscountCodeDiscountCode = {
     singularName: 'discount-code';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     code: Schema.Attribute.String &
@@ -622,6 +575,39 @@ export type ApiDiscountCodeDiscountCode = {
   };
 } & Struct.CollectionTypeSchema;
 
+export type ApiDropDrop = {
+  collectionName: 'drops';
+  info: {
+    displayName: 'Drop';
+    pluralName: 'drops';
+    singularName: 'drop';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<'oneToMany', 'api::drop.drop'> &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    rental: Schema.Attribute.Relation<'oneToOne', 'api::rental.rental'>;
+    transaction: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::transaction.transaction'
+    >;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'oneToOne',
+      'plugin::users-permissions.user'
+    >;
+  };
+} & Struct.CollectionTypeSchema;
+
 export type ApiDuoRequestDuoRequest = {
   collectionName: 'duo_requests';
   info: {
@@ -630,7 +616,7 @@ export type ApiDuoRequestDuoRequest = {
     singularName: 'duo-request';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     champions: Schema.Attribute.JSON;
@@ -673,23 +659,62 @@ export type ApiEloElo = {
     singularName: 'elo';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
-    accountPrices: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::account-price.account-price'
-    >;
+    accountPrice: Schema.Attribute.Integer;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    game: Schema.Attribute.Relation<'manyToOne', 'api::game.game'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::elo.elo'> &
       Schema.Attribute.Private;
+    name: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+  };
+} & Struct.CollectionTypeSchema;
+
+export type ApiExtendExtend = {
+  collectionName: 'extends';
+  info: {
+    displayName: 'Extend';
+    pluralName: 'extends';
+    singularName: 'extend';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::extend.extend'
+    > &
+    Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    rental: Schema.Attribute.Relation<'manyToOne', 'api::rental.rental'>;
+    time_option: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::time-option.time-option'
+    >;
+    transaction: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::transaction.transaction'
+    >;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'oneToOne',
+      'plugin::users-permissions.user'
+    >;
   };
 } & Struct.CollectionTypeSchema;
 
@@ -735,7 +760,7 @@ export type ApiFriendRequestFriendRequest = {
     singularName: 'friend-request';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -773,7 +798,7 @@ export type ApiGameMatchGameMatch = {
     singularName: 'game-match';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     assist: Schema.Attribute.Integer;
@@ -815,49 +840,23 @@ export type ApiGameGame = {
     singularName: 'game';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    elos: Schema.Attribute.Relation<'oneToMany', 'api::elo.elo'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::game.game'> &
       Schema.Attribute.Private;
+    name: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
   };
 } & Struct.CollectionTypeSchema;
-
-export type ApiNexusBalanceNexusBalance = {
-  collectionName: 'nexus_balances';
-  info: {
-    displayName: 'Nexus Balance';
-    pluralName: 'nexus-balances';
-    singularName: 'nexus-balance';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  attributes: {
-    balance: Schema.Attribute.Decimal;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::nexus-balance.nexus-balance'
-    > &
-    Schema.Attribute.Private;
-    publishedAt: Schema.Attribute.DateTime;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-} & Struct.SingleTypeSchema;
 
 export type ApiNotificationNotification = {
   collectionName: 'notifications';
@@ -930,9 +929,8 @@ export type ApiPaymentPayment = {
       'api::discount-code.discount-code'
     >;
     gateway: Schema.Attribute.Enumeration<
-      ['stripe', 'mercadoPago', 'boostRoyal', 'turboBoost']
+      ['stripe', 'mercadoPago', 'boostRoyal', 'turboBoost', 'manual']
     >;
-    isPaid: Schema.Attribute.Boolean;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -940,7 +938,8 @@ export type ApiPaymentPayment = {
     > &
     Schema.Attribute.Private;
     metadata: Schema.Attribute.JSON;
-    paymentId: Schema.Attribute.String;
+    paymentStatus: Schema.Attribute.Enumeration<['open', 'paid', 'canceled']> &
+      Schema.Attribute.DefaultTo<'open'>;
     price: Schema.Attribute.Integer;
     publishedAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
@@ -961,7 +960,7 @@ export type ApiPlanPlan = {
     singularName: 'plan';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     allowedElos: Schema.Attribute.Relation<'oneToMany', 'api::elo.elo'>;
@@ -974,9 +973,11 @@ export type ApiPlanPlan = {
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::plan.plan'> &
       Schema.Attribute.Private;
     monthlyCoins: Schema.Attribute.Integer;
-    price: Schema.Attribute.Integer;
+    monthlyPrice: Schema.Attribute.Integer;
+    name: Schema.Attribute.String;
+    premiums: Schema.Attribute.Relation<'oneToMany', 'api::premium.premium'>;
     publishedAt: Schema.Attribute.DateTime;
-    title: Schema.Attribute.String;
+    tier: Schema.Attribute.Integer;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1007,8 +1008,9 @@ export type ApiPremiumPremium = {
       'api::premium.premium'
     > &
     Schema.Attribute.Private;
+    paidAmount: Schema.Attribute.Integer;
+    plan: Schema.Attribute.Relation<'manyToOne', 'api::plan.plan'>;
     publishedAt: Schema.Attribute.DateTime;
-    tier: Schema.Attribute.Enumeration<['basic', 'premium', 'pro', 'free']>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1018,34 +1020,6 @@ export type ApiPremiumPremium = {
     >;
   };
 } & Struct.CollectionTypeSchema;
-
-export type ApiPricePrice = {
-  collectionName: 'prices';
-  info: {
-    description: '';
-    displayName: 'Price';
-    pluralName: 'prices';
-    singularName: 'price';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  attributes: {
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    league: Schema.Attribute.JSON;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<'oneToMany', 'api::price.price'> &
-      Schema.Attribute.Private;
-    publishedAt: Schema.Attribute.DateTime;
-    timeMultipliers: Schema.Attribute.JSON;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    valorant: Schema.Attribute.JSON;
-  };
-} & Struct.SingleTypeSchema;
 
 export type ApiRankingRanking = {
   collectionName: 'rankings';
@@ -1064,8 +1038,8 @@ export type ApiRankingRanking = {
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     division: Schema.Attribute.String;
-    elo: Schema.Attribute.String;
-    game: Schema.Attribute.Enumeration<['valorant', 'league']>;
+    elo: Schema.Attribute.Relation<'oneToOne', 'api::elo.elo'>;
+    game: Schema.Attribute.Relation<'oneToOne', 'api::game.game'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -1092,7 +1066,7 @@ export type ApiReferralBreakpointReferralBreakpoint = {
     singularName: 'referral-breakpoint';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -1121,7 +1095,7 @@ export type ApiReferralProfileReferralProfile = {
     singularName: 'referral-profile';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -1149,6 +1123,49 @@ export type ApiReferralProfileReferralProfile = {
   };
 } & Struct.CollectionTypeSchema;
 
+export type ApiRentalRental = {
+  collectionName: 'rentals';
+  info: {
+    displayName: 'Rental';
+    pluralName: 'rentals';
+    singularName: 'rental';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    claim: Schema.Attribute.Relation<'oneToOne', 'api::claim.claim'>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    currentExpirationDate: Schema.Attribute.DateTime;
+    drop: Schema.Attribute.Relation<'oneToOne', 'api::drop.drop'>;
+    extends: Schema.Attribute.Relation<'oneToMany', 'api::extend.extend'>;
+    isActive: Schema.Attribute.Boolean;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::rental.rental'
+    > &
+    Schema.Attribute.Private;
+    notifiedExpiration1h: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
+    notifiedExpiration30m: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
+    notifiedExpiration5m: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
+    publishedAt: Schema.Attribute.DateTime;
+    riotAccount: Schema.Attribute.Relation<'manyToOne', 'api::account.account'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+  };
+} & Struct.CollectionTypeSchema;
+
 export type ApiReviewReview = {
   collectionName: 'reviews';
   info: {
@@ -1157,7 +1174,7 @@ export type ApiReviewReview = {
     singularName: 'review';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -1194,13 +1211,12 @@ export type ApiTimeOptionTimeOption = {
     singularName: 'time-option';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    displayName: Schema.Attribute.String;
     game: Schema.Attribute.Relation<'oneToOne', 'api::game.game'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
@@ -1208,6 +1224,7 @@ export type ApiTimeOptionTimeOption = {
       'api::time-option.time-option'
     > &
     Schema.Attribute.Private;
+    milliseconds: Schema.Attribute.Integer;
     multiplier: Schema.Attribute.Integer;
     publishedAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
@@ -1280,6 +1297,34 @@ export type ApiVersionVersion = {
     version: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.Unique;
+  };
+} & Struct.CollectionTypeSchema;
+
+export type ApiWithdrawnWithdrawn = {
+  collectionName: 'withdrawns';
+  info: {
+    displayName: 'Withdrawn';
+    pluralName: 'withdrawns';
+    singularName: 'withdrawn';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    amount: Schema.Attribute.Decimal;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::withdrawn.withdrawn'
+    > &
+    Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
   };
 } & Struct.CollectionTypeSchema;
 
@@ -1744,7 +1789,6 @@ export type PluginUsersPermissionsUser = {
         ]
       > &
       Schema.Attribute.DefaultTo<'["nexus"]'>;
-    actions: Schema.Attribute.Relation<'oneToMany', 'api::action.action'>;
     avatar: Schema.Attribute.Media<'images' | 'files'> &
       Schema.Attribute.Required;
     blocked: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
@@ -1805,14 +1849,11 @@ export type PluginUsersPermissionsUser = {
       'manyToOne',
       'api::referral-profile.referral-profile'
     >;
-    referral_profile: Schema.Attribute.Relation<
+    referralProfile: Schema.Attribute.Relation<
       'oneToOne',
       'api::referral-profile.referral-profile'
     >;
-    rentedAccounts: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::account.account'
-    >;
+    rentals: Schema.Attribute.Relation<'oneToMany', 'api::rental.rental'>;
     resetPasswordToken: Schema.Attribute.String & Schema.Attribute.Private;
     role: Schema.Attribute.Relation<
       'manyToOne',
@@ -1844,31 +1885,32 @@ declare module '@strapi/types' {
       'admin::transfer-token': AdminTransferToken;
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
-      'api::account-price.account-price': ApiAccountPriceAccountPrice;
       'api::account.account': ApiAccountAccount;
-      'api::action.action': ApiActionAction;
+      'api::claim.claim': ApiClaimClaim;
       'api::configuration.configuration': ApiConfigurationConfiguration;
       'api::discord-guild.discord-guild': ApiDiscordGuildDiscordGuild;
       'api::discount-code.discount-code': ApiDiscountCodeDiscountCode;
+      'api::drop.drop': ApiDropDrop;
       'api::duo-request.duo-request': ApiDuoRequestDuoRequest;
       'api::elo.elo': ApiEloElo;
+      'api::extend.extend': ApiExtendExtend;
       'api::favorite-account.favorite-account': ApiFavoriteAccountFavoriteAccount;
       'api::friend-request.friend-request': ApiFriendRequestFriendRequest;
       'api::game-match.game-match': ApiGameMatchGameMatch;
       'api::game.game': ApiGameGame;
-      'api::nexus-balance.nexus-balance': ApiNexusBalanceNexusBalance;
       'api::notification.notification': ApiNotificationNotification;
       'api::payment.payment': ApiPaymentPayment;
       'api::plan.plan': ApiPlanPlan;
       'api::premium.premium': ApiPremiumPremium;
-      'api::price.price': ApiPricePrice;
       'api::ranking.ranking': ApiRankingRanking;
       'api::referral-breakpoint.referral-breakpoint': ApiReferralBreakpointReferralBreakpoint;
       'api::referral-profile.referral-profile': ApiReferralProfileReferralProfile;
+      'api::rental.rental': ApiRentalRental;
       'api::review.review': ApiReviewReview;
       'api::time-option.time-option': ApiTimeOptionTimeOption;
       'api::transaction.transaction': ApiTransactionTransaction;
       'api::version.version': ApiVersionVersion;
+      'api::withdrawn.withdrawn': ApiWithdrawnWithdrawn;
       'plugin::content-releases.release': PluginContentReleasesRelease;
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;
       'plugin::i18n.locale': PluginI18NLocale;

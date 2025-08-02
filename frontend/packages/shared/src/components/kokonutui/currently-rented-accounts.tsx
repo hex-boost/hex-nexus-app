@@ -1,4 +1,4 @@
-import type { AccountType } from '@/types/types.ts';
+import type { AccountType, Rental } from '@/types/types.ts';
 import { AccountCard } from '@/components/AccountCard.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { cn } from '@/lib/utils';
@@ -26,7 +26,7 @@ function AccountItem({ account, onAccountChange }: { account: AccountType; onAcc
 
 type CurrentlyRentedAccountsProps = {
   className?: string;
-  accounts: AccountType[];
+  accounts: Rental[];
 };
 
 export default function CurrentlyRentedAccounts({ accounts, className }: CurrentlyRentedAccountsProps) {
@@ -44,7 +44,7 @@ export default function CurrentlyRentedAccounts({ accounts, className }: Current
         ? accounts.map(account => (
             <AccountItem
               key={account.id}
-              account={account}
+              account={account.riotAccount}
               onAccountChange={handleAccountChange}
             />
           ))

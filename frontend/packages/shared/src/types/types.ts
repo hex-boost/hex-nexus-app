@@ -7,12 +7,12 @@ import type {
   AdminTransferTokenPermission,
   AdminUser,
   ApiAccountAccount,
-  ApiActionAction,
   ApiFavoriteAccountFavoriteAccount,
   ApiNotificationNotification,
   ApiPremiumPremium,
-  ApiPricePrice,
   ApiRankingRanking,
+  ApiRentalRental,
+  ApiTimeOptionTimeOption,
   ApiTransactionTransaction,
   ApiVersionVersion,
   PluginContentReleasesRelease,
@@ -44,10 +44,10 @@ export type ApiTokenPermissionType = Entity<AdminApiTokenPermission>;
 export type AdminPermissionType = Entity<AdminPermission>;
 export type AdminRoleType = Entity<AdminRole>;
 export type TransferTokenType = Entity<AdminTransferToken>;
-
+export type Rental = Entity<ApiRentalRental>;
 export type TransferTokenPermissionType = Entity<AdminTransferTokenPermission>;
 export type AdminUserType = Entity<AdminUser>;
-
+export type TimeOption = Entity<ApiTimeOptionTimeOption>;
 export type ActionType = Entity<ApiActionAction>;
 export type PremiumType = Entity<ApiPremiumPremium>;
 export type PriceType = Entity<ApiPricePrice>;

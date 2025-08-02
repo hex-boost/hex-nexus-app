@@ -66,15 +66,13 @@ export function useAccountActions({
   });
   const { mutate: handleExtendAccount, isPending: isExtendPending } = useMutation({
     mutationKey: ['accounts', 'extend', account?.documentId],
-    mutationFn: async (timeIndex: number) => {
-      setSelectedExtensionIndex(timeIndex);
-
+    mutationFn: async (timeOptionDocumentId: string) => {
       const requestPromise = strapiClient.request<{
         message: string;
-      }>('put', `accounts/${account?.documentId}/extend`, {
+      }>('post', `rentals/${account?.documentId}/extensions`, {
         data: {
-          game: 'league',
-          time: timeIndex,
+          gameDocumentId: 's6ntaxkuso7487dzcaoamj5g',
+          timeOptionDocumentId,
         },
       });
       const isOverlayPage = router.state.location.pathname === '/overlay';
@@ -123,7 +121,7 @@ export function useAccountActions({
       return (await strapiClient.create<{
         message: string;
       }>(`accounts/${account?.documentId}/rentals`, {
-        game: 'league',
+        game: account,
         time: timeIndex,
         boostRoyalOrderId,
       })).data;

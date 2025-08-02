@@ -1,5 +1,5 @@
-import type { FilterState } from '@/features/accounts-table/hooks/useAccounts.tsx';
-import type { AccountType, RankingType } from '@/types/types.ts';
+import type { FilterState, TimeOptionWithPrice } from '@/features/accounts-table/hooks/useAccounts.tsx';
+import type { AccountType } from '@/types/types.ts';
 import type { ArrowUp } from 'lucide-react';
 import { AccountGameIcon } from '@/components/GameComponents.tsx';
 import { GameRankDisplay } from '@/components/GameRankDisplay.tsx';
@@ -15,8 +15,7 @@ import React from 'react';
 
 type AccountRowProps = {
   account: AccountType;
-  isPriceLoading: boolean;
-  price: any;
+  price: TimeOptionWithPrice[];
   onViewDetails: (id: string) => void;
   getEloIcon: (elo: string) => string;
   getRegionIcon: (region: string) => React.ReactNode;
@@ -29,40 +28,16 @@ type AccountRowProps = {
 export function AccountRow({
   filters,
   account,
-  isPriceLoading,
   price,
   onViewDetails,
   getRegionIcon,
 }: AccountRowProps) {
-  const currentRankPrice = account.rankings.find(
-    ranking => ranking.queueType === 'soloqueue' && ranking.type === 'current' && ranking.elo !== '',
-  ) || account.rankings.find(
-    ranking => ranking.queueType === 'soloqueue' && ranking.type === 'provisory',
-  ) || {
-    elo: 'unranked',
-    division: '',
-    points: 0,
-    wins: 0,
-    losses: 0,
-  } as RankingType;
   const currentRank = account.rankings.find(
-    ranking => ranking.queueType === filters.queueType && ranking.type === 'current' && ranking.elo !== '',
+    ranking => ranking.queueType === filters.queueType && ranking.type === 'current' && ranking.elo.name !== '',
   ) || account.rankings.find(
     ranking => ranking.queueType === filters.queueType && ranking.type === 'provisory',
-  ) || {
-    elo: 'unranked',
-    division: '',
-    points: 0,
-    wins: 0,
-    losses: 0,
-  } as RankingType;
-  const previousRank = account.rankings.find(ranking => ranking.queueType === filters.queueType && ranking.type === 'previous') || {
-    elo: 'unranked',
-    division: '',
-    points: 0,
-    wins: 0,
-    losses: 0,
-  } as RankingType;
+  );
+  const previousRank = account.rankings.find(ranking => ranking.queueType === filters.queueType && ranking.type === 'previous');
   const { getFormattedServer, getWinrateColorClass, getCompanyIcon } = useMapping();
   const { getLeaverBusterInfo, getSeverityObject } = useRiotAccount({ account });
   return (
@@ -307,7 +282,7 @@ export function AccountRow({
         </span>
       </td>
       <td className="p-3">
-        <PriceDisplay isPriceLoading={isPriceLoading} price={price} ranking={currentRankPrice} />
+        <PriceDisplay price={price} />
       </td>
       <td className="p-3 text-center" onClick={e => e.stopPropagation()}>
         <AccountActionsMenu accountId={account.documentId} onViewDetails={onViewDetails} />

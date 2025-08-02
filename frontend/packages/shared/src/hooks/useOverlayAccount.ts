@@ -12,10 +12,10 @@ export function useOverlayAccount(username: string | undefined) {
   const { calculateTimeRemaining, getSecondsRemaining } = useDateTime();
   const initialRentalTime = account ? getSecondsRemaining(account) : 0;
   // If not in store, or we need to refresh, fetch directly
-  const { isRentedLoading } = useAccountByID({
+  const { } = useAccountByID({
     username,
   });
-  const isAccountLoading = !account && (isRentedLoading || username === undefined);
+  const isAccountLoading = !account && (username === undefined);
 
   const { price, getAccountPrice, isPriceLoading } = usePrice();
 

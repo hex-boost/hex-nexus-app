@@ -1,6 +1,7 @@
+import type { AccountWithPrice } from '@/features/accounts-table/hooks/useAccounts.tsx';
 import type { AccountType } from '@/types/types.ts';
-import { ChampionsSkinsTab } from '@/components/account-id/ChampionsSkinsTab.tsx';
 
+import { ChampionsSkinsTab } from '@/components/account-id/ChampionsSkinsTab.tsx';
 import { LeaverBusterDisplay } from '@/components/account-id/leaver-buster-display.tsx';
 import { BoostRoyalOrderModal } from '@/components/BoostRoyalOrderModal.tsx';
 import { CoinIcon } from '@/components/coin-icon.tsx';
@@ -12,12 +13,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input.tsx';
 import { Separator } from '@/components/ui/separator.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
+import { formatMilliseconds } from '@/features/accounts-table/components/price-display.tsx';
 import { FavoriteAccountNote } from '@/features/favorite-account/components/FavoriteAccountNote.tsx';
 import { FavoriteStar } from '@/features/favorite-account/components/FavoriteStar.tsx';
 import { useAccountActions } from '@/hooks/useAccountActions.ts';
 import { useAccountFilters } from '@/hooks/useAccountFilters.ts';
 import { useDateTime } from '@/hooks/useDateTime.ts';
-import { usePrice } from '@/hooks/usePrice.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
 import { cn } from '@/lib/utils.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
@@ -25,10 +26,12 @@ import { Check, CircleCheckBig, Clock, Search, Shield, X } from 'lucide-react';
 import { useState } from 'react';
 import AccountInfoDisplay from './account-info-display.tsx';
 
-export default function AccountDetails({ account, onAccountChange }: {
+export default function AccountDetails({ accountWithPrice, onAccountChange }: {
   onAccountChange: () => Promise<void>;
-  account: AccountType;
+  accountWithPrice: AccountWithPrice;
 }) {
+  const account = accountWithPrice.account as AccountType;
+  const price = accountWithPrice['time-options'];
   const { user } = useUserStore();
   const [isBoostRoyalModalOpen, setIsBoostRoyalModalOpen] = useState(false);
 
@@ -54,7 +57,6 @@ export default function AccountDetails({ account, onAccountChange }: {
   const soloQueueRank = account.rankings?.find(lc => lc.queueType === 'soloqueue');
   const flexQueueRank = account.rankings?.find(lc => lc.queueType === 'flex');
   const { calculateTimeRemaining } = useDateTime();
-  const { price, getAccountPrice, isPriceLoading } = usePrice();
   const handleRentClick = () => {
     if (account.type === 'boostroyal') {
       setIsBoostRoyalModalOpen(true);
@@ -395,30 +397,26 @@ export default function AccountDetails({ account, onAccountChange }: {
                       options
                     </div>
                     <div className="grid grid-cols-3 gap-2">
-                      {isPriceLoading
-                        ? Array.from({ length: 3 }).map((_, index) => (
-                            <Skeleton key={index} className="h-12 w-full" />
-                          ))
-                        : (price && getAccountPrice(price, soloQueueRank?.elo).map((option, index) => (
-                            <Button
-                              key={index}
-                              variant="outline"
-                              size="sm"
-                              className="flex border-primary/10 bg-white/[0.001] flex-col items-center gap-1 h-auto py-2"
-                              onClick={() => handleExtendAccount(index)}
-                              disabled={isExtendPending}
-                            >
-                              <span className="text-sm">
-                                {option.hours}
-                                h
-                              </span>
-                              <div className="flex items-center gap-0.5 text-xs">
-                                <CoinIcon className="w-3 h-3 text-amber-500" />
-                                {option.price.toLocaleString()}
-                              </div>
-                            </Button>
-                          ))
-                          )}
+                      {(price.map((option, index) => (
+                        <Button
+                          key={index}
+                          variant="outline"
+                          size="sm"
+                          className="flex border-primary/10 bg-white/[0.001] flex-col items-center gap-1 h-auto py-2"
+                          onClick={() => handleExtendAccount(option.documentId)}
+                          disabled={isExtendPending}
+                        >
+                          <span className="text-sm">
+                            {formatMilliseconds(option.milliseconds)}
+                            h
+                          </span>
+                          <div className="flex items-center gap-0.5 text-xs">
+                            <CoinIcon className="w-3 h-3 text-amber-500" />
+                            {option.accountPrice}
+                          </div>
+                        </Button>
+                      ))
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -443,7 +441,7 @@ export default function AccountDetails({ account, onAccountChange }: {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-3">
-                    {!isPriceLoading && price && getAccountPrice(price, soloQueueRank?.elo) && getAccountPrice(price, soloQueueRank?.elo).map((option, index) => (
+                    { price.map((option, index) => (
                       // eslint-disable-next-line jsx-a11y/no-static-element-interactions,jsx-a11y/click-events-have-key-events
                       <div
                         key={index}
@@ -454,9 +452,7 @@ export default function AccountDetails({ account, onAccountChange }: {
                           <div className="flex items-center gap-1.5">
                             <Clock className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
                             <span className="font-medium text-zinc-900 dark:text-zinc-50">
-                              {option.hours}
-                              {' '}
-                              {option.hours === 1 ? 'hour' : 'hours'}
+                              {formatMilliseconds(option.milliseconds)}
                             </span>
                           </div>
                           {selectedRentalOptionIndex === index && (
@@ -475,9 +471,6 @@ export default function AccountDetails({ account, onAccountChange }: {
                         </div>
                       </div>
                     ))}
-                    {isPriceLoading && Array.from({ length: 3 }).fill(0).map((_, index) => (
-                      <Skeleton key={index} className="h-24 w-full" />
-                    ))}
                   </div>
 
                   <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
@@ -487,16 +480,16 @@ export default function AccountDetails({ account, onAccountChange }: {
                         className="flex items-center gap-1 text-lg font-semibold text-zinc-900 dark:text-zinc-50"
                       >
                         <CoinIcon className="w-4 h-4 text-amber-500 dark:text-amber-400" />
-                        {!isPriceLoading && price && getAccountPrice(price, soloQueueRank?.elo) && selectedRentalOptionIndex !== undefined
-                          ? getAccountPrice(price, soloQueueRank?.elo)[selectedRentalOptionIndex]?.price.toLocaleString() || '0'
-                          : <Skeleton className="w-10 h-6" />}
-                        {' '}
+                        {/* { selectedRentalOptionIndex !== undefined */}
+                        {/*  ? soloQueueRank?.elo.name)[selectedRentalOptionIndex]?.price.toLocaleString() || '0' */}
+                        {/*  : <Skeleton className="w-10 h-6" />} */}
+                        {/* {' '} */}
                         coins
                       </div>
                     </div>
                     <Button
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                      disabled={!price || (price && !getAccountPrice(price, soloQueueRank?.elo)) || isPriceLoading || isRentPending || selectedRentalOptionIndex == null}
+                      disabled={!price || (isRentPending || selectedRentalOptionIndex == null)}
                       loading={isRentPending}
                       onClick={handleRentClick}
                     >

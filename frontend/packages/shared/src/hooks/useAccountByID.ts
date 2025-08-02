@@ -1,31 +1,18 @@
-import type { AccountType } from '@/types/types.ts';
+import type { AccountWithPrice } from '@/features/accounts-table/hooks/useAccounts.tsx';
 import { strapiClient } from '@/lib/strapi.ts';
 import { useQuery } from '@tanstack/react-query';
 
-export function useAccountByID({ documentId, username }: { username?: string; documentId?: string }) {
+export function useAccountByID({ documentId }: { username?: string; documentId?: string }) {
   const {
-    data: availableAccounts,
+    data: accountById,
     isLoading: isAvailableLoading,
   } = useQuery({
-    queryKey: ['accounts', 'available', documentId],
-    queryFn: () => strapiClient.find<AccountType[]>('accounts/available', {
-      filters: { documentId, username },
-    }).then(res => res.data),
+    queryKey: ['accounts', 'rental-options', documentId],
+    queryFn: () => strapiClient.find<AccountWithPrice>(`accounts/${documentId}/rental-options`, {}).then(res => res.data),
   });
 
-  const {
-    data: rentedAccounts,
-    isLoading: isRentedLoading,
-  } = useQuery({
-    queryKey: ['accounts', 'rented', documentId],
-    queryFn: () => strapiClient.find<AccountType[]>('accounts/rented', {
-      filters: { documentId, username },
-    }).then(res => res.data),
-  });
   return {
-    availableAccounts,
-    rentedAccounts,
+    accountById,
     isAvailableLoading,
-    isRentedLoading,
   };
 }

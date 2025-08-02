@@ -1,5 +1,4 @@
-import type { AccountType, Server } from '@/types/types.ts';
-import type { StrapiResponse } from 'strapi-ts-sdk/dist/infra/strapi-sdk/src';
+import type { AccountType, Server, TimeOption } from '@/types/types.ts';
 
 import { strapiClient } from '@/lib/strapi.ts';
 
@@ -25,7 +24,9 @@ export const availableRegions: Server[] = [
 ];
 
 type SortKey = keyof AccountType | 'coin_price' | 'price' | 'winrate' | 'blueEssence' | 'LCUchampions' | 'LCUskins';
-
+export type TimeOptionWithPrice = TimeOption & { accountPrice: number };
+export type AccountWithPrice = (
+    { 'account': AccountType; 'time-options': TimeOptionWithPrice[] });
 export type FilterState = {
   leaverStatus: string[];
   game: string;
@@ -56,6 +57,7 @@ type AccountsState = {
     pageCount?: number;
   };
 };
+
 export function useAccounts(initialPage = 1, initialPageSize = 20) {
   const DEFAULT_STATE: AccountsState = useMemo(() => ({
     searchQuery: '',
@@ -171,7 +173,7 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
       return newState;
     });
   }, [queryClient]);
-  // Reset all filters
+    // Reset all filters
   const resetFilters = useCallback(() => {
     const newState = {
       ...DEFAULT_STATE,
@@ -282,11 +284,11 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
         if (ranksToMatch.length > 0 && divsToMatch.length > 0) {
           for (const rank of ranksToMatch) {
             for (const division of divsToMatch) {
-              conditions.push({ $and: [{ elo: { $eqi: rank } }, { division: { $eqi: division } }] });
+              conditions.push({ $and: [{ elo: { name: { $eqi: rank } } }, { division: { $eqi: division } }] });
             }
           }
         } else if (ranksToMatch.length > 0) {
-          conditions.push({ elo: { $in: ranksToMatch } });
+          conditions.push({ elo: { name: { $in: ranksToMatch } } });
         } else if (divsToMatch.length > 0) {
           // This case handles when only divisions are selected, implying any defined rank within those divisions.
           conditions.push({ division: { $in: divsToMatch } });
@@ -308,7 +310,7 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
             $and: [
               { queueType: { $eqi: queueTypeFilter } },
               { type: { $in: ['current', 'provisory'] } },
-              { elo: { $nin: ['unranked', '', null] } }, // Elo must be defined (not unranked, empty, or null)
+              { elo: { name: { $nin: ['unranked', '', null] } } }, // Elo must be defined (not unranked, empty, or null)
               definedRankDivisionMatcher,
             ],
           },
@@ -324,9 +326,9 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
               { type: { $in: ['current', 'provisory'] } },
               {
                 $or: [ // Elo is unranked, empty, or does not exist
-                  { elo: { $eqi: 'unranked' } },
-                  { elo: { $eqi: '' } },
-                  { elo: { $exists: false } },
+                  { elo: { name: { $eqi: 'unranked' } } },
+                  { elo: { name: { $eqi: '' } } },
+                  { elo: { $null: true } },
                 ],
               },
             ],
@@ -345,9 +347,9 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
                   { type: { $in: ['current', 'provisory'] } },
                   {
                     $or: [
-                      { elo: { $eqi: 'unranked' } },
-                      { elo: { $eqi: '' } },
-                      { elo: { $exists: false } },
+                      { elo: { name: { $eqi: 'unranked' } } },
+                      { elo: { name: { $eqi: '' } } },
+                      { elo: { $null: true } },
                     ],
                   },
                 ],
@@ -358,7 +360,7 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
                 $and: [
                   { queueType: { $eqi: queueTypeFilter } },
                   { type: { $eqi: 'previous' } },
-                  { elo: { $nin: ['unranked', '', null] } }, // Previous Elo must be defined
+                  { elo: { name: { $nin: ['unranked', '', null] } } }, // Previous Elo must be defined
                   definedRankDivisionMatcher,
                 ],
               },
@@ -395,7 +397,7 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
     queryKey: ['accounts', state.filters, state.searchQuery, state.pagination.page, state.pagination.pageSize, state.sortConfig],
     queryFn: async () => {
       const queryParams = buildQueryParams(state.pagination.page);
-      return await strapiClient.find<AccountType[]>('accounts/available', queryParams) as StrapiResponse<AccountType[]>;
+      return await strapiClient.find<AccountWithPrice[]>('accounts/available', queryParams);
     },
   });
 
@@ -406,7 +408,7 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
         minBlueEssence: value,
       });
     }, 200), [setFilters, state.filters]);
-  // Function to update slider value immediately (for UI) but debounce the actual filter
+    // Function to update slider value immediately (for UI) but debounce the actual filter
   const handleBlueEssenceChange = useCallback((value: number) => {
     setSliderValue(value);
     debouncedSetBlueEssence(value);
@@ -427,7 +429,7 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
           queryKey: ['accounts', state.filters, state.searchQuery, nextPage, state.pagination.pageSize, state.sortConfig],
           queryFn: async () => {
             const queryParams = buildQueryParams(nextPage);
-            return await strapiClient.find<AccountType[]>('accounts/available', queryParams);
+            return await strapiClient.find<AccountWithPrice[]>('accounts/available', queryParams);
           },
         });
       }
@@ -457,7 +459,10 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
   const setPageSize = useCallback((newSize: number) => {
     setPagination({ page: 1, pageSize: newSize });
   }, [setPagination]);
-  const processedData = rawData || { data: [], meta: { pagination: { page: 1, pageSize: state.pagination.pageSize, pageCount: 0, total: 0 } } };
+  const processedData = rawData || {
+    data: [],
+    meta: { pagination: { page: 1, pageSize: state.pagination.pageSize, pageCount: 0, total: 0 } },
+  };
 
   return {
     availableRegions,

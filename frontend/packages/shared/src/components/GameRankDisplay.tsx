@@ -17,7 +17,7 @@ export function GameRankDisplay({
   showLP = true,
   imageClass = 'w-6 h-6', // Default to 6 (w-6 h-6)
 }: RankDisplayProps) {
-  const elo = ranking?.elo || 'unranked';
+  const elo = ranking?.elo?.name || 'unranked';
   const normalizedElo = elo.toLowerCase();
   const { getEloIcon } = useMapping();
 
