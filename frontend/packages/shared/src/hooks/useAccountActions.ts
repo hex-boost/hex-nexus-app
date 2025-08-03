@@ -1,4 +1,4 @@
-import type { AccountType, RawStrapiError } from '@/types/types';
+import type { AccountType, RawStrapiError, StrapiError } from '@/types/types';
 import { strapiClient } from '@/lib/strapi';
 import { useAccountStore } from '@/stores/useAccountStore.ts';
 
@@ -146,7 +146,7 @@ export function useAccountActions({
   // In useAccountActions.ts, update the handleRentAccount mutation:
   const { mutate: handleRentAccount, isPending: isRentPending } = useMutation<
     { message: string },
-    RawStrapiError,
+    StrapiError,
     RentAccountVariables,
     unknown
   >({
@@ -166,7 +166,7 @@ export function useAccountActions({
       toast.success(data.message);
     },
     onError: (error) => {
-      toast.error(error.error.message);
+      toast.error(error.data.error.message);
     },
   });
   return {
