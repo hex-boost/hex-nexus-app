@@ -20,7 +20,7 @@ export function useOverlayAccount(username: string | undefined) {
   const { price, getAccountPrice, isPriceLoading } = usePrice();
 
   const { handleExtendAccount, isExtendPending, selectedExtensionIndex }
-    = useAccountActions({ account, user });
+    = useAccountActions({ account });
   const {
     data: dropRefund,
     isLoading: isRefundLoading,

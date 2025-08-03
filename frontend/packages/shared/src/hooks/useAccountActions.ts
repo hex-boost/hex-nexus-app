@@ -1,77 +1,107 @@
-import type { AccountType, StrapiError, UserType } from '@/types/types';
+import type { AccountType, RawStrapiError } from '@/types/types';
 import { strapiClient } from '@/lib/strapi';
 import { useAccountStore } from '@/stores/useAccountStore.ts';
+
+import { Monitor as AccountMonitor } from '@account';
+
 import { Manager } from '@leagueManager';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+export type RefundResponse = {
+  amount: number;
+  remainingPercentage: number;
+  totalPaidAmount: number;
+};
+export type ExtensionsResponse = {
+  message: string;
+  rental: Extension;
+};
+
+export type Extension = {
+  id: number;
+  documentId: string;
+  currentExpirationDate: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string;
+  locale: any;
+  notifiedExpiration1h: boolean;
+  notifiedExpiration30m: boolean;
+  notifiedExpiration5m: boolean;
+};
 export function useAccountActions({
   account,
-  user,
+  isAccountRented,
+  accountRentalId,
 }: {
   account?: AccountType;
-  user: UserType | null;
+  isAccountRented?: boolean;
+  accountRentalId?: string;
 }) {
   const queryClient = useQueryClient();
   const { isNexusAccount } = useAccountStore();
-  const [selectedRentalOptionIndex, setSelectedRentalOptionIndex] = useState<number>(1);
+  const [selectedRentalOptionDocumentId, setSelectedRentalOptionDocumentId] = useState<string>('');
   const [isDropDialogOpen, setIsDropDialogOpen] = useState(false);
   const [selectedExtensionIndex, setSelectedExtensionIndex] = useState<number>(1);
   const router = useRouter();
 
   const invalidateRelatedQueries = async () => {
-    await queryClient.invalidateQueries({ queryKey: ['accounts', 'rented'] });
-    await queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['accounts'], exact: false }),
+      queryClient.invalidateQueries({ queryKey: ['rentals'], exact: false }),
+      queryClient.invalidateQueries({ queryKey: ['users', 'me'], exact: false }),
+    ]);
   };
   const {
     data: dropRefund,
   } = useQuery({
-    queryKey: ['accounts', 'refund', account?.id],
+    queryKey: ['rentals', 'refund', accountRentalId],
     queryFn: async () => {
-      return (await strapiClient.request<{
-        data: { amount: number };
-      }>('get', `accounts/${account?.documentId}/refund`, {
-        validateStatus: status => status <= 500,
-      })).data;
+      return await strapiClient.request<RefundResponse>('get', `rentals/${accountRentalId}/refund`);
     },
-    enabled: account?.user?.documentId === user?.documentId,
+    enabled: !!(isAccountRented && accountRentalId),
   });
 
   const { mutate: handleDropAccount, isPending: isDropPending } = useMutation<
     { message: string },
-    StrapiError,
+    RawStrapiError,
     { silently?: boolean }
   >({
-    mutationKey: ['accounts', 'drop', account?.documentId],
+    mutationKey: ['rentals', 'drop', accountRentalId],
     mutationFn: async (_variables) => {
       setIsDropDialogOpen(false);
-
       return await strapiClient.request<{
         message: string;
-      }>('post', `accounts/${account?.documentId}/drop`);
+      }>('delete', `rentals/${accountRentalId}`);
     },
-    onSuccess: (data, variables) => {
-      invalidateRelatedQueries();
-      Manager.ForceCloseAllClients();
+    onSuccess: async (data, variables) => {
+      await invalidateRelatedQueries();
+      AccountMonitor.IsNexusAccount().then((isNexus) => {
+        if (isNexus || isNexusAccount) {
+          Manager.ForceCloseAllClients().catch((error) => {
+            console.error('Failed to force close all clients:', error);
+          });
+        }
+      });
       if (variables.silently) {
         return;
       }
-      toast.success(data.message);
+      toast.success(data.message || 'Account dropped successfully');
     },
-    onError: (error) => {
-      toast.error(error.data.error.message);
+    onError: (data) => {
+      toast.error(data.error.message || 'Failed to drop account');
     },
   });
   const { mutate: handleExtendAccount, isPending: isExtendPending } = useMutation({
     mutationKey: ['accounts', 'extend', account?.documentId],
     mutationFn: async (timeOptionDocumentId: string) => {
-      const requestPromise = strapiClient.request<{
-        message: string;
-      }>('post', `rentals/${account?.documentId}/extensions`, {
+      const requestPromise = strapiClient.request<ExtensionsResponse>('post', `rentals/${accountRentalId}/extensions`, {
         data: {
-          gameDocumentId: 's6ntaxkuso7487dzcaoamj5g',
+          gameDocumentId: account?.rankings[0].game.documentId,
           timeOptionDocumentId,
         },
       });
@@ -100,44 +130,49 @@ export function useAccountActions({
 
         return response;
       } catch (error) {
-        toast.error(error.error?.message, { id: toastId as any });
+        if ('message' in error) {
+          toast.error(error.error?.message, { id: toastId as any });
+        } else {
+          toast.error(error.error?.message, { id: toastId as any });
+        }
         throw error;
       }
     },
   });
   type RentAccountVariables = {
-    timeIndex: number;
+    timeOptionDocumentId: string;
     boostRoyalOrderId?: number;
   };
   // In useAccountActions.ts, update the handleRentAccount mutation:
   const { mutate: handleRentAccount, isPending: isRentPending } = useMutation<
     { message: string },
-    StrapiError,
+    RawStrapiError,
     RentAccountVariables,
     unknown
   >({
     mutationKey: ['accounts', 'rent', account?.documentId],
-    mutationFn: async ({ boostRoyalOrderId, timeIndex }: { timeIndex: number; boostRoyalOrderId?: number }) => {
-      return (await strapiClient.create<{
+    mutationFn: async ({ boostRoyalOrderId, timeOptionDocumentId }: { timeOptionDocumentId: string; boostRoyalOrderId?: number }) => {
+      const response = await strapiClient.create<{
         message: string;
       }>(`accounts/${account?.documentId}/rentals`, {
-        game: account,
-        time: timeIndex,
+        gameDocumentId: account?.rankings[0].game.documentId,
+        timeOptionDocumentId,
         boostRoyalOrderId,
-      })).data;
+      });
+      return response.data;
     },
     onSuccess: async (data) => {
       await invalidateRelatedQueries();
       toast.success(data.message);
     },
     onError: (error) => {
-      toast.error(error.data.error.message);
+      toast.error(error.error.message);
     },
   });
   return {
     setSelectedExtensionIndex,
-    selectedRentalOptionIndex,
-    setSelectedRentalOptionIndex,
+    selectedRentalOptionDocumentId,
+    setSelectedRentalOptionDocumentId,
     handleRentAccount,
     isRentPending,
 

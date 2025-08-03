@@ -23,6 +23,7 @@ function AccountByID() {
   const refetchAccount = async () => {
     // Invalidate all queries that start with 'accounts' with a single call
     await queryClient.invalidateQueries({ queryKey: ['accounts'] });
+    await queryClient.invalidateQueries({ queryKey: ['rentals'] });
   };
 
   return (

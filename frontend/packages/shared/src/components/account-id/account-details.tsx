@@ -1,5 +1,5 @@
 import type { AccountWithPrice } from '@/features/accounts-table/hooks/useAccounts.tsx';
-import type { AccountType } from '@/types/types.ts';
+import type { AccountType, Rental } from '@/types/types.ts';
 
 import { ChampionsSkinsTab } from '@/components/account-id/ChampionsSkinsTab.tsx';
 import { LeaverBusterDisplay } from '@/components/account-id/leaver-buster-display.tsx';
@@ -12,7 +12,6 @@ import { Button } from '@/components/ui/button.tsx';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card.tsx';
 import { Input } from '@/components/ui/input.tsx';
 import { Separator } from '@/components/ui/separator.tsx';
-import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { formatMilliseconds } from '@/features/accounts-table/components/price-display.tsx';
 import { FavoriteAccountNote } from '@/features/favorite-account/components/FavoriteAccountNote.tsx';
 import { FavoriteStar } from '@/features/favorite-account/components/FavoriteStar.tsx';
@@ -24,6 +23,7 @@ import { cn } from '@/lib/utils.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { Check, CircleCheckBig, Clock, Search, Shield, X } from 'lucide-react';
 import { useState } from 'react';
+import { Skeleton } from '../ui/skeleton.tsx';
 import AccountInfoDisplay from './account-info-display.tsx';
 
 export default function AccountDetails({ accountWithPrice, onAccountChange }: {
@@ -34,7 +34,11 @@ export default function AccountDetails({ accountWithPrice, onAccountChange }: {
   const price = accountWithPrice['time-options'];
   const { user } = useUserStore();
   const [isBoostRoyalModalOpen, setIsBoostRoyalModalOpen] = useState(false);
+  const isAccountRented = user?.rentals && user.rentals.length > 0 && user?.rentals?.some(rental => (rental.riotAccount.documentId === account.documentId) && rental.isActive);
+  console.log('isaccountRented', isAccountRented);
 
+  const accountRental = isAccountRented ? user.rentals.find(rental => (rental.riotAccount.documentId === account.documentId) && rental.isActive) : null;
+  console.log('accountRental', accountRental);
   const {
     championsSearch,
     setChampionsSearch,
@@ -45,13 +49,13 @@ export default function AccountDetails({ accountWithPrice, onAccountChange }: {
   } = useAccountFilters({ account });
   const {
     dropRefund,
-    selectedRentalOptionIndex,
+    selectedRentalOptionDocumentId,
     handleExtendAccount,
     isExtendPending,
-    setSelectedRentalOptionIndex,
+    setSelectedRentalOptionDocumentId,
     isRentPending,
     handleRentAccount,
-  } = useAccountActions({ account, user });
+  } = useAccountActions({ account, isAccountRented, accountRentalId: accountRental?.documentId });
   const [activeTab, setActiveTab] = useState(0);
   const { getCompanyIcon, getGameIcon, getFormattedServer } = useMapping();
   const soloQueueRank = account.rankings?.find(lc => lc.queueType === 'soloqueue');
@@ -61,13 +65,12 @@ export default function AccountDetails({ accountWithPrice, onAccountChange }: {
     if (account.type === 'boostroyal') {
       setIsBoostRoyalModalOpen(true);
     } else {
-      handleRentAccount({ timeIndex: selectedRentalOptionIndex });
+      handleRentAccount({ timeOptionDocumentId: selectedRentalOptionDocumentId });
     }
   };
-
   // Add function to handle BoostRoyal order submission
   const handleBoostRoyalOrderSubmit = (boostRoyalOrderId: number) => {
-    handleRentAccount({ timeIndex: selectedRentalOptionIndex, boostRoyalOrderId });
+    handleRentAccount({ timeOptionDocumentId: selectedRentalOptionDocumentId, boostRoyalOrderId });
     setIsBoostRoyalModalOpen(false);
   };
   return (
@@ -96,18 +99,18 @@ export default function AccountDetails({ accountWithPrice, onAccountChange }: {
                       <FavoriteAccountNote account={account} />
                     </div>
                     {
-                      account.gamename
+                      isAccountRented && accountRental
 
                         ? (
                             <div className="flex gap-4 items-center ">
                               <span
                                 className="text-sm text-muted-foreground   transition-all duration-200"
                               >
-                                {`${account.gamename}#${account.tagline}`}
+                                {`${accountRental.riotAccount.gamename}#${accountRental.riotAccount.tagline}`}
                               </span>
                               <CopyToClipboard
                                 className="bg-transparent p-0 w-0 h-0"
-                                text={`${account.gamename}#${account.tagline}`}
+                                text={`${accountRental.riotAccount.gamename}#${accountRental.riotAccount.tagline}`}
                               />
                             </div>
                           )
@@ -348,7 +351,7 @@ export default function AccountDetails({ accountWithPrice, onAccountChange }: {
 
       {/* Right column - Rental options */}
       <div className="space-y-6 col-span-2">
-        {account.user && account.user?.id === user?.id
+        {isAccountRented
           ? (
 
               <Card>
@@ -365,7 +368,7 @@ export default function AccountDetails({ accountWithPrice, onAccountChange }: {
                       </span>
 
                       <span className="font-medium">
-                        {calculateTimeRemaining(account)}
+                        {isAccountRented ? calculateTimeRemaining(accountRental as Rental) : 'N/A'}
 
                       </span>
                     </div>
@@ -382,8 +385,8 @@ export default function AccountDetails({ accountWithPrice, onAccountChange }: {
                         className="flex  items-center gap-1 text-lg font-semibold text-zinc-900 dark:text-zinc-50 "
                       >
                         <CoinIcon className="w-4 h-4 text-amber-500 dark:text-amber-400" />
-                        {dropRefund
-                          ? <>{dropRefund.amount.toLocaleString()}</>
+                        {dropRefund && dropRefund.amount
+                          ? <>{dropRefund?.amount?.toLocaleString()}</>
                           : <Skeleton className="w-6 h-4"></Skeleton>}
                         {' '}
                         coins
@@ -408,7 +411,6 @@ export default function AccountDetails({ accountWithPrice, onAccountChange }: {
                         >
                           <span className="text-sm">
                             {formatMilliseconds(option.milliseconds)}
-                            h
                           </span>
                           <div className="flex items-center gap-0.5 text-xs">
                             <CoinIcon className="w-3 h-3 text-amber-500" />
@@ -425,6 +427,8 @@ export default function AccountDetails({ accountWithPrice, onAccountChange }: {
                   <RentedAccountButton account={account} />
 
                   <DropAccountAction
+                    accountRentalDocumentId={accountRental?.documentId}
+                    isAccountRented
                     account={account}
                     user={user}
                     onSuccess={onAccountChange}
@@ -445,8 +449,8 @@ export default function AccountDetails({ accountWithPrice, onAccountChange }: {
                       // eslint-disable-next-line jsx-a11y/no-static-element-interactions,jsx-a11y/click-events-have-key-events
                       <div
                         key={index}
-                        className={cn('border  rounded-lg p-3 cursor-pointer transition-all', selectedRentalOptionIndex === index ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700')}
-                        onClick={() => setSelectedRentalOptionIndex(index)}
+                        className={cn('border  rounded-lg p-3 cursor-pointer transition-all', selectedRentalOptionDocumentId === option.documentId ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700')}
+                        onClick={() => setSelectedRentalOptionDocumentId(option.documentId)}
                       >
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex items-center gap-1.5">
@@ -455,7 +459,7 @@ export default function AccountDetails({ accountWithPrice, onAccountChange }: {
                               {formatMilliseconds(option.milliseconds)}
                             </span>
                           </div>
-                          {selectedRentalOptionIndex === index && (
+                          {selectedRentalOptionDocumentId === option.documentId && (
                             <div className="bg-blue-500 rounded-full p-0.5">
                               <Check className="w-3 h-3 text-white" />
                             </div>
@@ -465,7 +469,7 @@ export default function AccountDetails({ accountWithPrice, onAccountChange }: {
                           className="flex items-center gap-1 text-sm font-medium text-zinc-900 dark:text-zinc-50"
                         >
                           <CoinIcon className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
-                          {option.price.toLocaleString()}
+                          {option.accountPrice}
                           {' '}
                           coins
                         </div>
@@ -480,16 +484,13 @@ export default function AccountDetails({ accountWithPrice, onAccountChange }: {
                         className="flex items-center gap-1 text-lg font-semibold text-zinc-900 dark:text-zinc-50"
                       >
                         <CoinIcon className="w-4 h-4 text-amber-500 dark:text-amber-400" />
-                        {/* { selectedRentalOptionIndex !== undefined */}
-                        {/*  ? soloQueueRank?.elo.name)[selectedRentalOptionIndex]?.price.toLocaleString() || '0' */}
-                        {/*  : <Skeleton className="w-10 h-6" />} */}
-                        {/* {' '} */}
+                        {accountWithPrice['time-options']?.find(option => option.documentId === selectedRentalOptionDocumentId)?.accountPrice }
                         coins
                       </div>
                     </div>
                     <Button
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                      disabled={!price || (isRentPending || selectedRentalOptionIndex == null)}
+                      disabled={!price || (isRentPending)}
                       loading={isRentPending}
                       onClick={handleRentClick}
                     >

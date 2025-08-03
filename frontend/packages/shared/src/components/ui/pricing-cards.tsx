@@ -34,7 +34,6 @@ export default function PricingCards() {
   const scrollToPricing = () => {
     pricingRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
-
   const plansWithPrices = useMemo(() => {
     return staticPricingPlans.map((plan) => {
       if (plan.tier_enum === 'free') {
@@ -49,11 +48,11 @@ export default function PricingCards() {
   }, [staticPricingPlans, pricesData]);
 
   const currentPlanDetails = useMemo(() => {
-    if (!user?.premium?.tier) {
+    if (!user?.premium?.plan?.name) {
       return undefined;
     }
-    return plansWithPrices.find(plan => plan.tier_enum === user.premium.tier.toLowerCase());
-  }, [plansWithPrices, user?.premium?.tier]);
+    return plansWithPrices.find(plan => plan.tier_enum === user.premium.plan.name.toLowerCase());
+  }, [plansWithPrices, user?.premium?.plan?.name]);
 
   const renderIcon = (tier: PremiumTiers) => {
     const colorClass = getTierColorClass(tier);
@@ -63,7 +62,7 @@ export default function PricingCards() {
 
   // Updated filter to hide the current plan from the list of upgrade options
   const plansToDisplayFilter = (plan: { tier_enum: PremiumTiers }) =>
-    plan.tier_enum.toLowerCase() !== user?.premium?.tier?.toLowerCase();
+    plan.tier_enum.toLowerCase() !== user?.premium?.plan?.name?.toLowerCase();
 
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) {

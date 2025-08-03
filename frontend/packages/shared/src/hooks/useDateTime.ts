@@ -1,4 +1,4 @@
-import type { AccountType } from '@/types/types.ts';
+import type { AccountType, Rental } from '@/types/types.ts';
 
 export function useDateTime() {
   function getFormattedTimeRemaining(expirationDateString: string): string {
@@ -23,11 +23,9 @@ export function useDateTime() {
     }
   }
 
-  function calculateTimeRemaining(account: AccountType): string {
-    const mostRecentAction = account.actionHistory?.reduce((latest, current) =>
-      new Date(latest.createdAt) > new Date(current.createdAt) ? latest : current,
-    );
-    return getFormattedTimeRemaining(mostRecentAction?.expirationDate.toString());
+  function calculateTimeRemaining(rental: Rental): string {
+    const mostRecentAction = rental.currentExpirationDate;
+    return getFormattedTimeRemaining(mostRecentAction);
   }
 
   function getSecondsRemaining(account: AccountType): number {

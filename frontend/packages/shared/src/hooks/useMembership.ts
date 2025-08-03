@@ -58,7 +58,7 @@ export function useMembership() {
           title: 'Monthly 500 coins budget',
         },
         {
-          title: 'Accounts up to Platinum',
+          title: 'Accounts up to Silver',
         },
 
         {

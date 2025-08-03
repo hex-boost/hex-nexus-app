@@ -288,13 +288,18 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
             }
           }
         } else if (ranksToMatch.length > 0) {
-          conditions.push({ elo: { name: { $in: ranksToMatch } } });
+          if (ranksToMatch.length === 1) {
+            conditions.push({ elo: { name: { $eqi: ranksToMatch[0] } } });
+          } else {
+            // Create an OR condition with case-insensitive equality for each rank
+            const rankConditions = ranksToMatch.map(rank => ({
+              elo: { name: { $eqi: rank } },
+            }));
+            conditions.push({ $or: rankConditions });
+          }
         } else if (divsToMatch.length > 0) {
-          // This case handles when only divisions are selected, implying any defined rank within those divisions.
           conditions.push({ division: { $in: divsToMatch } });
         }
-        // Return a single condition object if only one, or an $or for multiple.
-        // If conditions array is empty, return null.
         if (conditions.length === 0) {
           return null;
         }

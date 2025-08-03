@@ -448,7 +448,8 @@ func (s *Service) IsAuthStateValid() error {
 		s.logger.Sugar().Errorf("Failed to get authentication state %v", err)
 		return err
 	}
-	if currentAuth.Type != "auth" {
+
+	if currentAuth.Type != "auth" && currentAuth.Error != "invalid_request" {
 		return errors.New("authentication in invalid state: " + currentAuth.Type)
 	}
 	if currentAuth.Type == "error" && currentAuth.Captcha.Hcaptcha.Data == "" {

@@ -8,7 +8,7 @@ export function useAccountByID({ documentId }: { username?: string; documentId?:
     isLoading: isAvailableLoading,
   } = useQuery({
     queryKey: ['accounts', 'rental-options', documentId],
-    queryFn: () => strapiClient.find<AccountWithPrice>(`accounts/${documentId}/rental-options`, {}).then(res => res.data),
+    queryFn: () => strapiClient.request<AccountWithPrice>('get', `accounts/${documentId}/rental-options`, {}).then(res => res),
   });
 
   return {

@@ -89,7 +89,7 @@ export default function SubscriptionStatus({ className, subscription }: Subscrip
       <div className="space-y-2 ">
         <p className="text-xs font-medium text-zinc-900 dark:text-zinc-100">Plan Features:</p>
         <ul className="space-y-1">
-          {pricingPlans.find(plan => plan.tier_enum === user?.premium?.tier)?.benefits.map((feature, index) => (
+          {pricingPlans.find(plan => plan.tier_enum === user?.premium?.plan?.name.toLowerCase())?.benefits.map((feature, index) => (
             <li key={index} className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
               {feature.title}

@@ -114,7 +114,7 @@ export default function Dashboard({ user }: { user: UserType | null }) {
           {
             !user
               ? <CurrentlyRentedAccountsSkeleton />
-              : <CurrentlyRentedAccounts accounts={user.rentals} />
+              : <CurrentlyRentedAccounts accounts={(user.rentals.find(rental => rental?.isActive) || []) as any} />
           }
         </div>
         <div className="bg-white dark:bg-black/20 flex flex-col items-start rounded-xl border border-gray-200 dark:border-[#1F1F23]">

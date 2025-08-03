@@ -48,9 +48,7 @@ export type Rental = Entity<ApiRentalRental>;
 export type TransferTokenPermissionType = Entity<AdminTransferTokenPermission>;
 export type AdminUserType = Entity<AdminUser>;
 export type TimeOption = Entity<ApiTimeOptionTimeOption>;
-export type ActionType = Entity<ApiActionAction>;
 export type PremiumType = Entity<ApiPremiumPremium>;
-export type PriceType = Entity<ApiPricePrice>;
 export type RankingType = Entity<ApiRankingRanking>;
 export type TransactionType = Entity<ApiTransactionTransaction>;
 
@@ -187,6 +185,15 @@ export type Timer = {
   totalTimeInPhase: number;
 };
 
+export type RawStrapiError = {
+  data: null;
+  error: {
+    status: number;
+    name: string;
+    message: string;
+    details: Record<string, unknown>;
+  };
+};
 export type StrapiError = AxiosResponse<{
   data: null;
   error: {

@@ -9,75 +9,36 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog.tsx';
-import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
-import { strapiClient } from '@/lib/strapi';
+import { useAccountActions } from '@/hooks/useAccountActions.ts';
 import { useAccountStore } from '@/stores/useAccountStore.ts';
-import { Monitor as AccountMonitor } from '@account';
-import { Manager } from '@leagueManager';
-import { useMutation, useQuery } from '@tanstack/react-query';
 import { ArrowDownToLine } from 'lucide-react';
 import { useState } from 'react';
-import { toast } from 'sonner';
 
 export type DropAccountActionProps = {
+  isAccountRented?: boolean;
   account: AccountType;
   user: UserType | null;
   onSuccess?: () => Promise<void>;
   variant?: 'button' | 'dropdown';
   asChild?: boolean;
+  accountRentalDocumentId?: string;
   children?: React.ReactNode;
   buttonVariant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
 };
 
 export function DropAccountAction({
+  accountRentalDocumentId,
   account,
-  user,
-  onSuccess,
+  isAccountRented,
   children,
   buttonVariant = 'outline',
 }: DropAccountActionProps) {
-  const { refetchUser } = useCommonFetch();
   const [isOpen, setIsOpen] = useState(false);
   const { isNexusAccount } = useAccountStore();
-
-  // Get refund amount
-  const { data: dropRefund } = useQuery({
-    queryKey: ['accounts', 'refund', account.id],
-    queryFn: () => strapiClient.find<{ amount: number }>(`accounts/${account?.documentId}/refund`)
-      .then(res => res.data),
-    enabled: !!account.documentId && isOpen && account.user?.documentId === user?.documentId,
-    staleTime: 0,
-  });
-  // Handle dialog open
-  // Drop account mutation
-  const { mutate: handleDropAccount, isPending } = useMutation({
-    mutationKey: ['accounts', 'drop', account.documentId],
-    mutationFn: async () => {
-      setIsOpen(false);
-
-      const response = await strapiClient.request<{
-        message: string;
-      }>('post', `accounts/${account.documentId}/drop`);
-
-      await refetchUser();
-      if (onSuccess) {
-        await onSuccess();
-      }
-      return response;
-    },
-    onSuccess: async (data) => {
-      if (isNexusAccount || await AccountMonitor.IsNexusAccount()) {
-        await Manager.ForceCloseAllClients();
-      }
-      toast.success(data.message || 'Account dropped successfully');
-    },
-    onError: (error: any) => {
-      toast.error(error.error?.message || 'Failed to drop account');
-    },
-  });
+  const { dropRefund, handleDropAccount, isDropPending } = useAccountActions({ isAccountRented, accountRentalId: accountRentalDocumentId, account });
 
   // Determine if button should be disabled
-  const isDisabled = isPending || account.user?.documentId !== user?.documentId;
+  const isDisabled = isDropPending || !isAccountRented;
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -126,9 +87,9 @@ export function DropAccountAction({
           </Button>
           <Button
             variant="destructive"
-            loading={isPending}
+            loading={isDropPending}
             disabled={isDisabled}
-            onClick={() => handleDropAccount()}
+            onClick={() => handleDropAccount({})}
             className="flex items-center gap-1"
           >
             <ArrowDownToLine className="h-4 w-4" />

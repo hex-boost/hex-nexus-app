@@ -1,24 +1,23 @@
-import type { AccountType, Rental } from '@/types/types.ts';
+import type { Rental } from '@/types/types.ts';
 import { AccountCard } from '@/components/AccountCard.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { cn } from '@/lib/utils';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { Gamepad2, ShoppingCart } from 'lucide-react';
 
 // Simplified component for each account item
-function AccountItem({ account, onAccountChange }: { account: AccountType; onAccountChange: () => Promise<void> }) {
-  const mostRecentAction = account.actionHistory.reduce((latest, current) =>
-    new Date(latest.createdAt) > new Date(current.createdAt) ? latest : current,
-  );
+function AccountItem({ rental, onAccountChange }: { rental: Rental; onAccountChange: () => Promise<void> }) {
+  const mostRecentAction = rental.currentExpirationDate;
 
   return (
     <AccountCard
-      key={account.id}
+      key={rental.id}
       gameType="lol"
 
-      expirationDate={mostRecentAction.expirationDate.toString()}
-      riotAccount={account}
+      expirationDate={mostRecentAction}
+      riotAccount={rental.riotAccount}
       onAccountChange={onAccountChange}
     />
   );
@@ -32,19 +31,20 @@ type CurrentlyRentedAccountsProps = {
 export default function CurrentlyRentedAccounts({ accounts, className }: CurrentlyRentedAccountsProps) {
   const router = useRouter();
 
+  const queryClient = useQueryClient();
   // Function to refresh accounts after dropping one
   const handleAccountChange = async () => {
-    // In a real app, this would refresh the account list
-    console.log('Account changed, should refresh account list');
+    await queryClient.invalidateQueries({ queryKey: ['rentals'] });
+    await queryClient.invalidateQueries({ queryKey: ['accounts'] });
   };
 
   return (
     <div className={cn('w-full px-6  max-h-[240px] flex h-full flex-col gap-4  overflow-y-auto', className)}>
       {accounts.length > 0
-        ? accounts.map(account => (
+        ? accounts.map(rental => (
             <AccountItem
-              key={account.id}
-              account={account.riotAccount}
+              key={rental.id}
+              rental={rental}
               onAccountChange={handleAccountChange}
             />
           ))

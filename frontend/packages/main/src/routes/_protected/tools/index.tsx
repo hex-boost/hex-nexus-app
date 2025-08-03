@@ -27,7 +27,7 @@ function RouteComponent() {
   const router = useRouter();
   const [isLolskinEnabled, toggleLolSkinEnabled] = useLocalStorage<boolean>('lolskin-enabled', false);
   const handleSelectSkin = (champion: FormattedChampion, skin: FormattedSkin, chroma: any | null = null) => {
-    if (user?.premium.tier !== 'pro' || !isLolskinEnabled) {
+    if (user?.premium.plan?.hasSkinChanger || !isLolskinEnabled) {
       logger.info('lolskin', 'User is not a premium user blocking skin changer');
       return;
     }
@@ -59,7 +59,7 @@ function RouteComponent() {
     );
   };
   const handleToggleSkinFeature = async () => {
-    if (user?.premium.tier !== 'pro') {
+    if (user?.premium.plan?.hasSkinChanger) {
       logger.info('lolskin', 'User is not a premium user blocking skin feature toggle');
       return;
     }
@@ -75,9 +75,10 @@ function RouteComponent() {
       },
     );
   };
+
   return (
     <>
-      <PremiumContentWrapper isPremiumUser={user?.premium?.tier === 'pro'} onPurchase={() => router.navigate({ to: '/subscription' })}>
+      <PremiumContentWrapper isPremiumUser={user?.premium?.plan?.tier === 300} onPurchase={() => router.navigate({ to: '/subscription' })}>
         <CharacterSelection
           isLoading={isLoading}
           skins={allSkins}

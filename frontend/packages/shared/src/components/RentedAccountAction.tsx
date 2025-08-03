@@ -2,7 +2,6 @@ import type { AccountType } from '@/types/types.ts';
 import { Button } from '@/components/ui/button.tsx';
 
 import { useLeagueManager } from '@/hooks/useLeagueManager.tsx';
-import { useUserStore } from '@/stores/useUserStore.ts';
 import { LeagueClientStateType } from '@league';
 import { LogIn } from 'lucide-react';
 
@@ -18,7 +17,6 @@ export function RentedAccountButton({ account }: RentedAccountButtonProps) {
     clientState,
     isStateLoading,
   } = useLeagueManager({ account });
-  const { user } = useUserStore();
 
   if (isStateLoading || (clientState === LeagueClientStateType.ClientStateNone)) {
     return (
@@ -85,7 +83,6 @@ export function RentedAccountButton({ account }: RentedAccountButtonProps) {
         return (
           <Button
             variant="default"
-            disabled={account.user?.documentId !== user?.documentId}
             className="flex-1  bg-blue-600 !w-full hover:bg-blue-700 text-white"
             onClick={() => handleOpenCaptchaWebview()}
           >

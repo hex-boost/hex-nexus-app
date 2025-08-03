@@ -79,7 +79,7 @@ function DashboardLayout() {
   const { updateFavoriteNote, isNoteDialogOpen, setIsNoteDialogOpen, noteText, setNoteText, handleSaveNote } = useFavoriteAccounts();
 
   async function handleOpenOpgg(summonerCards: string[]) {
-    if (user?.premium?.tier !== 'pro') {
+    if (user?.premium?.plan?.hasLobbyRevealer) {
       setOpenPremiumDialog(true);
       return;
     }
@@ -128,7 +128,7 @@ function DashboardLayout() {
                         )
                       : (
                           <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                            {user?.premium?.tier === 'pro'
+                            {user?.premium?.plan?.tier === 300
                               ? (
                                   <span className="flex items-center">
                                     <svg

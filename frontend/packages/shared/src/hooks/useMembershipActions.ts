@@ -1,24 +1,30 @@
 import type { CheckoutSession, PaymentMethodsAccepted, SubscriptionRequest } from '@/types/membership.ts';
 import type { PremiumTiers } from '@/types/types.ts';
-
 import type { PaymentResponse } from 'mercadopago/dist/clients/payment/commonTypes';
 
 import { useMembership } from '@/hooks/useMembership.ts';
+
 import { strapiClient } from '@/lib/strapi.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { Stripe } from '@stripe';
 import { useMutation } from '@tanstack/react-query';
+import { useFlag } from '@unleash/proxy-client-react';
 import { Browser } from '@wailsio/runtime';
 import * as React from 'react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
 export function useMembershipActions() {
+  const mercadoPagoEnabled = useFlag('mercadoPagoEnabled');
+  const isStripeEnabled = useFlag('stripeEnabled');
   const { paymentMethods } = useMembership();
 
   const [selectedPaymentMethod, setSelectedPaymentMethod] = React.useState<PaymentMethodsAccepted>(paymentMethods[0].title);
   const [pendingPlanTier, setPendingPlanTier] = useState<string | null>(null);
   async function createStripeSubscription(data: SubscriptionRequest): Promise<CheckoutSession> {
+    if (!isStripeEnabled) {
+      throw new Error('Mercado Pago is temporary disabled');
+    }
     try {
       return await strapiClient.request<CheckoutSession>('post', 'stripe/subscription', {
         data,
@@ -36,8 +42,11 @@ export function useMembershipActions() {
     data: PaymentResponse;
   };
   async function createPixPayment(payload: PixPayload): Promise<PixResponse> {
+    if (!mercadoPagoEnabled) {
+      throw new Error('Mercado Pago is temporary disabled');
+    }
     try {
-      return await strapiClient.request<PixResponse>('post', 'mercadopago/payment', {
+      return await strapiClient.request<PixResponse>('post', 'mercadopago/subscription', {
         data: { ...payload },
 
       });
@@ -51,7 +60,7 @@ export function useMembershipActions() {
   const { mutate: selectPlan } = useMutation({
     mutationKey: ['subscription'],
     mutationFn: async (tier: string) => {
-      if (user?.premium?.tier) {
+      if (user?.premium?.plan?.tier !== 1) {
         throw new Error('You already have a plan, please contact support if you want to change or extend it');
       }
       setPendingPlanTier(tier);
@@ -82,7 +91,7 @@ export function useMembershipActions() {
   const { isPending, mutate: handlePayment } = useMutation({
     mutationKey: ['payment', selectedPaymentMethod],
     mutationFn: async (selectedTier: PremiumTiers) => {
-      if (user?.premium?.tier !== 'free') {
+      if (user?.premium?.plan?.tier !== 1) {
         throw new Error('You already have a plan, please contact support if you want to change or extend it');
       }
       let url: string = '';

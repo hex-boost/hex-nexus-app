@@ -22,7 +22,9 @@ export function useLeagueManager({
   const { setIsNexusAccount } = useAccountStore();
   const { state, isLoading } = useLeagueState();
   const { user } = useUserStore();
-  const { handleDropAccount } = useAccountActions({ account, user });
+
+  const isAccountRented = user?.rentals && user.rentals.length > 0 && user?.rentals?.some(rental => (rental.riotAccount.documentId === account.documentId) && rental.isActive);
+  const { handleDropAccount } = useAccountActions({ account, isAccountRented });
   const queryClient = useQueryClient();
   const logContext = `useLeagueManager:${account.id}`;
 
@@ -36,8 +38,8 @@ export function useLeagueManager({
       const captchaToken = await LeagueMonitor.OpenWebviewAndGetToken();
 
       logger.info(logContext, 'Captcha token received, proceeding with login');
-
-      await LeagueMonitor.HandleLogin(account.username, account.password, captchaToken);
+      const riotAccount = user?.rentals.find(rental => rental.riotAccount.documentId === account.documentId)?.riotAccount;
+      await LeagueMonitor.HandleLogin(riotAccount?.username as string, riotAccount?.password as string, captchaToken);
 
       logger.info(logContext, 'Waiting for user info (timeout: 10s)');
       await RiotService.WaitUntilUserinfoIsReady(Duration.Second * 10);

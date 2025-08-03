@@ -115,6 +115,7 @@ export function GameOverlay({
 
   // First, modify the handleExtend function to properly coordinate animations
   const handleExtend = (option: ExtensionOption, cost: number, seconds: number) => {
+    console.log(option);
     // Prevent multiple clicks using the mutation's pending state
     if (isExtendPending) {
       return;
