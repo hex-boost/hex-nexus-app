@@ -179,7 +179,7 @@ func (cm *Monitor) checkClientState() {
 
 		if cm.riotAuth.IsClientInitialized() || cm.initializeRiotClientIfNeeded() {
 			authState, err := cm.riotAuth.GetAuthenticationState()
-			if err == nil && authState != nil && authState.Type == "success" {
+			if err == nil && authState.Type == "success" {
 				cm.logger.Info("Auth state success, user is logged in")
 				cm.updateState(&LeagueClientState{ClientState: ClientStateLoggedIn})
 				if !cm.isFirstUpdated || cm.accountMonitor.IsNexusAccount() {

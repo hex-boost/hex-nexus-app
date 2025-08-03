@@ -104,7 +104,7 @@ export function AccountCard({
                   className="flex items-center gap-1 text-sm font-medium text-zinc-900 dark:text-zinc-100"
                 >
                   <CoinIcon className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
-                  {/* {getAccountPrice(price!, currentRanking?.elo)[0].price} */}
+                  {/* {favoriteAccount.riotAccount.rentals} */}
                 </div>
               )}
             </div>

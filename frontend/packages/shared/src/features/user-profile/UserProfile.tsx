@@ -156,14 +156,14 @@ export function UserProfile({
       setImageToCrop(null);
     }
   };
-  const textClass = user?.premium?.tier
-    ? getTierColorClass(user.premium.tier).text
+  const textClass = user?.premium?.plan?.name?.toLowerCase()
+    ? getTierColorClass(user.premium.plan.name).text
     : getTierColorClass('free').text;
   const menuItems: MenuItem[] = [
     {
       label: 'Membership',
-      value: user?.premium?.tier
-        ? user?.premium?.tier?.slice(0, 1).toUpperCase() + user?.premium?.tier?.slice(1)
+      value: user?.premium?.plan?.name?.toLowerCase()
+        ? user?.premium?.plan?.name?.slice(0, 1).toUpperCase() + user?.premium?.plan?.name?.slice(1)
         : 'Free',
       href: '/subscription',
       icon: <Crown className="w-4 h-4" />,
@@ -274,7 +274,7 @@ export function UserProfile({
               <div className="flex-1">
                 <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">{user?.username}</h2>
                 <div className="w-full flex justify-between gap-2">
-                  <p className={cls(` capitalize`, textClass)}>{user?.premium?.tier || 'Free'}</p>
+                  <p className={cls(` capitalize`, textClass)}>{user?.premium?.plan?.name || 'Free'}</p>
 
                   {user?.accountPermissions?.includes('boostroyal') && user?.boostRoyalUserId && (
                     <TooltipProvider>
@@ -380,7 +380,7 @@ export function UserProfile({
                 </div>
               </Button>
 
-              {user?.premium?.tier === 'free' && (
+              {user?.premium?.plan?.name?.toLowerCase() === 'free' && (
                 <>
                   <Separator />
                   <Link to="/subscription" className="pt-2">
