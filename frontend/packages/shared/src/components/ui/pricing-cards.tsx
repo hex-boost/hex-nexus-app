@@ -365,7 +365,7 @@ export default function PricingCards() {
                                                   <span
                                                     className={`${getTierColorClass(plan.tier_enum).text} text-6xl font-bold mx-1`}
                                                   >
-                                                    {Math.floor(plan.price) - 1}
+                                                    {Math.floor(plan.price / 100) - 1}
                                                   </span>
                                                   <span
                                                     className={`${getTierColorClass(plan.tier_enum).text} text-4xl font-bold -ml-1`}
@@ -376,13 +376,13 @@ export default function PricingCards() {
                                               )
                                             : ( // Fallback for USD prices < 1 or if charm pricing is not applicable
                                                 <span className={`${getTierColorClass(plan.tier_enum).text} text-6xl font-bold mx-1`}>
-                                                  {plan.price?.toFixed(2)}
+                                                  {plan.price / 100}
                                                 </span>
                                               )
                                         )
                                       : ( // For other currencies
                                           <span className={`${getTierColorClass(plan.tier_enum).text} text-6xl font-bold mx-1`}>
-                                            {plan.price?.toFixed(2)}
+                                            {plan.price / 100}
                                           </span>
                                         )}
                                   </>
