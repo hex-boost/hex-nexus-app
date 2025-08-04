@@ -3,6 +3,7 @@ package riot
 import (
 	"bytes"
 	"context"
+	"regexp"
 	"runtime"
 
 	"crypto/tls"
@@ -14,7 +15,6 @@ import (
 	"net"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -149,9 +149,87 @@ func (s *Service) getProcess() (pid int, err error) {
 	return 0, errors.New("unable to find Riot Client process")
 }
 func (s *Service) getCredentials(riotClientPid int) (port string, authToken string, err error) {
+	// First try: Read from lockfile
+	s.logger.Debug("Attempting to get credentials from lockfile")
+
+	// Find the Riot Client install path from RiotClientInstalls.json
+	programData := os.Getenv("PROGRAMDATA")
+	if programData == "" {
+		programData = "C:\\ProgramData"
+	}
+
+	riotClientInstallsPath := filepath.Join(programData, "Riot Games", "RiotClientInstalls.json")
+	fileContent, err := os.ReadFile(riotClientInstallsPath)
+	if err != nil {
+		s.logger.Debug("Failed to read Riot client installs file, trying standard locations", zap.Error(err))
+		// Continue with default paths as fallback
+	}
+
+	// Parse the install path from the config
+	var clientInstallDir string
+	if err == nil {
+		var clientInstalls struct {
+			RcDefault string `json:"rc_default"`
+		}
+		if err := json.Unmarshal(fileContent, &clientInstalls); err == nil && clientInstalls.RcDefault != "" {
+			// Extract the directory from the executable path
+			clientInstallDir = filepath.Dir(clientInstalls.RcDefault)
+			s.logger.Debug("Found Riot client install directory from config", zap.String("dir", clientInstallDir))
+		}
+	}
+
+	// Try lockfile locations in order of preference
+	var lockfilePaths []string
+
+	// 1. If we found the install path from config, check there first
+	if clientInstallDir != "" {
+		lockfilePaths = append(lockfilePaths, filepath.Join(clientInstallDir, "Config", "lockfile"))
+	}
+
+	// 2. Check standard location in LocalAppData
+	localAppData := os.Getenv("LOCALAPPDATA")
+	if localAppData != "" {
+		lockfilePaths = append(lockfilePaths, filepath.Join(localAppData, "Riot Games", "Riot Client", "Config", "lockfile"))
+	} else {
+		// Fallback if LOCALAPPDATA is not available
+		homeDir, err := os.UserHomeDir()
+		if err == nil {
+			lockfilePaths = append(lockfilePaths, filepath.Join(homeDir, "AppData", "Local", "Riot Games", "Riot Client", "Config", "lockfile"))
+		}
+	}
+
+	// Try each path in order
+	var lockfileContent []byte
+	var lockfilePath string
+	for _, path := range lockfilePaths {
+		s.logger.Debug("Trying lockfile path", zap.String("path", path))
+		content, err := os.ReadFile(path)
+		if err == nil {
+			lockfileContent = content
+			lockfilePath = path
+			s.logger.Debug("Found lockfile", zap.String("path", path))
+			break
+		}
+	}
+
+	if lockfileContent != nil {
+		// Parse lockfile content: name:pid:port:password:protocol
+		parts := strings.Split(strings.TrimSpace(string(lockfileContent)), ":")
+		if len(parts) >= 5 {
+			port = parts[2]
+			password := parts[3]
+			authHeader := base64.StdEncoding.EncodeToString([]byte("riot:" + password))
+			s.logger.Debug("Got credentials from lockfile", zap.String("port", port), zap.String("path", lockfilePath))
+			return port, authHeader, nil
+		}
+		s.logger.Debug("Lockfile found but has invalid format", zap.String("path", lockfilePath))
+	}
+
+	// Fallback: Get from process command line
+	s.logger.Debug("Lockfile method failed, falling back to process command line")
 	cmdlineOutput, err := s.sysquery.GetProcessCommandLineByPID(uint32(riotClientPid))
 	if err != nil {
-		return "", "", fmt.Errorf("failed to get command line: %w", err)
+		return "", "", fmt.Errorf("failed to get command line and lockfile method also failed: %w", err)
 	}
 
 	portRegex := regexp.MustCompile(`--app-port[=\s](\d+)`)
@@ -163,10 +241,11 @@ func (s *Service) getCredentials(riotClientPid int) (port string, authToken stri
 	if len(portMatch) > 1 && len(authMatch) > 1 {
 		token := authMatch[1]
 		authHeader := base64.StdEncoding.EncodeToString([]byte("riot:" + token))
+		s.logger.Debug("Got credentials from process command line")
 		return portMatch[1], authHeader, nil
 	}
 
-	return "", "", fmt.Errorf("unable to extract credentials from process (PID: %d)", riotClientPid)
+	return "", "", fmt.Errorf("unable to extract credentials from either lockfile or process (PID: %d)", riotClientPid)
 }
 func (s *Service) LoginWithCaptcha(ctx context.Context, username, password, captchaToken string) (string, error) {
 	s.clientMutex.RLock()

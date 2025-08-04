@@ -24,7 +24,8 @@ export function useLeagueManager({
   const { user } = useUserStore();
 
   const isAccountRented = user?.rentals && user.rentals.length > 0 && user?.rentals?.some(rental => (rental.riotAccount.documentId === account.documentId) && rental.isActive);
-  const { handleDropAccount } = useAccountActions({ account, isAccountRented });
+  const accountRented = user?.rentals && user.rentals.length > 0 ? user?.rentals?.find(rental => (rental.riotAccount.documentId === account.documentId) && rental.isActive) : undefined;
+  const { handleDropAccount } = useAccountActions({ account, isAccountRented, accountRentalId: accountRented?.documentId });
   const queryClient = useQueryClient();
   const logContext = `useLeagueManager:${account.id}`;
 
