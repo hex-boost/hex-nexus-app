@@ -66,7 +66,7 @@ function RootLayout() {
     }
 
     const loadSavedSkins = async () => {
-      if (user?.premium?.plan.hasSkinChanger || !isLolskinEnabled) {
+      if (!user?.premium?.plan.hasSkinChanger || !isLolskinEnabled) {
         return;
       }
       const isBackLolSkinEnabled = await Service.IsLolSkinEnabled();

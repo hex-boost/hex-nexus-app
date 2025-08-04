@@ -55,7 +55,7 @@ export default function AccountDetails({ accountWithPrice, onAccountChange }: {
     setSelectedRentalOptionDocumentId,
     isRentPending,
     handleRentAccount,
-  } = useAccountActions({ account, isAccountRented, accountRentalId: accountRental?.documentId });
+  } = useAccountActions({ account, isAccountRented, accountRentalId: accountRental?.documentId, timeOptions: accountWithPrice['time-options'] });
   const [activeTab, setActiveTab] = useState(0);
   const { getCompanyIcon, getGameIcon, getFormattedServer } = useMapping();
   const soloQueueRank = account.rankings?.find(lc => lc.queueType === 'soloqueue');
@@ -490,7 +490,7 @@ export default function AccountDetails({ accountWithPrice, onAccountChange }: {
                     </div>
                     <Button
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                      disabled={!price || (isRentPending)}
+                      disabled={!price || isRentPending || !selectedRentalOptionDocumentId}
                       loading={isRentPending}
                       onClick={handleRentClick}
                     >

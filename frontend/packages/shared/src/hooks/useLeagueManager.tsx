@@ -50,7 +50,8 @@ export function useLeagueManager({
 
       toast.success('Authenticated successfully');
       try {
-        await RiotService.CheckAccountBanned(account.username);
+        const riotAccount = user?.rentals.find(rental => rental.riotAccount.documentId === account.documentId)?.riotAccount;
+        await RiotService.CheckAccountBanned(riotAccount?.username as string);
       } catch (error: any) {
         logger.error(logContext, 'Error checking account ban', error);
         if (error.message.includes('permanent_banned')) {

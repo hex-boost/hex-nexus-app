@@ -1,9 +1,10 @@
+import type { TimeOption } from '@/features/accounts-table/components/accounts-table.tsx';
 import type { AccountType, RawStrapiError, StrapiError } from '@/types/types';
 import { strapiClient } from '@/lib/strapi';
+
 import { useAccountStore } from '@/stores/useAccountStore.ts';
 
 import { Monitor as AccountMonitor } from '@account';
-
 import { Manager } from '@leagueManager';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
@@ -36,15 +37,18 @@ export type Extension = {
 export function useAccountActions({
   account,
   isAccountRented,
+  timeOptions,
   accountRentalId,
 }: {
   account?: AccountType;
   isAccountRented?: boolean;
   accountRentalId?: string;
+  timeOptions?: TimeOption[];
 }) {
   const queryClient = useQueryClient();
   const { isNexusAccount } = useAccountStore();
-  const [selectedRentalOptionDocumentId, setSelectedRentalOptionDocumentId] = useState<string>('');
+
+  const [selectedRentalOptionDocumentId, setSelectedRentalOptionDocumentId] = useState<string>(timeOptions?.[0]?.documentId || '');
   const [isDropDialogOpen, setIsDropDialogOpen] = useState(false);
   const [selectedExtensionIndex, setSelectedExtensionIndex] = useState<number>(1);
   const router = useRouter();
@@ -152,6 +156,10 @@ export function useAccountActions({
   >({
     mutationKey: ['accounts', 'rent', account?.documentId],
     mutationFn: async ({ boostRoyalOrderId, timeOptionDocumentId }: { timeOptionDocumentId: string; boostRoyalOrderId?: number }) => {
+      if (!timeOptionDocumentId) {
+        toast.warning('Please select a time option before renting the account.');
+        throw new Error('Time option not selected');
+      }
       const response = await strapiClient.create<{
         message: string;
       }>(`accounts/${account?.documentId}/rentals`, {
@@ -166,7 +174,9 @@ export function useAccountActions({
       toast.success(data.message);
     },
     onError: (error) => {
-      toast.error(error.data.error.message);
+      if (error.data?.error?.message) {
+        toast.error(error.data.error.message);
+      }
     },
   });
   return {

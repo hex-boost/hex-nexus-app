@@ -8,6 +8,7 @@ import { logger } from '@/lib/logger.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { State as LolSkinState, Service } from '@lolskin';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
+import { useEffect } from 'react';
 import { toast } from 'sonner'; // or your toast library
 import {
   Handler,
@@ -25,9 +26,12 @@ function RouteComponent() {
 
   const { user } = useUserStore();
   const router = useRouter();
+  useEffect(() => {
+    console.log('user', user);
+  }, [user]);
   const [isLolskinEnabled, toggleLolSkinEnabled] = useLocalStorage<boolean>('lolskin-enabled', false);
   const handleSelectSkin = (champion: FormattedChampion, skin: FormattedSkin, chroma: any | null = null) => {
-    if (user?.premium.plan?.hasSkinChanger || !isLolskinEnabled) {
+    if (!user?.premium.plan?.hasSkinChanger) {
       logger.info('lolskin', 'User is not a premium user blocking skin changer');
       return;
     }
@@ -59,7 +63,7 @@ function RouteComponent() {
     );
   };
   const handleToggleSkinFeature = async () => {
-    if (user?.premium.plan?.hasSkinChanger) {
+    if (!user?.premium.plan?.hasSkinChanger) {
       logger.info('lolskin', 'User is not a premium user blocking skin feature toggle');
       return;
     }
@@ -78,7 +82,7 @@ function RouteComponent() {
 
   return (
     <>
-      <PremiumContentWrapper isPremiumUser={user?.premium?.plan?.tier === 300} onPurchase={() => router.navigate({ to: '/subscription' })}>
+      <PremiumContentWrapper isPremiumUser={user?.premium.plan.hasSkinChanger} onPurchase={() => router.navigate({ to: '/subscription' })}>
         <CharacterSelection
           isLoading={isLoading}
           skins={allSkins}

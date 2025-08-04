@@ -39,17 +39,6 @@ type ImageFormat struct {
 	SizeInBytes int     `json:"sizeInBytes"`
 }
 
-type Premium struct {
-	Id          int       `json:"id"`
-	DocumentId  string    `json:"documentId"`
-	Tier        string    `json:"tier"`
-	ExpiresAt   time.Time `json:"expiresAt"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
-	PublishedAt time.Time `json:"publishedAt"`
-	Locale      *string   `json:"locale"`
-}
-
 type Action struct {
 	Id             int       `json:"id"`
 	DocumentId     string    `json:"documentId"`
@@ -88,28 +77,53 @@ type UserWithJWT struct {
 	JWT  string `json:"jwt"`
 	User User   `json:"user"`
 }
+type Premium struct {
+	Id                       int         `json:"id"`
+	DocumentId               string      `json:"documentId"`
+	ExpiresAt                time.Time   `json:"expiresAt"`
+	CreatedAt                time.Time   `json:"createdAt"`
+	UpdatedAt                time.Time   `json:"updatedAt"`
+	PublishedAt              time.Time   `json:"publishedAt"`
+	Locale                   interface{} `json:"locale"`
+	LastCoinDistributionDate time.Time   `json:"lastCoinDistributionDate"`
+	ExpirationWarningSent    bool        `json:"expirationWarningSent"`
+	PaidAmount               interface{} `json:"paidAmount"`
+	Plan                     struct {
+		Id               int         `json:"id"`
+		DocumentId       string      `json:"documentId"`
+		MonthlyCoins     int         `json:"monthlyCoins"`
+		HasLobbyRevealer bool        `json:"hasLobbyRevealer"`
+		HasSkinChanger   bool        `json:"hasSkinChanger"`
+		CreatedAt        time.Time   `json:"createdAt"`
+		UpdatedAt        time.Time   `json:"updatedAt"`
+		PublishedAt      time.Time   `json:"publishedAt"`
+		Locale           interface{} `json:"locale"`
+		Name             string      `json:"name"`
+		MonthlyPrice     int         `json:"monthlyPrice"`
+		Tier             int         `json:"tier"`
+	} `json:"plan"`
+}
 type User struct {
-	Id                 int              `json:"id"`
-	DocumentId         string           `json:"documentId"`
-	Username           string           `json:"username"`
-	Email              string           `json:"email"`
-	Provider           string           `json:"provider"`
-	Password           string           `json:"password"`
-	ResetPasswordToken *string          `json:"resetPasswordToken"`
-	ConfirmationToken  *string          `json:"confirmationToken"`
-	Confirmed          bool             `json:"confirmed"`
-	Blocked            bool             `json:"blocked"`
-	Hwid               string           `json:"hwid"`
-	Discord            *interface{}     `json:"discord"`
-	AccountPermissions []string         `json:"accountPermissions"`
-	Coins              int              `json:"coins"`
-	CreatedAt          time.Time        `json:"createdAt"`
-	UpdatedAt          time.Time        `json:"updatedAt"`
-	PublishedAt        time.Time        `json:"publishedAt"`
-	Locale             *string          `json:"locale"`
-	Actions            []Action         `json:"actions"`
-	RentedAccounts     []SummonerRented `json:"rentedAccounts"`
-	FavoriteAccounts   []interface{}    `json:"favoriteAccounts"`
-	Avatar             *Avatar          `json:"avatar"`
-	Premium            *Premium         `json:"premium"`
+	Id                 int           `json:"id"`
+	DocumentId         string        `json:"documentId"`
+	Username           string        `json:"username"`
+	Email              string        `json:"email"`
+	Provider           string        `json:"provider"`
+	Password           string        `json:"password"`
+	ResetPasswordToken *string       `json:"resetPasswordToken"`
+	ConfirmationToken  *string       `json:"confirmationToken"`
+	Confirmed          bool          `json:"confirmed"`
+	Blocked            bool          `json:"blocked"`
+	Hwid               string        `json:"hwid"`
+	Discord            *interface{}  `json:"discord"`
+	AccountPermissions []string      `json:"accountPermissions"`
+	Coins              int           `json:"coins"`
+	CreatedAt          time.Time     `json:"createdAt"`
+	UpdatedAt          time.Time     `json:"updatedAt"`
+	PublishedAt        time.Time     `json:"publishedAt"`
+	Locale             *string       `json:"locale"`
+	Actions            []Action      `json:"actions"`
+	FavoriteAccounts   []interface{} `json:"favoriteAccounts"`
+	Avatar             *Avatar       `json:"avatar"`
+	Premium            *Premium      `json:"premium"`
 }

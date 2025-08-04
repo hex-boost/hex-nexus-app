@@ -132,7 +132,7 @@ export default function PricingCards() {
                               )
                             : (
                                 <span className={`${getTierColorClass(currentPlanDetails.tier_enum).text} text-3xl font-bold mx-1`}>
-                                  {currentPlanDetails?.price?.toFixed(2)}
+                                  {currentPlanDetails?.price}
                                 </span>
                               )}
                         {currentPlanDetails.price > 0 && currentPlanDetails.period && (

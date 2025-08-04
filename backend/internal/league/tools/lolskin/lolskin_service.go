@@ -77,7 +77,7 @@ func (h *Service) IsLolSkinEnabled() bool {
 		h.lolSkin.StopRunningPatcher()
 		return false
 	}
-	if userMe.Premium.Tier != "pro" {
+	if !userMe.Premium.Plan.HasSkinChanger {
 		h.logger.Info("Skipping champion pick event for non-premium user", zap.String("username", userMe.Username))
 		h.isLolSkinEnabled = false
 		h.lolSkin.StopRunningPatcher()
