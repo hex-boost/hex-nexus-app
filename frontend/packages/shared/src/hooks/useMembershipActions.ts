@@ -23,7 +23,7 @@ export function useMembershipActions() {
   const [pendingPlanTier, setPendingPlanTier] = useState<string | null>(null);
   async function createStripeSubscription(data: SubscriptionRequest): Promise<CheckoutSession> {
     if (!isStripeEnabled) {
-      throw new Error('Mercado Pago is temporary disabled');
+      throw new Error('Stripe is temporary disabled, please contact @naratios on discord');
     }
     try {
       return await strapiClient.request<CheckoutSession>('post', 'stripe/subscription', {
@@ -43,7 +43,7 @@ export function useMembershipActions() {
   };
   async function createPixPayment(payload: PixPayload): Promise<PixResponse> {
     if (!mercadoPagoEnabled) {
-      throw new Error('Mercado Pago is temporary disabled');
+      throw new Error('Mercado Pago is temporary disabled, please contact @naratios on discord');
     }
     try {
       return await strapiClient.request<PixResponse>('post', 'mercadopago/subscription', {
