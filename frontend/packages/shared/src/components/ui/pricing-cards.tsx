@@ -123,7 +123,7 @@ export default function PricingCards() {
                             ? (
                                 <>
                                   <span className={`${getTierColorClass(currentPlanDetails.tier_enum).text} text-3xl font-bold mx-1`}>
-                                    {Math.floor(currentPlanDetails.price) - 1}
+                                    {Math.floor(currentPlanDetails.price / 100) - 1}
                                   </span>
                                   <span className={`${getTierColorClass(currentPlanDetails.tier_enum).text} text-xl font-bold -ml-1`}>
                                     .99
@@ -132,7 +132,7 @@ export default function PricingCards() {
                               )
                             : (
                                 <span className={`${getTierColorClass(currentPlanDetails.tier_enum).text} text-3xl font-bold mx-1`}>
-                                  {currentPlanDetails?.price}
+                                  {(currentPlanDetails.price / 100).toFixed(2)}
                                 </span>
                               )}
                         {currentPlanDetails.price > 0 && currentPlanDetails.period && (
