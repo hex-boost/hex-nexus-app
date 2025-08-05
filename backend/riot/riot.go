@@ -3,10 +3,10 @@ package riot
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"regexp"
 	"runtime"
 
-	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -28,9 +28,18 @@ import (
 	"go.uber.org/zap"
 )
 
+// Helper function to get the current function name for mutex logging
+func getFunctionName() string {
+	pc, _, _, _ := runtime.Caller(2)
+	return runtime.FuncForPC(pc).Name()
+}
+
 type Service struct {
 	client      *resty.Client
 	clientMutex sync.RWMutex // Add this mutex
+
+	// Add a dedicated mutex for authentication operations
+	authMutex sync.RWMutex
 
 	logger        *logger.Logger
 	captcha       *captcha.Captcha
@@ -53,8 +62,26 @@ func NewService(logger *logger.Logger, captcha *captcha.Captcha, accountClient *
 }
 
 func (s *Service) ResetRestyClient() {
+	lockID := fmt.Sprintf("clientMutex-%d", time.Now().UnixNano())
+	caller := getFunctionName()
+
+	s.logger.Sugar().Infof("Acquiring lock: mutex=%s, operation=%s, lock_id=%s, caller=%s",
+		"clientMutex", "Lock", lockID, caller)
+
+	lockStart := time.Now()
 	s.clientMutex.Lock()
-	defer s.clientMutex.Unlock()
+
+	s.logger.Sugar().Infof("Lock acquired: mutex=%s, operation=%s, lock_id=%s, wait_time_ms=%v, caller=%s",
+		"clientMutex", "Lock", lockID, time.Since(lockStart), caller)
+
+	defer func() {
+		unlockStart := time.Now()
+		s.clientMutex.Unlock()
+
+		s.logger.Sugar().Infof("Lock released: mutex=%s, operation=%s, lock_id=%s, held_time_ms=%v, unlock_time_ms=%v, caller=%s",
+			"clientMutex", "Unlock", lockID, time.Since(lockStart), time.Since(unlockStart), caller)
+	}()
+
 	s.client = nil
 }
 
@@ -248,9 +275,27 @@ func (s *Service) getCredentials(riotClientPid int) (port string, authToken stri
 	return "", "", fmt.Errorf("unable to extract credentials from either lockfile or process (PID: %d)", riotClientPid)
 }
 func (s *Service) LoginWithCaptcha(ctx context.Context, username, password, captchaToken string) (string, error) {
+	lockID := fmt.Sprintf("clientMutex-%d", time.Now().UnixNano())
+	caller := getFunctionName()
+
+	s.logger.Sugar().Infof("Acquiring lock: mutex=%s, operation=%s, lock_id=%s, caller=%s",
+		"clientMutex", "RLock", lockID, caller)
+
+	lockStart := time.Now()
 	s.clientMutex.RLock()
-	defer s.clientMutex.RUnlock()
-	s.logger.Info("Authenticating with captcha token", zap.String("token_length", fmt.Sprintf("%d", len(captchaToken))))
+
+	s.logger.Sugar().Infof("Lock acquired: mutex=%s, operation=%s, lock_id=%s, wait_time_ms=%v, caller=%s",
+		"clientMutex", "RLock", lockID, time.Since(lockStart), caller)
+
+	defer func() {
+		unlockStart := time.Now()
+		s.clientMutex.RUnlock()
+
+		s.logger.Sugar().Infof("Lock released: mutex=%s, operation=%s, lock_id=%s, held_time_ms=%v, unlock_time_ms=%v, caller=%s",
+			"clientMutex", "RUnlock", lockID, time.Since(lockStart), time.Since(unlockStart), caller)
+	}()
+
+	s.logger.Sugar().Infof("Authenticating with captcha token of length %d", len(captchaToken))
 
 	authPayload := types.Authentication{
 		Campaign: nil,
@@ -270,53 +315,237 @@ func (s *Service) LoginWithCaptcha(ctx context.Context, username, password, capt
 		SetBody(authPayload).
 		SetResult(&loginResult)
 
+	s.logger.Sugar().Debugf("Preparing to send authentication request with captcha for username: %s", username)
+
 	// Create a channel to handle async response
 	done := make(chan error, 1)
 
 	// Execute request in goroutine to handle context cancellation
 	go func() {
 		var err error
-		_, err = req.Put("/rso-authenticator/v1/authentication")
+		resp, err := req.Put("/rso-authenticator/v1/authentication")
+		if err == nil {
+			s.logger.Sugar().Debugf("Authentication API response received: status %d, size %d bytes",
+				resp.StatusCode(), string(resp.Body()))
+		}
 		done <- err
 	}()
 
 	// Wait for either context cancellation or request completion
 	select {
 	case <-ctx.Done():
-		s.logger.Error("Authentication timed out", zap.Error(ctx.Err()))
+		s.logger.Sugar().Errorf("Authentication timed out: %v", ctx.Err())
 		return "", fmt.Errorf("authentication timed out: %w", ctx.Err())
 	case err := <-done:
 		if err != nil {
-			s.logger.Error("Authentication with captcha failed", zap.Error(err))
+			s.logger.Sugar().Errorf("Authentication with captcha failed: %v", err)
 			return "", fmt.Errorf("authentication request failed: %w", err)
 		}
 	}
+
+	s.logger.Sugar().Debugf("Processing authentication response type: %s", loginResult.Type)
 
 	if loginResult.Type == "multifactor" {
 		s.logger.Info("multifactor required for authentication")
 		return "", errors.New("multifactor")
 	}
 	if loginResult.Type == "success" {
-		s.logger.Info("Authentication with captcha successful")
+		tokenPreview := fmt.Sprintf("%s...%s", loginResult.Success.LoginToken[:10], loginResult.Success.LoginToken[len(loginResult.Success.LoginToken)-10:])
+		s.logger.Sugar().Infof("Authentication with captcha successful, login token: %s", tokenPreview)
+
+		s.logger.Debug("Starting completeAuthentication with login token")
 		err := s.completeAuthentication(loginResult.Success.LoginToken)
+		s.logger.Sugar().Debugf("completeAuthentication finished: %v", err)
 		if err != nil {
-			return "", err
+			s.logger.Sugar().Errorf("Failed to complete authentication with login token: %v", err)
+			return "", fmt.Errorf("complete authentication failed: %w", err)
 		}
-		_, err = s.getAuthorization()
+
+		s.logger.Debug("Starting getAuthorization")
+		authResult, err := s.getAuthorization()
+
 		if err != nil {
-			return "", err
+			s.logger.Sugar().Errorf("Failed to get authorization after successful authentication: %v", err)
+			return "", fmt.Errorf("authorization failed: %w", err)
 		}
+
+		keys := make([]string, 0)
+		if authResult != nil {
+			for k := range authResult {
+				keys = append(keys, k)
+			}
+			s.logger.Sugar().Debugf("getAuthorization finished with error: %v, authResult keys: %v", err, keys)
+		} else {
+			s.logger.Sugar().Debugf("getAuthorization finished with error: %v, authResult is nil", err)
+		}
+
+		s.logger.Info("Full authentication flow completed successfully")
 		return "", nil
 	}
 	if loginResult.Type == "auth" && loginResult.Error == "auth_failure" {
+		s.logger.Sugar().Errorf("Authentication failed with auth_failure: %+v", loginResult)
 		return "", errors.New(loginResult.Error)
 	}
 	if loginResult.Error == "captcha_not_allowed" {
+		s.logger.Sugar().Errorf("Captcha not allowed: %+v", loginResult.Captcha)
 		return loginResult.Captcha.Hcaptcha.Data, errors.New(loginResult.Error)
 	}
 
-	s.logger.Error("Authentication with captcha failed", zap.Any("response", loginResult))
+	s.logger.Sugar().Errorf("Authentication with captcha failed with unknown error: %+v", loginResult)
 	return "", errors.New("authentication with captcha failed")
+}
+
+func (s *Service) completeAuthentication(loginToken string) error {
+	// Use the dedicated auth mutex instead of the shared client mutex
+	lockID := fmt.Sprintf("authMutex-%d", time.Now().UnixNano())
+	caller := getFunctionName()
+
+	s.logger.Sugar().Infof("Acquiring lock: mutex=%s, operation=%s, lock_id=%s, caller=%s",
+		"authMutex", "Lock", lockID, caller)
+
+	lockStart := time.Now()
+	s.authMutex.Lock()
+
+	s.logger.Sugar().Infof("Lock acquired: mutex=%s, operation=%s, lock_id=%s, wait_time_ms=%v, caller=%s",
+		"authMutex", "Lock", lockID, time.Since(lockStart), caller)
+
+	defer func() {
+		unlockStart := time.Now()
+		s.authMutex.Unlock()
+
+		s.logger.Sugar().Infof("Lock released: mutex=%s, operation=%s, lock_id=%s, held_time_ms=%v, unlock_time_ms=%v, caller=%s",
+			"authMutex", "Unlock", lockID, time.Since(lockStart), time.Since(unlockStart), caller)
+	}()
+
+	startTime := time.Now()
+	tokenPreview := fmt.Sprintf("%s...%s", loginToken[:10], loginToken[len(loginToken)-10:])
+	requestID := fmt.Sprintf("auth-%d", startTime.UnixNano())
+
+	s.logger.Sugar().Infof("CompleteAuthentication started: request_id=%s, token_preview=%s, start_time=%v",
+		requestID, tokenPreview, startTime)
+
+	var loginTokenResp types.LoginTokenResponse
+
+	requestBody := types.LoginTokenRequest{
+		AuthenticationType: "RiotAuth",
+		CodeVerifier:       "",
+		LoginToken:         loginToken,
+		PersistLogin:       false,
+	}
+
+	s.logger.Sugar().Infof("Preparing login token request: request_id=%s, authentication_type=%s, persist_login=%v, elapsed_ms=%v",
+		requestID, requestBody.AuthenticationType, requestBody.PersistLogin, time.Since(startTime))
+
+	// Create the request but don't send it yet
+	req := s.client.R().
+		SetBody(requestBody).
+		SetResult(&loginTokenResp)
+
+	s.logger.Sugar().Infof("Sending login token request: request_id=%s, url=%s, method=%s, elapsed_ms=%v",
+		requestID, "/rso-auth/v1/session/login-token", "PUT", time.Since(startTime))
+
+	requestStartTime := time.Now()
+	putResp, err := req.Put("/rso-auth/v1/session/login-token")
+	requestDuration := time.Since(requestStartTime)
+
+	if err != nil {
+		s.logger.Sugar().Errorf("Network error sending login token request [request_id=%s]: %v (request_duration_ms=%v, total_elapsed_ms=%v)",
+			requestID, err, requestDuration, time.Since(startTime))
+		return fmt.Errorf("network error in login token request: %w", err)
+	}
+
+	s.logger.Sugar().Infof("Login token request completed: request_id=%s, status_code=%d, body_size_bytes=%d, request_duration_ms=%v, total_elapsed_ms=%v",
+		requestID, putResp.StatusCode(), len(putResp.Body()), requestDuration, time.Since(startTime))
+
+	// Log response headers in debug level
+	for k, v := range putResp.Header() {
+		if len(v) > 0 {
+			s.logger.Sugar().Debugf("Response header: request_id=%s, header_%s=%v", requestID, k, v)
+		}
+	}
+
+	// Log response body in debug level
+	s.logger.Sugar().Debugf("Response body: request_id=%s, body=%s", requestID, string(putResp.Body()))
+
+	if putResp.IsError() {
+		s.logger.Sugar().Errorf("Login token response returned error [request_id=%s]: status_code=%d, body=%s, total_elapsed_ms=%v",
+			requestID, putResp.StatusCode(), string(putResp.Body()), time.Since(startTime))
+		return fmt.Errorf("login token request failed with status %d: %s",
+			putResp.StatusCode(), string(putResp.Body()))
+	}
+
+	s.logger.Sugar().Infof("Login token response parsed: request_id=%s, response_type=%s, total_elapsed_ms=%v",
+		requestID, loginTokenResp.Type, time.Since(startTime))
+
+	if loginTokenResp.Type != "authenticated" {
+		s.logger.Sugar().Errorf("Login token authentication failed [request_id=%s]: expected_type=authenticated, actual_type=%s, full_response=%+v, total_elapsed_ms=%v",
+			requestID, loginTokenResp.Type, loginTokenResp, time.Since(startTime))
+		return fmt.Errorf("authentication not successful: got type %s", loginTokenResp.Type)
+	}
+
+	s.logger.Sugar().Infof("Authentication successful: request_id=%s, total_elapsed_ms=%v",
+		requestID, time.Since(startTime))
+	return nil
+}
+
+func (s *Service) getAuthorization() (map[string]interface{}, error) {
+	// Use the dedicated auth mutex for consistency with other auth operations
+	lockID := fmt.Sprintf("authMutex-%d", time.Now().UnixNano())
+	caller := getFunctionName()
+
+	s.logger.Sugar().Infof("Acquiring lock: mutex=%s, operation=%s, lock_id=%s, caller=%s",
+		"authMutex", "RLock", lockID, caller)
+
+	lockStart := time.Now()
+	s.authMutex.RLock()
+
+	s.logger.Sugar().Infof("Lock acquired: mutex=%s, operation=%s, lock_id=%s, wait_time_ms=%v, caller=%s",
+		"authMutex", "RLock", lockID, time.Since(lockStart), caller)
+
+	defer func() {
+		unlockStart := time.Now()
+		s.authMutex.RUnlock()
+
+		s.logger.Sugar().Infof("Lock released: mutex=%s, operation=%s, lock_id=%s, held_time_ms=%v, unlock_time_ms=%v, caller=%s",
+			"authMutex", "RUnlock", lockID, time.Since(lockStart), time.Since(unlockStart), caller)
+	}()
+
+	s.logger.Sugar().Info("Starting authorization request")
+
+	var authResult map[string]interface{}
+
+	requestPayload := getAuthorizationRequestPayload()
+	s.logger.Sugar().Debugf("Preparing authorization request: payload=%+v", requestPayload)
+
+	postResp, err := s.client.R().
+		SetBody(requestPayload).
+		SetResult(&authResult).
+		Post("/rso-auth/v2/authorizations/riot-client")
+	if err != nil {
+		s.logger.Sugar().Errorf("Authorization request failed: %v", err)
+		return nil, err
+	}
+
+	if postResp.IsError() {
+		s.logger.Sugar().Errorf("Authorization response error: %+v", postResp)
+		return nil, errors.New("authorization request failed")
+	}
+
+	s.logger.Sugar().Info("Authorization successful")
+	return authResult, nil
+}
+
+func (s *Service) Logout() error {
+	res, err := s.client.R().Delete("/rso-authenticator/v1/authentication")
+	if err != nil {
+		s.logger.Sugar().Errorf("Error logging out: %v", err)
+		return err
+	}
+	if res.IsError() {
+		s.logger.Sugar().Errorf("Error logging out: response=%s", string(res.Body()))
+		return err
+	}
+	return err
 }
 func (s *Service) Launch() error {
 
@@ -330,14 +559,14 @@ func (s *Service) Launch() error {
 	riotClientPath = filepath.Join(programData, "Riot Games", "RiotClientInstalls.json")
 	fileContent, err := os.ReadFile(riotClientPath)
 	if err != nil {
-		s.logger.Error("Failed to read Riot client installs file", zap.Error(err))
+		s.logger.Sugar().Errorf("Failed to read Riot client installs file: %v", err)
 		return fmt.Errorf("failed to read Riot client installs file: %w", err)
 	}
 	var clientInstalls struct {
 		RcDefault string `json:"rc_default"`
 	}
 	if err := json.Unmarshal(fileContent, &clientInstalls); err != nil {
-		s.logger.Error("Failed to parse Riot client installs file", zap.Error(err))
+		s.logger.Sugar().Errorf("Failed to parse Riot client installs file: %v", err)
 		return fmt.Errorf("failed to parse Riot client installs file: %w", err)
 	}
 	if clientInstalls.RcDefault == "" {
@@ -350,7 +579,7 @@ func (s *Service) Launch() error {
 
 	_, err = s.cmd.Start(clientInstalls.RcDefault, args...)
 	if err != nil {
-		s.logger.Error("Failed to start Riot client", zap.Error(err))
+		s.logger.Sugar().Errorf("Failed to start Riot client: %v", err)
 		return fmt.Errorf("failed to start Riot client: %w", err)
 	}
 	return nil
@@ -364,19 +593,37 @@ func (s *Service) isProcessRunning() bool {
 
 }
 func (s *Service) InitializeClient() error {
+	lockID := fmt.Sprintf("clientMutex-%d", time.Now().UnixNano())
+	caller := getFunctionName()
+
+	s.logger.Sugar().Infof("Acquiring lock: mutex=%s, operation=%s, lock_id=%s, caller=%s",
+		"clientMutex", "Lock", lockID, caller)
+
+	lockStart := time.Now()
 	s.clientMutex.Lock()
-	defer s.clientMutex.Unlock()
+
+	s.logger.Sugar().Infof("Lock acquired: mutex=%s, operation=%s, lock_id=%s, wait_time_ms=%v, caller=%s",
+		"clientMutex", "Lock", lockID, time.Since(lockStart), caller)
+
+	defer func() {
+		unlockStart := time.Now()
+		s.clientMutex.Unlock()
+
+		s.logger.Sugar().Infof("Lock released: mutex=%s, operation=%s, lock_id=%s, held_time_ms=%v, unlock_time_ms=%v, caller=%s",
+			"clientMutex", "Unlock", lockID, time.Since(lockStart), time.Since(unlockStart), caller)
+	}()
+
 	riotClientPid, err := s.getProcess()
 	if err != nil {
-		s.logger.Warn("Failed to get Riot client pid", zap.Error(err))
+		s.logger.Sugar().Warnf("Failed to get Riot client pid: %v", err)
 		return err
 	}
 	port, authToken, err := s.getCredentials(riotClientPid)
 	if err != nil {
-		s.logger.Warn("Failed to get client credentials", zap.Error(err))
+		s.logger.Sugar().Warnf("Failed to get client credentials: %v", err)
 		return err
 	}
-	s.logger.Debug("Credentials obtained", zap.String("port", port), zap.Any("authToken", authToken))
+	s.logger.Sugar().Debugf("Credentials obtained: port %s, authToken %v", port, authToken)
 	client := resty.New().
 		SetBaseURL("https://127.0.0.1:"+port).
 		SetHeader("Authorization", "Basic "+authToken).
@@ -401,89 +648,46 @@ func (s *Service) SetupCaptchaVerification() error {
 	return nil
 }
 
-func (s *Service) completeAuthentication(loginToken string) error {
-	s.clientMutex.RLock()
-	defer s.clientMutex.RUnlock()
-
-	var loginTokenResp types.LoginTokenResponse
-	putResp, err := s.client.R().
-		SetBody(types.LoginTokenRequest{
-			AuthenticationType: "RiotAuth",
-			CodeVerifier:       "",
-			LoginToken:         loginToken,
-			PersistLogin:       false,
-		}).
-		SetResult(&loginTokenResp).
-		Put("/rso-auth/v1/session/login-token")
-	if err != nil {
-		s.logger.Error("Error sending login token", zap.Error(err))
-		return err
-	}
-	if putResp.IsError() {
-		s.logger.Error("Login token response error", zap.Any("response", putResp))
-		return errors.New("login token request failed")
-	}
-	if loginTokenResp.Type != "authenticated" {
-		s.logger.Error("Authentication failed", zap.String("type", loginTokenResp.Type))
-		return errors.New("authentication not successful")
-	}
-	s.logger.Info("Successfully authenticated with login token")
-	return nil
-}
-
-func (s *Service) getAuthorization() (map[string]interface{}, error) {
-	s.clientMutex.RLock()
-	defer s.clientMutex.RUnlock()
-	var authResult map[string]interface{}
-	postResp, err := s.client.R().
-		SetBody(getAuthorizationRequestPayload()).
-		SetResult(&authResult).
-		Post("/rso-auth/v2/authorizations/riot-client")
-	if err != nil {
-		s.logger.Error("Authorization request failed", zap.Error(err))
-		return nil, err
-	}
-
-	if postResp.IsError() {
-		s.logger.Error("Authorization response error", zap.Any("response", postResp))
-		return nil, errors.New("authorization request failed")
-	}
-
-	s.logger.Info("Authorization successful")
-	return authResult, nil
-}
-
-func (s *Service) Logout() error {
-	res, err := s.client.R().Delete("/rso-authenticator/v1/authentication")
-	if err != nil {
-		s.logger.Error("Error logging out", zap.Error(err))
-		return err
-	}
-	if res.IsError() {
-		s.logger.Error("Error logging out", zap.String("response", string(res.Body())))
-		return err
-	}
-	return err
-}
-
 func (s *Service) GetAuthenticationState() (*types.RiotIdentityResponse, error) {
+	lockID := fmt.Sprintf("clientMutex-%d", time.Now().UnixNano())
+	caller := getFunctionName()
+
+	s.logger.Sugar().Infof("Acquiring lock: mutex=%s, operation=%s, lock_id=%s, caller=%s",
+		"clientMutex", "RLock", lockID, caller)
+
+	lockStart := time.Now()
 	s.clientMutex.RLock()
+
+	s.logger.Sugar().Infof("Lock acquired: mutex=%s, operation=%s, lock_id=%s, wait_time_ms=%v, caller=%s",
+		"clientMutex", "RLock", lockID, time.Since(lockStart), caller)
+
 	if s.client == nil {
+		unlockStart := time.Now()
 		s.clientMutex.RUnlock()
+
+		s.logger.Sugar().Infof("Lock released (early): mutex=%s, operation=%s, lock_id=%s, held_time_ms=%v, unlock_time_ms=%v, caller=%s, reason=%s",
+			"clientMutex", "RUnlock", lockID, time.Since(lockStart), time.Since(unlockStart), caller, "client is nil")
+
 		return nil, errors.New("client is not initialized")
 	}
 
 	var getCurrentAuthResult types.RiotIdentityResponse
 	result, err := s.client.R().SetResult(&getCurrentAuthResult).Get("/rso-authenticator/v1/authentication")
+
+	unlockStart := time.Now()
 	s.clientMutex.RUnlock() // Release the lock after the request is made
 
+	s.logger.Sugar().Infof("Lock released: mutex=%s, operation=%s, lock_id=%s, held_time_ms=%v, unlock_time_ms=%v, caller=%s, reason=%s",
+		"clientMutex", "RUnlock", lockID, time.Since(lockStart), time.Since(unlockStart), caller, "after API request")
+
 	if err != nil {
-		s.logger.Error(fmt.Sprintf("Failed while trying to get authentication state %v", err))
+		s.logger.Sugar().Errorf("Failed while trying to get authentication state: %v", err)
 		// Check for network errors, including timeouts
 		var netErr net.Error
 		if errors.As(err, &netErr) && netErr.Timeout() {
-			s.logger.Info("Detected network timeout, attempting to re-initialize client")
+			s.logger.Sugar().Info("Detected network timeout, attempting to re-initialize client")
 			if initErr := s.InitializeClient(); initErr != nil {
+				s.logger.Sugar().Errorf("Failed to re-initialize client after timeout: %v", initErr)
 				return nil, fmt.Errorf("failed to re-initialize client after timeout: %w", initErr)
 			}
 			// Return a specific error to indicate re-initialization happened
@@ -493,15 +697,15 @@ func (s *Service) GetAuthenticationState() (*types.RiotIdentityResponse, error) 
 	}
 
 	if result.IsError() {
-		s.logger.Error("Authentication failed",
-			zap.String("message", string(result.Body())),
-			zap.Int("status_code", result.StatusCode()))
+		s.logger.Sugar().Errorf("Authentication failed: status code %d, message: %s",
+			result.StatusCode(), string(result.Body()))
 
 		var errorResponse types.ErrorResponse
 		if err := json.Unmarshal(result.Body(), &errorResponse); err == nil {
 			if errorResponse.ErrorCode == "CREDENTIALS_INVALID" {
 				s.logger.Info("Detected invalid credentials, attempting to re-initialize client")
 				if initErr := s.InitializeClient(); initErr != nil {
+					s.logger.Sugar().Errorf("Failed to re-initialize client: %v", initErr)
 					return nil, fmt.Errorf("failed to re-initialize client: %w", initErr)
 				}
 				return nil, errors.New("client re-initialized after invalid credentials")
@@ -518,13 +722,13 @@ func (s *Service) IsAuthStateValid() error {
 	if !s.IsClientInitialized() {
 		err := s.InitializeClient()
 		if err != nil {
-			s.logger.Error("Failed to initialize client", zap.Error(err))
+			s.logger.Sugar().Errorf("Failed to initialize client: %v", err)
 			return err
 		}
 	}
 	currentAuth, err := s.GetAuthenticationState()
 	if err != nil {
-		s.logger.Sugar().Errorf("Failed to get authentication state %v", err)
+		s.logger.Sugar().Errorf("Failed to get authentication state: %v", err)
 		return err
 	}
 
@@ -541,13 +745,13 @@ func (s *Service) IsAuthStateValid() error {
 func (s *Service) getCaptchaData() (string, error) {
 	err := s.IsAuthStateValid()
 	if err != nil {
-		s.logger.Error("Invalid authentication state", zap.Error(err))
+		s.logger.Sugar().Errorf("Invalid authentication state: %v", err)
 		return "", err
 	}
 	_, err = s.client.R().
 		Delete("/rso-authenticator/v1/authentication")
 	if err != nil {
-		s.logger.Error("Error in authentication delete session", zap.Error(err))
+		s.logger.Sugar().Errorf("Error in authentication delete session: %v", err)
 		return "", err
 	}
 	var startAuthResult types.RiotIdentityResponse
@@ -556,15 +760,15 @@ func (s *Service) getCaptchaData() (string, error) {
 		SetResult(&startAuthResult).
 		Post("/rso-authenticator/v1/authentication/riot-identity/start")
 	if err != nil {
-		s.logger.Error("Error in authentication start request", zap.Error(err))
+		s.logger.Sugar().Errorf("Error in authentication start request: %v", err)
 		return "", err
 	}
 	if startAuthRes.IsError() {
 		var errorResponse types.ErrorResponse
 		if err := json.Unmarshal(startAuthRes.Body(), &errorResponse); err != nil {
-			s.logger.Error("Failed to parse error response", zap.Error(err))
+			s.logger.Sugar().Errorf("Failed to parse error response: %v", err)
 		}
-		s.logger.Error("Authentication failed", zap.String("message", errorResponse.Message))
+		s.logger.Sugar().Errorf("Authentication failed: %s", errorResponse.Message)
 		return "", errors.New(errorResponse.Message)
 	}
 	if startAuthResult.Captcha.Hcaptcha.Data == "" {
@@ -579,7 +783,7 @@ func (s *Service) CheckAccountBanned(username string) error {
 	if !s.IsClientInitialized() {
 		err := s.InitializeClient()
 		if err != nil {
-			s.logger.Error("Failed to initialize client", zap.Error(err))
+			s.logger.Sugar().Errorf("Failed to initialize client: %v", err)
 			return err
 		}
 	}
@@ -592,15 +796,14 @@ func (s *Service) CheckAccountBanned(username string) error {
 		case <-ticker.C:
 			userInfo, err := s.GetUserinfo()
 			if err != nil {
-				s.logger.Error("Failed to get user info for ban check", zap.Error(err))
+				s.logger.Sugar().Errorf("Failed to get user info for ban check: %v", err)
 				return err
 			}
 
 			// Check if the user has restrictions
 			if len(userInfo.Ban.Restrictions) > 0 {
-				s.logger.Warn("Account has restrictions",
-					zap.Int("count", len(userInfo.Ban.Restrictions)),
-					zap.Any("restrictions", userInfo.Ban.Restrictions))
+				s.logger.Sugar().Warnf("Account has %d restrictions: %+v",
+					len(userInfo.Ban.Restrictions), userInfo.Ban.Restrictions)
 
 				for _, restriction := range userInfo.Ban.Restrictions {
 					if restriction.Type == "PERMANENT_BAN" && (restriction.Scope == "riot" || restriction.Scope == "lol" || restriction.Scope == "") {
@@ -609,7 +812,7 @@ func (s *Service) CheckAccountBanned(username string) error {
 							Ban:      &userInfo.Ban,
 						})
 						if saveErr != nil {
-							s.logger.Error("Error saving summoner with multifactor restriction", zap.Error(err))
+							s.logger.Sugar().Errorf("Error saving summoner with ban restriction: %v", saveErr)
 							return saveErr
 						}
 						return fmt.Errorf("permanent_banned")
