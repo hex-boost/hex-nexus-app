@@ -1,15 +1,18 @@
-import { useUserStore } from '@/stores/useUserStore.ts';
 import * as Sentry from '@sentry/react';
 import { createRouter } from '@tanstack/react-router';
 import { UnleashClient } from 'unleash-proxy-client';
-import { routeTree } from './routeTree.gen.ts';
+import { routeTree } from '../../../main/src/routeTree.gen.ts';
+import { useUserStore } from '../stores/useUserStore.ts';
 
 export const unleashClient = new UnleashClient({
   url: 'https://primary-production-8693.up.railway.app/api/frontend',
   clientKey: '*:production.825408eb4a39c1335a6a4c258a24fe77e93c547a38209badd5ee2f6a',
-  appName: 'my-frontend-app',
+  appName: 'nexus-app',
   environment: 'production',
-  refreshInterval: 15, // seconds
+  context: {
+    userId: useUserStore.getState().user?.id?.toString() || 'anonymous',
+  },
+  refreshInterval: 30, // seconds
 });
 export const router = createRouter({
   routeTree,

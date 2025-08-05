@@ -37,7 +37,7 @@ export default function AccountDetails({ accountWithPrice, onAccountChange }: {
   const isAccountRented = user?.rentals && user.rentals.length > 0 && user?.rentals?.some(rental => (rental.riotAccount.documentId === account.documentId) && rental.isActive);
   console.log('isaccountRented', isAccountRented);
 
-  const accountRental = isAccountRented ? user.rentals.find(rental => (rental.riotAccount.documentId === account.documentId) && rental.isActive) : null;
+  const accountRental = (isAccountRented && user.rentals?.length > 0) ? user.rentals?.find(rental => (rental.riotAccount.documentId === account.documentId) && rental.isActive) : null;
   console.log('accountRental', accountRental);
   const {
     championsSearch,

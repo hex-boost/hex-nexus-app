@@ -1,4 +1,5 @@
 import type { UserType } from '@/types/types';
+import { unleashClient } from '@/lib/instrument.ts';
 import { Monitor as AccountMonitor } from '@account';
 import { BaseClient } from '@client';
 import { Manager } from '@leagueManager';
@@ -55,7 +56,13 @@ export const useUserStore = create<AuthState>((set, get) => ({
         LogService.Error(logComponent, 'Failed to set user context', { error: err }),
       );
     }
-
+    unleashClient.updateContext({
+      userId: user.id.toString(),
+      properties: {
+        userTier: user.premium?.plan?.name || 'free',
+        email: user.email,
+      },
+    });
     set({ user, jwt });
   },
 
@@ -75,6 +82,12 @@ export const useUserStore = create<AuthState>((set, get) => ({
       } else {
         LogService.Info(logComponent, 'User is not a Nexus account. Not forcing close on logout', {});
       }
+    });
+    unleashClient.updateContext({
+      userId: 'anonymous',
+      properties: {
+        userTier: 'free',
+      },
     });
   },
   isAuthenticated: () => get().jwt != null,

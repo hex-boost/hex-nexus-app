@@ -1,13 +1,13 @@
 import { Toaster } from '@/components/ui/sonner.tsx';
-import * as Sentry from '@sentry/react';
+import { router, unleashClient } from '@/lib/instrument.ts';
 
+import * as Sentry from '@sentry/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { RouterProvider } from '@tanstack/react-router';
 import { FlagProvider } from '@unleash/proxy-client-react';
 import React, { lazy, Suspense, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom/client';
-import { router, unleashClient } from './instrument.ts';
 import '@/index.css';
 
 // Lazy load the production version of devtools
