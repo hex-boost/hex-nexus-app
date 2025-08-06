@@ -282,7 +282,7 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 		accountClient,
 		accountState,
 	)
-	wailsLogger := logger.NewWailsAdapter(appInstance.Log().Wails())
+	wailsLogger := logger.NewWailsAdapter(appInstance.Log().WailsInternal())
 
 	mainLogger.Debug("Initializing discord service")
 	discordService := discord.New(appInstance.Log().Discord(), cfg)

@@ -12,6 +12,7 @@ const (
 	LogPrefixStripe   = "STRIPE"
 	LogPrefixRiot     = "RIOT"
 	LogPrefixWails    = "WLS"
+	LogPrefixWailsInternal    = "WLS-INTERNAL"
 	LogPrefixWeb      = "WEB"
 	LogPrefixServices = "SEV"
 	LogPrefixProtocol = "PROTOCOL"
@@ -22,6 +23,7 @@ type log struct {
 	discord  *logger.Logger
 	riot     *logger.Logger
 	wails    *logger.Logger
+	wailsInternal    *logger.Logger
 	web      *logger.Logger
 	repo     *logger.Logger
 	services *logger.Logger
@@ -40,6 +42,7 @@ func NewLogger(cfg *config.Config) *log {
 		web:      logger.New(LogPrefixWeb, cfg),
 		services: logger.New(LogPrefixServices, cfg),
 		protocol: logger.New(LogPrefixProtocol, cfg),
+		wailsInternal: logger.New(LogPrefixWailsInternal, cfg),
 	}
 }
 
@@ -67,6 +70,9 @@ func (l *log) Wails() *logger.Logger {
 	return l.wails
 }
 
+func (l *log) WailsInternal() *logger.Logger {
+	return l.wailsInternal
+}
 func (l *log) Protocol() *logger.Logger {
 	return l.protocol
 }
