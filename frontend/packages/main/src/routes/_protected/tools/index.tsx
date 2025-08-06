@@ -3,7 +3,7 @@ import PremiumContentWrapper from '@/components/paywall/premium-content-wrapper.
 import CharacterSelection from '@/features/skin-selector/character-selection.tsx';
 import { useLocalStorage } from '@/hooks/use-local-storage.tsx';
 import { useAllDataDragon } from '@/hooks/useDataDragon/useDataDragon.ts';
-import { saveSkinSelection } from '@/lib/champion-skin-store';
+import { clearSkinSelections, saveSkinSelection } from '@/lib/champion-skin-store';
 import { logger } from '@/lib/logger.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { State as LolSkinState, Service } from '@lolskin';
@@ -80,6 +80,34 @@ function RouteComponent() {
     );
   };
 
+  // Add the reset skins function
+  const handleResetAllSkins = async () => {
+    if (!user?.premium.plan?.hasSkinChanger) {
+      logger.info('lolskin', 'User is not a premium user blocking skin reset');
+      return;
+    }
+
+    toast.promise(
+      (async () => {
+        // Clear the skin selections from IndexedDB
+        await clearSkinSelections();
+
+        // Reset the LolSkin state
+        await LolSkinState.ReplaceAllSelections([]);
+
+        // Invalidate the cache in the Service
+        await Service.InvalidateCache();
+
+        logger.info('lolskin', 'All skin selections have been reset and cache invalidated');
+      })(),
+      {
+        loading: 'Resetting all skin selections...',
+        success: 'All skin selections have been reset',
+        error: 'Failed to reset skin selections.',
+      },
+    );
+  };
+
   return (
     <>
       <PremiumContentWrapper isPremiumUser={user?.premium.plan.hasSkinChanger} onPurchase={() => router.navigate({ to: '/subscription' })}>
@@ -90,6 +118,7 @@ function RouteComponent() {
           onSelectSkin={handleSelectSkin}
           isLolSkinEnabled={isLolskinEnabled}
           toggleLolSkinEnabled={handleToggleSkinFeature}
+          resetAllSkins={handleResetAllSkins}
         />
       </PremiumContentWrapper>
     </>

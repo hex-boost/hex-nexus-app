@@ -376,20 +376,6 @@ func (c *LolSkin) writeCurrentProfile(profile string) {
 	defer file.Close()
 	file.WriteString(profile + "\n")
 }
-func (c *LolSkin) loadCatalog(path string) (*Catalog, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open catalog file: %v", err)
-	}
-	defer file.Close()
-
-	var catalog Catalog
-	if err := json.NewDecoder(file).Decode(&catalog); err != nil {
-		return nil, fmt.Errorf("failed to parse catalog: %v", err)
-	}
-
-	return &catalog, nil
-}
 
 func (c *LolSkin) DownloadSkins(championID int32, skinID int32) (string, error) {
 	// Get champion and skin names from ID
@@ -680,4 +666,9 @@ func (c *LolSkin) resolveChampionAndSkinData(championID int32, skinID int32) (*C
 	}
 
 	return &champData, skinName, nil
+}
+
+// GetTempDir returns the temporary directory path
+func (c *LolSkin) GetTempDir() string {
+	return c.tempDir
 }

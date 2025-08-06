@@ -2,9 +2,13 @@ package lolskin
 
 import (
 	"context"
+	"fmt"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
 	"github.com/hex-boost/hex-nexus-app/backend/types"
 	"go.uber.org/zap"
+	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 )
 
@@ -87,7 +91,90 @@ func (h *Service) IsLolSkinEnabled() bool {
 
 	return h.isLolSkinEnabled
 }
+// InvalidateCache clears all skin-related data including downloads, profiles, and cache
+func (h *Service) InvalidateCache() error {
+	h.logger.Info("Starting cache invalidation - clearing all skin data")
 
+	// Stop any running patcher first
+	h.lolSkin.StopRunningPatcher()
+
+	// Get the temp directory path from lolSkin instance
+	tempDir := h.lolSkin.GetTempDir()
+	if tempDir == "" {
+		return fmt.Errorf("temp directory not found")
+	}
+
+	// Define folders to delete
+	foldersToDelete := []string{
+		"installed",      // Downloaded and extracted skins
+		"profiles",       // Profile configurations
+		"temp_downloads", // Temporary download files
+		"dataDragon",     // Cached DataDragon API data
+	}
+
+	var errors []string
+
+	// Delete each folder
+	for _, folder := range foldersToDelete {
+		folderPath := filepath.Join(tempDir, folder)
+		if _, err := os.Stat(folderPath); err == nil {
+			h.logger.Info("Deleting folder", zap.String("path", folderPath))
+			if err := os.RemoveAll(folderPath); err != nil {
+				errMsg := fmt.Sprintf("failed to delete %s: %v", folder, err)
+				h.logger.Error("Failed to delete folder", zap.String("folder", folder), zap.Error(err))
+				errors = append(errors, errMsg)
+			} else {
+				h.logger.Info("Successfully deleted folder", zap.String("folder", folder))
+			}
+		} else {
+			h.logger.Info("Folder does not exist, skipping", zap.String("folder", folder))
+		}
+	}
+
+	// Also delete any profile-related files in the root temp directory
+	filesToDelete := []string{
+		"current.profile",
+		"mod-tools-log.txt",
+	}
+
+	for _, file := range filesToDelete {
+		filePath := filepath.Join(tempDir, file)
+		if _, err := os.Stat(filePath); err == nil {
+			h.logger.Info("Deleting file", zap.String("path", filePath))
+			if err := os.Remove(filePath); err != nil {
+				errMsg := fmt.Sprintf("failed to delete %s: %v", file, err)
+				h.logger.Error("Failed to delete file", zap.String("file", file), zap.Error(err))
+				errors = append(errors, errMsg)
+			} else {
+				h.logger.Info("Successfully deleted file", zap.String("file", file))
+			}
+		}
+	}
+
+	// Recreate the necessary directories
+	dirsToRecreate := []string{
+		"installed",
+		"profiles",
+	}
+
+	for _, dir := range dirsToRecreate {
+		dirPath := filepath.Join(tempDir, dir)
+		if err := os.MkdirAll(dirPath, 0755); err != nil {
+			errMsg := fmt.Sprintf("failed to recreate directory %s: %v", dir, err)
+			h.logger.Error("Failed to recreate directory", zap.String("dir", dir), zap.Error(err))
+			errors = append(errors, errMsg)
+		} else {
+			h.logger.Info("Successfully recreated directory", zap.String("dir", dir))
+		}
+	}
+
+	if len(errors) > 0 {
+		return fmt.Errorf("cache invalidation completed with errors: %s", strings.Join(errors, "; "))
+	}
+
+	h.logger.Info("Cache invalidation completed successfully")
+	return nil
+}
 // Modify StartInjection method in lolskin_service.go
 func (h *Service) StartInjection() {
 	if !h.IsLolSkinEnabled() {

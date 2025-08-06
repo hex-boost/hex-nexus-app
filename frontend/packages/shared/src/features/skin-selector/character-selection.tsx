@@ -1,4 +1,15 @@
 import type { FormattedChampion, FormattedSkin } from '@/hooks/useDataDragon/types/useDataDragonHook.ts';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button.tsx';
 import { Input } from '@/components/ui/input.tsx';
 import { Label } from '@/components/ui/label.tsx';
@@ -7,7 +18,7 @@ import CharacterCard from '@/features/skin-selector/components/character-card.ts
 import { SkinSelectorTutorial } from '@/features/skin-selector/skin-selector-tutorial.tsx';
 import { getSkinSelections, saveSkinSelection } from '@/lib/champion-skin-store';
 import { cn } from '@/lib/utils.ts';
-import { ArrowLeft, HelpCircle, Search, X } from 'lucide-react';
+import { ArrowLeft, HelpCircle, Search, Trash2, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 // Type for user preferences
@@ -27,7 +38,7 @@ type CharacterSelectionProps = {
   isLoading: boolean;
   isLolSkinEnabled?: boolean;
   toggleLolSkinEnabled?: () => Promise<void>; // Optional prop to control skin feature toggle
-
+  resetAllSkins?: () => Promise<void>; // New prop for resetting all skins
 };
 
 export default function CharacterSelection({
@@ -37,6 +48,7 @@ export default function CharacterSelection({
   isLoading,
   isLolSkinEnabled, // Default to true if not provided
   toggleLolSkinEnabled, // Optional prop to control skin feature toggle
+  resetAllSkins, // New prop for resetting skins
 }: CharacterSelectionProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchDebounced, setSearchDebounced] = useState('');
@@ -79,16 +91,9 @@ export default function CharacterSelection({
       }
     };
   }, [loadSkinSelections]);
+
   useEffect(() => {
     // Existing champion initialization code remains the same
-    if (initialChampionId && !selectedChampion) {
-      const champion = champions.find(c => Number(c.id) === initialChampionId);
-      if (champion) {
-        setSelectedChampion(champion);
-      }
-    }
-  }, [champions, initialChampionId, selectedChampion]);
-  useEffect(() => {
     if (initialChampionId && !selectedChampion) {
       const champion = champions.find(c => Number(c.id) === initialChampionId);
       if (champion) {
@@ -103,32 +108,66 @@ export default function CharacterSelection({
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  // Separate champions into those with skins selected and those without
+  const { championsWithSkins, championsWithoutSkins } = useMemo(() => {
+    const withSkins: FormattedChampion[] = [];
+    const withoutSkins: FormattedChampion[] = [];
+
+    champions.forEach((champion) => {
+      const championId = Number(champion.id);
+      if (skinSelections[championId]
+        && skinSelections[championId].skinNum !== champion.skins[0].num) { // Skip if default skin is selected
+        withSkins.push(champion);
+      } else {
+        withoutSkins.push(champion);
+      }
+    });
+
+    return { championsWithSkins: withSkins, championsWithoutSkins: withoutSkins };
+  }, [champions, skinSelections]);
+
   // Filter items based on search query and current view
   const filteredItems = useMemo(() => {
-    const items = selectedChampion ? selectedChampion.skins : champions;
-    if (!searchDebounced) {
-      return items;
-    }
-
     if (selectedChampion) {
-      // Filter skins
+      // If in skin view, filter the selected champion's skins
+      if (!searchDebounced) {
+        return selectedChampion.skins;
+      }
+
       return selectedChampion.skins.filter(skin =>
         skin.name.toLowerCase().includes(searchDebounced.toLowerCase()),
       );
     } else {
-      // Filter champions
-      return champions.filter((champion) => {
-        // Search in champion name
+      // If in champion view, we'll handle rendering separately in the JSX
+      if (!searchDebounced) {
+        return { championsWithSkins, championsWithoutSkins };
+      }
+
+      // Filter both groups based on search
+      const filteredWithSkins = championsWithSkins.filter((champion) => {
         if (champion.name.toLowerCase().includes(searchDebounced.toLowerCase())) {
           return true;
         }
-        // Search in skin names
         return champion.skins.some(skin =>
           skin.name.toLowerCase().includes(searchDebounced.toLowerCase()),
         );
       });
+
+      const filteredWithoutSkins = championsWithoutSkins.filter((champion) => {
+        if (champion.name.toLowerCase().includes(searchDebounced.toLowerCase())) {
+          return true;
+        }
+        return champion.skins.some(skin =>
+          skin.name.toLowerCase().includes(searchDebounced.toLowerCase()),
+        );
+      });
+
+      return {
+        championsWithSkins: filteredWithSkins,
+        championsWithoutSkins: filteredWithoutSkins,
+      };
     }
-  }, [champions, selectedChampion, searchDebounced]);
+  }, [championsWithSkins, championsWithoutSkins, selectedChampion, searchDebounced]);
 
   // Get the selected skin for a champion
   const getSelectedSkin = useCallback(
@@ -144,6 +183,7 @@ export default function CharacterSelection({
     },
     [skinSelections],
   );
+
   // Handle skin selection
   const handleSkinSelect = useCallback(
     (championId: number, skinId: number, chromaId?: number) => {
@@ -172,6 +212,7 @@ export default function CharacterSelection({
         // Refresh skin selections after saving
         loadSkinSelections();
       });
+
       // If in embedded mode, call the onSelectSkin callback
       if (onSelectSkin && selectedChampion) {
         const chroma = chromaId && skin.chromas ? skin.chromas.find(c => c.id === chromaId) : null;
@@ -180,6 +221,7 @@ export default function CharacterSelection({
     },
     [onSelectSkin, selectedChampion, loadSkinSelections],
   );
+
   // Handle card click based on current view
   const handleCardClick = (item: FormattedChampion | FormattedSkin) => {
     if (selectedChampion) {
@@ -199,6 +241,22 @@ export default function CharacterSelection({
   // Get page title
   const [showTutorial, setShowTutorial] = useState(false);
   const pageTitle = selectedChampion ? selectedChampion.name : 'Skin Selector';
+
+  // Render champion cards for a given list
+  const renderChampionCards = (championsList: FormattedChampion[]) => {
+    return championsList.map((champion) => {
+      const selectedSkin = getSelectedSkin(champion);
+
+      return (
+        <CharacterCard
+          key={champion.id}
+          champion={champion}
+          selectedSkin={selectedSkin}
+          onClick={() => handleCardClick(champion)}
+        />
+      );
+    });
+  };
 
   return (
     <div className={cn('flex flex-col h-full w-full  bg-background')}>
@@ -230,10 +288,35 @@ export default function CharacterSelection({
                 </Label>
               </div>
             </div>
-            <Button variant="outline" onClick={() => setShowTutorial(true)}>
-              How It Works
-              <HelpCircle className="ml-2" size={16} />
-            </Button>
+            <div className="flex gap-2">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive">
+                    <Trash2 className="mr-2" size={16} />
+                    Reset All Skins
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action will reset all your skin selections to defaults and clear the cache.
+                      This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={resetAllSkins} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Reset
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              <Button variant="outline" onClick={() => setShowTutorial(true)}>
+                How It Works
+                <HelpCircle className="ml-2" size={16} />
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -259,8 +342,8 @@ export default function CharacterSelection({
         </div>
       </div>
 
-      {/* Simple grid of cards */}
-      <div className="flex-1 ">
+      {/* Content section */}
+      <div className="flex-1 overflow-y-auto">
         {isLoading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
             {Array.from({ length: 12 }).map((_, i) => (
@@ -268,41 +351,64 @@ export default function CharacterSelection({
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 pb-6 ">
-            {filteredItems.map((item) => {
-              if (selectedChampion) {
-                // Skin view
-                const skin = item as FormattedSkin;
-                const isSelected = skinSelections[Number(selectedChampion.id)]?.skinNum === skin.num;
+          <>
+            {selectedChampion ? (
+            // Skin view
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 pb-6">
+                {(filteredItems as FormattedSkin[]).map((skin) => {
+                  const isSelected = skinSelections[Number(selectedChampion.id)]?.skinNum === skin.num;
+                  return (
+                    <CharacterCard
+                      key={skin.id}
+                      skin={skin}
+                      isSelected={isSelected}
+                      onClick={() => handleCardClick(skin)}
+                    />
+                  );
+                })}
+              </div>
+            ) : (
+            // Champions view with two sections
+              <>
+                {/* Champions with skins selected section */}
+                {(filteredItems as { championsWithSkins: FormattedChampion[]; championsWithoutSkins: FormattedChampion[] })
+                  .championsWithSkins
+                  .length > 0 && (
+                  <div className="mb-8">
+                    <h3 className="text-xl font-medium text-foreground mb-4 border-b pb-2">Champions with Skins Selected</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                      {renderChampionCards((filteredItems as any).championsWithSkins)}
+                    </div>
+                  </div>
+                )}
 
-                return (
-                  <CharacterCard
-                    key={skin.id}
-                    skin={skin}
-                    isSelected={isSelected}
-                    onClick={() => handleCardClick(skin)}
-                  />
-                );
-              } else {
-                // Champion view
-                const champion = item as FormattedChampion;
-                const selectedSkin = getSelectedSkin(champion);
+                {/* All champions section */}
+                {(filteredItems as { championsWithSkins: FormattedChampion[]; championsWithoutSkins: FormattedChampion[] })
+                  .championsWithoutSkins
+                  .length > 0 && (
+                  <div>
+                    <h3 className="text-xl font-medium text-foreground mb-4 border-b pb-2">All Champions</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 pb-6">
+                      {renderChampionCards((filteredItems as any).championsWithoutSkins)}
+                    </div>
+                  </div>
+                )}
 
-                return (
-                  <CharacterCard
-                    key={champion.id}
-                    champion={champion}
-                    selectedSkin={selectedSkin}
-                    onClick={() => handleCardClick(champion)}
-                  />
-                );
-              }
-            })}
-          </div>
+                {/* Show message when no champions found */}
+                {(filteredItems as any).championsWithSkins.length === 0
+                  && (filteredItems as any).championsWithoutSkins.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No champions found matching "
+                    {searchDebounced}
+                    "
+                  </div>
+                )}
+              </>
+            )}
+          </>
         )}
       </div>
       <SkinSelectorTutorial open={showTutorial} setOpen={setShowTutorial} />
     </div>
-
   );
 }

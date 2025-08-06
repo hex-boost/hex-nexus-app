@@ -65,21 +65,33 @@ func (s *Service) ResetRestyClient() {
 	lockID := fmt.Sprintf("clientMutex-%d", time.Now().UnixNano())
 	caller := getFunctionName()
 
-	s.logger.Sugar().Infof("Acquiring lock: mutex=%s, operation=%s, lock_id=%s, caller=%s",
-		"clientMutex", "Lock", lockID, caller)
+	s.logger.Info("Acquiring lock",
+		zap.String("mutex", "clientMutex"),
+		zap.String("operation", "Lock"),
+		zap.String("lock_id", lockID),
+		zap.String("caller", caller))
 
 	lockStart := time.Now()
 	s.clientMutex.Lock()
 
-	s.logger.Sugar().Infof("Lock acquired: mutex=%s, operation=%s, lock_id=%s, wait_time_ms=%v, caller=%s",
-		"clientMutex", "Lock", lockID, time.Since(lockStart), caller)
+	s.logger.Info("Lock acquired",
+		zap.String("mutex", "clientMutex"),
+		zap.String("operation", "Lock"),
+		zap.String("lock_id", lockID),
+		zap.Duration("wait_time_ms", time.Since(lockStart)),
+		zap.String("caller", caller))
 
 	defer func() {
 		unlockStart := time.Now()
 		s.clientMutex.Unlock()
 
-		s.logger.Sugar().Infof("Lock released: mutex=%s, operation=%s, lock_id=%s, held_time_ms=%v, unlock_time_ms=%v, caller=%s",
-			"clientMutex", "Unlock", lockID, time.Since(lockStart), time.Since(unlockStart), caller)
+		s.logger.Info("Lock released",
+			zap.String("mutex", "clientMutex"),
+			zap.String("operation", "Unlock"),
+			zap.String("lock_id", lockID),
+			zap.Duration("held_time_ms", time.Since(lockStart)),
+			zap.Duration("unlock_time_ms", time.Since(unlockStart)),
+			zap.String("caller", caller))
 	}()
 
 	s.client = nil
@@ -278,21 +290,33 @@ func (s *Service) LoginWithCaptcha(ctx context.Context, username, password, capt
 	lockID := fmt.Sprintf("clientMutex-%d", time.Now().UnixNano())
 	caller := getFunctionName()
 
-	s.logger.Sugar().Infof("Acquiring lock: mutex=%s, operation=%s, lock_id=%s, caller=%s",
-		"clientMutex", "RLock", lockID, caller)
+	s.logger.Info("Acquiring lock",
+		zap.String("mutex", "clientMutex"),
+		zap.String("operation", "RLock"),
+		zap.String("lock_id", lockID),
+		zap.String("caller", caller))
 
 	lockStart := time.Now()
 	s.clientMutex.RLock()
 
-	s.logger.Sugar().Infof("Lock acquired: mutex=%s, operation=%s, lock_id=%s, wait_time_ms=%v, caller=%s",
-		"clientMutex", "RLock", lockID, time.Since(lockStart), caller)
+	s.logger.Info("Lock acquired",
+		zap.String("mutex", "clientMutex"),
+		zap.String("operation", "RLock"),
+		zap.String("lock_id", lockID),
+		zap.Duration("wait_time_ms", time.Since(lockStart)),
+		zap.String("caller", caller))
 
 	defer func() {
 		unlockStart := time.Now()
 		s.clientMutex.RUnlock()
 
-		s.logger.Sugar().Infof("Lock released: mutex=%s, operation=%s, lock_id=%s, held_time_ms=%v, unlock_time_ms=%v, caller=%s",
-			"clientMutex", "RUnlock", lockID, time.Since(lockStart), time.Since(unlockStart), caller)
+		s.logger.Info("Lock released",
+			zap.String("mutex", "clientMutex"),
+			zap.String("operation", "RUnlock"),
+			zap.String("lock_id", lockID),
+			zap.Duration("held_time_ms", time.Since(lockStart)),
+			zap.Duration("unlock_time_ms", time.Since(unlockStart)),
+			zap.String("caller", caller))
 	}()
 
 	s.logger.Sugar().Infof("Authenticating with captcha token of length %d", len(captchaToken))
@@ -400,29 +424,43 @@ func (s *Service) completeAuthentication(loginToken string) error {
 	lockID := fmt.Sprintf("authMutex-%d", time.Now().UnixNano())
 	caller := getFunctionName()
 
-	s.logger.Sugar().Infof("Acquiring lock: mutex=%s, operation=%s, lock_id=%s, caller=%s",
-		"authMutex", "Lock", lockID, caller)
+	s.logger.Info("Acquiring lock",
+		zap.String("mutex", "authMutex"),
+		zap.String("operation", "Lock"),
+		zap.String("lock_id", lockID),
+		zap.String("caller", caller))
 
 	lockStart := time.Now()
 	s.authMutex.Lock()
 
-	s.logger.Sugar().Infof("Lock acquired: mutex=%s, operation=%s, lock_id=%s, wait_time_ms=%v, caller=%s",
-		"authMutex", "Lock", lockID, time.Since(lockStart), caller)
+	s.logger.Info("Lock acquired",
+		zap.String("mutex", "authMutex"),
+		zap.String("operation", "Lock"),
+		zap.String("lock_id", lockID),
+		zap.Duration("wait_time_ms", time.Since(lockStart)),
+		zap.String("caller", caller))
 
 	defer func() {
 		unlockStart := time.Now()
 		s.authMutex.Unlock()
 
-		s.logger.Sugar().Infof("Lock released: mutex=%s, operation=%s, lock_id=%s, held_time_ms=%v, unlock_time_ms=%v, caller=%s",
-			"authMutex", "Unlock", lockID, time.Since(lockStart), time.Since(unlockStart), caller)
+		s.logger.Info("Lock released",
+			zap.String("mutex", "authMutex"),
+			zap.String("operation", "Unlock"),
+			zap.String("lock_id", lockID),
+			zap.Duration("held_time_ms", time.Since(lockStart)),
+			zap.Duration("unlock_time_ms", time.Since(unlockStart)),
+			zap.String("caller", caller))
 	}()
 
 	startTime := time.Now()
 	tokenPreview := fmt.Sprintf("%s...%s", loginToken[:10], loginToken[len(loginToken)-10:])
 	requestID := fmt.Sprintf("auth-%d", startTime.UnixNano())
 
-	s.logger.Sugar().Infof("CompleteAuthentication started: request_id=%s, token_preview=%s, start_time=%v",
-		requestID, tokenPreview, startTime)
+	s.logger.Info("CompleteAuthentication started",
+		zap.String("request_id", requestID),
+		zap.String("token_preview", tokenPreview),
+		zap.Time("start_time", startTime))
 
 	var loginTokenResp types.LoginTokenResponse
 
@@ -433,16 +471,22 @@ func (s *Service) completeAuthentication(loginToken string) error {
 		PersistLogin:       false,
 	}
 
-	s.logger.Sugar().Infof("Preparing login token request: request_id=%s, authentication_type=%s, persist_login=%v, elapsed_ms=%v",
-		requestID, requestBody.AuthenticationType, requestBody.PersistLogin, time.Since(startTime))
+	s.logger.Info("Preparing login token request",
+		zap.String("request_id", requestID),
+		zap.String("authentication_type", requestBody.AuthenticationType),
+		zap.Bool("persist_login", requestBody.PersistLogin),
+		zap.Duration("elapsed_ms", time.Since(startTime)))
 
 	// Create the request but don't send it yet
 	req := s.client.R().
 		SetBody(requestBody).
 		SetResult(&loginTokenResp)
 
-	s.logger.Sugar().Infof("Sending login token request: request_id=%s, url=%s, method=%s, elapsed_ms=%v",
-		requestID, "/rso-auth/v1/session/login-token", "PUT", time.Since(startTime))
+	s.logger.Info("Sending login token request",
+		zap.String("request_id", requestID),
+		zap.String("url", "/rso-auth/v1/session/login-token"),
+		zap.String("method", "PUT"),
+		zap.Duration("elapsed_ms", time.Since(startTime)))
 
 	requestStartTime := time.Now()
 	putResp, err := req.Put("/rso-auth/v1/session/login-token")
@@ -454,18 +498,28 @@ func (s *Service) completeAuthentication(loginToken string) error {
 		return fmt.Errorf("network error in login token request: %w", err)
 	}
 
-	s.logger.Sugar().Infof("Login token request completed: request_id=%s, status_code=%d, body_size_bytes=%d, request_duration_ms=%v, total_elapsed_ms=%v",
-		requestID, putResp.StatusCode(), len(putResp.Body()), requestDuration, time.Since(startTime))
+	s.logger.Info("Login token request completed",
+		zap.String("request_id", requestID),
+		zap.Int("status_code", putResp.StatusCode()),
+		zap.Int("body_size_bytes", len(putResp.Body())),
+		zap.Duration("request_duration_ms", requestDuration),
+		zap.Duration("total_elapsed_ms", time.Since(startTime)))
 
 	// Log response headers in debug level
+	headerFields := []zap.Field{}
 	for k, v := range putResp.Header() {
 		if len(v) > 0 {
-			s.logger.Sugar().Debugf("Response header: request_id=%s, header_%s=%v", requestID, k, v)
+			headerFields = append(headerFields, zap.Strings(fmt.Sprintf("header_%s", k), v))
 		}
 	}
+	s.logger.Debug("Response headers", append([]zap.Field{
+		zap.String("request_id", requestID),
+	}, headerFields...)...)
 
 	// Log response body in debug level
-	s.logger.Sugar().Debugf("Response body: request_id=%s, body=%s", requestID, string(putResp.Body()))
+	s.logger.Debug("Response body",
+		zap.String("request_id", requestID),
+		zap.String("body", string(putResp.Body())))
 
 	if putResp.IsError() {
 		s.logger.Sugar().Errorf("Login token response returned error [request_id=%s]: status_code=%d, body=%s, total_elapsed_ms=%v",
@@ -474,8 +528,10 @@ func (s *Service) completeAuthentication(loginToken string) error {
 			putResp.StatusCode(), string(putResp.Body()))
 	}
 
-	s.logger.Sugar().Infof("Login token response parsed: request_id=%s, response_type=%s, total_elapsed_ms=%v",
-		requestID, loginTokenResp.Type, time.Since(startTime))
+	s.logger.Info("Login token response parsed",
+		zap.String("request_id", requestID),
+		zap.String("response_type", loginTokenResp.Type),
+		zap.Duration("total_elapsed_ms", time.Since(startTime)))
 
 	if loginTokenResp.Type != "authenticated" {
 		s.logger.Sugar().Errorf("Login token authentication failed [request_id=%s]: expected_type=authenticated, actual_type=%s, full_response=%+v, total_elapsed_ms=%v",
@@ -483,8 +539,9 @@ func (s *Service) completeAuthentication(loginToken string) error {
 		return fmt.Errorf("authentication not successful: got type %s", loginTokenResp.Type)
 	}
 
-	s.logger.Sugar().Infof("Authentication successful: request_id=%s, total_elapsed_ms=%v",
-		requestID, time.Since(startTime))
+	s.logger.Info("Authentication successful",
+		zap.String("request_id", requestID),
+		zap.Duration("total_elapsed_ms", time.Since(startTime)))
 	return nil
 }
 
@@ -493,29 +550,41 @@ func (s *Service) getAuthorization() (map[string]interface{}, error) {
 	lockID := fmt.Sprintf("authMutex-%d", time.Now().UnixNano())
 	caller := getFunctionName()
 
-	s.logger.Sugar().Infof("Acquiring lock: mutex=%s, operation=%s, lock_id=%s, caller=%s",
-		"authMutex", "RLock", lockID, caller)
+	s.logger.Info("Acquiring lock",
+		zap.String("mutex", "authMutex"),
+		zap.String("operation", "RLock"),
+		zap.String("lock_id", lockID),
+		zap.String("caller", caller))
 
 	lockStart := time.Now()
 	s.authMutex.RLock()
 
-	s.logger.Sugar().Infof("Lock acquired: mutex=%s, operation=%s, lock_id=%s, wait_time_ms=%v, caller=%s",
-		"authMutex", "RLock", lockID, time.Since(lockStart), caller)
+	s.logger.Info("Lock acquired",
+		zap.String("mutex", "authMutex"),
+		zap.String("operation", "RLock"),
+		zap.String("lock_id", lockID),
+		zap.Duration("wait_time_ms", time.Since(lockStart)),
+		zap.String("caller", caller))
 
 	defer func() {
 		unlockStart := time.Now()
 		s.authMutex.RUnlock()
 
-		s.logger.Sugar().Infof("Lock released: mutex=%s, operation=%s, lock_id=%s, held_time_ms=%v, unlock_time_ms=%v, caller=%s",
-			"authMutex", "RUnlock", lockID, time.Since(lockStart), time.Since(unlockStart), caller)
+		s.logger.Info("Lock released",
+			zap.String("mutex", "authMutex"),
+			zap.String("operation", "RUnlock"),
+			zap.String("lock_id", lockID),
+			zap.Duration("held_time_ms", time.Since(lockStart)),
+			zap.Duration("unlock_time_ms", time.Since(unlockStart)),
+			zap.String("caller", caller))
 	}()
 
-	s.logger.Sugar().Info("Starting authorization request")
+	s.logger.Info("Starting authorization request")
 
 	var authResult map[string]interface{}
 
 	requestPayload := getAuthorizationRequestPayload()
-	s.logger.Sugar().Debugf("Preparing authorization request: payload=%+v", requestPayload)
+	s.logger.Debug("Preparing authorization request", zap.Any("payload", requestPayload))
 
 	postResp, err := s.client.R().
 		SetBody(requestPayload).
@@ -531,7 +600,7 @@ func (s *Service) getAuthorization() (map[string]interface{}, error) {
 		return nil, errors.New("authorization request failed")
 	}
 
-	s.logger.Sugar().Info("Authorization successful")
+	s.logger.Info("Authorization successful")
 	return authResult, nil
 }
 
@@ -596,21 +665,33 @@ func (s *Service) InitializeClient() error {
 	lockID := fmt.Sprintf("clientMutex-%d", time.Now().UnixNano())
 	caller := getFunctionName()
 
-	s.logger.Sugar().Infof("Acquiring lock: mutex=%s, operation=%s, lock_id=%s, caller=%s",
-		"clientMutex", "Lock", lockID, caller)
+	s.logger.Info("Acquiring lock",
+		zap.String("mutex", "clientMutex"),
+		zap.String("operation", "Lock"),
+		zap.String("lock_id", lockID),
+		zap.String("caller", caller))
 
 	lockStart := time.Now()
 	s.clientMutex.Lock()
 
-	s.logger.Sugar().Infof("Lock acquired: mutex=%s, operation=%s, lock_id=%s, wait_time_ms=%v, caller=%s",
-		"clientMutex", "Lock", lockID, time.Since(lockStart), caller)
+	s.logger.Info("Lock acquired",
+		zap.String("mutex", "clientMutex"),
+		zap.String("operation", "Lock"),
+		zap.String("lock_id", lockID),
+		zap.Duration("wait_time_ms", time.Since(lockStart)),
+		zap.String("caller", caller))
 
 	defer func() {
 		unlockStart := time.Now()
 		s.clientMutex.Unlock()
 
-		s.logger.Sugar().Infof("Lock released: mutex=%s, operation=%s, lock_id=%s, held_time_ms=%v, unlock_time_ms=%v, caller=%s",
-			"clientMutex", "Unlock", lockID, time.Since(lockStart), time.Since(unlockStart), caller)
+		s.logger.Info("Lock released",
+			zap.String("mutex", "clientMutex"),
+			zap.String("operation", "Unlock"),
+			zap.String("lock_id", lockID),
+			zap.Duration("held_time_ms", time.Since(lockStart)),
+			zap.Duration("unlock_time_ms", time.Since(unlockStart)),
+			zap.String("caller", caller))
 	}()
 
 	riotClientPid, err := s.getProcess()
@@ -652,21 +733,47 @@ func (s *Service) GetAuthenticationState() (*types.RiotIdentityResponse, error) 
 	lockID := fmt.Sprintf("clientMutex-%d", time.Now().UnixNano())
 	caller := getFunctionName()
 
-	s.logger.Sugar().Infof("Acquiring lock: mutex=%s, operation=%s, lock_id=%s, caller=%s",
-		"clientMutex", "RLock", lockID, caller)
+	s.logger.Info("Acquiring lock",
+		zap.String("mutex", "clientMutex"),
+		zap.String("operation", "RLock"),
+		zap.String("lock_id", lockID),
+		zap.String("caller", caller))
 
 	lockStart := time.Now()
 	s.clientMutex.RLock()
 
-	s.logger.Sugar().Infof("Lock acquired: mutex=%s, operation=%s, lock_id=%s, wait_time_ms=%v, caller=%s",
-		"clientMutex", "RLock", lockID, time.Since(lockStart), caller)
+	s.logger.Info("Lock acquired",
+		zap.String("mutex", "clientMutex"),
+		zap.String("operation", "RLock"),
+		zap.String("lock_id", lockID),
+		zap.Duration("wait_time_ms", time.Since(lockStart)),
+		zap.String("caller", caller))
+
+	defer func() {
+		unlockStart := time.Now()
+		s.clientMutex.RUnlock()
+
+		s.logger.Info("Lock released",
+			zap.String("mutex", "clientMutex"),
+			zap.String("operation", "RUnlock"),
+			zap.String("lock_id", lockID),
+			zap.Duration("held_time_ms", time.Since(lockStart)),
+			zap.Duration("unlock_time_ms", time.Since(unlockStart)),
+			zap.String("caller", caller))
+	}()
 
 	if s.client == nil {
 		unlockStart := time.Now()
 		s.clientMutex.RUnlock()
 
-		s.logger.Sugar().Infof("Lock released (early): mutex=%s, operation=%s, lock_id=%s, held_time_ms=%v, unlock_time_ms=%v, caller=%s, reason=%s",
-			"clientMutex", "RUnlock", lockID, time.Since(lockStart), time.Since(unlockStart), caller, "client is nil")
+		s.logger.Info("Lock released (early)",
+			zap.String("mutex", "clientMutex"),
+			zap.String("operation", "RUnlock"),
+			zap.String("lock_id", lockID),
+			zap.Duration("held_time_ms", time.Since(lockStart)),
+			zap.Duration("unlock_time_ms", time.Since(unlockStart)),
+			zap.String("caller", caller),
+			zap.String("reason", "client is nil"))
 
 		return nil, errors.New("client is not initialized")
 	}
@@ -677,15 +784,21 @@ func (s *Service) GetAuthenticationState() (*types.RiotIdentityResponse, error) 
 	unlockStart := time.Now()
 	s.clientMutex.RUnlock() // Release the lock after the request is made
 
-	s.logger.Sugar().Infof("Lock released: mutex=%s, operation=%s, lock_id=%s, held_time_ms=%v, unlock_time_ms=%v, caller=%s, reason=%s",
-		"clientMutex", "RUnlock", lockID, time.Since(lockStart), time.Since(unlockStart), caller, "after API request")
+	s.logger.Info("Lock released",
+		zap.String("mutex", "clientMutex"),
+		zap.String("operation", "RUnlock"),
+		zap.String("lock_id", lockID),
+		zap.Duration("held_time_ms", time.Since(lockStart)),
+		zap.Duration("unlock_time_ms", time.Since(unlockStart)),
+		zap.String("caller", caller),
+		zap.String("reason", "after API request"))
 
 	if err != nil {
 		s.logger.Sugar().Errorf("Failed while trying to get authentication state: %v", err)
 		// Check for network errors, including timeouts
 		var netErr net.Error
 		if errors.As(err, &netErr) && netErr.Timeout() {
-			s.logger.Sugar().Info("Detected network timeout, attempting to re-initialize client")
+			s.logger.Info("Detected network timeout, attempting to re-initialize client")
 			if initErr := s.InitializeClient(); initErr != nil {
 				s.logger.Sugar().Errorf("Failed to re-initialize client after timeout: %v", initErr)
 				return nil, fmt.Errorf("failed to re-initialize client after timeout: %w", initErr)
