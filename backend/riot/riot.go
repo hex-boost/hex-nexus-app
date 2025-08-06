@@ -62,38 +62,8 @@ func NewService(logger *logger.Logger, captcha *captcha.Captcha, accountClient *
 }
 
 func (s *Service) ResetRestyClient() {
-	lockID := fmt.Sprintf("clientMutex-%d", time.Now().UnixNano())
-	caller := getFunctionName()
-
-	s.logger.Info("Acquiring lock",
-		zap.String("mutex", "clientMutex"),
-		zap.String("operation", "Lock"),
-		zap.String("lock_id", lockID),
-		zap.String("caller", caller))
-
-	lockStart := time.Now()
 	s.clientMutex.Lock()
-
-	s.logger.Info("Lock acquired",
-		zap.String("mutex", "clientMutex"),
-		zap.String("operation", "Lock"),
-		zap.String("lock_id", lockID),
-		zap.Duration("wait_time_ms", time.Since(lockStart)),
-		zap.String("caller", caller))
-
-	defer func() {
-		unlockStart := time.Now()
-		s.clientMutex.Unlock()
-
-		s.logger.Info("Lock released",
-			zap.String("mutex", "clientMutex"),
-			zap.String("operation", "Unlock"),
-			zap.String("lock_id", lockID),
-			zap.Duration("held_time_ms", time.Since(lockStart)),
-			zap.Duration("unlock_time_ms", time.Since(unlockStart)),
-			zap.String("caller", caller))
-	}()
-
+	defer s.clientMutex.Unlock()
 	s.client = nil
 }
 
@@ -287,37 +257,8 @@ func (s *Service) getCredentials(riotClientPid int) (port string, authToken stri
 	return "", "", fmt.Errorf("unable to extract credentials from either lockfile or process (PID: %d)", riotClientPid)
 }
 func (s *Service) LoginWithCaptcha(ctx context.Context, username, password, captchaToken string) (string, error) {
-	lockID := fmt.Sprintf("clientMutex-%d", time.Now().UnixNano())
-	caller := getFunctionName()
-
-	s.logger.Info("Acquiring lock",
-		zap.String("mutex", "clientMutex"),
-		zap.String("operation", "RLock"),
-		zap.String("lock_id", lockID),
-		zap.String("caller", caller))
-
-	lockStart := time.Now()
 	s.clientMutex.RLock()
-
-	s.logger.Info("Lock acquired",
-		zap.String("mutex", "clientMutex"),
-		zap.String("operation", "RLock"),
-		zap.String("lock_id", lockID),
-		zap.Duration("wait_time_ms", time.Since(lockStart)),
-		zap.String("caller", caller))
-
-	defer func() {
-		unlockStart := time.Now()
-		s.clientMutex.RUnlock()
-
-		s.logger.Info("Lock released",
-			zap.String("mutex", "clientMutex"),
-			zap.String("operation", "RUnlock"),
-			zap.String("lock_id", lockID),
-			zap.Duration("held_time_ms", time.Since(lockStart)),
-			zap.Duration("unlock_time_ms", time.Since(unlockStart)),
-			zap.String("caller", caller))
-	}()
+	defer s.clientMutex.RUnlock()
 
 	s.logger.Sugar().Infof("Authenticating with captcha token of length %d", len(captchaToken))
 
@@ -420,38 +361,8 @@ func (s *Service) LoginWithCaptcha(ctx context.Context, username, password, capt
 }
 
 func (s *Service) completeAuthentication(loginToken string) error {
-	// Use the dedicated auth mutex instead of the shared client mutex
-	lockID := fmt.Sprintf("authMutex-%d", time.Now().UnixNano())
-	caller := getFunctionName()
-
-	s.logger.Info("Acquiring lock",
-		zap.String("mutex", "authMutex"),
-		zap.String("operation", "Lock"),
-		zap.String("lock_id", lockID),
-		zap.String("caller", caller))
-
-	lockStart := time.Now()
 	s.authMutex.Lock()
-
-	s.logger.Info("Lock acquired",
-		zap.String("mutex", "authMutex"),
-		zap.String("operation", "Lock"),
-		zap.String("lock_id", lockID),
-		zap.Duration("wait_time_ms", time.Since(lockStart)),
-		zap.String("caller", caller))
-
-	defer func() {
-		unlockStart := time.Now()
-		s.authMutex.Unlock()
-
-		s.logger.Info("Lock released",
-			zap.String("mutex", "authMutex"),
-			zap.String("operation", "Unlock"),
-			zap.String("lock_id", lockID),
-			zap.Duration("held_time_ms", time.Since(lockStart)),
-			zap.Duration("unlock_time_ms", time.Since(unlockStart)),
-			zap.String("caller", caller))
-	}()
+	defer s.authMutex.Unlock()
 
 	startTime := time.Now()
 	tokenPreview := fmt.Sprintf("%s...%s", loginToken[:10], loginToken[len(loginToken)-10:])
@@ -546,38 +457,8 @@ func (s *Service) completeAuthentication(loginToken string) error {
 }
 
 func (s *Service) getAuthorization() (map[string]interface{}, error) {
-	// Use the dedicated auth mutex for consistency with other auth operations
-	lockID := fmt.Sprintf("authMutex-%d", time.Now().UnixNano())
-	caller := getFunctionName()
-
-	s.logger.Info("Acquiring lock",
-		zap.String("mutex", "authMutex"),
-		zap.String("operation", "RLock"),
-		zap.String("lock_id", lockID),
-		zap.String("caller", caller))
-
-	lockStart := time.Now()
 	s.authMutex.RLock()
-
-	s.logger.Info("Lock acquired",
-		zap.String("mutex", "authMutex"),
-		zap.String("operation", "RLock"),
-		zap.String("lock_id", lockID),
-		zap.Duration("wait_time_ms", time.Since(lockStart)),
-		zap.String("caller", caller))
-
-	defer func() {
-		unlockStart := time.Now()
-		s.authMutex.RUnlock()
-
-		s.logger.Info("Lock released",
-			zap.String("mutex", "authMutex"),
-			zap.String("operation", "RUnlock"),
-			zap.String("lock_id", lockID),
-			zap.Duration("held_time_ms", time.Since(lockStart)),
-			zap.Duration("unlock_time_ms", time.Since(unlockStart)),
-			zap.String("caller", caller))
-	}()
+	defer s.authMutex.RUnlock()
 
 	s.logger.Info("Starting authorization request")
 
@@ -662,43 +543,10 @@ func (s *Service) isProcessRunning() bool {
 
 }
 func (s *Service) InitializeClient() error {
-	lockID := fmt.Sprintf("clientMutex-%d", time.Now().UnixNano())
-	caller := getFunctionName()
-
-	s.logger.Info("Acquiring lock",
-		zap.String("mutex", "clientMutex"),
-		zap.String("operation", "Lock"),
-		zap.String("lock_id", lockID),
-		zap.String("caller", caller))
-
-	lockStart := time.Now()
 	s.clientMutex.Lock()
-
-	s.logger.Info("Lock acquired",
-		zap.String("mutex", "clientMutex"),
-		zap.String("operation", "Lock"),
-		zap.String("lock_id", lockID),
-		zap.Duration("wait_time_ms", time.Since(lockStart)),
-		zap.String("caller", caller))
-
-	defer func() {
-		unlockStart := time.Now()
-		s.clientMutex.Unlock()
-
-		s.logger.Info("Lock released",
-			zap.String("mutex", "clientMutex"),
-			zap.String("operation", "Unlock"),
-			zap.String("lock_id", lockID),
-			zap.Duration("held_time_ms", time.Since(lockStart)),
-			zap.Duration("unlock_time_ms", time.Since(unlockStart)),
-			zap.String("caller", caller))
-	}()
+	defer s.clientMutex.Unlock()
 
 	riotClientPid, err := s.getProcess()
-	if err != nil {
-		s.logger.Sugar().Warnf("Failed to get Riot client pid: %v", err)
-		return err
-	}
 	port, authToken, err := s.getCredentials(riotClientPid)
 	if err != nil {
 		s.logger.Sugar().Warnf("Failed to get client credentials: %v", err)
@@ -730,68 +578,18 @@ func (s *Service) SetupCaptchaVerification() error {
 }
 
 func (s *Service) GetAuthenticationState() (*types.RiotIdentityResponse, error) {
-	lockID := fmt.Sprintf("clientMutex-%d", time.Now().UnixNano())
-	caller := getFunctionName()
-
-	s.logger.Info("Acquiring lock",
-		zap.String("mutex", "clientMutex"),
-		zap.String("operation", "RLock"),
-		zap.String("lock_id", lockID),
-		zap.String("caller", caller))
-
-	lockStart := time.Now()
 	s.clientMutex.RLock()
 
-	s.logger.Info("Lock acquired",
-		zap.String("mutex", "clientMutex"),
-		zap.String("operation", "RLock"),
-		zap.String("lock_id", lockID),
-		zap.Duration("wait_time_ms", time.Since(lockStart)),
-		zap.String("caller", caller))
-
-	defer func() {
-		unlockStart := time.Now()
-		s.clientMutex.RUnlock()
-
-		s.logger.Info("Lock released",
-			zap.String("mutex", "clientMutex"),
-			zap.String("operation", "RUnlock"),
-			zap.String("lock_id", lockID),
-			zap.Duration("held_time_ms", time.Since(lockStart)),
-			zap.Duration("unlock_time_ms", time.Since(unlockStart)),
-			zap.String("caller", caller))
-	}()
-
 	if s.client == nil {
-		unlockStart := time.Now()
 		s.clientMutex.RUnlock()
-
-		s.logger.Info("Lock released (early)",
-			zap.String("mutex", "clientMutex"),
-			zap.String("operation", "RUnlock"),
-			zap.String("lock_id", lockID),
-			zap.Duration("held_time_ms", time.Since(lockStart)),
-			zap.Duration("unlock_time_ms", time.Since(unlockStart)),
-			zap.String("caller", caller),
-			zap.String("reason", "client is nil"))
-
 		return nil, errors.New("client is not initialized")
 	}
 
 	var getCurrentAuthResult types.RiotIdentityResponse
 	result, err := s.client.R().SetResult(&getCurrentAuthResult).Get("/rso-authenticator/v1/authentication")
 
-	unlockStart := time.Now()
-	s.clientMutex.RUnlock() // Release the lock after the request is made
-
-	s.logger.Info("Lock released",
-		zap.String("mutex", "clientMutex"),
-		zap.String("operation", "RUnlock"),
-		zap.String("lock_id", lockID),
-		zap.Duration("held_time_ms", time.Since(lockStart)),
-		zap.Duration("unlock_time_ms", time.Since(unlockStart)),
-		zap.String("caller", caller),
-		zap.String("reason", "after API request"))
+	// Release the lock after the request is made
+	s.clientMutex.RUnlock()
 
 	if err != nil {
 		s.logger.Sugar().Errorf("Failed while trying to get authentication state: %v", err)
