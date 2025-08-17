@@ -69,11 +69,6 @@ function RootLayout() {
       if (!user?.premium?.plan.hasSkinChanger || !isLolskinEnabled) {
         return;
       }
-      const isBackLolSkinEnabled = await Service.IsLolSkinEnabled();
-      if (!isBackLolSkinEnabled) {
-        logger.warn('lolskin', 'LolSkin service is not available');
-        return;
-      }
       logger.info('lolskin', 'Loading saved skin selections at application start');
 
       try {
