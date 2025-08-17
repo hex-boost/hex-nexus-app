@@ -2,6 +2,7 @@ import type { StrapiError } from '@/types/types';
 import { LoginForm } from '@/features/auth/login-form.tsx';
 import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
 import { useProfileAvatar } from '@/hooks/useProfileAvatar.ts';
+import { logger } from '@/lib/logger.ts';
 import { strapiClient, userAuth } from '@/lib/strapi.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { Discord } from '@discord';
@@ -73,26 +74,26 @@ export function LoginFormPage() {
       return Discord.StartOAuth();
     },
     onSuccess: async (data) => {
-      console.info('discord login data', data);
+      logger.info('LoginFormPage', 'discord login data', data);
       if (!data || !data.jwt) {
         toast.error('Failed to authenticate with Discord');
         return;
       }
 
-      console.info('discord login jwt', data?.jwt);
+      logger.info('LoginFormPage', 'discord login jwt', data?.jwt);
       setAuthToken(data.jwt);
 
       try {
         await refetchUser();
-        console.info('User refetched successfully');
+        logger.info('LoginFormPage', 'User refetched successfully');
         router.navigate({ to: '/dashboard' });
       } catch (error) {
-        console.error('Error refetching user:', error);
+        logger.error('LoginFormPage', 'Error refetching user:', error);
         toast.error('Failed to load user data');
       }
     },
     onError: (error) => {
-      console.error('Error in Discord login:', error);
+      logger.error('LoginFormPage', 'Error in Discord login:', error);
       toast.error('Failed to authenticate with Discord');
     },
   });

@@ -40,7 +40,7 @@ type LeagueService interface {
 type LCUConnection interface {
 	IsClientInitialized() bool
 	GetClient() (*resty.Client, error)
-	GetLeagueCredentials() (string, string, string, error)
+	GetLeagueCredentials() (int, string, string, error)
 }
 
 // AccountMonitor defines the contract for account monitoring
@@ -207,8 +207,7 @@ func (s *Service) connectToLCUWebSocket() error {
 
 	u := url.URL{
 		Scheme: "wss",
-
-		Host: "127.0.0.1:" + port,
+		Host:   fmt.Sprintf("127.0.0.1:%d", port),
 	}
 	// Connect to WebSocket
 	conn, _, err := dialer.Dial(u.String(), headers)

@@ -1,13 +1,18 @@
 package lcu
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/command"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
+	"go.uber.org/zap"
 	"regexp"
+	"strconv"
 	"sync"
 	"time"
 
@@ -39,7 +44,7 @@ func (c *Connection) performInitialization() error {
 	encodedAuth := base64.StdEncoding.EncodeToString([]byte("riot:" + token))
 
 	newClient := resty.New().
-		SetBaseURL(fmt.Sprintf("https://127.0.0.1:%s", port)).
+		SetBaseURL(fmt.Sprintf("https://127.0.0.1:%d", port)).
 		SetHeader("Accept", "application/json").
 		SetHeader("Authorization", "Basic "+encodedAuth).
 		SetTimeout(10 * time.Second)
@@ -87,33 +92,82 @@ func (c *Connection) IsClientInitialized() bool {
 	return resp.IsSuccess()
 }
 
-func (c *Connection) GetLeagueCredentials() (port, token, pid string, err error) {
-	output, err := c.process.GetCommandLineByName("LeagueClientUx.exe")
-	if err != nil {
-		return "", "", "", fmt.Errorf("failed to get command line for LeagueClientUx.exe: %w", err)
-	}
-
-	portRegex := regexp.MustCompile(`--app-port=(\d+)`)
-	tokenRegex := regexp.MustCompile(`--remoting-auth-token=([\w-]+)`)
-	pidRegex := regexp.MustCompile(`--app-pid=(\d+)`)
-
-	portMatches := portRegex.FindStringSubmatch(string(output))
-	tokenMatches := tokenRegex.FindStringSubmatch(string(output))
-	pidMatches := pidRegex.FindStringSubmatch(string(output))
-
-	if len(portMatches) < 2 || len(tokenMatches) < 2 || len(pidMatches) < 2 {
-		return "", "", "", errors.New("league client not found or missing required parameters (port/token/pid)")
-	}
-	port = portMatches[1]
-	token = tokenMatches[1]
-	pid = pidMatches[1]
-
-	if port == "" || token == "" || pid == "" {
-		return "", "", "", errors.New("league client parameters (port/token/pid) are empty")
-	}
-	return port, token, pid, nil
+type Win32_Process struct {
+	ProcessID   uint32
+	CommandLine *string
 }
 
+func (c *Connection) getProcessesWithCim() ([]Win32_Process, error) {
+	cmdRaw := `Get-CimInstance -ClassName Win32_Process -Property ProcessId,CommandLine -ErrorAction SilentlyContinue | Select-Object ProcessId,CommandLine | ConvertTo-Json`
+
+	// Execute the PowerShell command.
+	var stdout, stderr bytes.Buffer
+	cmd := command.New()
+	ps := cmd.Exec("powershell", "-NoProfile", "-NonInteractive", "-Command", cmdRaw)
+	ps.Stdout = &stdout
+	ps.Stderr = &stderr
+
+	if err := ps.Run(); err != nil {
+		return nil, fmt.Errorf("failed to execute PowerShell command: %w, stderr: %s", err, stderr.String())
+	}
+
+	// Unmarshal the JSON output into our struct slice.
+	var processes []Win32_Process
+	if err := json.Unmarshal(stdout.Bytes(), &processes); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal JSON from PowerShell: %w", err)
+	}
+
+	return processes, nil
+}
+func (c *Connection) GetLeagueCredentials() (port int, token string, portStr string, err error) {
+	// Get all processes with their command lines
+	processes, err := c.getProcessesWithCim()
+	if err != nil {
+		return 0, "", "", fmt.Errorf("failed to get processes: %w", err)
+	}
+
+	// Define regex patterns to extract credentials
+	portRegex := regexp.MustCompile(`--app-port=(\d+)`)
+	riotTokenRegex := regexp.MustCompile(`--riotclient-auth-token=([\w-]+)`)
+	remotingTokenRegex := regexp.MustCompile(`--remoting-auth-token=([\w-]+)`)
+
+	// Search through all processes
+	for _, process := range processes {
+		if process.CommandLine == nil {
+			continue
+		}
+
+		cmdLine := *process.CommandLine
+
+		// Check if this is a League client process by looking for riotclient-auth-token
+		if !riotTokenRegex.MatchString(cmdLine) {
+			continue
+		}
+
+		portMatch := portRegex.FindStringSubmatch(cmdLine)
+		remotingTokenMatch := remotingTokenRegex.FindStringSubmatch(cmdLine)
+
+		// Verify all required credentials are found
+		if len(portMatch) < 2 || len(remotingTokenMatch) < 2 {
+			c.logger.Debug("Found League Client process but couldn't extract all credentials",
+				zap.Uint32("processId", process.ProcessID),
+				zap.Bool("hasPort", len(portMatch) >= 2),
+				zap.Bool("hasRemotingToken", len(remotingTokenMatch) >= 2))
+			continue
+		}
+
+		// Parse port to integer
+		portInt, err := strconv.Atoi(portMatch[1])
+		if err != nil {
+			c.logger.Warn("Found League Client but failed to parse port", zap.Error(err))
+			continue
+		}
+
+		return portInt, remotingTokenMatch[1], portMatch[1], nil
+	}
+
+	return 0, "", "", errors.New("League Client process not found or credentials not available")
+}
 func (c *Connection) WaitUntilReady() error {
 	timeout := 60 * time.Second
 	ctx, cancel := context.WithTimeout(c.ctx, timeout)

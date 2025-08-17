@@ -1,8 +1,14 @@
 package league
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account/events"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/command"
 	"github.com/wailsapp/wails/v3/pkg/application"
+	"regexp"
+	"strconv"
 	"time"
 
 	"fmt" // Added for error wrapping
@@ -90,29 +96,87 @@ func (s *Service) IsPlaying() bool {
 	return false
 }
 
-// IsRunning uses ps.Processes(). Similar to IsPlaying, this should be thread-safe.
-func (s *Service) IsRunning() bool {
-	processes, err := ps.Processes()
+type Win32_Process struct {
+	ProcessID   uint32
+	CommandLine *string
+}
+
+func (s *Service) getProcessesWithCim() ([]Win32_Process, error) {
+	cmdRaw := `Get-CimInstance -ClassName Win32_Process -Property ProcessId,CommandLine -ErrorAction SilentlyContinue | Select-Object ProcessId,CommandLine | ConvertTo-Json`
+
+	// Execute the PowerShell command.
+	var stdout, stderr bytes.Buffer
+	cmd := command.New()
+	ps := cmd.Exec("powershell", "-NoProfile", "-NonInteractive", "-Command", cmdRaw)
+	ps.Stdout = &stdout
+	ps.Stderr = &stderr
+
+	if err := ps.Run(); err != nil {
+		return nil, fmt.Errorf("failed to execute PowerShell command: %w, stderr: %s", err, stderr.String())
+	}
+
+	// Unmarshal the JSON output into our struct slice.
+	var processes []Win32_Process
+	if err := json.Unmarshal(stdout.Bytes(), &processes); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal JSON from PowerShell: %w", err)
+	}
+
+	return processes, nil
+}
+
+func (s *Service) GetLeagueCredentials() (port int, token string, portStr string, err error) {
+	// Get all processes with their command lines
+	processes, err := s.getProcessesWithCim()
 	if err != nil {
-		s.logger.Error("Failed to list processes for IsRunning check", zap.Error(err))
-		return false
+		return 0, "", "", fmt.Errorf("failed to get processes: %w", err)
 	}
 
-	leagueProcessNames := []string{
-		"LeagueClient.exe",   // Main client process
-		"LeagueClientUx.exe", // Client UX process
-	}
+	// Define regex patterns to extract credentials
+	portRegex := regexp.MustCompile(`--app-port=(\d+)`)
+	riotTokenRegex := regexp.MustCompile(`--riotclient-auth-token=([\w-]+)`)
+	remotingTokenRegex := regexp.MustCompile(`--remoting-auth-token=([\w-]+)`)
 
+	// Search through all processes
 	for _, process := range processes {
-		exe := process.Executable()
-		for _, name := range leagueProcessNames {
-			if exe == name {
-				// Found one of the core League Client processes
-				return true
-			}
+		if process.CommandLine == nil {
+			continue
 		}
+
+		cmdLine := *process.CommandLine
+
+		// Check if this is a League client process by looking for riotclient-auth-token
+		if !riotTokenRegex.MatchString(cmdLine) {
+			continue
+		}
+
+		portMatch := portRegex.FindStringSubmatch(cmdLine)
+		remotingTokenMatch := remotingTokenRegex.FindStringSubmatch(cmdLine)
+
+		// Verify all required credentials are found
+		if len(portMatch) < 2 || len(remotingTokenMatch) < 2 {
+			s.logger.Debug("Found League Client process but couldn't extract all credentials",
+				zap.Uint32("processId", process.ProcessID),
+				zap.Bool("hasPort", len(portMatch) >= 2),
+				zap.Bool("hasRemotingToken", len(remotingTokenMatch) >= 2))
+			continue
+		}
+
+		// Parse port to integer
+		portInt, err := strconv.Atoi(portMatch[1])
+		if err != nil {
+			s.logger.Warn("Found League Client but failed to parse port", zap.Error(err))
+			continue
+		}
+
+		// Always use the remoting-auth-token
+		return portInt, remotingTokenMatch[1], portMatch[1], nil
 	}
-	return false
+
+	return 0, "", "", errors.New("League Client process not found or credentials not available")
+}
+func (s *Service) IsRunning() bool {
+	_, _, _, err := s.GetLeagueCredentials()
+	return err == nil
 }
 
 func (s *Service) Logout() {

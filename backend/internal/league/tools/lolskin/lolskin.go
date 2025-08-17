@@ -208,7 +208,6 @@ func (c *LolSkin) InjectFantome(mods []string) error {
 	}
 
 	if err := c.executeCommand(ModToolsExe, overlayArgs, "OVERLAY", logFile); err != nil {
-
 		return err
 	}
 

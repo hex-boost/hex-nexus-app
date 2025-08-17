@@ -12,14 +12,20 @@ export function ErrorPage({ error }: ErrorPageProps) {
   const navigate = useNavigate();
   const router = useRouter();
   const [errorMessage, setErrorMessage] = useState<string>('An unexpected error occurred');
-  const [isAnimating, setIsAnimating] = useState(true);
   const isDevelopment = import.meta.env.MODE === 'development';
+  // Disable animations in development for faster debugging
+  const [isAnimating, setIsAnimating] = useState(!isDevelopment);
 
   useEffect(() => {
+    // If in development, don't run the animation effect
+    if (isDevelopment) {
+      throw error;
+    }
+
     setIsAnimating(true);
     const timer = setTimeout(() => setIsAnimating(false), 800);
     return () => clearTimeout(timer);
-  }, []);
+  }, [isDevelopment]);
 
   useEffect(() => {
     if (error) {
@@ -28,10 +34,18 @@ export function ErrorPage({ error }: ErrorPageProps) {
       } else {
         setErrorMessage(error.message || 'We encountered a problem while processing your request');
       }
+
+      // In development, log everything to the console for better debugging
+      if (isDevelopment) {
+        console.error('💥 An error occurred:', error);
+        if (error instanceof Error) {
+          console.log('📄 Stack Trace:', error.stack);
+        }
+      }
     } else {
       setErrorMessage('We encountered a problem while processing your request');
     }
-  }, [error]);
+  }, [error, isDevelopment]);
 
   return (
     <DefaultContextMenu>
@@ -54,11 +68,18 @@ export function ErrorPage({ error }: ErrorPageProps) {
               {errorMessage}
             </p>
 
-            {isDevelopment && error instanceof Error && error.stack && (
+            {/* In development, show all the error details directly on the page */}
+            {isDevelopment && error instanceof Error && (
               <div className="mt-4 p-4 bg-zinc-100 dark:bg-zinc-800 rounded-md text-left overflow-y-auto">
-                <p className="font-mono text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">
-                  {error.stack}
+                <h3 className="font-bold text-lg text-red-500">{error.name}</h3>
+                <p className="font-mono text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap mt-2">
+                  {error.message}
                 </p>
+                {error.stack && (
+                  <pre className="font-mono text-sm text-zinc-500 dark:text-zinc-400 whitespace-pre-wrap mt-4">
+                    {error.stack}
+                  </pre>
+                )}
               </div>
             )}
           </div>

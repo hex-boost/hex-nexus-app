@@ -196,7 +196,7 @@ func (cm *Monitor) checkClientState() {
 			cm.updateState(&LeagueClientState{ClientState: ClientStateLoggedIn})
 		}
 
-		if !cm.isFirstUpdated && cm.leagueService.IsLCUConnectionReady() && cm.accountMonitor.IsNexusAccount() {
+		if !cm.isFirstUpdated && cm.accountMonitor.IsNexusAccount() {
 			cm.checkAndUpdateAccount()
 		}
 		return

@@ -41,30 +41,27 @@ type eventRequest struct {
 }
 
 type Service struct {
-	logger           logger.Loggerer
-	accountClient    AccountClient
-	accountState     AccountState
-	lolSkin          *LolSkin
-	isLolSkinEnabled bool
-	lolSkinState     LolSkinState
-	eventMutex       sync.Mutex
-	ctx              context.Context
-	lolSkinService   *Service
+	logger         logger.Loggerer
+	accountClient  AccountClient
+	accountState   AccountState
+	lolSkin        *LolSkin
+	lolSkinState   LolSkinState
+	eventMutex     sync.Mutex
+	ctx            context.Context
+	lolSkinService *Service
 }
 
 func NewService(logger logger.Loggerer, accountState AccountState, accountClient AccountClient, lolSkin *LolSkin, state LolSkinState) *Service {
 	return &Service{
-		logger:           logger,
-		accountClient:    accountClient, // Should be set externally
-		accountState:     accountState,  // Should be set externally
-		lolSkin:          lolSkin,
-		isLolSkinEnabled: false,
-		lolSkinState:     state,
-		ctx:              context.Background(),
+		logger:        logger,
+		accountClient: accountClient, // Should be set externally
+		accountState:  accountState,  // Should be set externally
+		lolSkin:       lolSkin,
+		lolSkinState:  state,
+		ctx:           context.Background(),
 	}
 }
 func (h *Service) ToggleLolSkinEnabled(enabled bool) {
-	h.isLolSkinEnabled = enabled
 	if !enabled {
 		h.lolSkin.StopRunningPatcher()
 	} else {
@@ -73,25 +70,6 @@ func (h *Service) ToggleLolSkinEnabled(enabled bool) {
 	h.logger.Info("Set LolSkin enabled", zap.Bool("enabled", enabled))
 
 }
-func (h *Service) IsLolSkinEnabled() bool {
-	userMe, err := h.accountClient.UserMe()
-	if err != nil {
-		h.logger.Error("Failed to get user data", zap.Error(err))
-		h.isLolSkinEnabled = false
-		h.lolSkin.StopRunningPatcher()
-		return false
-	}
-	if !userMe.Premium.Plan.HasSkinChanger {
-		h.logger.Info("Skipping champion pick event for non-premium user", zap.String("username", userMe.Username))
-		h.isLolSkinEnabled = false
-		h.lolSkin.StopRunningPatcher()
-		return false
-	}
-	h.logger.Info("Lolskin enabled", zap.Bool("isLolSkinEnabled", h.isLolSkinEnabled))
-
-	return h.isLolSkinEnabled
-}
-// InvalidateCache clears all skin-related data including downloads, profiles, and cache
 func (h *Service) InvalidateCache() error {
 	h.logger.Info("Starting cache invalidation - clearing all skin data")
 
@@ -175,12 +153,9 @@ func (h *Service) InvalidateCache() error {
 	h.logger.Info("Cache invalidation completed successfully")
 	return nil
 }
+
 // Modify StartInjection method in lolskin_service.go
 func (h *Service) StartInjection() {
-	if !h.IsLolSkinEnabled() {
-		h.logger.Info("LolSkin is not enabled, skipping injection")
-		return
-	}
 
 	// Stop any running patcher before starting a new one
 	h.lolSkin.StopRunningPatcher()

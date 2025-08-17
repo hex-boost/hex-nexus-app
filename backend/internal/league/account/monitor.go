@@ -268,8 +268,6 @@ func (m *Monitor) checkCurrentAccount() {
 		zap.String("current", loggedInUsername))
 	currentAccount, _ = m.accountState.Update(&types.PartialSummonerRented{Username: loggedInUsername})
 
-	m.accountState.SetNexusAccount(false)
-
 	isNexusAccount, err := m.accountClient.UsernameExistsInDatabase(strings.ToLower(currentAccount.Username))
 	if err != nil {
 		m.logger.Warn("Failed to check if username exists in database", zap.Error(err))
