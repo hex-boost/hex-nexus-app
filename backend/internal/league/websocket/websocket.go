@@ -267,7 +267,7 @@ func (s *Service) sendSubscriptionImpl(eventPath string) error {
 		return err
 	}
 
-	s.logger.Debug("Subscribed to event", zap.String("event", eventPath))
+	s.logger.Sugar().Debugf("Subscribed to event %s", eventPath)
 	return nil
 }
 

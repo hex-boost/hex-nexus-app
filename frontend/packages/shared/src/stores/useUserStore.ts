@@ -84,7 +84,7 @@ export const useUserStore = create<AuthState>((set, get) => ({
       }
     });
     unleashClient.updateContext({
-      userId: 'anonymous',
+      userId: undefined,
       properties: {
         userTier: 'free',
       },

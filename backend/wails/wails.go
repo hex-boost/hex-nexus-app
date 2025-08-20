@@ -455,8 +455,6 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 			mainWindow.EmitEvent("nexus:confirm-close")
 			return
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
 		if tracer != nil {
 			_ = tracer.Shutdown(ctx)
 		}
@@ -472,8 +470,8 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 	})
 
 	systemTray := systemtray.New(mainWindow, icon16, accountMonitor, leagueManager, logger.New("SystemTray", cfg))
-	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(ctx *application.WindowEvent) {
-		go websocketHandler.ProcessEvents(context.Background())
+	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(eventCtx *application.WindowEvent) {
+		go websocketHandler.ProcessEvents(ctx)
 		appProtocol.SetWindow(mainWindow)
 		captchaService.SetWindow(captchaWindow)
 		websocketHandler.SetApp(mainApp)

@@ -16,7 +16,7 @@ export default function SubscriptionStatus({ className, subscription }: Subscrip
   const expiryDate = hasValidExpiry ? new Date(subscription.expiresAt) : new Date();
 
   const formattedExpiryDate = hasValidExpiry
-    ? expiryDate.toLocaleDateString('pt-BR', {
+    ? expiryDate.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
@@ -38,7 +38,7 @@ export default function SubscriptionStatus({ className, subscription }: Subscrip
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 flex items-center gap-2 capitalize">
             <Shield className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            {subscription?.tier || 'Free'}
+            {subscription?.plan?.name || 'Free'}
           </h3>
           <div
             className={cn('px-3 py-1 rounded-full text-xs font-medium', isSubscriptionActive(subscription) ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400')}
@@ -52,7 +52,7 @@ export default function SubscriptionStatus({ className, subscription }: Subscrip
                       Active
                     </div>
                   )
-                : !subscription?.tier
+                : !subscription?.plan
                     ? (
                         <div className="flex items-center gap-1">
                           <AlertCircle className="w-3.5 h-3.5" />
