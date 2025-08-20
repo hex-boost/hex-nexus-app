@@ -10,7 +10,7 @@ export const unleashClient = new UnleashClient({
   appName: 'nexus-app',
   environment: 'production',
   context: {
-    userId: useUserStore.getState().user?.id?.toString() || 'anonymous',
+    userId: useUserStore.getState().user?.id?.toString() || undefined,
   },
   refreshInterval: 30, // seconds
 });
