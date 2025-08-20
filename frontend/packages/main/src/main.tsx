@@ -17,14 +17,7 @@ const ReactQueryDevtoolsProduction = lazy(() =>
   })),
 );
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 30000,
-      refetchOnWindowFocus: true,
-    },
-  },
-});
+const queryClient = new QueryClient({});
 
 // Create a wrapper component to handle the devtools
 function App() {
