@@ -141,6 +141,7 @@ Section "Uninstall"
   done:
   FindClose $0
 
+
   ; Remove individual files
   Delete "$INSTDIR\updater.exe"
   Delete "$INSTDIR\WebView2Loader.dll"
@@ -152,6 +153,7 @@ Section "Uninstall"
   ; Remove log directory
   RMDir /r "$INSTDIR\logs"
 
+  RMDir /r "$LOCALAPPDATA\Nexus.exe"
   ; Remove registry entries
   DeleteRegKey HKLM "${PRODUCT_UNINST_KEY}"
   DeleteRegKey HKLM "${PRODUCT_DIR_REGKEY}"
