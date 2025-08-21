@@ -1,3 +1,4 @@
+import { strapiClient } from '@/lib/strapi.ts';
 import * as Sentry from '@sentry/react';
 import { createRouter } from '@tanstack/react-router';
 import { UnleashClient } from 'unleash-proxy-client';
@@ -22,6 +23,19 @@ export const router = createRouter({
     },
   },
 });
+strapiClient.axios.interceptors.response.use(
+  response => response,
+  (error) => {
+    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+      // First call logout to clear auth state
+      useUserStore.getState().logout();
+
+      // Then redirect to login page
+      router.navigate({ to: '/login' });
+    }
+    return Promise.reject(error);
+  },
+);
 const release = import.meta.env.VITE_APP_VERSION || 'development';
 Sentry.init({
   dsn: 'https://57f976075a4fde7d718f64a14383e365@o4509556130578433.ingest.us.sentry.io/4509585352097792',
