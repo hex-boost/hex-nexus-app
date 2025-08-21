@@ -200,8 +200,7 @@ export function useGameflowPhase() {
       if (!event.data[0]) {
         return;
       }
-      const session: Session = event.data[0];
-      update(session.phase as LolChallengesGameflowPhase);
+      update(event.data[0]);
     });
 
     return () => {

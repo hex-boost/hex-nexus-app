@@ -46,7 +46,7 @@ export function useChatMeQuery() {
   const wrappedRefetch = async () => {
     console.log('[useChatMeQuery] Manual refetch triggered');
     const result = await refetch();
-    console.log('[useChatMeQuery] Manual refetch completed with result:', result);
+    console.log('[useChatMeQuery] Manual refetch completed with result:', result.);
     return result;
   };
 

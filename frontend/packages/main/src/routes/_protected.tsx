@@ -63,7 +63,7 @@ function DashboardLayout() {
     console.log('[DashboardLayout] AppleStyleDock render conditions:', {
       isChampSelect: gameflowPhase?.phase === LolChallengesGameflowPhase.ChampSelect,
       isPending,
-      hasSummonerCards: !!summonerCards,
+      hasSummonerCards: summonerCards,
       chatMePlatformId: chatMe?.platformId,
     });
   }, [gameflowPhase, isPending, summonerCards, chatMe]);
@@ -79,7 +79,7 @@ function DashboardLayout() {
   const { updateFavoriteNote, isNoteDialogOpen, setIsNoteDialogOpen, noteText, setNoteText, handleSaveNote } = useFavoriteAccounts();
 
   async function handleOpenOpgg(summonerCards: string[]) {
-    if (user?.premium?.plan?.hasLobbyRevealer) {
+    if (!user?.premium?.plan?.hasLobbyRevealer) {
       setOpenPremiumDialog(true);
       return;
     }

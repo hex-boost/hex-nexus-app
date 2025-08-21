@@ -20,7 +20,6 @@ type AccountState interface {
 }
 
 type AccountClient interface {
-	Save(summoner types.PartialSummonerRented) (*types.SummonerResponse, error)
 	UserMe() (*types.User, error)
 }
 

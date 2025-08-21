@@ -505,7 +505,6 @@ func (s *Service) SubscribeToLeagueEvents() {
 			if err != nil {
 				s.logger.Error("Failed to subscribe to endpoint", zap.String("path", path), zap.Error(err))
 			}
-			s.logger.Debug(fmt.Sprintf("Successfully subscribed to %s endpoint ", path))
 
 		}
 	})
