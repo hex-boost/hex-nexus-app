@@ -1,7 +1,6 @@
 package riot
 
 import (
-	"bytes"
 	"context"
 	"crypto/tls"
 	"regexp"
@@ -67,35 +66,8 @@ func (s *Service) ResetRestyClient() {
 	s.client = nil
 }
 
-type Win32_Process struct {
-	ProcessID   uint32
-	CommandLine *string
-}
-
-func (s *Service) getProcessesWithCim() ([]Win32_Process, error) {
-	cmdRaw := `Get-CimInstance -ClassName Win32_Process -Property ProcessId,CommandLine -ErrorAction SilentlyContinue | Select-Object ProcessId,CommandLine | ConvertTo-Json`
-
-	// Execute the PowerShell command.
-	var stdout, stderr bytes.Buffer
-	cmd := command.New()
-	ps := cmd.Exec("powershell", "-NoProfile", "-NonInteractive", "-Command", cmdRaw)
-	ps.Stdout = &stdout
-	ps.Stderr = &stderr
-
-	if err := ps.Run(); err != nil {
-		return nil, fmt.Errorf("failed to execute PowerShell command: %w, stderr: %s", err, stderr.String())
-	}
-
-	// Unmarshal the JSON output into our struct slice.
-	var processes []Win32_Process
-	if err := json.Unmarshal(stdout.Bytes(), &processes); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal JSON from PowerShell: %w", err)
-	}
-
-	return processes, nil
-}
 func (s *Service) getProcess() (pid int, err error) {
-	processes, err := s.getProcessesWithCim()
+	processes, err := s.sysquery.GetProcessesWithCim()
 	if err != nil {
 		return 0, fmt.Errorf("failed to get processes using Get-CimInstance: %w", err)
 	}
@@ -122,7 +94,7 @@ func (s *Service) getProcess() (pid int, err error) {
 		}
 
 		wg.Add(1)
-		go func(procs []Win32_Process) {
+		go func(procs []sysquery.Win32_Process) {
 			defer wg.Done()
 			for _, p := range procs {
 				select {

@@ -111,19 +111,6 @@ func getProcessCommandLine(pid uint32) string {
 	return cmdline
 }
 
-// CleanupCache removes entries for processes that no longer exist
-func CleanupCache() {
-	cmdCache.Lock()
-	defer cmdCache.Unlock()
-
-	for pid := range cmdCache.data {
-		if _, err := process.NewProcess(int32(pid)); err != nil {
-			delete(cmdCache.data, pid)
-		}
-	}
-}
-
-// GetProcessDetails returns detailed information about a process
 func GetProcessDetails(pid uint32) (*ProcessInfo, error) {
 	p, err := process.NewProcess(int32(pid))
 	if err != nil {

@@ -1,15 +1,13 @@
 package lcu
 
 import (
-	"bytes"
 	"context"
 	"crypto/tls"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/hex-boost/hex-nexus-app/backend/pkg/command"
 	"github.com/hex-boost/hex-nexus-app/backend/pkg/logger"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/sysquery"
 	"go.uber.org/zap"
 	"regexp"
 	"strconv"
@@ -21,18 +19,21 @@ import (
 )
 
 type Connection struct {
-	client  *resty.Client
-	ctx     context.Context
-	process *process.Process
-	mu      sync.Mutex
-	logger  *logger.Logger
+	client   *resty.Client
+	ctx      context.Context
+	process  *process.Process
+	sysquery *sysquery.SysQuery
+
+	mu     sync.Mutex
+	logger *logger.Logger
 }
 
-func NewConnection(logger *logger.Logger, process *process.Process) *Connection {
+func NewConnection(logger *logger.Logger, process *process.Process, sysQuery *sysquery.SysQuery) *Connection {
 	return &Connection{
-		process: process,
-		logger:  logger,
-		ctx:     context.Background(),
+		process:  process,
+		logger:   logger,
+		ctx:      context.Background(),
+		sysquery: sysQuery,
 	}
 }
 
@@ -92,36 +93,9 @@ func (c *Connection) IsClientInitialized() bool {
 	return resp.IsSuccess()
 }
 
-type Win32_Process struct {
-	ProcessID   uint32
-	CommandLine *string
-}
-
-func (c *Connection) getProcessesWithCim() ([]Win32_Process, error) {
-	cmdRaw := `Get-CimInstance -ClassName Win32_Process -Property ProcessId,CommandLine -ErrorAction SilentlyContinue | Select-Object ProcessId,CommandLine | ConvertTo-Json`
-
-	// Execute the PowerShell command.
-	var stdout, stderr bytes.Buffer
-	cmd := command.New()
-	ps := cmd.Exec("powershell", "-NoProfile", "-NonInteractive", "-Command", cmdRaw)
-	ps.Stdout = &stdout
-	ps.Stderr = &stderr
-
-	if err := ps.Run(); err != nil {
-		return nil, fmt.Errorf("failed to execute PowerShell command: %w, stderr: %s", err, stderr.String())
-	}
-
-	// Unmarshal the JSON output into our struct slice.
-	var processes []Win32_Process
-	if err := json.Unmarshal(stdout.Bytes(), &processes); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal JSON from PowerShell: %w", err)
-	}
-
-	return processes, nil
-}
 func (c *Connection) GetLeagueCredentials() (port int, token string, portStr string, err error) {
 	// Get all processes with their command lines
-	processes, err := c.getProcessesWithCim()
+	processes, err := c.sysquery.GetProcessesWithCim()
 	if err != nil {
 		return 0, "", "", fmt.Errorf("failed to get processes: %w", err)
 	}

@@ -21,6 +21,33 @@ func New() *SysQuery {
 	}
 }
 
+type Win32_Process struct {
+	ProcessID   uint32
+	CommandLine *string
+}
+func (s *SysQuery) GetProcessesWithCim() ([]Win32_Process, error) {
+	cmdRaw := `Get-CimInstance -ClassName Win32_Process -Property ProcessId,CommandLine -ErrorAction SilentlyContinue | Select-Object ProcessId,CommandLine | ConvertTo-Json`
+
+	// Execute the PowerShell command.
+	var stdout, stderr bytes.Buffer
+	cmd := command.New()
+	ps := cmd.Exec("powershell", "-NoProfile", "-NonInteractive", "-Command", cmdRaw)
+	ps.Stdout = &stdout
+	ps.Stderr = &stderr
+
+	if err := ps.Run(); err != nil {
+		return nil, fmt.Errorf("failed to execute PowerShell command: %w, stderr: %s", err, stderr.String())
+	}
+
+	// Unmarshal the JSON output into our struct slice.
+	var processes []Win32_Process
+	if err := json.Unmarshal(stdout.Bytes(), &processes); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal JSON from PowerShell: %w", err)
+	}
+
+	return processes, nil
+}
+
 // GetProcessCommandLineByName retrieves command line by process name
 func (s *SysQuery) GetProcessCommandLineByName(processName string) ([]byte, error) {
 	// Escape single quotes in process name for PowerShell
