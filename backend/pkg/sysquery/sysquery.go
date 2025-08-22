@@ -22,9 +22,11 @@ func New() *SysQuery {
 }
 
 type Win32_Process struct {
-	ProcessID   uint32
+	ProcessID uint32
+
 	CommandLine *string
 }
+
 func (s *SysQuery) GetProcessesWithCim() ([]Win32_Process, error) {
 	cmdRaw := `Get-CimInstance -ClassName Win32_Process -Property ProcessId,CommandLine -ErrorAction SilentlyContinue | Select-Object ProcessId,CommandLine | ConvertTo-Json`
 
@@ -49,11 +51,41 @@ func (s *SysQuery) GetProcessesWithCim() ([]Win32_Process, error) {
 }
 
 // GetProcessCommandLineByName retrieves command line by process name
-func (s *SysQuery) GetProcessCommandLineByName(processName string) ([]byte, error) {
-	// Escape single quotes in process name for PowerShell
+func (s *SysQuery) GetProcessByName(processName string) ([]byte, uint32, error) {
 	escapedName := strings.Replace(processName, "'", "''", -1)
-	powershellCmd := fmt.Sprintf("Get-CimInstance Win32_Process -Filter \"name = '%s'\" | Select-Object -ExpandProperty CommandLine", escapedName)
-	return s.cmd.Execute("powershell", "-Command", powershellCmd)
+	powershellCmd := fmt.Sprintf(
+		"Get-CimInstance Win32_Process -Filter \"name = '%s'\" | Select-Object ProcessId,CommandLine | ConvertTo-Json",
+		escapedName,
+	)
+	output, err := s.cmd.Execute("powershell", "-Command", powershellCmd)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Unmarshal output (could be a single object or array)
+	var processes []struct {
+		ProcessId   uint32  `json:"ProcessId"`
+		CommandLine *string `json:"CommandLine"`
+	}
+	if err := json.Unmarshal(output, &processes); err != nil {
+		// Try single object
+		var single struct {
+			ProcessId   uint32  `json:"ProcessId"`
+			CommandLine *string `json:"CommandLine"`
+		}
+		if err2 := json.Unmarshal(output, &single); err2 != nil {
+			return nil, 0, err
+		}
+		if single.CommandLine == nil {
+			return nil, single.ProcessId, nil
+		}
+		return []byte(*single.CommandLine), single.ProcessId, nil
+	}
+
+	if len(processes) == 0 || processes[0].CommandLine == nil {
+		return nil, 0, nil
+	}
+	return []byte(*processes[0].CommandLine), processes[0].ProcessId, nil
 }
 
 // GetProcessCommandLineByPID retrieves command line by process ID
@@ -80,10 +112,7 @@ func (s *SysQuery) GetHardwareUUID() ([]byte, error) {
 		"$trimmedUuid = $rawUuid.Trim();" +
 		"$outputString = 'UUID' + (' ' * 36) + \"`n`n\" + $trimmedUuid + (' ' * 2) + \"`n`n`n`n\";" + // Correct PowerShell string construction
 		"[Console]::Write($outputString)"
-	// output, err := s.cmd.Execute("powershell", "-NoProfile", "-Command", powershellCmd)
-	// For testing, let's simulate the command execution with a known UUID
-	// Replace this with your actual s.cmd.Execute call
-	// --- For actual use, uncomment the line above and remove/comment out the simulation below ---
+
 	var output []byte
 	var err error
 	if s.cmd != nil { // Check if cmd is available for actual execution

@@ -387,9 +387,10 @@ func (s *Service) runWebSocketLoop() {
 			s.mutex.Lock()
 			isConnected := s.conn != nil && s.isConnectedUnsafe()
 			s.mutex.Unlock()
-
-			if !s.leagueService.IsRunning() || isConnected {
-				continue
+			if !s.lcuConnection.IsClientInitialized() {
+				if !s.leagueService.IsRunning() || isConnected {
+					continue
+				}
 			}
 
 			if err := s.connectToLCUWebSocket(); err != nil {

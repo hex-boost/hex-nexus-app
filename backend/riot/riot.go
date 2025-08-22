@@ -3,6 +3,7 @@ package riot
 import (
 	"context"
 	"crypto/tls"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/process"
 	"regexp"
 	"runtime"
 
@@ -43,6 +44,7 @@ type Service struct {
 	logger        *logger.Logger
 	captcha       *captcha.Captcha
 	ctx           context.Context
+	proc          *process.Process
 	cmd           *command.Command
 	sysquery      *sysquery.SysQuery
 	accountClient *account.Client
@@ -54,6 +56,7 @@ func NewService(logger *logger.Logger, captcha *captcha.Captcha, accountClient *
 		cmd:           command.New(),
 		sysquery:      sysquery.New(),
 		logger:        logger,
+		proc:          process.New(command.New()),
 		captcha:       captcha,
 		ctx:           context.Background(),
 		accountClient: accountClient,
@@ -65,8 +68,16 @@ func (s *Service) ResetRestyClient() {
 	defer s.clientMutex.Unlock()
 	s.client = nil
 }
+func (s *Service) IsRiotClientExeRunning() bool {
+	_, err := s.proc.GetCommandLineByName("RiotClient.exe")
+	return err == nil
+}
 
 func (s *Service) getProcess() (pid int, err error) {
+	proc, err := s.proc.GetCommandLineByName("RiotClient.exe")
+	if err == nil {
+		return int(proc.ProcessID), nil
+	}
 	processes, err := s.sysquery.GetProcessesWithCim()
 	if err != nil {
 		return 0, fmt.Errorf("failed to get processes using Get-CimInstance: %w", err)
@@ -129,8 +140,12 @@ func (s *Service) getProcess() (pid int, err error) {
 
 	return 0, errors.New("unable to find Riot Client process")
 }
-func (s *Service) getCredentials(riotClientPid int) (port string, authToken string, err error) {
-	// First try: Read from lockfile
+func (s *Service) LockFileExists() bool {
+	_, err := s.getLockFile()
+	return err == nil
+}
+func (s *Service) getLockFile() ([]byte, error) {
+
 	s.logger.Debug("Attempting to get credentials from lockfile")
 
 	// Find the Riot Client install path from RiotClientInstalls.json
@@ -179,33 +194,42 @@ func (s *Service) getCredentials(riotClientPid int) (port string, authToken stri
 		}
 	}
 
-	// Try each path in order
 	var lockfileContent []byte
-	var lockfilePath string
 	for _, path := range lockfilePaths {
 		s.logger.Debug("Trying lockfile path", zap.String("path", path))
 		content, err := os.ReadFile(path)
 		if err == nil {
 			lockfileContent = content
-			lockfilePath = path
 			s.logger.Debug("Found lockfile", zap.String("path", path))
 			break
 		}
-	}
 
-	if lockfileContent != nil {
+	}
+	if len(lockfileContent) == 0 {
+		return nil, errors.New("lockfile not found")
+	}
+	return lockfileContent, nil
+}
+func (s *Service) getCredentials() (port string, authToken string, err error) {
+	lockfileContent, err := s.getLockFile()
+
+	if err == nil && len(lockfileContent) > 0 {
 		// Parse lockfile content: name:pid:port:password:protocol
 		parts := strings.Split(strings.TrimSpace(string(lockfileContent)), ":")
 		if len(parts) >= 5 {
 			port = parts[2]
 			password := parts[3]
 			authHeader := base64.StdEncoding.EncodeToString([]byte("riot:" + password))
-			s.logger.Debug("Got credentials from lockfile", zap.String("port", port), zap.String("path", lockfilePath))
+			s.logger.Debug("Got credentials from lockfile")
 			return port, authHeader, nil
 		}
-		s.logger.Debug("Lockfile found but has invalid format", zap.String("path", lockfilePath))
 	}
 
+	riotClientPid, pidErr := s.getProcess()
+	if pidErr != nil {
+		s.logger.Sugar().Errorf("Failed to get Riot Client process PID: %v", pidErr)
+		return "", "", fmt.Errorf("failed to get Riot Client process PID: %w", pidErr)
+	}
 	// Fallback: Get from process command line
 	s.logger.Debug("Lockfile method failed, falling back to process command line")
 	cmdlineOutput, err := s.sysquery.GetProcessCommandLineByPID(uint32(riotClientPid))
@@ -518,8 +542,7 @@ func (s *Service) InitializeClient() error {
 	s.clientMutex.Lock()
 	defer s.clientMutex.Unlock()
 
-	riotClientPid, err := s.getProcess()
-	port, authToken, err := s.getCredentials(riotClientPid)
+	port, authToken, err := s.getCredentials()
 	if err != nil {
 		s.logger.Sugar().Warnf("Failed to get client credentials: %v", err)
 		return err

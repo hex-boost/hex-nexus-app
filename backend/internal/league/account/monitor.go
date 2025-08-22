@@ -242,18 +242,16 @@ func (m *Monitor) GetLoggedInUsername(lastUsername string) string {
 			return ""
 		}
 		currentUsername = leagueCurrentUsername
-	} else if m.riotAuth.IsRunning() {
-		currentUsername = m.getSummonerNameByRiotClient()
 	} else if m.leagueService.IsPlaying() {
 		currentUsername = lastUsername
+	} else if m.riotAuth.IsRunning() {
+		currentUsername = m.getSummonerNameByRiotClient()
 	}
 	return strings.ToLower(currentUsername)
 }
 
 func (m *Monitor) checkCurrentAccount() {
-	if !m.leagueService.IsPlaying() && !m.leagueService.IsRunning() && !m.riotAuth.IsRunning() {
-		return
-	}
+
 	currentAccount := m.accountState.Get()
 
 	loggedInUsername := m.GetLoggedInUsername(currentAccount.Username)

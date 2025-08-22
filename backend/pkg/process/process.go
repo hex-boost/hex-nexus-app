@@ -1,6 +1,8 @@
 package process
 
 import (
+	"encoding/json"
+	"fmt"
 	"strings"
 	"sync"
 
@@ -22,8 +24,37 @@ func New(command *command.Command) *Process {
 	}
 }
 
-func (p *Process) GetCommandLineByName(processName string) ([]byte, error) {
-	return p.sysquery.GetProcessCommandLineByName(processName)
+func (p *Process) GetCommandLineByName(processName string) (*sysquery.Win32_Process, error) {
+	raw, pid, err := p.sysquery.GetProcessByName(processName)
+	if err != nil {
+		return nil, err
+	}
+	if len(raw) == 0 {
+		return nil, fmt.Errorf("process %q not found", processName)
+	}
+
+	// Try array first
+	var many []sysquery.Win32_Process
+	if err := json.Unmarshal(raw, &many); err == nil && len(many) > 0 {
+		return &many[0], nil
+	}
+
+	// Try single object
+	var one sysquery.Win32_Process
+	if err := json.Unmarshal(raw, &one); err == nil {
+		return &one, nil
+	}
+
+	// Fallback: plain string (ExpandProperty gives just string, not JSON)
+	cmdLine := strings.TrimSpace(string(raw))
+	if cmdLine != "" {
+		return &sysquery.Win32_Process{
+			ProcessID:   pid, // unknown here
+			CommandLine: &cmdLine,
+		}, nil
+	}
+
+	return nil, fmt.Errorf("failed to parse process command line for %q (raw=%s)", processName, string(raw))
 }
 
 type ProcessInfo struct {

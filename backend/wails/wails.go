@@ -13,6 +13,7 @@ import (
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/lcu"
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/manager"
+	"github.com/hex-boost/hex-nexus-app/backend/pkg/sysquery"
 	"log/slog"
 	"strings"
 
@@ -240,7 +241,8 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 	procs := process.New(cmd)
 
 	mainLogger.Debug("Initializing LCU connection")
-	lcuConn := lcu.NewConnection(appInstance.Log().League(), procs)
+	sysQuery := sysquery.New()
+	lcuConn := lcu.NewConnection(appInstance.Log().League(), procs, sysQuery)
 
 	mainLogger.Debug("Initializing clients")
 	baseClient := client.NewBaseClient(appInstance.Log().Repo(), cfg)
@@ -254,14 +256,14 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 	mainLogger.Debug("Initializing captcha service")
 	captchaService := captcha.New(appInstance.Log().Riot())
 
+	mainLogger.Debug("Initializing riot service")
+	riotService := riot.NewService(appInstance.Log().Riot(), captchaService, accountClient)
+
 	mainLogger.Debug("Initializing league service")
-	leagueService := league.NewService(appInstance.Log().Riot(), accountClient, summonerService, lcuConn, accountState)
+	leagueService := league.NewService(appInstance.Log().Riot(), accountClient, summonerService, lcuConn, accountState, riotService)
 
 	mainLogger.Debug("Initializing lolskin injector")
 	lolskinInjector := lolskin.New(appInstance.Log().League(), leagueService.GetPath(), catalog, csLolDLL, modToolsExe)
-
-	mainLogger.Debug("Initializing riot service")
-	riotService := riot.NewService(appInstance.Log().Riot(), captchaService, accountClient)
 
 	mainLogger.Debug("Initializing updater")
 	newUpdaterUtils := updaterUtils.New(appInstance.Log().Wails())

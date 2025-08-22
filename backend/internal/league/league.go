@@ -2,6 +2,7 @@ package league
 
 import (
 	"github.com/hex-boost/hex-nexus-app/backend/internal/league/account/events"
+	"github.com/hex-boost/hex-nexus-app/backend/riot"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"time"
 
@@ -18,6 +19,7 @@ import (
 )
 
 type Service struct {
+	riotService     *riot.Service
 	LCUconnection   *lcu.Connection
 	Api             *account.Client   // Changed from api to Api for public access
 	summonerService *summoner.Service // Assuming summoner.Service and its methods are thread-safe
@@ -25,11 +27,12 @@ type Service struct {
 	accountState    *account.State
 }
 
-func NewService(logger *logger.Logger, api *account.Client, summonerService *summoner.Service, lcuConnection *lcu.Connection, accountState *account.State) *Service {
+func NewService(logger *logger.Logger, api *account.Client, summonerService *summoner.Service, lcuConnection *lcu.Connection, accountState *account.State, riotService *riot.Service) *Service {
 	return &Service{
 		LCUconnection:   lcuConnection,
 		Api:             api,
 		accountState:    accountState,
+		riotService:     riotService,
 		logger:          logger,
 		summonerService: summonerService,
 	}
@@ -96,6 +99,9 @@ type Win32_Process struct {
 }
 
 func (s *Service) IsRunning() bool {
+	if !s.riotService.IsRiotClientExeRunning() || !s.riotService.LockFileExists() {
+		return false
+	}
 	_, _, _, err := s.LCUconnection.GetLeagueCredentials()
 	return err == nil
 }

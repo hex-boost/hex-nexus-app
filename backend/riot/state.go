@@ -21,10 +21,15 @@ type ProcessCredentials struct {
 }
 
 func (s *Service) IsRunning() bool {
+	lockfileExists := s.LockFileExists()
+	if !lockfileExists {
+		return false
+	}
 	hwnd := findWindow("Riot Client")
 	if hwnd != 0 {
 		return true
 	}
+
 	if !s.isProcessRunning() {
 		return false
 	}
@@ -52,12 +57,8 @@ func (s *Service) WaitUntilIsRunning(timeout time.Duration) error {
 }
 
 func (s *Service) IsAuthenticationReady() bool {
-	pid, err := s.getProcess()
-	if err != nil {
-		return false
-	}
 
-	_, _, err = s.getCredentials(pid)
+	_, _, err := s.getCredentials()
 	return err == nil
 }
 
