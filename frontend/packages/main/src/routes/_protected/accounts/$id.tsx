@@ -3,9 +3,11 @@ import { Button } from '@/components/ui/button.tsx';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { useAccountByID } from '@/hooks/useAccountByID.ts';
-import { useQueryClient } from '@tanstack/react-query';
+import { Monitor as LeagueMonitor } from '@league';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, useParams } from '@tanstack/react-router';
-import { ArrowLeftIcon } from 'lucide-react';
+import { ArrowLeftIcon, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 
 export const Route = createFileRoute('/_protected/accounts/$id')({
   beforeLoad: ({ params }) => {
@@ -21,14 +23,23 @@ function AccountByID() {
   const queryClient = useQueryClient();
   const { isAvailableLoading: isLoading, accountById } = useAccountByID({ documentId: id });
   const refetchAccount = async () => {
-    // Invalidate all queries that start with 'accounts' with a single call
     await queryClient.invalidateQueries({ queryKey: ['accounts'] });
     await queryClient.invalidateQueries({ queryKey: ['rentals'] });
   };
 
+  const { isPending, mutate: forceUpdateAccount } = useMutation({
+    mutationFn: LeagueMonitor.ForceUpdateAccount,
+    mutationKey: ['account', 'forceUpdate', id],
+    onSuccess: async () => {
+      toast.success('Account updated successfully');
+    },
+    onError: (error: any) => {
+      toast.error('error while updating', error);
+    },
+  });
   return (
     <>
-      <div className="mb-4">
+      <div className="flex w-full justify-between mb-4">
         <Link to="/accounts" className="text-white hover:underline">
           <Button variant="link" className="space-x-2">
             <ArrowLeftIcon className="w-4 h-4 " />
@@ -36,6 +47,24 @@ function AccountByID() {
             <span>Back to Accounts</span>
           </Button>
         </Link>
+
+        <Button
+          variant="outline"
+          className=""
+          onClick={() => forceUpdateAccount()}
+        >
+          {!isPending
+            ? (
+                <>
+
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Force account refresh
+                </>
+              )
+            : (
+                'Updating Account...'
+              )}
+        </Button>
       </div>
 
       <div className="space-y-8">

@@ -1,7 +1,7 @@
 import type { AccountWithPrice } from '@/features/accounts-table/hooks/useAccounts.tsx';
 import type { AccountType, Rental } from '@/types/types.ts';
-
 import { ChampionsSkinsTab } from '@/components/account-id/ChampionsSkinsTab.tsx';
+
 import { LeaverBusterDisplay } from '@/components/account-id/leaver-buster-display.tsx';
 import { BoostRoyalOrderModal } from '@/components/BoostRoyalOrderModal.tsx';
 import { CoinIcon } from '@/components/coin-icon.tsx';
@@ -76,6 +76,7 @@ export default function AccountDetails({ accountWithPrice, onAccountChange }: {
   return (
     <>
       <div className="lg:col-span-3 space-y-6">
+
         <Card>
           <CardHeader className="border-none justify-center">
             <CardTitle className="flex border-none items-center justify-between">

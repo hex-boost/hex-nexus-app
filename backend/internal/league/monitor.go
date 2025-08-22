@@ -257,14 +257,14 @@ func (cm *Monitor) initializeRiotClient() {
 	}
 	cm.logger.Info("Client initialized successfully")
 }
-func (cm *Monitor) ForceUpdateAccount() {
+func (cm *Monitor) ForceUpdateAccount() error {
 
 	accountState := cm.accountState.Get()
 
 	loggedInUsername := cm.accountMonitor.GetLoggedInUsername(accountState.Username)
 	if loggedInUsername == "" {
 		cm.logger.Info("No username detected via accountMonitor, skipping account update")
-		return
+		return errors.New("Failed to detect logged in username")
 	}
 
 	cm.logger.Sugar().Infow("Attempting to update account status",
@@ -284,7 +284,7 @@ func (cm *Monitor) ForceUpdateAccount() {
 	if err != nil {
 		cm.logger.Error("Error updating account from LCU", zap.Error(err), zap.String("username", loggedInUsername))
 
-		return
+		return errors.New("Failed to detect logged in username")
 	}
 
 	cm.stateMutex.Lock()
@@ -296,6 +296,7 @@ func (cm *Monitor) ForceUpdateAccount() {
 	cm.stateMutex.Unlock()
 
 	cm.logger.Info("Account successfully updated", zap.String("username", loggedInUsername))
+	return nil
 }
 
 // func (cm *Monitor) checkAndUpdateAccount() {
