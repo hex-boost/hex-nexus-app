@@ -161,64 +161,64 @@ func (cm *Monitor) updateState(newState *LeagueClientState) {
 
 }
 
-func (cm *Monitor) checkClientState() {
-
-	if !cm.isCheckingState.CompareAndSwap(false, true) {
-		return
-	}
-	defer cm.isCheckingState.Store(false)
-
-	previousState := cm.GetCurrentState()
-	currentState := previousState.ClientState
-
-	if currentState == ClientStateWaitingCaptcha {
-		return
-	}
-
-	if currentState == ClientStateWaitingLogin {
-
-		if cm.riotAuth.IsClientInitialized() || cm.initializeRiotClientIfNeeded() {
-			authState, err := cm.riotAuth.GetAuthenticationState()
-			if err == nil && authState.Type == "success" {
-				cm.logger.Info("Auth state success, user is logged in")
-				cm.updateState(&LeagueClientState{ClientState: ClientStateLoggedIn})
-				if !cm.isFirstUpdated || cm.accountMonitor.IsNexusAccount() {
-					cm.checkAndUpdateAccount()
-				}
-			}
-		}
-		return
-	}
-
-	if cm.leagueService.IsRunning() || cm.leagueService.IsPlaying() {
-
-		if currentState != ClientStateLoggedIn {
-			cm.updateState(&LeagueClientState{ClientState: ClientStateLoggedIn})
-		}
-
-		if !cm.isFirstUpdated && cm.accountMonitor.IsNexusAccount() {
-			cm.checkAndUpdateAccount()
-		}
-		return
-	}
-
-	if cm.riotService.IsRunning() {
-		isAuthStateValid := cm.riotAuth.IsAuthStateValid() == nil
-		if isAuthStateValid {
-			if currentState != ClientStateLoginReady {
-				cm.updateState(&LeagueClientState{ClientState: ClientStateLoginReady})
-			}
-			return
-		}
-	}
-
-	if currentState != ClientStateClosed {
-		cm.updateState(&LeagueClientState{ClientState: ClientStateClosed})
-		if cm.isFirstUpdated {
-			cm.resetAccountUpdateStatus()
-		}
-	}
-}
+// func (cm *Monitor) checkClientState() {
+//
+//		if !cm.isCheckingState.CompareAndSwap(false, true) {
+//			return
+//		}
+//		defer cm.isCheckingState.Store(false)
+//
+//		previousState := cm.GetCurrentState()
+//		currentState := previousState.ClientState
+//
+//		if currentState == ClientStateWaitingCaptcha {
+//			return
+//		}
+//
+//		if currentState == ClientStateWaitingLogin {
+//
+//			if cm.riotAuth.IsClientInitialized() || cm.initializeRiotClientIfNeeded() {
+//				authState, err := cm.riotAuth.GetAuthenticationState()
+//				if err == nil && authState.Type == "success" {
+//					cm.logger.Info("Auth state success, user is logged in")
+//					cm.updateState(&LeagueClientState{ClientState: ClientStateLoggedIn})
+//					if !cm.isFirstUpdated || cm.accountMonitor.IsNexusAccount() {
+//						//cm.checkAndUpdateAccount()
+//					}
+//				}
+//			}
+//			return
+//		}
+//
+//		if cm.leagueService.IsRunning() || cm.leagueService.IsPlaying() {
+//
+//			if currentState != ClientStateLoggedIn {
+//				cm.updateState(&LeagueClientState{ClientState: ClientStateLoggedIn})
+//			}
+//
+//			if !cm.isFirstUpdated && cm.accountMonitor.IsNexusAccount() {
+//				//cm.checkAndUpdateAccount()
+//			}
+//			return
+//		}
+//
+//		if cm.riotService.IsRunning() {
+//			isAuthStateValid := cm.riotAuth.IsAuthStateValid() == nil
+//			if isAuthStateValid {
+//				if currentState != ClientStateLoginReady {
+//					cm.updateState(&LeagueClientState{ClientState: ClientStateLoginReady})
+//				}
+//				return
+//			}
+//		}
+//
+//		if currentState != ClientStateClosed {
+//			cm.updateState(&LeagueClientState{ClientState: ClientStateClosed})
+//			if cm.isFirstUpdated {
+//				cm.resetAccountUpdateStatus()
+//			}
+//		}
+//	}
 func (cm *Monitor) initializeRiotClientIfNeeded() bool {
 	if !cm.riotAuth.IsClientInitialized() && cm.riotService.IsRunning() {
 		cm.logger.Debug("Client running but not initialized, initializing...")
@@ -257,23 +257,13 @@ func (cm *Monitor) initializeRiotClient() {
 	}
 	cm.logger.Info("Client initialized successfully")
 }
+func (cm *Monitor) ForceUpdateAccount() {
 
-func (cm *Monitor) checkAndUpdateAccount() {
-
-	if !cm.leagueService.IsLCUConnectionReady() {
-		return
-	}
-	cm.emitEvent(websocketEvents.LeagueWebsocketStart)
 	accountState := cm.accountState.Get()
 
 	loggedInUsername := cm.accountMonitor.GetLoggedInUsername(accountState.Username)
 	if loggedInUsername == "" {
 		cm.logger.Info("No username detected via accountMonitor, skipping account update")
-		return
-	}
-
-	if accountState.Username == loggedInUsername && cm.isFirstUpdated {
-		cm.logger.Debug("Username already matches and first update done, skipping redundant account update", zap.String("username", loggedInUsername))
 		return
 	}
 
@@ -307,6 +297,56 @@ func (cm *Monitor) checkAndUpdateAccount() {
 
 	cm.logger.Info("Account successfully updated", zap.String("username", loggedInUsername))
 }
+
+// func (cm *Monitor) checkAndUpdateAccount() {
+//
+//		if !cm.leagueService.IsLCUConnectionReady() {
+//			return
+//		}
+//		cm.emitEvent(websocketEvents.LeagueWebsocketStart)
+//		accountState := cm.accountState.Get()
+//
+//		loggedInUsername := cm.accountMonitor.GetLoggedInUsername(accountState.Username)
+//		if loggedInUsername == "" {
+//			cm.logger.Info("No username detected via accountMonitor, skipping account update")
+//			return
+//		}
+//
+//		if accountState.Username == loggedInUsername && cm.isFirstUpdated {
+//			cm.logger.Debug("Username already matches and first update done, skipping redundant account update", zap.String("username", loggedInUsername))
+//			return
+//		}
+//
+//		cm.logger.Sugar().Infow("Attempting to update account status",
+//			"detectedUsername", loggedInUsername,
+//			"previousUsername", accountState.Username)
+//
+//		partialUpdate := &types.PartialSummonerRented{
+//			Username: loggedInUsername,
+//		}
+//		_, err := cm.accountState.Update(partialUpdate)
+//		if err != nil {
+//			cm.logger.Error("Error updating account state with username", zap.Error(err), zap.String("username", loggedInUsername))
+//
+//		}
+//
+//		err = cm.leagueService.UpdateFromLCU()
+//		if err != nil {
+//			cm.logger.Error("Error updating account from LCU", zap.Error(err), zap.String("username", loggedInUsername))
+//
+//			return
+//		}
+//
+//		cm.stateMutex.Lock()
+//		if !cm.isFirstUpdated {
+//			cm.isFirstUpdated = true
+//			cm.logger.Info("Marking account as updated for the first time (isFirstUpdated = true)")
+//		}
+//
+//		cm.stateMutex.Unlock()
+//
+//		cm.logger.Info("Account successfully updated", zap.String("username", loggedInUsername))
+//	}
 func (cm *Monitor) emitEvent(name string, data ...any) {
 	cm.eventMutex.Lock()
 	defer cm.eventMutex.Unlock()
@@ -365,7 +405,7 @@ func (cm *Monitor) Start(app AppEmitter) {
 							cm.logger.Error("Panic recovered in checkClientState loop", zap.Any("panicValue", r), zap.Stack("stack"))
 						}
 					}()
-					cm.checkClientState()
+					//cm.checkClientState()
 				}()
 			case <-done:
 				cm.logger.Info("Client monitor polling goroutine stopping.")

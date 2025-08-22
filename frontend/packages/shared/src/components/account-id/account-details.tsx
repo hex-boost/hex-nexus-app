@@ -356,8 +356,20 @@ export default function AccountDetails({ accountWithPrice, onAccountChange }: {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Rented Account</CardTitle>
-                  <CardDescription>This account is currently rented by you</CardDescription>
+                  <div className="flex justify-between items-center w-full">
+                    <div className="flex flex-col gap-2">
+                      <CardTitle>Rented Account</CardTitle>
+                      <CardDescription>This account is currently rented by you</CardDescription>
+                    </div>
+                    <DropAccountAction
+                      accountRentalDocumentId={accountRental?.documentId}
+                      isAccountRented
+                      account={account}
+                      user={user}
+                      onSuccess={onAccountChange}
+                      buttonVariant="outline"
+                    />
+                  </div>
                 </CardHeader>
                 <Separator className="mb-4" />
                 <CardContent className="space-y-4 p-0">
@@ -422,18 +434,10 @@ export default function AccountDetails({ accountWithPrice, onAccountChange }: {
                     </div>
                   </div>
                 </CardContent>
-                <CardFooter className="flex gap-3">
+                <CardFooter className="grid grid-cols-5 gap-2">
 
                   <RentedAccountButton account={account} />
 
-                  <DropAccountAction
-                    accountRentalDocumentId={accountRental?.documentId}
-                    isAccountRented
-                    account={account}
-                    user={user}
-                    onSuccess={onAccountChange}
-                    buttonVariant="outline"
-                  />
                 </CardFooter>
               </Card>
             )
