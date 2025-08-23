@@ -6,7 +6,7 @@ export function useMembership() {
   const { getCompanyIcon } = useMapping();
   const getTierColorClass = (tier: PremiumTiers) => {
     const colorMap: Record<string, Record<string, string>> = {
-      basic: {
+      'basic': {
         bg: 'bg-blue-500',
         text: 'text-blue-300',
         border: 'border-[#1a2e45]',
@@ -14,7 +14,16 @@ export function useMembership() {
         bgLight: 'bg-blue-500/10',
         glow: 'bg-blue-500/20',
       },
-      premium: {
+
+      'basic+': {
+        bg: 'bg-cyan-500',
+        text: 'text-cyan-300',
+        border: 'border-[#164e63]', // deep cyan/teal tone
+        hover: 'hover:bg-cyan-600',
+        bgLight: 'bg-cyan-500/10',
+        glow: 'bg-cyan-500/20',
+      },
+      'premium': {
         bg: 'bg-primary',
         text: 'text-indigo-300',
         border: 'border-[#384394]',
@@ -23,7 +32,7 @@ export function useMembership() {
         glow: 'bg-indigo-500/20',
       },
 
-      pro: {
+      'pro': {
         bg: 'bg-purple-600',
         text: 'text-purple-300',
         border: 'border-[#2d1a45]',
@@ -32,7 +41,7 @@ export function useMembership() {
 
         glow: 'bg-purple-500/20',
       },
-      free: {
+      'free': {
         bg: 'bg-emerald-600',
         text: 'text-emerald-300',
         border: 'border-emerald-900/30',
@@ -72,6 +81,7 @@ export function useMembership() {
 
       buttonText: 'Get Started for Free',
     },
+
     {
       tier: 'Basic',
       description: 'Perfect for part-time boosters',
@@ -102,6 +112,38 @@ export function useMembership() {
       ],
       tier_enum: 'basic',
       buttonText: 'Choose Basic',
+    },
+
+    {
+      tier: 'Basic+',
+      description: 'Made for intermediary boosters',
+      period: '/mo',
+
+      benefits: [
+        {
+          title: 'Monthly 4000 coins budget',
+          icon: 'check',
+        },
+
+        {
+          title: 'Accounts up to Emerald',
+          icon: 'check',
+
+        },
+        {
+          title: 'Secure Payment',
+          icon: 'check',
+
+        },
+        {
+          title: 'Ready to use in seconds',
+          icon: 'check',
+
+        },
+
+      ],
+      tier_enum: 'basic+',
+      buttonText: 'Choose Basic+',
     },
     {
       tier: 'Premium',

@@ -251,7 +251,7 @@ export default function PricingCards() {
             </p>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
             {pricesLoading
               ? (
                   staticPricingPlans
@@ -303,7 +303,7 @@ export default function PricingCards() {
 
                         <PaymentMethodDialog selectedTier={plan.tier_enum}>
                           <Button
-                            disabled={plan.tier_enum !== 'free'}
+                            disabled={plan.tier_enum === 'free'}
                             className={`w-full ${getTierColorClass(plan.tier_enum).bg} ${getTierColorClass(plan.tier_enum).hover} text-white py-3 rounded-md mt-6`}
                           >
                             {plan.buttonText}

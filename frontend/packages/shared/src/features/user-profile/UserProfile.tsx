@@ -157,7 +157,7 @@ export function UserProfile({
     }
   };
   const textClass = user?.premium?.plan?.name?.toLowerCase()
-    ? getTierColorClass(user.premium.plan.name.toLowerCase()).text
+    ? getTierColorClass(user.premium.plan.name.toLowerCase())?.text
     : getTierColorClass('free').text;
   const menuItems: MenuItem[] = [
     {

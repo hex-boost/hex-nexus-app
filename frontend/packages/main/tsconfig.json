@@ -17,7 +17,9 @@
       "@summonerClient": [
         "main/bindings/github.com/hex-boost/hex-nexus-app/backend/internal/league/summoner"
       ],
-
+      "@accountState": [
+        "main/bindings/github.com/hex-boost/hex-nexus-app/backend/internal/league/account/state"
+      ],
       "@lolskin": [
         "main/bindings/github.com/hex-boost/hex-nexus-app/backend/internal/league/tools/lolskin"
       ],

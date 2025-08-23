@@ -386,6 +386,7 @@ func Run(assets, csLolDLL, modToolsExe, catalog embed.FS, icon16 []byte, icon256
 			application.NewService(stripeService),
 			//application.NewService(gameOverlayManager),
 			application.NewService(updateManager),
+			application.NewService(accountState),
 			application.NewService(lolskinInjector),
 			application.NewService(lolSkinState),
 			application.NewService(websocketHandler),

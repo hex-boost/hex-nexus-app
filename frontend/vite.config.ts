@@ -33,6 +33,7 @@ export default defineConfig({
       // This is the key change - ensure this works for imports from both packages
       '@': path.resolve(__dirname, 'packages/shared/src'),
       '@summonerClient': path.resolve(__dirname, 'packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/internal/league/summoner'),
+      '@accountState': path.resolve(__dirname, 'packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/internal/league/account/state'),
 
       '@logger': path.resolve(__dirname, 'packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/pkg/logger'),
       '@types': path.resolve(__dirname, 'packages/main/bindings/github.com/hex-boost/hex-nexus-app/backend/types'),

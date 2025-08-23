@@ -276,8 +276,6 @@ func (m *Monitor) checkCurrentAccount() {
 }
 
 func (m *Monitor) IsNexusAccount() bool {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
 	return m.accountState.IsNexusAccount()
 }
 func (m *Monitor) processEvents() {
@@ -307,8 +305,6 @@ func (m *Monitor) processEvents() {
 	}
 }
 func (m *Monitor) SetNexusAccount(isNexusAccount bool) {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
 	stateChanged := m.accountState.SetNexusAccount(isNexusAccount)
 	currentStatus := m.accountState.IsNexusAccount()
 
