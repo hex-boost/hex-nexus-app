@@ -2,7 +2,12 @@ import { strapiClient } from '@/lib/strapi.ts';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
-type Plans = {
+export type Plans = {
+  currency: string;
+  desiredMonths: number;
+  prices: Prices;
+};
+type Prices = {
 
   basic: number;
   premium: number;
@@ -13,7 +18,7 @@ export type Currency = 'EUR' | 'USD' | 'BRL';
 export function useMembershipPrices() {
   const [selectedCurrency, setSelectedCurrency] = useState<Currency>('USD');
   const fetchPrices = async (currency: Currency): Promise<Plans> => {
-    return await strapiClient.request<Plans>('GET', `/premium/prices/${currency}`);
+    return await strapiClient.request<Plans>('GET', `/premium/prices/${currency}/v1`);
   };
   const { data: pricesData, isLoading: pricesLoading, error: pricesError } = useQuery<Plans, Error>({
     queryKey: ['prices', selectedCurrency],

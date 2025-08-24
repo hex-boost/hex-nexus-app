@@ -34,15 +34,14 @@ export type SupportContact = {
 
 export function OnboardingDialog() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [data, setData] = useState<OnboardingData>({});
+  const [_, setData] = useState<OnboardingData>({});
   const { user } = useUserStore();
-  const [open, setOpen] = useState(user?.configuration?.isNewUser || true);
+  const [open, setOpen] = useState(user?.configuration?.isNewUser);
   const { mutate: onCompleteOnboarding } = useMutation({
     mutationFn: async () => {
       const res = await strapiClient.axios.put(`/users/${user?.id}`, {
         configuration: {
           isNewUser: false,
-          referralCode: data.referralCode,
         },
       });
       return res.data;
