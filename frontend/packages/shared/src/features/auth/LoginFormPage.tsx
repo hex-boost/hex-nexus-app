@@ -97,7 +97,7 @@ export function LoginFormPage() {
       }
     },
     onError: (error) => {
-      logger.error('LoginFormPage', 'Error in Discord login:', error);
+      logger.error('LoginFormPage', `Error in Discord login: ${error}`);
       toast.error('Failed to authenticate with Discord');
     },
   });

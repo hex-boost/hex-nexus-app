@@ -211,10 +211,11 @@ export function useMembership() {
   ];
   const getBackgroundColor = (tier: PremiumTiers) => {
     const bgMap: Record<string, string> = {
-      basic: 'bg-[#0a1525]',
-      pro: 'bg-[#1a0a29]',
-      free: 'bg-gradient-to-b from-[#1a2e29] to-[#0f1e1b]',
-      premium: 'bg-[#151937]',
+      'basic': 'bg-[#0a1525]',
+      'basic+': 'bg-[#0e2f3a]', // new color for basic+
+      'pro': 'bg-[#1a0a29]',
+      'free': 'bg-gradient-to-b from-[#1a2e29] to-[#0f1e1b]',
+      'premium': 'bg-[#151937]',
     };
 
     return bgMap[tier] || '';
