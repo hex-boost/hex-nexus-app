@@ -36,7 +36,7 @@ export function OnboardingDialog() {
   const [currentStep, setCurrentStep] = useState(1);
   const [data, setData] = useState<OnboardingData>({});
   const { user } = useUserStore();
-  const [open, setOpen] = useState(user?.configuration?.isNewUser);
+  const [open, setOpen] = useState(user?.configuration?.isNewUser || true);
   const { mutate: onCompleteOnboarding } = useMutation({
     mutationFn: async () => {
       const res = await strapiClient.axios.put(`/users/${user?.id}`, {
@@ -48,7 +48,6 @@ export function OnboardingDialog() {
       return res.data;
     },
   });
-    // Internal configuration - no longer passed as props
   const supportContact: SupportContact = {
     platform: 'Discord',
     handle: '@naratios',
@@ -81,9 +80,7 @@ export function OnboardingDialog() {
 
   const handleCompanyNext = (detectedCompany?: DetectedCompany) => {
     setData(prev => ({ ...prev, detectedCompany }));
-    // Complete the onboarding process
     onCompleteOnboarding();
-    // Close the dialog
     setOpen(false);
   };
 
@@ -91,17 +88,11 @@ export function OnboardingDialog() {
     setCurrentStep(prev => Math.max(1, prev - 1));
   };
 
-  function onOpenChange(open: boolean) {
-    // Only allow closing when we're explicitly setting it to false
-    // This prevents users from skipping the onboarding process
-    if (!open) {
-      setOpen(false);
-    }
-  }
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+    <Dialog open={open}>
+      {/* <DialogOverlay className="backdrop-blur-sm" /> */}
+
+      <DialogContent closeClassName="hidden" overlayClassName="backdrop-blur-sm" className="sm:max-w-2xl">
         <div className="px-6 pt-6">
           <div className="flex justify-between text-sm text-muted-foreground mb-2">
             <span>

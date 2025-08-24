@@ -274,27 +274,24 @@ export function UserProfile({
               <div className="flex-1">
                 <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">{user?.username}</h2>
                 <div className="w-full flex justify-between gap-2">
-                  <p className={cls(` capitalize`, textClass)}>{user?.premium?.plan?.name || 'Free'}</p>
-
-                  {user?.accountPermissions?.includes('boostroyal') && user?.boostRoyalUserId && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="flex gap-2 items-center w-fit rounded-full py-0.5 px-3 bg-boostroyal-primary/10">
-                            <p className="text-xs font-bold text-boostroyal-primary">Boost Royal</p>
-                            <img src={logoBoostRoyal} alt="BoostRoyal" className="h-4 w-4" />
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent side="right" className="px-2 py-1 items-center text-sm flex gap-2">
-                          <span>
-                            Boost Royal Verified
-                          </span>
-                          {' '}
-                          <CheckCircle className="text-green-400" size={16} />
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
+                  <p className={cls(`capitalize`, textClass)}>{user?.premium?.plan?.name || 'Free'}</p>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex gap-2 items-center w-fit rounded-full py-0.5 px-3 bg-boostroyal-primary/10">
+                          <p className="text-xs font-bold text-boostroyal-primary">Boost Royal</p>
+                          <img src={logoBoostRoyal} alt="BoostRoyal" className="h-4 w-4" />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="px-2 py-1 items-center text-sm flex gap-2">
+                        <span>
+                          Boost Royal Verified
+                        </span>
+                        {' '}
+                        <CheckCircle className="text-green-400" size={16} />
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   {user?.accountPermissions?.includes('turboboost') && (
                     <TooltipProvider>
                       <Tooltip>

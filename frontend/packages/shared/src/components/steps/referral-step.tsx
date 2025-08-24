@@ -39,7 +39,7 @@ export function ReferralStep({ onNext }: ReferralStepProps) {
           />
         </div>
 
-        <div className="bg-muted/50 p-3 rounded-lg">
+        <div className="bg-muted/10 p-3 rounded-lg">
           <p className="text-sm text-muted-foreground">
             💡
             {' '}
