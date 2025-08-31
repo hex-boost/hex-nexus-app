@@ -30,7 +30,7 @@ import { useChatMeQuery } from '@/hooks/useChatMeQuery.ts';
 import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
 import { useFavoriteAccounts } from '@/hooks/useFavoriteAccounts.ts';
 import { LolChallengesGameflowPhase, useGameflowPhase } from '@/hooks/useGameflowPhaseQuery.ts';
-import { useMembership } from '@/hooks/useMembership.ts';
+import { useMembership } from '@/hooks/useMembership.tsx';
 import { useUserStore } from '@/stores/useUserStore';
 import { createFileRoute, Outlet, useRouter } from '@tanstack/react-router';
 import { Browser } from '@wailsio/runtime';

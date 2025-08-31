@@ -4,6 +4,7 @@ import { Monitor as AccountMonitor } from '@account';
 import { BaseClient } from '@client';
 import { Manager } from '@leagueManager';
 import { LogService } from '@logger';
+import * as Sentry from '@sentry/react';
 import { create } from 'zustand';
 
 type AuthState = {
@@ -35,7 +36,9 @@ export const useUserStore = create<AuthState>((set, get) => ({
   jwt: localStorage.getItem('authToken') || null,
   setUser: (user: UserType) => {
     set({ user });
-    localStorage.setItem('user', JSON.stringify(user));
+    Sentry.setUser(user);
+    localStorage
+      .setItem('user', JSON.stringify(user));
   },
   setAuthToken: (jwt: string) => {
     set({ jwt });
@@ -89,6 +92,7 @@ export const useUserStore = create<AuthState>((set, get) => ({
         userTier: 'free',
       },
     });
+    Sentry.setUser(null);
   },
   isAuthenticated: () => get().jwt != null,
 

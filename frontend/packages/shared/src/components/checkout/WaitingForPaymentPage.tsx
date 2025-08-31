@@ -1,7 +1,7 @@
 import type { PaymentMethodsAccepted } from '@/types/membership.ts';
 import type { PricingPlan } from '@/types/types.ts';
 import { Button } from '@/components/ui/button.tsx';
-import { useMembership } from '@/hooks/useMembership.ts';
+import { useMembership } from '@/hooks/useMembership.tsx';
 import { ArrowLeft } from 'lucide-react';
 import { PaymentInstructions } from './PaymentInstructions.tsx';
 import { PaymentLink } from './PaymentLink.tsx';

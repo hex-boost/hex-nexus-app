@@ -1,30 +1,42 @@
+import type { PlanWithPrice } from '@/features/payment/types/pricing.ts';
 import type { Currency } from '@/hooks/useMembershipPrices/useMembershipPrices.ts';
-import type { PremiumTiers, PricingPlan } from '@/types/types.ts';
+import type { PremiumTiers } from '@/types/types.ts';
 import { Badge } from '@/components/ui/badge.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
-import { useMembership } from '@/hooks/useMembership.ts';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useMembership } from '@/hooks/useMembership.tsx';
 import { cn } from '@/lib/utils.ts';
+import { useUserStore } from '@/stores/useUserStore.ts';
 import { currencySymbols } from './checkoutHelpers';
 
-type PlanWithPrice = PricingPlan & { price?: number };
-
 type PricingCardProps = {
+  isDisabled?: boolean;
   className?: string;
   plan: PlanWithPrice;
   selectedCurrency: Currency;
-  onCheckout: (plan: PricingPlan) => void;
+  onCheckout: (plan: PlanWithPrice) => void;
   isLoading?: boolean;
-  isSelected?: boolean; // New prop
+  isSelected?: boolean;
 };
 
-export function PricingCard({ className, plan, selectedCurrency, onCheckout, isLoading = false, isSelected = false }: PricingCardProps) {
+// This mapping is an assumption based on the prompt's description of numeric tiers.
+// Ideally, this would come from a shared configuration or the API.
+
+export function PricingCard({ className, plan, selectedCurrency, onCheckout, isLoading = false, isSelected = false, isDisabled = false }: PricingCardProps) {
+  const { user } = useUserStore();
   const { getBackgroundColor, getTierColorClass } = useMembership();
   const tierColor = getTierColorClass(plan.tier_enum);
 
   const renderIcon = (tier: PremiumTiers) => (
     <span className={`${getTierColorClass(tier).text} rounded-full bg-opacity-10 p-0.5`}>✓</span>
   );
+  let tooltipMessage = '';
+  if (isDisabled) {
+    tooltipMessage = 'You can only upgrade your plan, not downgrade.';
+  } else if (user?.premium.plan?.tier === 0) {
+    tooltipMessage = 'The Free plan cannot be selected.';
+  }
 
   const renderPrice = () => {
     if (isLoading) {
@@ -36,16 +48,45 @@ export function PricingCard({ className, plan, selectedCurrency, onCheckout, isL
     if (plan.price === 0) {
       return <span className={`${tierColor.text} text-6xl font-bold mx-1`}>0</span>;
     }
-    if (selectedCurrency === 'USD' && plan.price >= 1) {
+
+    // Apply the ".99" logic specifically for USD
+    if (selectedCurrency === 'USD') {
+      const mainPrice = Math.floor(plan.price / 100) - 1;
       return (
         <>
-          <span className={`${tierColor.text} text-6xl font-bold mx-1`}>{Math.floor(plan.price / 100) - 1}</span>
-          <span className={`${tierColor.text} text-4xl font-bold -ml-1`}>.99</span>
+          <span className={`${tierColor.text} text-6xl font-bold`}>{mainPrice}</span>
+          <span className={`${tierColor.text} text-4xl font-bold`}>.99</span>
         </>
       );
     }
-    return <span className={`${tierColor.text} text-6xl font-bold mx-1`}>{plan.price / 100}</span>;
+
+    // For other currencies, format with two decimal places
+    const formattedPrice = (plan.price / 100).toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    const [integerPart, decimalPart] = formattedPrice.split('.');
+
+    return (
+      <>
+        <span className={`${tierColor.text} text-6xl font-bold`}>{integerPart}</span>
+        <span className={`${tierColor.text} text-4xl font-bold`}>
+          .
+          {decimalPart}
+        </span>
+      </>
+    );
   };
+
+  const checkoutButton = (
+    <Button
+      disabled={isDisabled}
+      className={`w-full ${tierColor.bg} ${tierColor.hover} text-white py-3 rounded-md mt-6`}
+      onClick={() => onCheckout(plan)}
+    >
+      {isSelected ? 'Selected' : plan.buttonText}
+    </Button>
+  );
 
   return (
     <div className={cn(`${getBackgroundColor(plan.tier_enum)} rounded-xl p-6 text-left border ${isSelected ? 'border-purple-400' : tierColor.border}`, className)}>
@@ -66,13 +107,24 @@ export function PricingCard({ className, plan, selectedCurrency, onCheckout, isL
           </li>
         ))}
       </ul>
-      <Button
-        disabled={isLoading || (plan.price === undefined && plan.tier_enum !== 'free') || isSelected}
-        className={`w-full ${tierColor.bg} ${tierColor.hover} text-white py-3 rounded-md mt-6`}
-        onClick={() => onCheckout(plan as PricingPlan)}
-      >
-        {isSelected ? 'Selected' : plan.buttonText}
-      </Button>
+      {tooltipMessage
+        ? (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="w-full">
+                    {checkoutButton}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{tooltipMessage}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )
+        : (
+            checkoutButton
+          )}
     </div>
   );
 }

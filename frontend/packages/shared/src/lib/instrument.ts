@@ -1,15 +1,17 @@
 import { strapiClient } from '@/lib/strapi.ts';
 import * as Sentry from '@sentry/react';
+
 import { createRouter } from '@tanstack/react-router';
 import { UnleashClient } from 'unleash-proxy-client';
 import { routeTree } from '../../../main/src/routeTree.gen.ts';
 import { useUserStore } from '../stores/useUserStore.ts';
 
 export const unleashClient = new UnleashClient({
+
   url: 'https://primary-production-8693.up.railway.app/api/frontend',
   clientKey: '*:production.825408eb4a39c1335a6a4c258a24fe77e93c547a38209badd5ee2f6a',
   appName: 'nexus-app',
-  environment: 'production',
+  environment: import.meta.env.MODE || 'development',
   context: {
     userId: useUserStore.getState().user?.id?.toString() || undefined,
   },
@@ -38,6 +40,7 @@ strapiClient.axios.interceptors.response.use(
 );
 const release = import.meta.env.VITE_APP_VERSION || 'development';
 Sentry.init({
+  enabled: import.meta.env.MODE === 'production',
   dsn: 'https://57f976075a4fde7d718f64a14383e365@o4509556130578433.ingest.us.sentry.io/4509585352097792',
   integrations: [
     Sentry.tanstackRouterBrowserTracingIntegration(router),
@@ -51,7 +54,7 @@ Sentry.init({
       console: true,
       dom: true,
     }),
-    Sentry.consoleLoggingIntegration({ levels: ['log', 'error', 'warn'] }),
+    Sentry.consoleLoggingIntegration({ levels: ['log', 'info', 'error', 'warn', 'trace'] }),
     Sentry.replayIntegration(),
 
   ],

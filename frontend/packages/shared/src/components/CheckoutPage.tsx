@@ -1,79 +1,86 @@
+import type { PlanWithPrice } from '@/features/payment/types/pricing.ts';
+import type { Currency } from '@/hooks/useMembershipPrices/useMembershipPrices.ts';
 import type { PaymentMethodsAccepted } from '@/types/membership.ts';
-import type { PricingPlan } from '@/types/types.ts';
 import { PricingCard } from '@/components/checkout/PricingCard.tsx';
-import { WaitingForPaymentPage } from '@/components/checkout/WaitingForPaymentPage.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { Input } from '@/components/ui/input.tsx';
 import { Label } from '@/components/ui/label.tsx';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group.tsx';
-import { useMembership } from '@/hooks/useMembership.ts';
 import { useMembershipActions } from '@/hooks/useMembershipActions.ts';
 import { useMembershipPrices } from '@/hooks/useMembershipPrices/useMembershipPrices.ts';
-import { useMapping } from '@/lib/useMapping.tsx';
-import { ArrowLeft, Minus, Plus, Ticket } from 'lucide-react';
-import { useState } from 'react';
+import { ArrowLeft, CreditCard, Minus, Plus, Ticket } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { cls } from 'react-image-crop';
-import { toast } from 'sonner';
 
-// Define a type for the payment response object
-type PaymentResponse = {
-  documentId: string;
-  // Add other properties from the payment object as needed
-};
-
-export function CheckoutPage({ selectedPlan, onBack }: { selectedPlan: PricingPlan; onBack: () => void }) {
+export function CheckoutPage({ selectedPlan, onBack }: { selectedPlan: PlanWithPrice; onBack: () => void }) {
   const {
     paymentMethods,
     selectedPaymentMethod,
     setSelectedPaymentMethod,
-    isPending,
-    createSubscriptionPayment,
+    createSubscriptionPayment, // Use the new mutation
+    isCreatingPayment, // Use the new pending state
   } = useMembershipActions();
-
-  const { getTierColorClass, getBackgroundColor } = useMembership();
-  const { getCompanyIconNode } = useMapping();
-  const { selectedCurrency } = useMembershipPrices();
+  const { pricesData, pricesLoading, selectedCurrency, setSelectedCurrency } = useMembershipPrices();
 
   const [months, setMonths] = useState(1);
   const [discountCode, setDiscountCode] = useState('');
-  const [paymentDetails, setPaymentDetails] = useState<PaymentResponse | null>(null); // State to hold payment info
+  const isInitialMount = useRef(true);
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    if (selectedPaymentMethod === 'BR Balance') {
+      setSelectedCurrency('USD');
+    } else if (selectedPaymentMethod === 'Turbo Boost Balance') {
+      setSelectedCurrency('EUR');
+    } else if (selectedPaymentMethod === 'Pix') {
+      setSelectedCurrency('BRL');
+    }
+  }, [selectedPaymentMethod, setSelectedCurrency]);
 
   const handleMonthChange = (amount: number) => {
     setMonths(prev => Math.max(1, prev + amount));
   };
-
-  const handleCreatePayment = async () => {
-    try {
-      // const response = await createSubscriptionPayment({
-      //   gateway: selectedPaymentMethod,
-      //   desiredPlan: selectedPlan.tier_enum,
-      //   desiredMonths: months,
-      //   discountCodeString: discountCode,
-      // });
-      toast.success('Payment flow initiated.');
-      setPaymentDetails({ documentId: '#Dsad' }); // Set payment details to switch view
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to create payment.');
-    }
+  const paymentMapping: Record<string, string> = {
+    mercadopago: 'mercadoPago',
+    boostroyal: 'boostRoyal',
+    stripe: 'stripe',
+    turboboost: 'turboBoost',
+    nowPayments: 'nowPayments',
+  };
+  const handleCreatePayment = () => {
+    // Call the mutation with the payment details
+    createSubscriptionPayment({
+      gateway: paymentMapping[selectedPaymentMethod.toLowerCase()] as PaymentMethodsAccepted,
+      desiredPlan: selectedPlan.tier_enum,
+      desiredMonths: months,
+      discountCodeString: discountCode,
+      currency: selectedCurrency,
+    });
   };
 
-  const tierPricePerMonth = selectedPlan.price ? selectedPlan.price / 100 : 15; // Make price dynamic from plan
+  // Get the price for the current plan based on the selected currency from the hook's data
+  const currentPrice = pricesData?.prices?.[selectedPlan.tier_enum.toLowerCase() as keyof typeof pricesData.prices];
+
+  // This new plan object ensures the PricingCard on the left also updates its price
+  const tierPricePerMonth = currentPrice !== undefined ? currentPrice / 100 : 0;
   const totalPrice = tierPricePerMonth * months;
-  const selectedTier = selectedPlan.tier_enum;
 
-  // If payment has been created, show the "Waiting for Payment" page
-  if (paymentDetails) {
-    return (
-      <WaitingForPaymentPage
-        selectedPlan={selectedPlan}
-        selectedPaymentMethod={selectedPaymentMethod}
-        paymentDetails={paymentDetails}
-        onBack={onBack}
-      />
-    );
-  }
+  const totalPlanPrice = currentPrice ? currentPrice * months : 0;
+  const planForDisplay: PlanWithPrice = {
+    ...selectedPlan,
+    price: totalPlanPrice,
+  };
 
-  // Otherwise, show the checkout form
+  const currencies: { name: Currency; symbol: string }[] = [
+    { name: 'USD', symbol: '$' },
+    { name: 'EUR', symbol: '€' },
+    { name: 'BRL', symbol: 'R$' },
+  ];
+  const currencySymbol = currencies.find(c => c.name === selectedCurrency)?.symbol || '$';
+  const isCurrencyChangeDisabled = selectedPaymentMethod !== 'Stripe';
+
   return (
     <div className="container mx-auto p-4 text-white">
       <div className="relative mb-8 text-center">
@@ -94,10 +101,10 @@ export function CheckoutPage({ selectedPlan, onBack }: { selectedPlan: PricingPl
         <div className="lg:col-span-1">
           <PricingCard
             className="min-w-sm"
-            plan={selectedPlan}
+            plan={planForDisplay}
             selectedCurrency={selectedCurrency}
             onCheckout={() => {}}
-            isLoading={false}
+            isLoading={pricesLoading}
             isSelected={true}
           />
         </div>
@@ -123,12 +130,10 @@ export function CheckoutPage({ selectedPlan, onBack }: { selectedPlan: PricingPl
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-8 h-8 flex items-center justify-center">
-                      {/* Render SVG string, PNG, or fallback */}
-                      {typeof method.icon === 'string' && method.icon.trim().startsWith('<svg')
-                        ? <span dangerouslySetInnerHTML={{ __html: method.icon }} />
-                        : typeof method.icon === 'string' && method.icon.match(/\.(png|jpg|jpeg|webp)$/i)
-                          ? <img src={method.icon} alt={`${method.title} icon`} className="w-8 h-8 object-contain" />
-                          : getCompanyIconNode(method.icon?.toLowerCase().replace(' ', ''))}
+                      {
+                        method.icon
+                      }
+
                     </div>
                     <div>
                       <h3 className="text-start font-medium">{method.title}</h3>
@@ -184,23 +189,49 @@ export function CheckoutPage({ selectedPlan, onBack }: { selectedPlan: PricingPl
                   <Button variant="secondary" className="h-12 px-6">Apply</Button>
                 </div>
               </div>
+
+              <div>
+                <Label className="font-medium text-gray-300 mb-2 block">Currency</Label>
+                <div className="flex items-center gap-2">
+                  {currencies.map(currency => (
+                    <Button
+                      key={currency.name}
+                      variant={selectedCurrency === currency.name ? 'secondary' : 'outline'}
+                      onClick={() => setSelectedCurrency(currency.name)}
+                      disabled={isCurrencyChangeDisabled || pricesLoading}
+                      className="w-full"
+                    >
+                      {currency.name}
+                    </Button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2 mt-4 pt-4 border-t border-gray-200 dark:border-[#1F1F23]">
-              <div className="flex justify-between text-sm text-gray-400">
-                <p>
-                  {selectedTier}
-                  {' '}
-                  Plan x
-                  {months}
-                  {' '}
-                  month(s)
-                </p>
-                <p>
-                  $
-                  {totalPrice.toFixed(2)}
-                </p>
-              </div>
+              {pricesLoading
+                ? (
+                    <div className="flex justify-between text-sm">
+                      <div className="h-5 w-32 rounded bg-gray-300 dark:bg-gray-700 animate-pulse" />
+                      <div className="h-5 w-16 rounded bg-gray-300 dark:bg-gray-700 animate-pulse" />
+                    </div>
+                  )
+                : (
+                    <div className="flex justify-between text-sm text-gray-400">
+                      <p>
+                        {planForDisplay.tier_enum}
+                        {' '}
+                        Plan x
+                        {months}
+                        {' '}
+                        month(s)
+                      </p>
+                      <p>
+                        {currencySymbol}
+                        {totalPrice.toFixed(2)}
+                      </p>
+                    </div>
+                  )}
               {discountCode && (
                 <div className="flex justify-between text-sm text-green-400">
                   <p>Discount Applied</p>
@@ -209,19 +240,27 @@ export function CheckoutPage({ selectedPlan, onBack }: { selectedPlan: PricingPl
               )}
               <div className="flex justify-between font-bold text-lg mt-2 pt-2">
                 <p>Total</p>
-                <p>
-                  $
-                  {totalPrice.toFixed(2)}
-                </p>
+                {' '}
+                {pricesLoading
+                  ? (
+                      <div className="h-7 w-20 rounded bg-gray-300 dark:bg-gray-700 animate-pulse" />
+                    )
+                  : (
+                      <p>
+                        {currencySymbol}
+                        {totalPrice.toFixed(2)}
+                      </p>
+                    )}
               </div>
             </div>
 
             <Button
-              loading={isPending}
-              disabled={isPending}
-              className="w-full mt-4 bg-purple-600 hover:bg-purple-700 text-white h-12 text-lg"
+              loading={isCreatingPayment || pricesLoading}
+              disabled={isCreatingPayment || pricesLoading}
+              className=""
               onClick={handleCreatePayment}
             >
+              <CreditCard className="w-4 h-4 mr-2" />
               Checkout
             </Button>
           </div>

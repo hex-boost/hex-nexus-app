@@ -3,7 +3,7 @@ import type { PremiumTiers } from '@/types/types.ts';
 import { Button } from '@/components/ui/button.tsx';
 import { Card, CardContent } from '@/components/ui/card.tsx';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog.tsx';
-import { useMembership } from '@/hooks/useMembership.ts';
+import { useMembership } from '@/hooks/useMembership.tsx';
 import { motion } from 'framer-motion';
 import { CreditCard, CrownIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';

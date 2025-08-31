@@ -9,7 +9,7 @@ import { RainbowButton } from '@/components/ui/rainbow-button.tsx';
 import { Separator } from '@/components/ui/separator.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip.tsx';
-import { useMembership } from '@/hooks/useMembership.ts';
+import { useMembership } from '@/hooks/useMembership.tsx';
 import { useProfileAvatar } from '@/hooks/useProfileAvatar.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';

@@ -1,16 +1,15 @@
+import type { PlanWithPrice } from '@/features/payment/types/pricing.ts';
 import type { Currency } from '@/hooks/useMembershipPrices/useMembershipPrices.ts';
-import type { PremiumTiers, PricingPlan } from '@/types/types.ts';
-import { useMembership } from '@/hooks/useMembership.ts';
+import type { PremiumTiers } from '@/types/types.ts';
+import { useUserStore } from '@/stores/useUserStore.ts';
 import { CurrencySelector } from './CurrencySelector';
 import { PricingCard } from './PricingCard';
-
-type PlanWithPrice = PricingPlan & { price?: number };
 
 type UpgradeOptionsProps = {
   plans: PlanWithPrice[];
   selectedCurrency: Currency;
   setSelectedCurrency: (currency: Currency) => void;
-  onCheckout: (plan: PricingPlan) => void;
+  onCheckout: (plan: PlanWithPrice) => void;
   isLoading: boolean;
   error: Error | null;
   scrollToRef: React.RefObject<HTMLDivElement>;
@@ -27,7 +26,8 @@ export function UpgradeOptions({
   scrollToRef,
   plansToDisplayFilter,
 }: UpgradeOptionsProps) {
-  const { pricingPlans } = useMembership();
+  const { user } = useUserStore();
+  const userTier = user?.premium?.plan?.tier ?? 0;
 
   return (
     <div className="mt-8 text-center" ref={scrollToRef}>
@@ -48,8 +48,9 @@ export function UpgradeOptions({
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
         {isLoading
-          ? pricingPlans.filter(plansToDisplayFilter).map(plan => (
+          ? plans.filter(plansToDisplayFilter).map(plan => (
               <PricingCard
+                isDisabled={plan.tier === 'Free' || !!(userTier && plan.tier_enum <= userTier)}
                 key={`loading-${plan.tier_enum}`}
                 plan={plan}
                 selectedCurrency={selectedCurrency}
@@ -59,6 +60,7 @@ export function UpgradeOptions({
             ))
           : plans.filter(plansToDisplayFilter).map(plan => (
               <PricingCard
+                isDisabled={plan.tier === 'Free' || !!(userTier && plan.tier_enum <= userTier)}
                 key={`loaded-${plan.tier_enum}`}
                 plan={plan}
                 selectedCurrency={selectedCurrency}

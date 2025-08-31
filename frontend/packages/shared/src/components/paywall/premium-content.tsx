@@ -1,6 +1,6 @@
 // Create a new component: frontend/packages/shared/src/components/paywall/premium-content.tsx
 import { Button } from '@/components/ui/button';
-import { useMembership } from '@/hooks/useMembership.ts';
+import { useMembership } from '@/hooks/useMembership.tsx';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { CheckCircle2, Crown, Lock, Sparkles, Star } from 'lucide-react';

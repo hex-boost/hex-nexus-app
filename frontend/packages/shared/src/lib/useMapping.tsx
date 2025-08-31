@@ -14,7 +14,7 @@ import unrankedIcon from '@/assets/league_of_legends_unranked.svg';
 import logoBoostRoyal from '@/assets/logo-boost-royal.svg';
 import nexusIcon from '@/assets/logo-hex-boost.svg';
 import logoTurboBoost from '@/assets/logo-turbo-boost.png';
-import { EarthLock } from 'lucide-react';
+import { CheckCircle, Clock, EarthLock, XCircle } from 'lucide-react';
 import { LolIcon, ValorantIcon } from './icons';
 
 export function useMapping() {
@@ -293,108 +293,119 @@ export function useMapping() {
         return <img src={nexusIcon} alt="Company" className="h-8 w-8" />;
     }
   };
-type CompanyIcon = string | typeof EarthLock;
 
-const getCompanyIcon = (company: string): CompanyIcon => {
-  if (company === 'boostroyal') {
-    return logoBoostRoyal;
-  }
-  if (company === 'turboboost') {
-    // Return an img tag string for PNGs to work with dangerouslySetInnerHTML
-    return logoTurboBoost;
-  }
-  if (company === 'private') {
-    return EarthLock; // This case needs to be handled differently if used with dangerouslySetInnerHTML
-  }
-  return nexusIcon; // Assuming nexusIcon is an SVG string or compatible
-};
-const getGameIcon = (game: 'lol' | 'valorant', props?: { size?: number; className?: string }) => {
-  if (game === 'lol') {
-    return <LolIcon {...props} />;
-  } else {
-    return <ValorantIcon />;
-  }
-};
-const rangeBucket = (tuples: [number, any][]) => {
-  // Return a function that takes a number and returns the corresponding value
-  return (value: number): any => {
-    for (let i = tuples.length - 1; i >= 0; i--) {
-      const [k, v] = tuples[i];
-      if (value >= k) {
-        return v;
-      }
-    }
-    // Default to first value if below all ranges
-    return tuples[0][1];
+  const getPaymentStatusConfig = (status: 'paid' | 'open' | 'canceled') => {
+    const config = {
+      paid: { icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-50 dark:bg-green-900/20', label: 'Paid' },
+      open: { icon: Clock, color: 'text-yellow-500', bg: 'bg-yellow-50 dark:bg-yellow-900/20', label: 'Pending' },
+      canceled: { icon: XCircle, color: 'text-red-500', bg: 'bg-red-50 dark:bg-red-900/20', label: 'Canceled' },
+    };
+    return config[status];
   };
-};
-const kdaColorRange = rangeBucket([
-  [0, '#828790'],
-  [1.5, '#978D87'],
-  [3.0, '#C4A889'],
-  [4.5, '#DEAF78'],
-  [6.5, '#E6A85F'],
-  [8.5, '#FF9417'],
-]);
 
-const getKdaColor = (kda: number): string => {
-  return kdaColorRange[kda];
-};
-const getFormattedServer = (server: Server): string => {
-  switch (server) {
-    case 'LA2':
-      return 'LAS';
-    case 'RU':
-      return 'RU';
-    case 'LA1':
-      return 'LAN';
-    case 'OC1':
-      return 'OCE';
-    case 'ME1':
-      return 'MENA';
-    case 'EUN1':
-      return 'EUNE';
-    default:
-      return server ? server?.slice(0, server.length - 1) : 'N/A';
-  }
-};
-function getWinrateColorClass(winRate: number) {
-  let winRateColorClass = 'text-zinc-600 dark:text-muted-foreground';
-  if (winRate > 55) {
-    // if (winRate >= 95) {
-    //   winRateColorClass = 'text-blue-500 dark:text-blue-500 font-medium';
-    // } else if (winRate >= 85) {
-    //   winRateColorClass = 'text-blue-400 dark:text-blue-400 font-medium';
-    // } else if (winRate >= 75) {
-    //   winRateColorClass = 'text-blue-300 dark:text-blue-300 font-medium';
-    // } else if (winRate >= 65) {
-    //   winRateColorClass = 'text-blue-200 dark:text-blue-200';
-    // } else {
-    //   winRateColorClass = 'text-blue-100 dark:text-blue-100';
-    // }
-  } else if (winRate < 40 && winRate > 0) {
-    if (winRate < 30) {
-      winRateColorClass = 'text-red-500 dark:text-red-400';
-    } else if (winRate < 40) {
-      winRateColorClass = 'text-red-300 dark:text-red-300';
-    } else {
-      winRateColorClass = 'text-red-100 dark:text-red-100';
+    type CompanyIcon = string | typeof EarthLock;
+
+    const getCompanyIcon = (company: string): CompanyIcon => {
+      if (company === 'boostroyal') {
+        return logoBoostRoyal;
+      }
+      if (company === 'turboboost') {
+        // Return an img tag string for PNGs to work with dangerouslySetInnerHTML
+        return logoTurboBoost;
+      }
+      if (company === 'private') {
+        return EarthLock; // This case needs to be handled differently if used with dangerouslySetInnerHTML
+      }
+      return nexusIcon; // Assuming nexusIcon is an SVG string or compatible
+    };
+    const getGameIcon = (game: 'lol' | 'valorant', props?: { size?: number; className?: string }) => {
+      if (game === 'lol') {
+        return <LolIcon {...props} />;
+      } else {
+        return <ValorantIcon />;
+      }
+    };
+    const rangeBucket = (tuples: [number, any][]) => {
+      // Return a function that takes a number and returns the corresponding value
+      return (value: number): any => {
+        for (let i = tuples.length - 1; i >= 0; i--) {
+          const [k, v] = tuples[i];
+          if (value >= k) {
+            return v;
+          }
+        }
+        // Default to first value if below all ranges
+        return tuples[0][1];
+      };
+    };
+    const kdaColorRange = rangeBucket([
+      [0, '#828790'],
+      [1.5, '#978D87'],
+      [3.0, '#C4A889'],
+      [4.5, '#DEAF78'],
+      [6.5, '#E6A85F'],
+      [8.5, '#FF9417'],
+    ]);
+
+    const getKdaColor = (kda: number): string => {
+      return kdaColorRange[kda];
+    };
+    const getFormattedServer = (server: Server): string => {
+      switch (server) {
+        case 'LA2':
+          return 'LAS';
+        case 'RU':
+          return 'RU';
+        case 'LA1':
+          return 'LAN';
+        case 'OC1':
+          return 'OCE';
+        case 'ME1':
+          return 'MENA';
+        case 'EUN1':
+          return 'EUNE';
+        default:
+          return server ? server?.slice(0, server.length - 1) : 'N/A';
+      }
+    };
+    function getWinrateColorClass(winRate: number) {
+      let winRateColorClass = 'text-zinc-600 dark:text-muted-foreground';
+      if (winRate > 55) {
+        // if (winRate >= 95) {
+        //   winRateColorClass = 'text-blue-500 dark:text-blue-500 font-medium';
+        // } else if (winRate >= 85) {
+        //   winRateColorClass = 'text-blue-400 dark:text-blue-400 font-medium';
+        // } else if (winRate >= 75) {
+        //   winRateColorClass = 'text-blue-300 dark:text-blue-300 font-medium';
+        // } else if (winRate >= 65) {
+        //   winRateColorClass = 'text-blue-200 dark:text-blue-200';
+        // } else {
+        //   winRateColorClass = 'text-blue-100 dark:text-blue-100';
+        // }
+      } else if (winRate < 40 && winRate > 0) {
+        if (winRate < 30) {
+          winRateColorClass = 'text-red-500 dark:text-red-400';
+        } else if (winRate < 40) {
+          winRateColorClass = 'text-red-300 dark:text-red-300';
+        } else {
+          winRateColorClass = 'text-red-100 dark:text-red-100';
+        }
+      }
+      return winRateColorClass;
     }
-  }
-  return winRateColorClass;
-}
-return {
-  getRegionIcon,
-  getCompanyIcon,
-  getEloIcon,
-  getRankColor,
-  getGameIcon,
-  getKdaColor,
-  getStatusColor,
-  getSkinRarityColor,
-  getFormattedServer,
-  getWinrateColorClass,
-  getRankBackground,
-  getCompanyIconNode,
-};
+    return {
+      getRegionIcon,
+      getCompanyIcon,
+      getEloIcon,
+      getRankColor,
+      getGameIcon,
+      getKdaColor,
+      getStatusColor,
+      getSkinRarityColor,
+      getFormattedServer,
+      getWinrateColorClass,
+      getRankBackground,
+      getCompanyIconNode,
+      getPaymentStatusConfig,
+    };
 }

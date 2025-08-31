@@ -1,42 +1,12 @@
-import type { Currency } from '@/hooks/useMembershipPrices/useMembershipPrices.ts';
-import type { PremiumTiers, PricingPlan } from '@/types/types.ts';
-import { useMembership } from '@/hooks/useMembership.ts';
+import type { PlanWithPrice } from '@/features/payment/types/pricing.ts';
+import type { PremiumTiers } from '@/types/types.ts';
+import { useMembership } from '@/hooks/useMembership.tsx';
 import { useMembershipPrices } from '@/hooks/useMembershipPrices/useMembershipPrices.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { useMemo, useRef, useState } from 'react';
 import { CheckoutPage } from '../CheckoutPage.tsx';
 import { ActivePlan } from './ActivePlan';
 import { UpgradeOptions } from './UpgradeOptions';
-
-// --- Type Definitions ---
-
-type PlanWithPrice = PricingPlan & { price?: number };
-
-type PricingCardProps = {
-  plan: PlanWithPrice;
-  selectedCurrency: Currency;
-  onCheckout: (plan: PricingPlan) => void;
-  isLoading?: boolean;
-};
-
-type UpgradeOptionsProps = {
-  plans: PlanWithPrice[];
-  selectedCurrency: Currency;
-  setSelectedCurrency: (currency: Currency) => void;
-  onCheckout: (plan: PricingPlan) => void;
-  isLoading: boolean;
-  error: Error | null;
-  scrollToRef: React.RefObject<HTMLDivElement>;
-  plansToDisplayFilter: (plan: { tier_enum: PremiumTiers }) => boolean;
-};
-
-type ActivePlanProps = {
-  plan: PlanWithPrice;
-  selectedCurrency: Currency;
-  onUpgradeClick: () => void;
-};
-
-// --- Main Component ---
 
 /**
  * Main component to display pricing cards, handle checkout flow,
@@ -47,7 +17,7 @@ export default function PricingCards() {
   const { user } = useUserStore();
   const { pricingPlans: staticPricingPlans } = useMembership();
   const { pricesData, selectedCurrency, pricesError, pricesLoading, setSelectedCurrency } = useMembershipPrices();
-  const [planForCheckout, setPlanForCheckout] = useState<PricingPlan | null>(null);
+  const [planForCheckout, setPlanForCheckout] = useState<PlanWithPrice | null>(null);
 
   const plansWithPrices: PlanWithPrice[] = useMemo(() => {
     return staticPricingPlans.map((plan) => {
@@ -70,7 +40,7 @@ export default function PricingCards() {
     pricingRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleCheckout = (plan: PricingPlan) => {
+  const handleCheckout = (plan: PlanWithPrice) => {
     setPlanForCheckout(plan);
   };
 

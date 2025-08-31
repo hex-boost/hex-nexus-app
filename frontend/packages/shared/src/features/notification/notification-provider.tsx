@@ -9,7 +9,7 @@ import {
 } from '@/features/notification/types/notification.ts';
 import { useLocalStorage } from '@/hooks/use-local-storage.tsx';
 import { useWebSocket } from '@/hooks/use-websocket.tsx';
-import { useMembership } from '@/hooks/useMembership.ts';
+import { useMembership } from '@/hooks/useMembership.tsx';
 import { useUpdate } from '@/hooks/useUpdate/useUpdate.tsx';
 import { logger } from '@/lib/logger.ts';
 import { strapiClient } from '@/lib/strapi.ts';

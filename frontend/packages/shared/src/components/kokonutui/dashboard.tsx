@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button.tsx';
 import { Separator } from '@/components/ui/separator.tsx';
 import { Skeleton } from '@/components/ui/skeleton.tsx';
 import FavoriteAccounts from '@/features/favorite-account/components/FavoriteAccounts.tsx';
+import RecentPayments from '@/features/payment/RecentPayments.tsx';
 import { Link } from '@tanstack/react-router';
-import { Activity, Shield, Star } from 'lucide-react';
+import { Activity, CreditCard, Shield, Star } from 'lucide-react';
 import CurrentlyRentedAccounts from './currently-rented-accounts';
 import SubscriptionStatus from './subscription-status';
 
@@ -125,6 +126,17 @@ export default function Dashboard({ user }: { user: UserType | null }) {
           <Separator className="mb-4" />
           <div className="min-h-[300px] w-full overflow-hidden">
             <FavoriteAccounts user={user} />
+          </div>
+        </div>
+        <div className="bg-white dark:bg-black/20 flex flex-col items-start rounded-xl border border-gray-200 dark:border-[#1F1F23]">
+          <h2 className="text-xl font-bold w-full px-6 pt-6  text-gray-900 dark:text-white mb-4 text-left flex items-center gap-2">
+            <CreditCard className="w-4 h-4 text-zinc-900 dark:text-zinc-50 " />
+            Recent Payments
+          </h2>
+
+          <Separator className="mb-4" />
+          <div className="min-h-[300px] w-full overflow-hidden">
+            <RecentPayments />
           </div>
         </div>
       </div>

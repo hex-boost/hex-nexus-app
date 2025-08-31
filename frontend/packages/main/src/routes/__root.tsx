@@ -1,4 +1,3 @@
-import { ErrorPage } from '@/components/error-page.tsx';
 import { OnboardingDialog } from '@/components/onboarding-dialog.tsx';
 import { PremiumPaymentModal } from '@/features/payment/PremiumPaymentModal.tsx';
 import { useLocalStorage } from '@/hooks/use-local-storage.tsx';
@@ -22,27 +21,37 @@ export type RouterContext = {
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootLayout,
-  errorComponent: ErrorPage,
+  // errorComponent: ErrorPage,
+  onError: error => console.log('error rendering:', error),
+
   notFoundComponent: () => <div>Page not found</div>,
 
   beforeLoad: async ({ location }) => {
-    const isAuthenticated = useUserStore.getState().isAuthenticated();
+    try {
+      const isAuthenticated = useUserStore.getState().isAuthenticated();
 
-    const isLoginRoute = location.pathname === '/login';
-    const params = new URLSearchParams(window.location.search);
-    const targetRoute = params.get('target');
+      const isLoginRoute = location.pathname === '/login';
+      const params = new URLSearchParams(window.location.search);
+      const targetRoute = params.get('target');
 
-    if (targetRoute === 'overlay') {
-      throw redirect({ to: '/overlay' });
-    }
+      if (targetRoute === 'overlay') {
+        throw redirect({ to: '/overlay' });
+      }
 
-    if (!isAuthenticated && !isLoginRoute) {
-      throw redirect({ to: '/login' });
+      if (!isAuthenticated && !isLoginRoute) {
+        throw redirect({ to: '/login' });
+      }
+      if (isAuthenticated && isLoginRoute) {
+        throw redirect({ to: '/dashboard' });
+      }
+
+      return { isAuthenticated };
+    } catch (
+      error
+    ) {
+      logger.error('Route', 'Error in beforeLoad', error);
+      throw error;
     }
-    if (isAuthenticated && isLoginRoute) {
-      throw redirect({ to: '/dashboard' });
-    }
-    return { isAuthenticated };
   },
 });
 

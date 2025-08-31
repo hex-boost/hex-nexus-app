@@ -1,8 +1,8 @@
 import type { Currency } from '@/hooks/useMembershipPrices/useMembershipPrices.ts';
-import type { PricingPlan } from '@/types/types.ts';
+import type { PricingPlan } from '@/types/membership';
 import { FlickeringGrid } from '@/components/magicui/flickering-grid.tsx';
 import { Button } from '@/components/ui/button.tsx';
-import { useMembership } from '@/hooks/useMembership.ts';
+import { useMembership } from '@/hooks/useMembership.tsx';
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { ArrowDownCircle, CircleCheckBig, UserCircle } from 'lucide-react';
 import { currencySymbols, formatDate } from './checkoutHelpers';
@@ -27,13 +27,17 @@ export function ActivePlan({ plan, selectedCurrency, onUpgradeClick }: ActivePla
     if (plan.price === 0) {
       return <span className={`${tierColor.text} text-3xl font-bold mx-1`}>Free</span>;
     }
-    const priceDisplay = (
+    return (
       <div className="flex items-baseline">
         <span className={`${tierColor.text} text-lg`}>{currencySymbols[selectedCurrency]}</span>
         {selectedCurrency === 'USD' && plan.price >= 1
           ? (
               <>
-                <span className={`${tierColor.text} text-3xl font-bold mx-1`}>{Math.floor(plan.price / 100) - 1}</span>
+                <span
+                  className={`${tierColor.text} text-3xl font-bold mx-1`}
+                >
+                  {Math.floor(plan.price / 100) - 1}
+                </span>
                 <span className={`${tierColor.text} text-xl font-bold -ml-1`}>.99</span>
               </>
             )
@@ -43,7 +47,6 @@ export function ActivePlan({ plan, selectedCurrency, onUpgradeClick }: ActivePla
         {plan.period && <span className="text-gray-400 text-sm ml-1">{plan.period.toLowerCase()}</span>}
       </div>
     );
-    return priceDisplay;
   };
 
   return (
@@ -101,6 +104,7 @@ export function ActivePlan({ plan, selectedCurrency, onUpgradeClick }: ActivePla
 
         <h1 className="text-3xl font-bold mb-4 text-center">
           You're on the
+          {' '}
           {plan.tier}
           {' '}
           Plan

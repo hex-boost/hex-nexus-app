@@ -9,6 +9,7 @@ import type {
   ApiAccountAccount,
   ApiFavoriteAccountFavoriteAccount,
   ApiNotificationNotification,
+  ApiPaymentPayment,
   ApiPremiumPremium,
   ApiRankingRanking,
   ApiRentalRental,
@@ -37,6 +38,7 @@ export type Server = AccountType['server'];
 export type ServerNotification = Entity<ApiNotificationNotification>;
 export type ServerNotificationEvents = ServerNotification['event'];
 export type Version = Entity<ApiVersionVersion>;
+export type Payment = Entity<ApiPaymentPayment>;
 
 export type AccountPermissions = Entity<PluginUsersPermissionsUser>['accountPermissions'];
 export type ApiTokenType = Entity<AdminApiToken>;
