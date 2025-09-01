@@ -93,13 +93,11 @@ export default function RecentPayments() {
     );
   }
 
-  const allPayments = [
+  const recentPayments = [
     ...(paymentsData?.paidPayments ?? []),
     ...(paymentsData?.openPayments ?? []),
     ...(paymentsData?.canceledPayments ?? []),
   ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-  const recentPayments = allPayments.slice(0, 3);
 
   if (recentPayments.length === 0) {
     return (

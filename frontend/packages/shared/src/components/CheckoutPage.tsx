@@ -113,6 +113,8 @@ export function CheckoutPage({ selectedPlan, onBack }: { selectedPlan: PlanWithP
         return 'New User Discount';
       case 'referral':
         return 'Referral Discount';
+      case 'loyalty':
+        return 'Loyalty';
       default:
         return 'Discount Code';
     }

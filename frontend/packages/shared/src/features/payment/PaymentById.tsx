@@ -72,6 +72,7 @@ export default function PaymentDetails({ paymentId }: PaymentDetailsProps) {
 
   const formatPrice = (price: number) => `${getCurrencySymbol(payment.currency)}${(price / 100).toFixed(2)}`;
   function openPaymentLink() {
+    console.log('openPaymentLink', payment);
     Browser.OpenURL(payment?.metadata.sessionUrl);
   }
   const getTutorialForGateway = (gatewayName: string) => {
