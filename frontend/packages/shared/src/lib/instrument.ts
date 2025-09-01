@@ -12,9 +12,6 @@ export const unleashClient = new UnleashClient({
   clientKey: '*:production.825408eb4a39c1335a6a4c258a24fe77e93c547a38209badd5ee2f6a',
   appName: 'nexus-app',
   environment: import.meta.env.MODE || 'development',
-  context: {
-    userId: useUserStore.getState().user?.id?.toString() || undefined,
-  },
   refreshInterval: 30, // seconds
 });
 export const router = createRouter({

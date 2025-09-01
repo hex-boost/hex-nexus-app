@@ -79,9 +79,17 @@ export type CheckoutSession = {
   url: string;
 };
 
-export type PaymentMethodsAccepted = 'Pix' | 'Stripe' | 'BR Balance' | 'Turbo Boost Balance' | 'Crypto';
+export enum PaymentMethodEnum {
+  Stripe = 'stripe',
+  MercadoPago = 'mercadoPago',
+  BoostRoyal = 'boostRoyal',
+  TurboBoost = 'turboBoost',
+  NowPayments = 'nowPayments',
+  Manual = 'manual',
+}
 export type PaymentMethod = {
-  title: PaymentMethodsAccepted;
+  title: string;
+  method: PaymentMethodEnum;
   description: string;
   icon: ReactNode;
   isExternal?: boolean;

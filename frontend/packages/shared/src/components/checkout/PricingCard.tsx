@@ -49,18 +49,6 @@ export function PricingCard({ className, plan, selectedCurrency, onCheckout, isL
       return <span className={`${tierColor.text} text-6xl font-bold mx-1`}>0</span>;
     }
 
-    // Apply the ".99" logic specifically for USD
-    if (selectedCurrency === 'USD') {
-      const mainPrice = Math.floor(plan.price / 100) - 1;
-      return (
-        <>
-          <span className={`${tierColor.text} text-6xl font-bold`}>{mainPrice}</span>
-          <span className={`${tierColor.text} text-4xl font-bold`}>.99</span>
-        </>
-      );
-    }
-
-    // For other currencies, format with two decimal places
     const formattedPrice = (plan.price / 100).toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,

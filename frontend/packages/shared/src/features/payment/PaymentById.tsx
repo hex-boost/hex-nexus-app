@@ -1,3 +1,5 @@
+// --- START OF FILE PaymentById.tsx ---
+
 import type { Payment, PremiumTiers } from '@/types/types.ts';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,10 +18,22 @@ type PaymentDetailsProps = {
   paymentId: string;
 };
 
+const getCurrencySymbol = (currency: string | undefined) => {
+  switch (currency?.toUpperCase()) {
+    case 'EUR':
+      return '€';
+    case 'BRL':
+      return 'R$';
+    case 'USD':
+    default:
+      return '$';
+  }
+};
+
 export default function PaymentDetails({ paymentId }: PaymentDetailsProps) {
+  const queryClient = useQueryClient();
   const { getPaymentStatusConfig } = useMapping();
   const { getTierColorClass, getGatewayDetails, pricingPlans } = useMembership();
-  const queryClient = useQueryClient();
 
   const { data: allPayments, isLoading, isError, error } = usePaymentsQuery();
   const cancelPaymentMutation = useCancelPaymentMutation();
@@ -56,15 +70,7 @@ export default function PaymentDetails({ paymentId }: PaymentDetailsProps) {
   const status = getPaymentStatusConfig(payment.paymentStatus);
   const StatusIcon = status.icon;
 
-  const formatPrice = (price: number) => `$${(price / 100).toFixed(2)}`;
-  const formatDate = (dateString: string) =>
-    new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+  const formatPrice = (price: number) => `${getCurrencySymbol(payment.currency)}${(price / 100).toFixed(2)}`;
   function openPaymentLink() {
     Browser.OpenURL(payment?.metadata.sessionUrl);
   }
@@ -126,11 +132,10 @@ export default function PaymentDetails({ paymentId }: PaymentDetailsProps) {
         return {
           title: 'How to Pay with Boost Royal',
           steps: [
-
             {
               step: 1,
               title: 'Navigate to Balance Page',
-              description: 'Go to the Boost Royal page at ',
+              description: 'Go to the Boost Royal page by clicking on go to Subscription',
             },
             {
               step: 2,
@@ -156,15 +161,15 @@ export default function PaymentDetails({ paymentId }: PaymentDetailsProps) {
             {
               step: 1,
               title: 'Navigate to Balance Page',
-              description: 'Go to the Turbo balance page at https://boosting.turboboost.gg/balance.',
+              description: 'Go to the Turbo balance page by clicking on go to Subscription',
             },
             {
-              step: 3,
+              step: 2,
               title: 'Select Package',
               description: 'At the bottom left, under your balance display, click the button for the package you wish to purchase.',
             },
             {
-              step: 4,
+              step: 3,
               title: 'Complete Purchase',
               description: 'The funds will be transferred automatically to complete the payment.',
             },
@@ -233,9 +238,10 @@ export default function PaymentDetails({ paymentId }: PaymentDetailsProps) {
 
   const tierEnum = payment.desiredPlan.name.toLowerCase() as PremiumTiers;
   const tierColors = getTierColorClass(tierEnum);
+
   async function handleCancelPayment() {
-    cancelPaymentMutation.mutate(payment!.documentId);
-    await queryClient.invalidateQueries({ queryKey: ['payments'], exact: false });
+    await cancelPaymentMutation.mutate(payment!.documentId);
+    setTimeout(() => queryClient.invalidateQueries({ queryKey: ['payments', 'user'], exact: false }), 1000);
   }
   return (
     <div className="max-w-6xl mx-auto">
@@ -318,17 +324,17 @@ export default function PaymentDetails({ paymentId }: PaymentDetailsProps) {
             <div className="relative z-10">
               <div className="flex items-start justify-between mb-6">
                 <div>
-                  <div className="flex items-center gap-3 mb-3">
+                  <div className="flex items-center gap-3 mb-1">
                     <h3 className={cn('text-2xl font-bold', tierColors?.text)}>{payment.desiredPlan.name}</h3>
                   </div>
-                  <p className="text-gray-300 text-sm leading-relaxed max-w-md">{payment.desiredPlan.description}</p>
+                  <p className="text-gray-300 text-sm leading-relaxed max-w-md">{planDetails?.description}</p>
                 </div>
 
                 <div className="text-right">
                   <div className="flex items-baseline mb-1">
-                    <span className={cn('text-2xl font-bold', tierColors?.text)}>$</span>
+                    <span className={cn('text-2xl font-bold', tierColors?.text)}>{getCurrencySymbol(payment.currency)}</span>
                     <span className={cn('text-4xl font-bold mx-1', tierColors?.text)}>
-                      {formatPrice(payment.price)}
+                      {(payment.desiredPlan.monthlyPrice / 100).toFixed(2)}
                     </span>
                     <span className="text-gray-400 text-sm ml-2">/month</span>
                   </div>
@@ -377,8 +383,11 @@ export default function PaymentDetails({ paymentId }: PaymentDetailsProps) {
                   <span className="text-sm font-medium text-gray-300">{gateway.name}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <StatusIcon className={cn('w-4 h-4', status.color)} />
-                  <Badge className={cn('text-xs font-medium capitalize', status.bg, status.color)}>{payment.paymentStatus}</Badge>
+                  <Badge className={cn('text-xs font-medium capitalize', status.bg, status.color)}>
+
+                    <StatusIcon className={cn('w-4 h-4', status.color)} />
+                    {status.label}
+                  </Badge>
                 </div>
               </div>
 
@@ -400,31 +409,24 @@ export default function PaymentDetails({ paymentId }: PaymentDetailsProps) {
                   </p>
                 </div>
 
-                {payment.discountCode && (
-                  <div className="flex justify-between text-sm">
-                    <p className="text-green-400">
-                      Discount (
-                      {payment.discountCode.code}
-                      )
+                {payment.discounts && payment.discounts.map((discount, index) => (
+                  <div key={index} className="flex justify-between text-sm">
+                    <p className="text-green-400 capitalize">
+                      {discount.type.replace(/([A-Z])/g, ' $1').trim()}
+                      {' '}
+                      Discount
                     </p>
                     <p className="text-green-400 font-medium">
                       -
-                      {payment.discountCode.isPercentage
-                        ? `${payment.discountCode.value}%`
-                        : formatPrice(payment.discountCode.value)}
+                      {discount.isPercentage
+                        ? `${discount.value}%`
+                        : formatPrice(discount.value)}
                     </p>
                   </div>
-                )}
+                ))}
               </div>
 
               <Separator className="bg-gray-700/50" />
-              <div className="space-y-3 pt-2">
-
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">Payment Date</p>
-                  <p className="text-sm text-gray-300">{formatDate(payment.createdAt)}</p>
-                </div>
-              </div>
               <div className="flex justify-between items-center p-3 rounded-lg bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20">
                 <p className="text-white font-bold text-lg">Total</p>
                 <p className="text-white font-bold text-xl">{formatPrice(payment.price)}</p>

@@ -3,7 +3,7 @@ import { Progress } from '@/components/ui/progress';
 import { strapiClient } from '@/lib/strapi.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
 import { useUserStore } from '@/stores/useUserStore.ts';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import React, { useState } from 'react';
 import { CompanyDetectionStep } from './steps/company-detection-step';
 import { ReferralStep } from './steps/referral-step';
@@ -34,16 +34,30 @@ export type SupportContact = {
 
 export function OnboardingDialog() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [_, setData] = useState<OnboardingData>({});
+  const [onboardingData, setData] = useState<OnboardingData>({});
   const { user } = useUserStore();
-  const [open, setOpen] = useState(user?.configuration?.isNewUser);
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(user ? !user?.configuration?.isNewUser : false);
   const { mutate: onCompleteOnboarding } = useMutation({
+    mutationKey: ['users'],
     mutationFn: async () => {
       const res = await strapiClient.axios.put(`/users/${user?.id}`, {
         configuration: {
           isNewUser: false,
+
         },
       });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
+    },
+  });
+
+  const { mutate: onReferralNext } = useMutation({
+    mutationFn: async () => {
+      const res = await strapiClient.axios.put(`/referralCode/link/${onboardingData.referralCode}`);
+
       return res.data;
     },
   });
@@ -74,6 +88,9 @@ export function OnboardingDialog() {
   const totalSteps = 2;
   const handleReferralNext = (referralCode?: string) => {
     setData(prev => ({ ...prev, referralCode }));
+    if (referralCode) {
+      onReferralNext();
+    }
     setCurrentStep(2);
   };
 

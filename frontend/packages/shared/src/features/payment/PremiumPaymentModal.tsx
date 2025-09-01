@@ -1,4 +1,4 @@
-import type { PaymentMethodsAccepted } from '@/types/membership.ts';
+import type { PaymentMethodEnum } from '@/types/membership.ts';
 import type { PremiumTiers } from '@/types/types.ts';
 import { Button } from '@/components/ui/button.tsx';
 import { Card, CardContent } from '@/components/ui/card.tsx';
@@ -13,7 +13,7 @@ type PremiumPaymentModalProps = {
   onClose: () => void;
   tier: PremiumTiers;
   currency?: 'USD' | 'BRL' | 'EUR';
-  paymentMethod: PaymentMethodsAccepted;
+  paymentMethod: PaymentMethodEnum;
   amount: number;
 };
 

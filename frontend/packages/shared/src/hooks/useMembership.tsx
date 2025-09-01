@@ -1,6 +1,7 @@
 import type { PaymentMethod, PricingPlan } from '@/types/membership.ts';
 import type { PremiumTiers } from '@/types/types.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
+import { PaymentMethodEnum } from '@/types/membership.ts';
 
 export function useMembership() {
   const { getCompanyIconNode } = useMapping();
@@ -224,6 +225,7 @@ export function useMembership() {
 
     {
       title: 'Stripe',
+      method: PaymentMethodEnum.Stripe,
       description: 'Pay with Visa, Mastercard, or American Express',
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32px" height="32px" fill="#6772e5">
@@ -234,8 +236,10 @@ export function useMembership() {
       ),
       isExternal: true,
     },
+
     {
       title: 'Pix',
+      method: PaymentMethodEnum.MercadoPago,
       description: 'Pay with pix directly from your bank account',
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="32px" height="32px" baseProfile="basic">
@@ -249,6 +253,7 @@ export function useMembership() {
 
     {
       title: 'BR Balance',
+      method: PaymentMethodEnum.BoostRoyal,
       description: 'Pay using your Boost Royal balance',
       icon: (
         <svg height="32" width="32" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 39 39">
@@ -268,9 +273,29 @@ export function useMembership() {
     },
     {
       title: 'Turbo Boost Balance',
+      method: PaymentMethodEnum.TurboBoost,
       description: 'Pay using your Turbo balance',
       icon: getCompanyIconNode('turboboost'),
 
+    },
+
+    {
+      title: 'Crypto',
+      method: PaymentMethodEnum.NowPayments,
+      description: 'Pay with Crypto',
+      icon: (
+        <svg width="800px" height="800px" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+          <g fill-rule="evenodd">
+            <path fill="#3C3C3D" d="M16 32C7.163 32 0 24.837 0 16S7.163 0 16 0s16 7.163 16 16-7.163 16-16 16zm7.994-15.781L16.498 4 9 16.22l7.498 4.353 7.496-4.354zM24 17.616l-7.502 4.351L9 17.617l7.498 10.378L24 17.616z" />
+            <g fill-rule="nonzero">
+              <path fill="#627EEA" fill-opacity=".3" d="M16.498 4v8.87l7.497 3.35zm0 17.968v6.027L24 17.616z" />
+              <path fill="#627EEA" fill-opacity=".8" d="M16.498 20.573l7.497-4.353-7.497-3.348z" />
+              <path fill="#627EEA" fill-opacity=".3" d="M9 16.22l7.498 4.353v-7.701z" />
+            </g>
+          </g>
+        </svg>
+      ),
+      isExternal: true,
     },
   ];
   const getGatewayDetails = (gatewayKey: string) => {
@@ -279,7 +304,7 @@ export function useMembership() {
       mercadoPago: { name: 'Mercado Pago', icon: paymentMethods[1].icon, color: 'bg-cyan-500' },
       boostRoyal: { name: 'Boost Royal', icon: paymentMethods[2].icon, color: 'bg-purple-500' },
       turboBoost: { name: 'Turbo Boost', icon: getCompanyIconNode('turboboost'), color: 'bg-green-500' },
-      nowPayments: { name: 'Now Payments', icon: '?', color: 'bg-orange-500' },
+      nowPayments: { name: 'Now Payments', icon: paymentMethods[4].icon, color: 'bg-orange-500' },
       manual: { name: 'Manual', icon: '?', color: 'bg-gray-500' },
     };
     return gatewayMap[gatewayKey] || { name: gatewayKey, icon: '?', color: 'bg-gray-500' };

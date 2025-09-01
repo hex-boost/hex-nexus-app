@@ -14,7 +14,7 @@ import unrankedIcon from '@/assets/league_of_legends_unranked.svg';
 import logoBoostRoyal from '@/assets/logo-boost-royal.svg';
 import nexusIcon from '@/assets/logo-hex-boost.svg';
 import logoTurboBoost from '@/assets/logo-turbo-boost.png';
-import { CheckCircle, Clock, EarthLock, XCircle } from 'lucide-react';
+import { CheckCircle, EarthLock, Hourglass, XCircle } from 'lucide-react';
 import { LolIcon, ValorantIcon } from './icons';
 
 export function useMapping() {
@@ -297,7 +297,7 @@ export function useMapping() {
   const getPaymentStatusConfig = (status: 'paid' | 'open' | 'canceled') => {
     const config = {
       paid: { icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-50 dark:bg-green-900/20', label: 'Paid' },
-      open: { icon: Clock, color: 'text-yellow-500', bg: 'bg-yellow-50 dark:bg-yellow-900/20', label: 'Pending' },
+      open: { icon: Hourglass, color: 'text-yellow-500', bg: 'bg-yellow-50 dark:bg-yellow-900/20', label: 'Waiting Payment' },
       canceled: { icon: XCircle, color: 'text-red-500', bg: 'bg-red-50 dark:bg-red-900/20', label: 'Canceled' },
     };
     return config[status];

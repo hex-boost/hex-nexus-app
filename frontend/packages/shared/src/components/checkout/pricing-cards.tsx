@@ -16,7 +16,7 @@ export default function PricingCards() {
   const pricingRef = useRef<HTMLDivElement>(null);
   const { user } = useUserStore();
   const { pricingPlans: staticPricingPlans } = useMembership();
-  const { pricesData, selectedCurrency, pricesError, pricesLoading, setSelectedCurrency } = useMembershipPrices();
+  const { pricesData, selectedCurrency, pricesError, pricesLoading, setSelectedCurrency } = useMembershipPrices(1);
   const [planForCheckout, setPlanForCheckout] = useState<PlanWithPrice | null>(null);
 
   const plansWithPrices: PlanWithPrice[] = useMemo(() => {

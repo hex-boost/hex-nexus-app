@@ -12,6 +12,9 @@ export const Route = createFileRoute('/_protected/payments/$id')({
 });
 function PaymentByID() {
   const { id } = useParams({ from: '/_protected/payments/$id' });
+  if (!id) {
+    return <div>Invalid payment ID</div>;
+  }
 
   return <PaymentDetails paymentId={id} />;
 }

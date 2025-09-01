@@ -46,7 +46,7 @@ export function UpgradeOptions({
         </p>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
         {isLoading
           ? plans.filter(plansToDisplayFilter).map(plan => (
               <PricingCard
