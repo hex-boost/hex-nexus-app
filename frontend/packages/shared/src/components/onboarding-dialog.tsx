@@ -37,7 +37,7 @@ export function OnboardingDialog() {
   const [onboardingData, setData] = useState<OnboardingData>({});
   const { user } = useUserStore();
   const queryClient = useQueryClient();
-  const [open, setOpen] = useState(user ? !user?.configuration?.isNewUser : false);
+  const [open, setOpen] = useState(user ? user?.configuration?.isNewUser : false);
   const { mutate: onCompleteOnboarding } = useMutation({
     mutationKey: ['users'],
     mutationFn: async () => {

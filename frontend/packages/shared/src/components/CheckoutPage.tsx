@@ -61,11 +61,10 @@ export function CheckoutPage({ selectedPlan, onBack }: { selectedPlan: PlanWithP
   }, [selectedPaymentMethod, setSelectedCurrency]);
 
   // Separate discounts into different types for UI logic
-  const { appliedCodeDiscount, specialDiscounts } = useMemo(() => {
+  const { appliedCodeDiscount } = useMemo(() => {
     const allDiscounts = pricesData?.prices?.discounts || [];
     return {
       appliedCodeDiscount: allDiscounts.find(d => d.type === 'discount_code'),
-      specialDiscounts: allDiscounts.filter(d => d.type !== 'discount_code'),
     };
   }, [pricesData]);
 
@@ -112,6 +111,8 @@ export function CheckoutPage({ selectedPlan, onBack }: { selectedPlan: PlanWithP
     switch (type) {
       case 'newUser':
         return 'New User Discount';
+      case 'referral':
+        return 'Referral Discount';
       default:
         return 'Discount Code';
     }
@@ -239,21 +240,6 @@ export function CheckoutPage({ selectedPlan, onBack }: { selectedPlan: PlanWithP
                         <X className="h-3 w-3" />
                       </Button>
                     </Badge>
-                  </div>
-                )}
-                {specialDiscounts.length > 0 && (
-                  <div className="mt-2 flex flex-col gap-2 items-start">
-                    {specialDiscounts.map(discount => (
-                      <Badge key={discount.type} variant="outline" className="text-sm p-2 border-green-500/50 text-green-400">
-                        {getDiscountDisplayName(discount.type)}
-                        :
-                        {' '}
-                        {discount.value}
-                        {discount.isPercentage ? '%' : ''}
-                        {' '}
-                        OFF
-                      </Badge>
-                    ))}
                   </div>
                 )}
               </div>
