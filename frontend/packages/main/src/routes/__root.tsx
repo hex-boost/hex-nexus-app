@@ -60,7 +60,6 @@ function RootLayout() {
     }
   }, [jwt]);
   useEffect(() => {
-    // Only run if user is authenticated and premium features are available
     if (!isAuthenticated() || !user) {
       return;
     }
@@ -77,7 +76,6 @@ function RootLayout() {
         const savedSelections = await getSkinSelections();
 
         if (savedSelections.length > 0) {
-          // This will update the state but not immediately trigger injection
           for (const selection of savedSelections) {
             await LolSkinState.SetChampionSkin(
               selection.championId,
@@ -86,7 +84,6 @@ function RootLayout() {
             );
           }
 
-          // After updating all selections, trigger a single injection
           await Service.StartInjection();
           toast.success(`${savedSelections.length} saved skins have been applied`);
           logger.info('lolskin', `Applied ${savedSelections.length} saved skin selections`);
@@ -98,7 +95,6 @@ function RootLayout() {
       }
     };
 
-    // Load skins after auth is confirmed and if feature is enabled
     if (isLolskinEnabled) {
       loadSavedSkins();
     }

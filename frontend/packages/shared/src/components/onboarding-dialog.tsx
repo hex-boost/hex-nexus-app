@@ -36,7 +36,7 @@ export function OnboardingDialog() {
   const [currentStep, setCurrentStep] = useState(1);
   const [data, setData] = useState<OnboardingData>({});
   const { user } = useUserStore();
-  const [open, setOpen] = useState(user?.configuration?.isNewUser);
+  const [open, setOpen] = useState(user?.configuration?.isNewUser || false);
   const { mutate: onCompleteOnboarding } = useMutation({
     mutationFn: async () => {
       const res = await strapiClient.axios.put(`/users/${user?.id}`, {

@@ -1,7 +1,7 @@
 import AdminPanelLayout from '@/components/admin-panel/admin-panel-layout.tsx';
-
 // frontend/src/routes/_protected.tsx
 import { CloseConfirmationHandler } from '@/components/CloseConfirmation.tsx';
+
 import { CoinIcon } from '@/components/coin-icon.tsx';
 import { DefaultContextMenu } from '@/components/DefaultContextMenu.tsx';
 import { PremiumContentDialog } from '@/components/paywall/premium-content-dialog.tsx';
@@ -22,19 +22,18 @@ import { Textarea } from '@/components/ui/textarea.tsx';
 import { WindowControls } from '@/components/WindowControls.tsx';
 import { ContextMenuProvider } from '@/contexts/ContextMenuContext.tsx';
 import { useLobbyRevealer } from '@/features/lobby-revealer/hooks/useLobbyRevealer.ts';
-import { LobbyRevealerDock } from '@/features/lobby-revealer/lobby-revealer-dock.tsx';
 import { NotificationProvider } from '@/features/notification/notification-provider.tsx';
 import { NotificationBell } from '@/features/notification/NotificationBell.tsx';
 import { UserProfile } from '@/features/user-profile/UserProfile.tsx';
 import { useChatMeQuery } from '@/hooks/useChatMeQuery.ts';
 import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
 import { useFavoriteAccounts } from '@/hooks/useFavoriteAccounts.ts';
-import { LolChallengesGameflowPhase, useGameflowPhase } from '@/hooks/useGameflowPhaseQuery.ts';
 import { useMembership } from '@/hooks/useMembership.ts';
 import { useUserStore } from '@/stores/useUserStore';
+import * as Summoner from '@summonerClient';
 import { createFileRoute, Outlet, useRouter } from '@tanstack/react-router';
 import { Browser } from '@wailsio/runtime';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { cls } from 'react-image-crop';
 import 'non.geist';
 
@@ -46,27 +45,10 @@ function DashboardLayout() {
   const router = useRouter();
   const { logout, user } = useUserStore();
   const { isUserLoading, refetchUser } = useCommonFetch();
-  const { gameflowPhase } = useGameflowPhase();
-  const { refetch, chatMe } = useChatMeQuery();
+  const { chatMe} = useChatMeQuery();
   const [openPremiumDialog, setOpenPremiumDialog] = useState(false);
-  const { getMultiSearchUrl, summonerCards, isPending } = useLobbyRevealer({ platformId: chatMe?.platformId || '' });
+  const { getMultiSearchUrl, processSummonerCards } = useLobbyRevealer({ platformId: chatMe?.platformId || '' });
   const { pricingPlans } = useMembership();
-  useEffect(() => {
-    console.log('[DashboardLayout] gameflowPhase changed:', gameflowPhase?.phase);
-    if (gameflowPhase?.phase === LolChallengesGameflowPhase.ChampSelect) {
-      console.log('[DashboardLayout] ChampSelect detected, triggering chatMe refetch');
-      refetch();
-    }
-  }, [gameflowPhase, refetch]);
-
-  useEffect(() => {
-    console.log('[DashboardLayout] AppleStyleDock render conditions:', {
-      isChampSelect: gameflowPhase?.phase === LolChallengesGameflowPhase.ChampSelect,
-      isPending,
-      hasSummonerCards: summonerCards,
-      chatMePlatformId: chatMe?.platformId,
-    });
-  }, [gameflowPhase, isPending, summonerCards, chatMe]);
 
   function handleLogout() {
     logout();
@@ -78,27 +60,26 @@ function DashboardLayout() {
 
   const { updateFavoriteNote, isNoteDialogOpen, setIsNoteDialogOpen, noteText, setNoteText, handleSaveNote } = useFavoriteAccounts();
 
-  async function handleOpenOpgg(summonerCards: string[]) {
+  async function openOpgg() {
     if (!user?.premium?.plan?.hasLobbyRevealer) {
       setOpenPremiumDialog(true);
       return;
     }
-    await Browser.OpenURL(getMultiSearchUrl(summonerCards));
+    try {
+      const result = await Summoner.Client.GetLolChat();
+      const lobbySession = await Summoner.Client.GetLolLobbySession();
+      if (!lobbySession || !lobbySession.myTeam || lobbySession.myTeam.length === 0) {
+        console.error('Could not retrieve lobby information or lobby is empty.');
+        return;
+      }
+      const summonerNames = processSummonerCards(lobbySession);
+      await Browser.OpenURL(getMultiSearchUrl(summonerNames, result.platformId));
+    } catch (e) {
+      console.error('Failed to reveal lobby:', e);
+    }
   }
   return (
     <>
-      {
-        gameflowPhase?.phase === LolChallengesGameflowPhase.ChampSelect && !isPending && summonerCards
-        && (
-          <>
-            {console.log('[DashboardLayout] Rendering AppleStyleDock with:', {
-              summonerCards,
-              multiSearchUrl: getMultiSearchUrl(summonerCards),
-            })}
-            <LobbyRevealerDock onClickAction={() => handleOpenOpgg(summonerCards)} />
-          </>
-        )
-      }
       <PremiumContentDialog
         title="Unlock Lobby Revealer"
         description="Get instant insights on players in your lobby and gain a strategic advantage before the match even starts."
@@ -119,7 +100,22 @@ function DashboardLayout() {
                 className={cls('sticky top-0 z-50  backdrop-blur-md bg-black/20 border-b ml-[89px]')}
                 style={{ '--wails-draggable': 'drag' } as React.CSSProperties}
               >
+
                 <div className="grid grid-flow-col justify-end items-center gap-4 py-2">
+                  <div className="w-full flex items-center justify-start">
+                    <Button onClick={() => openOpgg()} variant="outline" className="ml-auto">
+                      <p>
+                        Reveal Lobby
+                      </p>
+
+                      <img
+                        alt="opgg icon"
+                        className="ml-2"
+                        src="https://s-opgg-kit.op.gg/gnb/config/images/icon/bfa5abe2f78d6e9a55e81c9988c31442.svg?image=q_auto:good,f_webp,w_24,h_24"
+                      />
+
+                    </Button>
+                  </div>
                   <div className="hidden sm:flex justify-center items-center gap-2 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-full">
                     <CoinIcon className="h-4 w-4 text-amber-500 dark:text-amber-400" />
                     {isLoading

@@ -57,6 +57,32 @@ func (s *Client) GetLoginSession() (*types.LoginSession, error) {
 	return &result, nil
 }
 
+func (s *Client) GetLolLobbySession() (*types.LolLobbyTeamBuilderSession, error) {
+	s.logger.Debug("Fetching summoner data")
+	lcuClient, err := s.conn.GetClient()
+	if err != nil {
+		s.logger.Warn("Failed to get LCU client for GetLolLobbySession", zap.Error(err))
+		return nil, fmt.Errorf("LCU client unavailable for GetLolLobbySession: %w", err)
+	}
+
+	var result types.LolLobbyTeamBuilderSession
+	resp, err := lcuClient.R().SetResult(&result).
+		Get("/lol-lobby-team-builder/champ-select/v1/session")
+	if err != nil {
+		s.logger.Warn("Error fetching GetLolLobbySession data", zap.Error(err))
+		return nil, err
+	}
+
+	if resp.StatusCode() != http.StatusOK {
+		errMsg := fmt.Sprintf("Failed to get GetLolLobbySession: %d, body: %s", resp.StatusCode(), resp.String())
+		s.logger.Warn(errMsg)
+		return nil, errors.New(errMsg)
+	}
+
+	s.logger.Info("Successfully retrieved GetLolLobbySession")
+
+	return &result, nil
+}
 func (s *Client) GetCurrentSummoner() (*types.CurrentSummoner, error) {
 	s.logger.Debug("Fetching summoner data")
 	lcuClient, err := s.conn.GetClient()

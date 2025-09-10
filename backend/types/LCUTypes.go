@@ -693,3 +693,113 @@ type LeaverBusterResponse struct {
 		ProcessedGameIdHistoryString     string `json:"processedGameIdHistoryString"`
 	} `json:"leaverBusterEntryDto"`
 }
+
+type LolLobbyTeamBuilderSession struct {
+	Actions [][]struct {
+		ActorCellId  int    `json:"actorCellId"`
+		ChampionId   int    `json:"championId"`
+		Completed    bool   `json:"completed"`
+		Duration     int    `json:"duration"`
+		Id           int    `json:"id"`
+		IsAllyAction bool   `json:"isAllyAction"`
+		IsInProgress bool   `json:"isInProgress"`
+		PickTurn     int    `json:"pickTurn"`
+		Type         string `json:"type"`
+	} `json:"actions"`
+	AllowBattleBoost         bool `json:"allowBattleBoost"`
+	AllowDuplicatePicks      bool `json:"allowDuplicatePicks"`
+	AllowLockedEvents        bool `json:"allowLockedEvents"`
+	AllowRerolling           bool `json:"allowRerolling"`
+	AllowSkinSelection       bool `json:"allowSkinSelection"`
+	AllowSubsetChampionPicks bool `json:"allowSubsetChampionPicks"`
+	Bans                     struct {
+		MyTeamBans    []interface{} `json:"myTeamBans"`
+		NumBans       int           `json:"numBans"`
+		TheirTeamBans []interface{} `json:"theirTeamBans"`
+	} `json:"bans"`
+	BenchChampions     []interface{} `json:"benchChampions"`
+	BenchEnabled       bool          `json:"benchEnabled"`
+	BoostableSkinCount int           `json:"boostableSkinCount"`
+	ChatDetails        struct {
+		MucJwtDto struct {
+			ChannelClaim string `json:"channelClaim"`
+			Domain       string `json:"domain"`
+			Jwt          string `json:"jwt"`
+			TargetRegion string `json:"targetRegion"`
+		} `json:"mucJwtDto"`
+		MultiUserChatId       string `json:"multiUserChatId"`
+		MultiUserChatPassword string `json:"multiUserChatPassword"`
+	} `json:"chatDetails"`
+	Counter              int    `json:"counter"`
+	GameId               int64  `json:"gameId"`
+	HasSimultaneousBans  bool   `json:"hasSimultaneousBans"`
+	HasSimultaneousPicks bool   `json:"hasSimultaneousPicks"`
+	Id                   string `json:"id"`
+	IsCustomGame         bool   `json:"isCustomGame"`
+	IsLegacyChampSelect  bool   `json:"isLegacyChampSelect"`
+	IsSpectating         bool   `json:"isSpectating"`
+	LocalPlayerCellId    int    `json:"localPlayerCellId"`
+	LockedEventIndex     int    `json:"lockedEventIndex"`
+	MyTeam               []struct {
+		AssignedPosition     string `json:"assignedPosition"`
+		CellId               int    `json:"cellId"`
+		ChampionId           int    `json:"championId"`
+		ChampionPickIntent   int    `json:"championPickIntent"`
+		GameName             string `json:"gameName"`
+		InternalName         string `json:"internalName"`
+		IsHumanoid           bool   `json:"isHumanoid"`
+		NameVisibilityType   string `json:"nameVisibilityType"`
+		ObfuscatedPuuid      string `json:"obfuscatedPuuid"`
+		ObfuscatedSummonerId int    `json:"obfuscatedSummonerId"`
+		PickMode             int    `json:"pickMode"`
+		PickTurn             int    `json:"pickTurn"`
+		PlayerAlias          string `json:"playerAlias"`
+		PlayerType           string `json:"playerType"`
+		Puuid                string `json:"puuid"`
+		SelectedSkinId       int    `json:"selectedSkinId"`
+		Spell1Id             int    `json:"spell1Id"`
+		Spell2Id             int    `json:"spell2Id"`
+		SummonerId           int    `json:"summonerId"`
+		TagLine              string `json:"tagLine"`
+		Team                 int    `json:"team"`
+		WardSkinId           int    `json:"wardSkinId"`
+	} `json:"myTeam"`
+	PickOrderSwaps     []interface{} `json:"pickOrderSwaps"`
+	PositionSwaps      []interface{} `json:"positionSwaps"`
+	QueueId            int           `json:"queueId"`
+	RerollsRemaining   int           `json:"rerollsRemaining"`
+	ShowQuitButton     bool          `json:"showQuitButton"`
+	SkipChampionSelect bool          `json:"skipChampionSelect"`
+	TheirTeam          []struct {
+		AssignedPosition     string `json:"assignedPosition"`
+		CellId               int    `json:"cellId"`
+		ChampionId           int    `json:"championId"`
+		ChampionPickIntent   int    `json:"championPickIntent"`
+		GameName             string `json:"gameName"`
+		InternalName         string `json:"internalName"`
+		IsHumanoid           bool   `json:"isHumanoid"`
+		NameVisibilityType   string `json:"nameVisibilityType"`
+		ObfuscatedPuuid      string `json:"obfuscatedPuuid"`
+		ObfuscatedSummonerId int    `json:"obfuscatedSummonerId"`
+		PickMode             int    `json:"pickMode"`
+		PickTurn             int    `json:"pickTurn"`
+		PlayerAlias          string `json:"playerAlias"`
+		PlayerType           string `json:"playerType"`
+		Puuid                string `json:"puuid"`
+		SelectedSkinId       int    `json:"selectedSkinId"`
+		Spell1Id             int    `json:"spell1Id"`
+		Spell2Id             int    `json:"spell2Id"`
+		SummonerId           int    `json:"summonerId"`
+		TagLine              string `json:"tagLine"`
+		Team                 int    `json:"team"`
+		WardSkinId           int    `json:"wardSkinId"`
+	} `json:"theirTeam"`
+	Timer struct {
+		AdjustedTimeLeftInPhase int    `json:"adjustedTimeLeftInPhase"`
+		InternalNowInEpochMs    int64  `json:"internalNowInEpochMs"`
+		IsInfinite              bool   `json:"isInfinite"`
+		Phase                   string `json:"phase"`
+		TotalTimeInPhase        int    `json:"totalTimeInPhase"`
+	} `json:"timer"`
+	Trades []interface{} `json:"trades"`
+}
