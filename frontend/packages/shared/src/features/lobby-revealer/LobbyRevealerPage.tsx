@@ -127,7 +127,7 @@ export function LobbyRevealerPage() {
   const tagLine = currentSummoner?.tagLine || chatMe?.gameTag || '';
   const region = chatMe?.platformId as Server || '';
 
-  const { isPending } = useLobbyRevealer({ platformId: region });
+  const { } = useLobbyRevealer();
   // Log derived properties
   useEffect(() => {
     logger.info('DERIVED_PROPS', {
@@ -409,7 +409,7 @@ export function LobbyRevealerPage() {
           // const lobbyPlayer = summonerCards[index < 2 ? index : index - 1];
 
           // If we're loading other players data, show skeleton
-          if (isPending && index !== 2) {
+          if (index !== 2) {
             logger.info('RENDERING_PLAYER', { index, type: 'skeleton', reason: 'loading other players' });
             return <SummonerCardSkeleton key={`lobby-loading-${index}`} />;
           }

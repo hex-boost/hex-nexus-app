@@ -1,7 +1,7 @@
 import type { Server } from '@/types/types.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
 
-export function useLobbyRevealer({ platformId }: { platformId: string }) {
+export function useLobbyRevealer() {
   const { getFormattedServer } = useMapping();
 
   function processSummonerCards(champSelect: any) {

@@ -25,7 +25,6 @@ import { useLobbyRevealer } from '@/features/lobby-revealer/hooks/useLobbyReveal
 import { NotificationProvider } from '@/features/notification/notification-provider.tsx';
 import { NotificationBell } from '@/features/notification/NotificationBell.tsx';
 import { UserProfile } from '@/features/user-profile/UserProfile.tsx';
-import { useChatMeQuery } from '@/hooks/useChatMeQuery.ts';
 import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
 import { useFavoriteAccounts } from '@/hooks/useFavoriteAccounts.ts';
 import { useMembership } from '@/hooks/useMembership.ts';
@@ -45,9 +44,8 @@ function DashboardLayout() {
   const router = useRouter();
   const { logout, user } = useUserStore();
   const { isUserLoading, refetchUser } = useCommonFetch();
-  const { chatMe} = useChatMeQuery();
   const [openPremiumDialog, setOpenPremiumDialog] = useState(false);
-  const { getMultiSearchUrl, processSummonerCards } = useLobbyRevealer({ platformId: chatMe?.platformId || '' });
+  const { getMultiSearchUrl, processSummonerCards } = useLobbyRevealer();
   const { pricingPlans } = useMembership();
 
   function handleLogout() {
@@ -73,7 +71,7 @@ function DashboardLayout() {
         return;
       }
       const summonerNames = processSummonerCards(lobbySession);
-      await Browser.OpenURL(getMultiSearchUrl(summonerNames, result.platformId));
+      await Browser.OpenURL(getMultiSearchUrl(summonerNames, result?.platformId!));
     } catch (e) {
       console.error('Failed to reveal lobby:', e);
     }
