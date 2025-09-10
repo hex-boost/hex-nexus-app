@@ -1,8 +1,8 @@
 import AdminPanelLayout from '@/components/admin-panel/admin-panel-layout.tsx';
 // frontend/src/routes/_protected.tsx
 import { CloseConfirmationHandler } from '@/components/CloseConfirmation.tsx';
-
 import { CoinIcon } from '@/components/coin-icon.tsx';
+
 import { DefaultContextMenu } from '@/components/DefaultContextMenu.tsx';
 import { PremiumContentDialog } from '@/components/paywall/premium-content-dialog.tsx';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
@@ -34,6 +34,7 @@ import { createFileRoute, Outlet, useRouter } from '@tanstack/react-router';
 import { Browser } from '@wailsio/runtime';
 import React, { useState } from 'react';
 import { cls } from 'react-image-crop';
+import { toast } from 'sonner';
 import 'non.geist';
 
 export const Route = createFileRoute('/_protected')({
@@ -68,10 +69,16 @@ function DashboardLayout() {
       const lobbySession = await Summoner.Client.GetLolLobbySession();
       if (!lobbySession || !lobbySession.myTeam || lobbySession.myTeam.length === 0) {
         console.error('Could not retrieve lobby information or lobby is empty.');
+        toast.warning('Maybe you\'re not on a champ select k?');
+
         return;
       }
       const summonerNames = processSummonerCards(lobbySession);
-      await Browser.OpenURL(getMultiSearchUrl(summonerNames, result?.platformId!));
+      if (!result) {
+        toast.warning('Could not fetch your summoner info, please try again later');
+        return;
+      }
+      await Browser.OpenURL(getMultiSearchUrl(summonerNames, result!.platformId));
     } catch (e) {
       console.error('Failed to reveal lobby:', e);
     }
