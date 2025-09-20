@@ -395,20 +395,20 @@ export default function PaymentDetails({ paymentId }: PaymentDetailsProps) {
               <Separator className="bg-gray-700/50" />
 
               <div className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <p className="text-gray-400">
-                    {payment.desiredPlan.name}
-                    {' '}
-                    ×
-                    {payment.desiredMonths}
-                    {' '}
-                    month
-                    {payment.desiredMonths > 1 ? 's' : ''}
-                  </p>
-                  <p className="text-white font-medium">
-                    {formatPrice(payment.desiredPlan.monthlyPrice * payment.desiredMonths)}
-                  </p>
-                </div>
+                {/* <div className="flex justify-between text-sm"> */}
+                {/*  <p className="text-gray-400"> */}
+                {/*    {payment.desiredPlan.name} */}
+                {/*    {' '} */}
+                {/*    × */}
+                {/*    {payment.desiredMonths} */}
+                {/*    {' '} */}
+                {/*    month */}
+                {/*    {payment.desiredMonths > 1 ? 's' : ''} */}
+                {/*  </p> */}
+                {/*  <p className="text-white font-medium"> */}
+                {/*    {formatPrice(payment.desiredPlan.monthlyPrice * payment.desiredMonths)} */}
+                {/*  </p> */}
+                {/* </div> */}
 
                 {payment.discounts && payment.discounts.map((discount, index) => (
                   <div key={index} className="flex justify-between text-sm">
@@ -434,7 +434,7 @@ export default function PaymentDetails({ paymentId }: PaymentDetailsProps) {
               </div>
 
               <div className="pt-4">
-                <Button onClick={openPaymentLink} className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-medium py-3 rounded-xl shadow-lg">
+                <Button disabled={payment.paymentStatus === 'canceled'} onClick={openPaymentLink} className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-medium py-3 rounded-xl shadow-lg">
                   <ExternalLink className="w-4 h-4 mr-2" />
                   Go to Subscription
                 </Button>

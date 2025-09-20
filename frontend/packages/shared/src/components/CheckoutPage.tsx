@@ -121,7 +121,7 @@ export function CheckoutPage({ selectedPlan, onBack }: { selectedPlan: PlanWithP
   };
 
   return (
-    <div className="container mx-auto p-4 text-white">
+    <div className=" mx-auto p-4 text-white">
       <div className="relative mb-8 text-center">
         <Button
           variant="ghost"
@@ -171,7 +171,7 @@ export function CheckoutPage({ selectedPlan, onBack }: { selectedPlan: PlanWithP
                     <div className="w-8 h-8 flex items-center justify-center">{method.icon}</div>
                     <div>
                       <h3 className="text-start font-medium">{method.title}</h3>
-                      <p className="text-sm text-muted-foreground">{method.description}</p>
+                      <p className="text-start text-sm text-muted-foreground">{method.description}</p>
                     </div>
                   </div>
                   <RadioGroupItem value={method.title} id={method.title} />
@@ -182,7 +182,7 @@ export function CheckoutPage({ selectedPlan, onBack }: { selectedPlan: PlanWithP
         </div>
 
         {/* Right side: Order Summary */}
-        <div className="sticky top-24 w-full h-full">
+        <div className=" top-24 w-full h-full">
           <div className="bg-white dark:bg-black/20 rounded-xl border border-gray-200 dark:border-[#1F1F23] p-6 flex flex-col gap-4 h-full">
             <h3 className="text-xl font-bold">Order Summary</h3>
 
