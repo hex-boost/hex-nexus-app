@@ -50,7 +50,26 @@ jobs:
         run: choco install mingw --no-progress --params "/InstallDir:C:\mingw-w64"
 
       - name: Install NSIS
+        id: install_nsis # Give the step an ID
         run: choco install nsis -y
+
+      - name: Add NSIS to PATH and Verify
+        run: |
+          # The standard installation path for NSIS via Chocolatey
+          $NSIS_PATH = "C:\Program Files (x86)\NSIS"
+          
+          # Add this path to the GITHUB_PATH, which makes it available to all subsequent steps
+          echo "Adding '$NSIS_PATH' to GITHUB_PATH"
+          echo "$NSIS_PATH" >> $env:GITHUB_PATH
+          
+          # --- Verification ---
+          echo "--- Verifying makensis location ---"
+          # This command should now succeed
+          where.exe makensis
+          
+          echo "--- Updated PATH for next steps ---"
+          echo $env:PATH
+        shell: pwsh
 
       - name: Verify GCC Path and Version
         run: |
