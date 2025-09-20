@@ -41,13 +41,7 @@ export function OnboardingDialog() {
   const { mutate: onCompleteOnboarding } = useMutation({
     mutationKey: ['users'],
     mutationFn: async () => {
-      const res = await strapiClient.axios.put(`/users/${user?.id}`, {
-        configuration: {
-          isNewUser: false,
-
-        },
-      });
-      return res.data;
+      return await strapiClient.axios.post(`/configuration/onboarding/complete/${user?.documentId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users', 'me'] });

@@ -23,14 +23,12 @@ export function CompanyDetectionStep({
 }: CompanyDetectionStepProps) {
   const { getCompanyIconNode } = useMapping();
 
-  // Find the first supported company that matches a user's company affiliations.
   const detectedUserCompany = useMemo(() => {
     return supportedCompanies.find(company =>
       userCompanies.includes(company.name.toLowerCase().replace(/\s/g, '')),
     );
   }, [supportedCompanies, userCompanies]);
 
-  // Create the detectedCompany object for the onNext callback.
   const detectedCompanyForNext = useMemo(() => {
     if (!detectedUserCompany) {
       return undefined;
@@ -39,12 +37,11 @@ export function CompanyDetectionStep({
     return {
       name: detectedUserCompany.name,
       description: detectedUserCompany.description,
-      // Benefits can be static or come from the company object if available
+
       benefits: ['Exclusive Accounts', 'Balance Transfer Payments', 'Priority support'],
     };
   }, [detectedUserCompany]);
 
-  // Handle the next button click
   const handleNext = () => {
     onNext(detectedCompanyForNext);
   };
@@ -72,7 +69,6 @@ export function CompanyDetectionStep({
               {supportedCompanies.map((company) => {
                 const isUserCompany = userCompanies.includes(company.name.toLowerCase().replace(/\s/g, ''));
 
-                // Simplified class and text determination
                 let containerClass = 'border-gray-200 bg-gray-50/50 text-gray-500 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-400';
                 let badgeClass = 'bg-gray-100 text-gray-800';
                 let statusText = 'Not Detected';
@@ -82,7 +78,6 @@ export function CompanyDetectionStep({
                   StatusIcon = CheckCircle;
                   const companyIdentifier = company.name.toLowerCase().replace(/\s/g, '');
 
-                  // Specific company styling is preserved
                   if (companyIdentifier.includes('boostroyal')) {
                     containerClass = 'border-boostroyal-primary bg-boostroyal-primary/10 text-foreground dark:border-boostroyal-primary dark:bg-boostroyal-primary/10';
                     badgeClass = 'bg-boostroyal-primary/20 text-boostroyal-primary';
@@ -101,7 +96,7 @@ export function CompanyDetectionStep({
                 return (
                   <div
                     key={company.name}
-                    // Use opacity on the container for non-detected companies as a subtle hint
+
                     className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${containerClass} ${!isUserCompany ? 'opacity-70' : ''}`}
                   >
                     {getCompanyIconNode(company.name.toLowerCase().replace(/\s/g, ''))}
