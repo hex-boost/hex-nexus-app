@@ -1,127 +1,112 @@
-import type { CheckoutSession, PaymentMethodsAccepted, SubscriptionRequest } from '@/types/membership.ts';
-import type { PremiumTiers } from '@/types/types.ts';
-import type { PaymentResponse } from 'mercadopago/dist/clients/payment/commonTypes';
-
-import { useMembership } from '@/hooks/useMembership.ts';
-
+import type { Currency } from '@/hooks/useMembershipPrices/useMembershipPrices.ts';
+import type { Payment, PremiumTiers } from '@/types/types.ts';
+import { useMembership } from '@/hooks/useMembership.tsx';
 import { strapiClient } from '@/lib/strapi.ts';
-import { useUserStore } from '@/stores/useUserStore.ts';
+
+import { PaymentMethodEnum } from '@/types/membership';
 import { Stripe } from '@stripe';
-import { useMutation } from '@tanstack/react-query';
-import { useFlag } from '@unleash/proxy-client-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
 import { Browser } from '@wailsio/runtime';
 import * as React from 'react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+// Define types for the new payment creation functionality
+
+type SubscriptionPaymentPayload = {
+  gateway: PaymentMethodEnum;
+  desiredPlan: PremiumTiers;
+  desiredMonths: number;
+  desiredCurrency: Currency;
+  discountCodeString?: string;
+  successUrl?: string;
+  cancelUrl?: string;
+
+};
+type PaymentResponse = {
+  message: string;
+  response: { discounts: any; payment: Payment; url: string };
+};
 export function useMembershipActions() {
-  const mercadoPagoEnabled = useFlag('mercadoPagoEnabled');
-  const isStripeEnabled = useFlag('stripeEnabled');
   const { paymentMethods } = useMembership();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = React.useState<PaymentMethodsAccepted>(paymentMethods[0].title);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = React.useState<PaymentMethodEnum>(paymentMethods[0].method);
   const [pendingPlanTier, setPendingPlanTier] = useState<string | null>(null);
-  async function createStripeSubscription(data: SubscriptionRequest): Promise<CheckoutSession> {
-    if (!isStripeEnabled) {
-      throw new Error('Stripe is temporary disabled, please contact @naratios on discord');
-    }
-    try {
-      return await strapiClient.request<CheckoutSession>('post', 'stripe/subscription', {
-        data,
-      });
-    } catch (error) {
-      console.error('Subscription creation failed:', error);
-      throw new Error('Failed to create subscription');
-    }
-  }
-  type PixPayload = {
-    membershipEnum: PremiumTiers;
-  };
-  type PixResponse = {
-    message: string;
-    data: PaymentResponse;
-  };
-  async function createPixPayment(payload: PixPayload): Promise<PixResponse> {
-    if (!mercadoPagoEnabled) {
-      throw new Error('Mercado Pago is temporary disabled, please contact @naratios on discord');
-    }
-    try {
-      return await strapiClient.request<PixResponse>('post', 'mercadopago/subscription', {
-        data: { ...payload },
 
-      });
-    } catch (error) {
-      console.error('Subscription creation failed:', error);
-      throw new Error('Failed to create subscription');
-    }
-  }
+  const { mutate: createSubscriptionPayment, isPending: isCreatingPayment } = useMutation({
+    mutationKey: ['user', 'payments', 'create'],
+    mutationFn: async (payload: SubscriptionPaymentPayload) => {
+      const finalPayload = { ...payload };
 
-  const { user } = useUserStore();
-  const { mutate: selectPlan } = useMutation({
-    mutationKey: ['subscription'],
-    mutationFn: async (tier: string) => {
-      if (user?.premium?.plan?.tier !== 1) {
-        throw new Error('You already have a plan, please contact support if you want to change or extend it');
+      if (finalPayload.gateway === PaymentMethodEnum.BoostRoyal) {
+        finalPayload.successUrl = 'https://dashboard.boostroyal.com/profile';
+        finalPayload.cancelUrl = 'https://dashboard.boostroyal.com/profile';
       }
-      setPendingPlanTier(tier);
-
-      // 1. First get callback URLs from local Go server
-      const [successUrl, cancelUrl] = await Stripe.GetCallbackURLs();
-
-      return await createStripeSubscription({
-        subscriptionTier: tier, // Directly pass tier (no mapping needed)
-        successUrl,
-        cancelUrl,
-      });
-    },
-    onSuccess: async (data) => {
-      await Browser.OpenURL(data.url as string);
-      setPendingPlanTier(null);
-    },
-    onError: (error) => {
-      if (error.message) {
-        toast.warning(error.message);
+      if (finalPayload.gateway === PaymentMethodEnum.TurboBoost) {
+        finalPayload.successUrl = 'https://boosting.turboboost.gg/balance';
+        finalPayload.cancelUrl = 'https://boosting.turboboost.gg/balance';
       }
-      console.error('Subscription error:', error);
-      setPendingPlanTier(null);
-    },
-
-  });
-
-  const { isPending, mutate: handlePayment } = useMutation({
-    mutationKey: ['payment', selectedPaymentMethod],
-    mutationFn: async (selectedTier: PremiumTiers) => {
-      if (user?.premium?.plan?.tier !== 1) {
-        throw new Error('You already have a plan, please contact support if you want to change or extend it');
-      }
-      let url: string = '';
-      if (selectedPaymentMethod === 'Pix') {
-        const pixResponse = await createPixPayment({ membershipEnum: selectedTier });
-        url = pixResponse.data.point_of_interaction?.transaction_data?.ticket_url as string;
-      }
-      if (selectedPaymentMethod === 'Stripe') {
+      if (payload.gateway === PaymentMethodEnum.NowPayments || payload.gateway === PaymentMethodEnum.Stripe) {
         const [successUrl, cancelUrl] = await Stripe.GetCallbackURLs();
-        const stripeResponse = await createStripeSubscription({ subscriptionTier: selectedTier.toLowerCase(), cancelUrl, successUrl });
-        url = stripeResponse.url;
+        finalPayload.successUrl = successUrl;
+        finalPayload.cancelUrl = cancelUrl;
       }
-      await Browser.OpenURL(url);
+
+      return strapiClient.request<PaymentResponse>('post', '/payments/subscription', {
+        data: finalPayload,
+      });
     },
-    onError: (error) => {
-      if (error.message) {
-        toast.warning(error.message);
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['payments', 'user'] });
+      let countdown = 3;
+      const toastId = toast.success(
+        `Payment created successfully! Redirecting in ${countdown}...`,
+      );
+      console.log('Payment creation response:', data);
+      Browser.OpenURL(data.response.url);
+      const intervalId = setInterval(() => {
+        countdown -= 1;
+        if (countdown > 0) {
+          toast.success(
+            `Payment created successfully! Redirecting in ${countdown}...`,
+            { id: toastId },
+          );
+        } else {
+          clearInterval(intervalId);
+          toast.dismiss(toastId);
+
+          navigate({ to: `/payments/${data.response.payment.documentId}` });
+        }
+      }, 1000);
+    },
+    onError: (error: any) => {
+      const specificMessage = error?.data.error?.message;
+
+      if (specificMessage) {
+        toast.error(specificMessage, {
+          action: {
+            label: 'View Payments',
+            onClick: () => navigate({ to: '/payments' }),
+          },
+        });
+      } else {
+        // Fallback for other types of errors
+        toast.error(error.message || 'Failed to create payment.');
       }
+      console.error('Payment creation error:', error);
     },
   });
+
   return {
-    createStripeSubscription,
-    createPixPayment,
-    selectPlan,
     pendingPlanTier,
     setPendingPlanTier,
     setSelectedPaymentMethod,
     paymentMethods,
-    handlePayment,
-    isPending,
+    createSubscriptionPayment, // Expose the new mutation
+    isCreatingPayment, // Expose the pending state for the new mutation
 
     selectedPaymentMethod,
   };

@@ -1,6 +1,17 @@
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { Filter, Gamepad2, History, RefreshCw, Search, ShieldAlert, ShoppingCart, Star, User2 } from 'lucide-react';
+import {
+  CreditCard,
+  Filter,
+  Gamepad2,
+  History,
+  RefreshCw,
+  Search,
+  ShieldAlert,
+  ShoppingCart,
+  Star,
+  User2,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 function SearchAnimation() {
@@ -375,7 +386,41 @@ function BadSmileAnimation() {
     </motion.div>
   );
 }
+function NoPaymentsAnimation() {
+  return (
+    <motion.div
+      className="relative w-28 h-28"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      {/* Document */}
+      <motion.div className="absolute w-20 h-24 rounded-md border-2 border-zinc-300 dark:border-zinc-600 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
+      {/* Lines on document */}
+      <motion.div className="absolute w-12 h-0.5 bg-zinc-300 dark:bg-zinc-600 left-1/2 top-10 -translate-x-1/2" />
+      <motion.div className="absolute w-12 h-0.5 bg-zinc-300 dark:bg-zinc-600 left-1/2 top-14 -translate-x-1/2" />
+      <motion.div className="absolute w-8 h-0.5 bg-zinc-300 dark:bg-zinc-600 left-1/2 top-18 -translate-x-1/2" />
 
+      {/* Fading dollar sign */}
+      <motion.div
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-4xl font-bold text-blue-500 dark:text-blue-400"
+        animate={{
+          opacity: [0, 1, 0],
+          y: [0, -10, -20],
+          scale: [0.8, 1, 0.8],
+        }}
+        transition={{
+          duration: 2.5,
+          repeat: Number.POSITIVE_INFINITY,
+          repeatType: 'loop',
+          ease: 'easeInOut',
+        }}
+      >
+        $
+      </motion.div>
+    </motion.div>
+  );
+}
 type EmptyStateProps = {
   type:
     | 'no-accounts'
@@ -385,7 +430,8 @@ type EmptyStateProps = {
     | 'no-rental-history'
     | 'no-champions'
     | 'no-skins'
-    | 'no-favorites';
+    | 'no-favorites'
+    | 'no-payments';
   searchQuery?: string;
   onAction?: () => void;
   onReset?: () => void;
@@ -463,6 +509,15 @@ export default function EmptyState({ type, searchQuery = '', onAction, onReset }
       showReset: !!searchQuery,
     },
     'no-favorites': { animation: <BadSmileAnimation />, iconFallback: <Star className="h-12 w-12 text-zinc-400" />, title: 'No favorite accounts', description: 'You haven\'t added any accounts to your favorites yet. Browse accounts and star the ones you like most.', actionLabel: '', resetLabel: '', showReset: false },
+    'no-payments': {
+      animation: <NoPaymentsAnimation />,
+      iconFallback: <CreditCard className="h-12 w-12 text-zinc-400" />,
+      title: 'No Payment History',
+      description: 'You haven\'t made any payments yet. When you do, they will appear right here.',
+      actionLabel: '',
+      resetLabel: '',
+      showReset: false,
+    },
   };
 
   const { animation, iconFallback, title, description, actionLabel, resetLabel, showReset } = content[type];
@@ -557,4 +612,8 @@ export function NoFavoritesFound({
   onBrowse: () => void;
 }) {
   return <EmptyState type="no-favorites" onAction={onBrowse} />;
+}
+
+export function NoPayments() {
+  return <EmptyState type="no-payments" />;
 }

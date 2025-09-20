@@ -102,7 +102,7 @@ function DashboardLayout() {
             <div className="flex flex-col min-h-screen bg-background">
 
               <div
-                className={cls('sticky top-0 z-50  backdrop-blur-md bg-black/20 border-b ml-[89px]')}
+                className={cls('sticky top-0 z-50  backdrop-blur-md bg-black/20 border-b ml-[84px]')}
                 style={{ '--wails-draggable': 'drag' } as React.CSSProperties}
               >
 

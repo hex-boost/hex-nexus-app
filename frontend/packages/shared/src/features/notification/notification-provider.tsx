@@ -9,13 +9,14 @@ import {
 } from '@/features/notification/types/notification.ts';
 import { useLocalStorage } from '@/hooks/use-local-storage.tsx';
 import { useWebSocket } from '@/hooks/use-websocket.tsx';
-import { useMembership } from '@/hooks/useMembership.ts';
+import { useMembership } from '@/hooks/useMembership.tsx';
 import { useUpdate } from '@/hooks/useUpdate/useUpdate.tsx';
 import { logger } from '@/lib/logger.ts';
 import { strapiClient } from '@/lib/strapi.ts';
 import { useAccountStore } from '@/stores/useAccountStore.ts';
 import { usePremiumPaymentModalStore } from '@/stores/usePremiumPaymentModalStore.ts';
 import { useUserStore } from '@/stores/useUserStore.ts';
+import { Monitor as AccountMonitor, State as AccountState } from '@account';
 import { Manager } from '@leagueManager';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Howl } from 'howler';
@@ -261,11 +262,21 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       }
       if (notification.event === NOTIFICATION_EVENTS.ACCOUNT_EXPIRED) {
         logger.info('notification-provider', 'Account expired notification received', notification.event);
-        if (isNexusAccount) {
-          Manager.ForceCloseAllClients().then(() => {
-            toast.info('Your account has expired, and the league has been closed.');
+        AccountMonitor.IsNexusAccount().then((isNexusAccount) => {
+          AccountState.Get().then((state) => {
+            if (isNexusAccount && notification.metadata.username.toLowerCase() === state?.username?.toLowerCase()) {
+              Manager.ForceCloseAllClients().then(() => {
+                toast.info('Your account has expired, and the league has been closed.');
+              }).catch(err => logger.error('notification-provider', err, {
+                state,
+                isNexusAccount,
+                notification,
+              }));
+            } else {
+              toast.info(`Your account has expired`);
+            }
           });
-        }
+        });
       }
       queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
     },

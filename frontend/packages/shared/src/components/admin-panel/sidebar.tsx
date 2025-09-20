@@ -15,7 +15,7 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        'fixed bg-black/20 backdrop-blur-md border-r-1 top-0 left-0 z-[51] h-screen translate-x-0 transition-[width] ease-in-out duration-300',
+        'fixed bg-black/20 backdrop-blur-md border-r-1 top-0 left-0 z-[49] h-screen translate-x-0 transition-[width] ease-in-out duration-300',
         !getOpenState() ? 'w-[90px]' : 'w-72',
         settings.disabled && 'hidden',
       )}

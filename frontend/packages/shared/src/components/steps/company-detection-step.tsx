@@ -1,10 +1,9 @@
 import type { DetectedCompany, SupportContact, SupportedCompany } from '../onboarding-dialog';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useMapping } from '@/lib/useMapping.tsx';
-import { AlertCircle, ArrowLeft, Building2, CheckCircle, MessageCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, Building2, CheckCircle, MessageCircle, XCircle } from 'lucide-react';
 import { useMemo } from 'react';
 
 type CompanyDetectionStepProps = {
@@ -20,151 +19,122 @@ export function CompanyDetectionStep({
   supportContact,
   onNext,
   onBack,
+  userCompanies,
 }: CompanyDetectionStepProps) {
   const { getCompanyIconNode } = useMapping();
 
-  // Find if user has any supported company permissions
-  const userCompany = useMemo(() => {
-    return supportedCompanies.find(company => company.userHasPermission === true);
-  }, [supportedCompanies]);
+  const detectedUserCompany = useMemo(() => {
+    return supportedCompanies.find(company =>
+      userCompanies.includes(company.name.toLowerCase().replace(/\s/g, '')),
+    );
+  }, [supportedCompanies, userCompanies]);
 
-  // Set hasDetectedCompany based on if we found a company with permissions
-  const hasDetectedCompany = !!userCompany;
-
-  // Create detectedCompany object from the found company with permissions
-  const detectedCompany = useMemo(() => {
-    if (!userCompany) {
+  const detectedCompanyForNext = useMemo(() => {
+    if (!detectedUserCompany) {
       return undefined;
     }
 
     return {
-      name: userCompany.name,
-      description: userCompany.description,
-      benefits: ['Premium account catalog', 'Special pricing', 'Priority support'],
-    };
-  }, [userCompany]);
+      name: detectedUserCompany.name,
+      description: detectedUserCompany.description,
 
-  // Handle the next button click
+      benefits: ['Exclusive Accounts', 'Balance Transfer Payments', 'Priority support'],
+    };
+  }, [detectedUserCompany]);
+
   const handleNext = () => {
-    onNext(detectedCompany);
+    onNext(detectedCompanyForNext);
   };
 
   return (
     <>
+      {/* Aligned with user-experience: more generic and welcoming header */}
       <DialogHeader className="text-center">
-        <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-          {hasDetectedCompany
-            ? (
-                <CheckCircle className="w-6 h-6 text-primary" />
-              )
-            : (
-                <AlertCircle className="w-6 h-6 text-muted-foreground" />
-              )}
-        </div>
-        <DialogTitle>
-          {hasDetectedCompany ? 'Company Detected!' : 'No Company Detected'}
-        </DialogTitle>
+        <DialogTitle>Check Your Company Benefits</DialogTitle>
         <DialogDescription>
-          {hasDetectedCompany
-            ? 'We\'ve automatically recognized your company affiliation'
-            : 'We couldn\'t automatically detect your company affiliation. You can still access our services with standard pricing.'}
+          We've checked your affiliations to see if you qualify for exclusive benefits.
+          Your detected companies are highlighted below.
         </DialogDescription>
       </DialogHeader>
 
-      <div className="space-y-4 py-4">
-        {hasDetectedCompany
-          ? (
-              <>
-                <div className="border rounded-lg p-4 bg-primary/5">
-                  <div className="flex items-center gap-2 mb-2">
-                    <CheckCircle className="w-5 h-5 text-primary" />
-                    <h3 className="font-semibold">{detectedCompany?.name}</h3>
-                    <Badge variant="secondary">Verified</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-3">{detectedCompany?.description}</p>
-                </div>
+      <div className="space-y-6 py-4">
+        <div>
+          <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+            <Building2 className="w-4 h-4" />
+            Supported Companies
+          </h3>
+          {/* Unified view for the list of companies */}
+          <div className="grid gap-2 max-h-48 overflow-y-auto">
+            <div className="space-y-3">
+              {supportedCompanies.map((company) => {
+                const isUserCompany = userCompanies.includes(company.name.toLowerCase().replace(/\s/g, ''));
 
-                <div className="bg-muted/50 p-3 rounded-lg">
-                  <p className="text-sm text-muted-foreground">
-                    🎯
-                    {' '}
-                    <strong>Great news!</strong>
-                    {' '}
-                    Your company has access to our premium account catalog
-                    with special pricing and priority support.
-                  </p>
-                </div>
-              </>
-            )
-          : (
-              <>
-                <div>
-                  <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-                    <Building2 className="w-4 h-4" />
-                    Supported Companies
-                  </h3>
-                  <div className="grid gap-2 max-h-48 overflow-y-auto">
-                    <div className="space-y-3">
-                      {supportedCompanies.map((company) => {
-                        const isUserCompany = company.userHasPermission === true;
+                let containerClass = 'border-gray-200 bg-gray-50/50 text-gray-500 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-400';
+                let badgeClass = 'bg-gray-100 text-gray-800';
+                let statusText = 'Not Detected';
+                let StatusIcon = XCircle;
 
-                        return (
-                          <div
-                            key={company.name}
-                            className={`flex items-center gap-3 p-3 rounded-lg border ${
-                              isUserCompany
-                                ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20'
-                                : 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50'
-                            }`}
-                            style={!isUserCompany ? { opacity: '0.6', pointerEvents: 'none' } : {}}
-                          >
-                            {getCompanyIconNode(company.name.toLowerCase().replace(/\s/g, ''))}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <h4 className="font-medium text-sm">{company.name}</h4>
-                                {isUserCompany
-                                  ? (
-                                      <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full flex items-center">
-                                        <CheckCircle className="w-3 h-3 mr-1" />
-                                        Available
-                                      </span>
-                                    )
-                                  : (
-                                      <span className="text-xs bg-gray-100 text-gray-800 px-2 py-0.5 rounded-full flex items-center">
-                                        <XCircle className="w-3 h-3 mr-1" />
-                                        Unavailable
-                                      </span>
-                                    )}
-                              </div>
-                              <p className="text-xs text-muted-foreground">{company.description}</p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
+                if (isUserCompany) {
+                  StatusIcon = CheckCircle;
+                  const companyIdentifier = company.name.toLowerCase().replace(/\s/g, '');
 
-                <Card className="border-primary/20 bg-primary/5">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <MessageCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                      <div className="flex-1">
-                        <h4 className="text-sm font-medium mb-1">Don't see your company?</h4>
-                        <p className="text-xs text-muted-foreground mb-3">
-                          We're always adding new company partnerships. Suggest your company for inclusion
-                          and get access to exclusive accounts.
-                        </p>
-                        <Button variant="outline" size="sm" className="text-xs bg-transparent">
-                          <MessageCircle className="w-3 h-3 mr-1" />
-                          {supportContact.displayText}
-                        </Button>
+                  if (companyIdentifier.includes('boostroyal')) {
+                    containerClass = 'border-boostroyal-primary bg-boostroyal-primary/10 text-foreground dark:border-boostroyal-primary dark:bg-boostroyal-primary/10';
+                    badgeClass = 'bg-boostroyal-primary/20 text-boostroyal-primary';
+                    statusText = 'Boost Royal Detected';
+                  } else if (companyIdentifier.includes('turbo')) {
+                    containerClass = 'border-turboboost-primary bg-turboboost-primary/10 text-foreground dark:border-turboboost-primary dark:bg-turboboost-primary/10';
+                    badgeClass = 'bg-turboboost-primary/20 text-turboboost-primary';
+                    statusText = 'Turbo Boost Detected';
+                  } else {
+                    containerClass = 'border-green-500 bg-green-50 text-foreground dark:border-green-700 dark:bg-green-900/20';
+                    badgeClass = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+                    statusText = 'Detected';
+                  }
+                }
+
+                return (
+                  <div
+                    key={company.name}
+
+                    className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${containerClass} ${!isUserCompany ? 'opacity-70' : ''}`}
+                  >
+                    {getCompanyIconNode(company.name.toLowerCase().replace(/\s/g, ''))}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-medium text-sm">{company.name}</h4>
+                        <span className={`text-xs px-2 py-0.5 rounded-full flex items-center ${badgeClass}`}>
+                          <StatusIcon className="w-3 h-3 mr-1" />
+                          {statusText}
+                        </span>
                       </div>
+                      <p className="text-xs text-muted-foreground">{company.description}</p>
                     </div>
-                  </CardContent>
-                </Card>
-              </>
-            )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* This card is now always visible for a better user experience */}
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <MessageCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <h4 className="text-sm font-medium mb-1">Don't see your company?</h4>
+                <p className="text-xs text-muted-foreground mb-3">
+                  We're always adding new company partnerships. Suggest your company for inclusion on Discord.
+                </p>
+                <Button variant="outline" size="sm" className="text-xs bg-transparent">
+                  <MessageCircle className="w-3 h-3 mr-1" />
+                  {supportContact.displayText}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="flex justify-between">

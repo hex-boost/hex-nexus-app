@@ -1,5 +1,5 @@
 import { Home, User } from '@geist-ui/icons';
-import { Crown, GamepadIcon } from 'lucide-react';
+import { CreditCard, Crown, GamepadIcon } from 'lucide-react';
 
 type Submenu = {
   href: string;
@@ -36,6 +36,12 @@ export function getMenuList(): Group[] {
           href: '/subscription',
           label: 'Subscription',
           icon: Crown,
+        },
+
+        {
+          href: '/payments',
+          label: 'payments',
+          icon: CreditCard,
         },
         {
           href: '/tools',

@@ -1,5 +1,5 @@
 import type { PremiumTiers } from '@/types/types.ts';
-import { useMembership } from '@/hooks/useMembership.ts';
+import { useMembership } from '@/hooks/useMembership.tsx';
 import { AlertTriangle, Clock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 

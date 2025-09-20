@@ -3,7 +3,7 @@ import { Progress } from '@/components/ui/progress';
 import { strapiClient } from '@/lib/strapi.ts';
 import { useMapping } from '@/lib/useMapping.tsx';
 import { useUserStore } from '@/stores/useUserStore.ts';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import React, { useState } from 'react';
 import { CompanyDetectionStep } from './steps/company-detection-step';
 import { ReferralStep } from './steps/referral-step';
@@ -34,21 +34,27 @@ export type SupportContact = {
 
 export function OnboardingDialog() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [data, setData] = useState<OnboardingData>({});
+  const [onboardingData, setData] = useState<OnboardingData>({});
   const { user } = useUserStore();
-  const [open, setOpen] = useState(user?.configuration?.isNewUser || false);
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(user ? user?.configuration?.isNewUser : false);
   const { mutate: onCompleteOnboarding } = useMutation({
+    mutationKey: ['users'],
     mutationFn: async () => {
-      const res = await strapiClient.axios.put(`/users/${user?.id}`, {
-        configuration: {
-          isNewUser: false,
-          referralCode: data.referralCode,
-        },
-      });
+      return await strapiClient.axios.post(`/configuration/onboarding/complete/${user?.documentId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
+    },
+  });
+
+  const { mutate: onReferralNext } = useMutation({
+    mutationFn: async () => {
+      const res = await strapiClient.axios.put(`/referralCode/link/${onboardingData.referralCode}`);
+
       return res.data;
     },
   });
-    // Internal configuration - no longer passed as props
   const supportContact: SupportContact = {
     platform: 'Discord',
     handle: '@naratios',
@@ -76,14 +82,15 @@ export function OnboardingDialog() {
   const totalSteps = 2;
   const handleReferralNext = (referralCode?: string) => {
     setData(prev => ({ ...prev, referralCode }));
+    if (referralCode) {
+      onReferralNext();
+    }
     setCurrentStep(2);
   };
 
   const handleCompanyNext = (detectedCompany?: DetectedCompany) => {
     setData(prev => ({ ...prev, detectedCompany }));
-    // Complete the onboarding process
     onCompleteOnboarding();
-    // Close the dialog
     setOpen(false);
   };
 
@@ -91,17 +98,11 @@ export function OnboardingDialog() {
     setCurrentStep(prev => Math.max(1, prev - 1));
   };
 
-  function onOpenChange(open: boolean) {
-    // Only allow closing when we're explicitly setting it to false
-    // This prevents users from skipping the onboarding process
-    if (!open) {
-      setOpen(false);
-    }
-  }
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+    <Dialog open={open}>
+      {/* <DialogOverlay className="backdrop-blur-sm" /> */}
+
+      <DialogContent closeClassName="hidden" overlayClassName="backdrop-blur-sm" className="sm:max-w-2xl">
         <div className="px-6 pt-6">
           <div className="flex justify-between text-sm text-muted-foreground mb-2">
             <span>

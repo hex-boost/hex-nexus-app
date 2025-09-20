@@ -17,10 +17,12 @@ import { Route as ProtectedImport } from './routes/_protected'
 import { Route as IndexImport } from './routes/index'
 import { Route as ProtectedToolsIndexImport } from './routes/_protected/tools/index'
 import { Route as ProtectedSubscriptionIndexImport } from './routes/_protected/subscription/index'
+import { Route as ProtectedPaymentsIndexImport } from './routes/_protected/payments/index'
 import { Route as ProtectedNotificationsIndexImport } from './routes/_protected/notifications/index'
 import { Route as ProtectedDashboardIndexImport } from './routes/_protected/dashboard/index'
 import { Route as ProtectedActiveGameIndexImport } from './routes/_protected/active-game/index'
 import { Route as ProtectedAccountsIndexImport } from './routes/_protected/accounts/index'
+import { Route as ProtectedPaymentsIdImport } from './routes/_protected/payments/$id'
 import { Route as ProtectedAccountsIdImport } from './routes/_protected/accounts/$id'
 
 // Create/Update Routes
@@ -62,6 +64,12 @@ const ProtectedSubscriptionIndexRoute = ProtectedSubscriptionIndexImport.update(
   } as any,
 )
 
+const ProtectedPaymentsIndexRoute = ProtectedPaymentsIndexImport.update({
+  id: '/payments/',
+  path: '/payments/',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+
 const ProtectedNotificationsIndexRoute =
   ProtectedNotificationsIndexImport.update({
     id: '/notifications/',
@@ -84,6 +92,12 @@ const ProtectedActiveGameIndexRoute = ProtectedActiveGameIndexImport.update({
 const ProtectedAccountsIndexRoute = ProtectedAccountsIndexImport.update({
   id: '/accounts/',
   path: '/accounts/',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+
+const ProtectedPaymentsIdRoute = ProtectedPaymentsIdImport.update({
+  id: '/payments/$id',
+  path: '/payments/$id',
   getParentRoute: () => ProtectedRoute,
 } as any)
 
@@ -132,6 +146,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedAccountsIdImport
       parentRoute: typeof ProtectedImport
     }
+    '/_protected/payments/$id': {
+      id: '/_protected/payments/$id'
+      path: '/payments/$id'
+      fullPath: '/payments/$id'
+      preLoaderRoute: typeof ProtectedPaymentsIdImport
+      parentRoute: typeof ProtectedImport
+    }
     '/_protected/accounts/': {
       id: '/_protected/accounts/'
       path: '/accounts'
@@ -160,6 +181,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedNotificationsIndexImport
       parentRoute: typeof ProtectedImport
     }
+    '/_protected/payments/': {
+      id: '/_protected/payments/'
+      path: '/payments'
+      fullPath: '/payments'
+      preLoaderRoute: typeof ProtectedPaymentsIndexImport
+      parentRoute: typeof ProtectedImport
+    }
     '/_protected/subscription/': {
       id: '/_protected/subscription/'
       path: '/subscription'
@@ -181,20 +209,24 @@ declare module '@tanstack/react-router' {
 
 interface ProtectedRouteChildren {
   ProtectedAccountsIdRoute: typeof ProtectedAccountsIdRoute
+  ProtectedPaymentsIdRoute: typeof ProtectedPaymentsIdRoute
   ProtectedAccountsIndexRoute: typeof ProtectedAccountsIndexRoute
   ProtectedActiveGameIndexRoute: typeof ProtectedActiveGameIndexRoute
   ProtectedDashboardIndexRoute: typeof ProtectedDashboardIndexRoute
   ProtectedNotificationsIndexRoute: typeof ProtectedNotificationsIndexRoute
+  ProtectedPaymentsIndexRoute: typeof ProtectedPaymentsIndexRoute
   ProtectedSubscriptionIndexRoute: typeof ProtectedSubscriptionIndexRoute
   ProtectedToolsIndexRoute: typeof ProtectedToolsIndexRoute
 }
 
 const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedAccountsIdRoute: ProtectedAccountsIdRoute,
+  ProtectedPaymentsIdRoute: ProtectedPaymentsIdRoute,
   ProtectedAccountsIndexRoute: ProtectedAccountsIndexRoute,
   ProtectedActiveGameIndexRoute: ProtectedActiveGameIndexRoute,
   ProtectedDashboardIndexRoute: ProtectedDashboardIndexRoute,
   ProtectedNotificationsIndexRoute: ProtectedNotificationsIndexRoute,
+  ProtectedPaymentsIndexRoute: ProtectedPaymentsIndexRoute,
   ProtectedSubscriptionIndexRoute: ProtectedSubscriptionIndexRoute,
   ProtectedToolsIndexRoute: ProtectedToolsIndexRoute,
 }
@@ -209,10 +241,12 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/overlay': typeof OverlayRoute
   '/accounts/$id': typeof ProtectedAccountsIdRoute
+  '/payments/$id': typeof ProtectedPaymentsIdRoute
   '/accounts': typeof ProtectedAccountsIndexRoute
   '/active-game': typeof ProtectedActiveGameIndexRoute
   '/dashboard': typeof ProtectedDashboardIndexRoute
   '/notifications': typeof ProtectedNotificationsIndexRoute
+  '/payments': typeof ProtectedPaymentsIndexRoute
   '/subscription': typeof ProtectedSubscriptionIndexRoute
   '/tools': typeof ProtectedToolsIndexRoute
 }
@@ -223,10 +257,12 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/overlay': typeof OverlayRoute
   '/accounts/$id': typeof ProtectedAccountsIdRoute
+  '/payments/$id': typeof ProtectedPaymentsIdRoute
   '/accounts': typeof ProtectedAccountsIndexRoute
   '/active-game': typeof ProtectedActiveGameIndexRoute
   '/dashboard': typeof ProtectedDashboardIndexRoute
   '/notifications': typeof ProtectedNotificationsIndexRoute
+  '/payments': typeof ProtectedPaymentsIndexRoute
   '/subscription': typeof ProtectedSubscriptionIndexRoute
   '/tools': typeof ProtectedToolsIndexRoute
 }
@@ -238,10 +274,12 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/overlay': typeof OverlayRoute
   '/_protected/accounts/$id': typeof ProtectedAccountsIdRoute
+  '/_protected/payments/$id': typeof ProtectedPaymentsIdRoute
   '/_protected/accounts/': typeof ProtectedAccountsIndexRoute
   '/_protected/active-game/': typeof ProtectedActiveGameIndexRoute
   '/_protected/dashboard/': typeof ProtectedDashboardIndexRoute
   '/_protected/notifications/': typeof ProtectedNotificationsIndexRoute
+  '/_protected/payments/': typeof ProtectedPaymentsIndexRoute
   '/_protected/subscription/': typeof ProtectedSubscriptionIndexRoute
   '/_protected/tools/': typeof ProtectedToolsIndexRoute
 }
@@ -254,10 +292,12 @@ export interface FileRouteTypes {
     | '/login'
     | '/overlay'
     | '/accounts/$id'
+    | '/payments/$id'
     | '/accounts'
     | '/active-game'
     | '/dashboard'
     | '/notifications'
+    | '/payments'
     | '/subscription'
     | '/tools'
   fileRoutesByTo: FileRoutesByTo
@@ -267,10 +307,12 @@ export interface FileRouteTypes {
     | '/login'
     | '/overlay'
     | '/accounts/$id'
+    | '/payments/$id'
     | '/accounts'
     | '/active-game'
     | '/dashboard'
     | '/notifications'
+    | '/payments'
     | '/subscription'
     | '/tools'
   id:
@@ -280,10 +322,12 @@ export interface FileRouteTypes {
     | '/login'
     | '/overlay'
     | '/_protected/accounts/$id'
+    | '/_protected/payments/$id'
     | '/_protected/accounts/'
     | '/_protected/active-game/'
     | '/_protected/dashboard/'
     | '/_protected/notifications/'
+    | '/_protected/payments/'
     | '/_protected/subscription/'
     | '/_protected/tools/'
   fileRoutesById: FileRoutesById
@@ -326,10 +370,12 @@ export const routeTree = rootRoute
       "filePath": "_protected.tsx",
       "children": [
         "/_protected/accounts/$id",
+        "/_protected/payments/$id",
         "/_protected/accounts/",
         "/_protected/active-game/",
         "/_protected/dashboard/",
         "/_protected/notifications/",
+        "/_protected/payments/",
         "/_protected/subscription/",
         "/_protected/tools/"
       ]
@@ -342,6 +388,10 @@ export const routeTree = rootRoute
     },
     "/_protected/accounts/$id": {
       "filePath": "_protected/accounts/$id.tsx",
+      "parent": "/_protected"
+    },
+    "/_protected/payments/$id": {
+      "filePath": "_protected/payments/$id.tsx",
       "parent": "/_protected"
     },
     "/_protected/accounts/": {
@@ -358,6 +408,10 @@ export const routeTree = rootRoute
     },
     "/_protected/notifications/": {
       "filePath": "_protected/notifications/index.tsx",
+      "parent": "/_protected"
+    },
+    "/_protected/payments/": {
+      "filePath": "_protected/payments/index.tsx",
       "parent": "/_protected"
     },
     "/_protected/subscription/": {

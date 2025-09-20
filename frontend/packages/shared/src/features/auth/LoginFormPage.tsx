@@ -50,12 +50,16 @@ export function LoginFormPage() {
     mutationFn: async (params: { email: string; username: string; password: string }) => {
       const base64Avatar = await getDefaultBase64Avatar(params.username);
       const uploadedAvatar = await uploadImageFromBase64(base64Avatar);
+      const hwid
+            = import.meta.env.MODE === 'development'
+              ? `dev-${Math.random().toString(36).slice(2, 10)}`
+              : await HWID.Get();
       const registerPayload = {
         username: params.username,
         email: params.email,
         password: params.password,
         avatar: uploadedAvatar.data[0].id,
-        hwid: await HWID.Get(),
+        hwid,
       } as any;
       return await userAuth.register(registerPayload);
     },
@@ -93,7 +97,7 @@ export function LoginFormPage() {
       }
     },
     onError: (error) => {
-      logger.error('LoginFormPage', 'Error in Discord login:', error);
+      logger.error('LoginFormPage', `Error in Discord login: ${error}`);
       toast.error('Failed to authenticate with Discord');
     },
   });

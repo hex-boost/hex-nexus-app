@@ -1,4 +1,4 @@
-import PricingCards from '@/components/ui/pricing-cards.tsx';
+import PricingCards from '@/components/checkout/pricing-cards.tsx';
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_protected/subscription/')({

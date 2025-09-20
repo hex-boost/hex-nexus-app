@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { useMembership } from '@/hooks/useMembership.ts';
+import { useMembership } from '@/hooks/useMembership.tsx';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { CheckCircle2, Crown, Lock, Sparkles, Star } from 'lucide-react';
@@ -57,7 +57,7 @@ export default function PremiumPaywall({
   }
 
   return (
-    <div className={cn('fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm', className)}>
+    <div className={cn('fixed inset-0 z-[47] flex items-center justify-center p-4 backdrop-blur-sm', className)}>
       <div className="absolute inset-0 bg-shade10/70" />
 
       <motion.div

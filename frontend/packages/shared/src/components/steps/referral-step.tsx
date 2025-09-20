@@ -2,7 +2,6 @@ import { Button } from '@/components/ui/button';
 import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Gift } from 'lucide-react';
 import { useState } from 'react';
 
 type ReferralStepProps = {
@@ -19,9 +18,6 @@ export function ReferralStep({ onNext }: ReferralStepProps) {
   return (
     <>
       <DialogHeader className="text-center">
-        <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-          <Gift className="w-6 h-6 text-primary" />
-        </div>
         <DialogTitle>Welcome! Do you have a referral code?</DialogTitle>
         <DialogDescription>
           Enter a referral code to unlock exclusive benefits (optional)
@@ -39,14 +35,14 @@ export function ReferralStep({ onNext }: ReferralStepProps) {
           />
         </div>
 
-        <div className="bg-muted/50 p-3 rounded-lg">
+        <div className="bg-muted/10 p-3 rounded-lg">
           <p className="text-sm text-muted-foreground">
             💡
             {' '}
             <strong>Tip:</strong>
             {' '}
-            Referral codes can provide access to premium features,
-            discounts, or exclusive content.
+            Referral codes can provide access to exclusive
+            discounts.
           </p>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import type { PremiumType } from '@/types/types';
-import { useMembership } from '@/hooks/useMembership.ts';
+import { useMembership } from '@/hooks/useMembership.tsx';
 import { cn } from '@/lib/utils';
 import { useUserStore } from '@/stores/useUserStore.ts';
 import { AlertCircle, Calendar, CheckCircle2, Shield } from 'lucide-react';

@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge.tsx';
 import { Button } from '@/components/ui/button';
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useMembership } from '@/hooks/useMembership.ts';
+import { useMembership } from '@/hooks/useMembership.tsx';
 import { getMenuList } from '@/lib/menu-list';
 import { cn } from '@/lib/utils';
 import { Link, useLocation } from '@tanstack/react-router';

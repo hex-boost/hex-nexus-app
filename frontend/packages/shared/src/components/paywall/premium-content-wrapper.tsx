@@ -1,6 +1,6 @@
 import type React from 'react';
 import PremiumPaywall from '@/components/paywall/premium-paywall.tsx';
-import { useMembership } from '@/hooks/useMembership.ts';
+import { useMembership } from '@/hooks/useMembership.tsx';
 import { useEffect, useState } from 'react';
 
 type PremiumContentWrapperProps = {

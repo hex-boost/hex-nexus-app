@@ -1,5 +1,5 @@
 import type { PremiumTiers } from '@/types/types.ts';
-import type { LucideAArrowDown } from 'lucide-react';
+import type { ReactNode } from 'react';
 
 export type Benefit = {
   title: string;
@@ -79,10 +79,18 @@ export type CheckoutSession = {
   url: string;
 };
 
-export type PaymentMethodsAccepted = 'Pix' | 'Stripe' | 'BR Balance' | 'Turbo Boost Balance';
+export enum PaymentMethodEnum {
+  Stripe = 'stripe',
+  MercadoPago = 'mercadoPago',
+  BoostRoyal = 'boostRoyal',
+  TurboBoost = 'turboBoost',
+  NowPayments = 'nowPayments',
+  Manual = 'manual',
+}
 export type PaymentMethod = {
-  title: PaymentMethodsAccepted;
+  title: string;
+  method: PaymentMethodEnum;
   description: string;
-  icon: string | typeof LucideAArrowDown;
+  icon: ReactNode;
   isExternal?: boolean;
 };
