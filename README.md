@@ -6,7 +6,7 @@ This template comes with Vite, React, TypeScript, TailwindCSS and shadcn/ui.
 
 Built with `Wails v2.5.1` and [shadcn's CLI](https://ui.shadcn.com/docs/cli)
 
-### Using the Template
+## Using the Template
 ```console
 wails init -n project-name -t https://github.com/Mahcks/wails-vite-react-tailwind-shadcnui-ts
 ```
