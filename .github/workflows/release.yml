@@ -49,36 +49,43 @@ jobs:
       - name: Install MinGW (GCC for CGO)
         run: choco install mingw --no-progress --params "/InstallDir:C:\mingw-w64"
 
-      - name: Install NSIS and Add to PATH
+      - name: Install NSIS and Add to PATH (Optimized)
         id: setup_nsis
         shell: pwsh
         run: |
-          # 1. Install NSIS using Chocolatey
+          # 1. Instala o NSIS usando Chocolatey
           choco install nsis -y
           
-          # 2. Dynamically find the makensis.exe executable on the entire C: drive
-          # This is robust and finds the file no matter where choco puts it.
-          Write-Host "Searching for makensis.exe..."
-          $makensisFile = Get-ChildItem -Path C:\ -Recurse -Filter "makensis.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+          # --- Lógica de busca otimizada ---
+          $PrimaryNsisPath = "C:\Program Files (x86)\NSIS"
+          $finalNsisBinPath = ""
           
-          # 3. Check if the file was found and fail if it wasn't
-          if ($null -eq $makensisFile) {
-            Write-Error "FATAL: makensis.exe was not found on the runner after installation."
+          # 2. Tenta o caminho primário e mais provável primeiro (é mais rápido)
+          Write-Host "Verificando o caminho primário e esperado: '$PrimaryNsisPath'"
+          if (Test-Path -Path (Join-Path $PrimaryNsisPath "makensis.exe")) {
+            $finalNsisBinPath = $PrimaryNsisPath
+            Write-Host "SUCESSO: makensis.exe encontrado no caminho primário."
+          } else {
+            # 3. Se falhar, executa a busca completa como um plano B (fallback)
+            Write-Host "AVISO: makensis.exe não encontrado no caminho primário. Iniciando busca completa no sistema..."
+            $makensisFile = Get-ChildItem -Path C:\ -Recurse -Filter "makensis.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+          
+            if ($null -ne $makensisFile) {
+              $finalNsisBinPath = $makensisFile.DirectoryName
+              Write-Host "SUCESSO: makensis.exe encontrado através da busca completa em: '$finalNsisBinPath'"
+            }
+          }
+          
+          # 4. Se o caminho final não foi encontrado nem no primário nem na busca, falha o workflow
+          if ([string]::IsNullOrEmpty($finalNsisBinPath)) {
+            Write-Error "FALHA CRÍTICA: makensis.exe não foi encontrado no runner após a instalação. O build não pode continuar."
             exit 1
           }
           
-          # 4. Get the parent directory (e.g., "C:\ProgramData\chocolatey\lib\nsis\tools\bin")
-          $nsisBinPath = $makensisFile.DirectoryName
-          Write-Host "Discovered NSIS binary path: $nsisBinPath"
+          # 5. Adiciona o caminho CORRETO e encontrado ao GITHUB_PATH para os próximos passos
+          Write-Host "Adicionando '$finalNsisBinPath' ao GITHUB_PATH."
+          echo "$finalNsisBinPath" >> $env:GITHUB_PATH
           
-          # 5. Add the CORRECT, discovered path to the GITHUB_PATH for all subsequent steps
-          echo "$nsisBinPath" >> $env:GITHUB_PATH
-          Write-Host "Successfully added '$nsisBinPath' to GITHUB_PATH."
-          
-          # 6. Verify that the command can now be found in the updated PATH
-          Write-Host "Verifying 'makensis' is now available..."
-          where.exe makensis
-
       - name: Verify GCC Path and Version
         run: |
           echo "--- PATH ---"
