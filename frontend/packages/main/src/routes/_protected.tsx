@@ -27,7 +27,7 @@ import { NotificationBell } from '@/features/notification/NotificationBell.tsx';
 import { UserProfile } from '@/features/user-profile/UserProfile.tsx';
 import { useCommonFetch } from '@/hooks/useCommonFetch.ts';
 import { useFavoriteAccounts } from '@/hooks/useFavoriteAccounts.ts';
-import { useMembership } from '@/hooks/useMembership.ts';
+import { useMembership } from '@/hooks/useMembership.tsx';
 import { useUserStore } from '@/stores/useUserStore';
 import * as Summoner from '@summonerClient';
 import { createFileRoute, Outlet, useRouter } from '@tanstack/react-router';
