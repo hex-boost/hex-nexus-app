@@ -45,6 +45,7 @@ export default function PaymentDetails({ paymentId }: PaymentDetailsProps) {
   ];
 
   const payment: Payment | undefined = allPaymentsArray.find(
+
     p => p.documentId === paymentId,
   );
 
@@ -73,7 +74,14 @@ export default function PaymentDetails({ paymentId }: PaymentDetailsProps) {
   const formatPrice = (price: number) => `${getCurrencySymbol(payment.currency)}${(price / 100).toFixed(2)}`;
   function openPaymentLink() {
     console.log('openPaymentLink', payment);
-    Browser.OpenURL(payment?.metadata.sessionUrl);
+    let url = payment?.metadata.sessionUrl;
+    if (payment?.gateway === 'boostRoyal') {
+      url = 'https://dashboard.boostroyal.com/profile';
+    }
+    if (payment?.gateway === 'turboBoost') {
+      url = 'https://boosting.turboboost.gg/balance';
+    }
+    Browser.OpenURL(url);
   }
   const getTutorialForGateway = (gatewayName: string) => {
     switch (gatewayName) {
