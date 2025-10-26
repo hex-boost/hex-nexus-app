@@ -119,6 +119,23 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
     persistedState.filters.minBlueEssence || 0,
   );
 
+  const [debouncedState, setDebouncedState] = useState(state);
+  const debouncedUpdate = useMemo(
+    () =>
+      debounce((newState: AccountsState) => {
+        setDebouncedState(newState);
+      }, 500), // 500ms de espera. Ajuste conforme necessário.
+    [],
+  );
+  useEffect(() => {
+    // Quando 'state' mudar (filtros, busca, etc.), chamamos a função com debounce.
+    debouncedUpdate(state);
+
+    // Cleanup para cancelar o debounce se o componente for desmontado
+    return () => {
+      debouncedUpdate.cancel();
+    };
+  }, [state, debouncedUpdate]);
   // Create a debounced filter update function
   // Update persisted state when any part changes
   const updatePersistedState = useCallback(() => {
@@ -215,7 +232,7 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
 
   // Build API query parameters
   const buildQueryParams = useCallback((page: number) => {
-    const { filters, searchQuery, sortConfig } = state;
+    const { filters, searchQuery, sortConfig } = debouncedState;
     const strapiFilters: any = {};
 
     // Document ID search
@@ -395,13 +412,13 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
     }
 
     return queryParams;
-  }, [state]);
+  }, [debouncedState]);
 
   // Main data query
   const { data: rawData, isLoading, isFetching } = useQuery({ // Use isFetching for loading indicators during background updates
-    queryKey: ['accounts', state.filters, state.searchQuery, state.pagination.page, state.pagination.pageSize, state.sortConfig],
+    queryKey: ['accounts', debouncedState],
     queryFn: async () => {
-      const queryParams = buildQueryParams(state.pagination.page);
+      const queryParams = buildQueryParams(debouncedState.pagination.page);
       return await strapiClient.find<AccountWithPrice[]>('accounts/available', queryParams);
     },
   });
