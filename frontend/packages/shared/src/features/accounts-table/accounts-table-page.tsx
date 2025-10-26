@@ -291,36 +291,16 @@ export function AccountsTablePage() {
                     <Label className="text-sm font-medium mb-1.5 block">
                       Server
                     </Label>
-                    {filters.region !== '' && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setFilters({ ...filters, region: '' })}
-                        className="h-6 text-xs text-muted-foreground hover:text-foreground"
-                      >
-                        Clear server
-                      </Button>
-                    )}
+
                   </div>
                   <Select
-                    defaultValue="any"
                     value={filters.region}
                     onValueChange={value => setFilters({ ...filters, region: value })}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Any Server" />
+                      <SelectValue placeholder="Select a Server" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem className="flex items-center" value="any">
-                        <div
-                          className="w-6 flex items-center justify-center h-6"
-                        >
-                          {getRegionIcon('any')}
-                        </div>
-                        <span>
-                          Any Server
-                        </span>
-                      </SelectItem>
                       {availableRegions.map(region => (
                         <SelectItem className="flex items-center" key={region} value={region}>
                           <div className="w-6 h-6 flex items-center justify-center">

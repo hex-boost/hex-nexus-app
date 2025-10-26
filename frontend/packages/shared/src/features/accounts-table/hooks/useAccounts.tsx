@@ -69,7 +69,7 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
       game: '',
       divisions: [],
       ranks: [],
-      region: '',
+      region: 'NA1',
       queueType: 'soloqueue', // Add default queue type
       company: '',
       status: '',
