@@ -6,7 +6,7 @@ import { useMapping } from '@/lib/useMapping.tsx';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import debounce from 'lodash/debounce';
-// Import lodash get for safe property access
+
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -32,7 +32,7 @@ export type FilterState = {
   game: string;
   divisions: string[];
   ranks: string[];
-  queueType: string; // Add queueType property
+  queueType: string;
   region: string;
   company: string;
   status: string;
@@ -70,7 +70,7 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
       divisions: [],
       ranks: [],
       region: 'NA1',
-      queueType: 'soloqueue', // Add default queue type
+      queueType: 'soloqueue',
       company: '',
       status: '',
       selectedChampions: [],
@@ -91,7 +91,6 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
 
   const { getRankColor, getEloIcon, getRegionIcon, getGameIcon } = useMapping();
 
-  // Get persisted state or use defaults
   const persistedState = (() => {
     const state = queryClient.getQueryData(['accounts-filter-state']);
     if (!state) {
@@ -120,32 +119,30 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
   );
 
   const [debouncedState, setDebouncedState] = useState(state);
+
   const debouncedUpdate = useMemo(
     () =>
       debounce((newState: AccountsState) => {
         setDebouncedState(newState);
-      }, 500), // 500ms de espera. Ajuste conforme necessário.
+      }, 500),
     [],
   );
+
   useEffect(() => {
-    // Quando 'state' mudar (filtros, busca, etc.), chamamos a função com debounce.
     debouncedUpdate(state);
 
-    // Cleanup para cancelar o debounce se o componente for desmontado
     return () => {
       debouncedUpdate.cancel();
     };
-  }, [state, debouncedUpdate]);
-  // Create a debounced filter update function
-  // Update persisted state when any part changes
+  }, [state.searchQuery, state.filters, state.sortConfig, state.pagination, debouncedUpdate, state]);
+
   const updatePersistedState = useCallback(() => {
     queryClient.setQueryData(['accounts-filter-state'], state);
   }, [queryClient, state]);
 
-  // Individual setters for state properties
   const setSearchQuery = useCallback((value: string) => {
     setState((prev) => {
-      const newState = { ...prev, searchQuery: value };
+      const newState = { ...prev, searchQuery: value, pagination: { ...prev.pagination, page: 1 } };
       queryClient.setQueryData(['accounts-filter-state'], newState);
       return newState;
     });
@@ -161,7 +158,7 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
 
   const setFilters = useCallback((value: FilterState) => {
     setState((prev) => {
-      const newState = { ...prev, filters: value };
+      const newState = { ...prev, filters: value, pagination: { ...prev.pagination, page: 1 } };
       queryClient.setQueryData(['accounts-filter-state'], newState);
       return newState;
     });
@@ -190,7 +187,7 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
       return newState;
     });
   }, [queryClient]);
-    // Reset all filters
+
   const resetFilters = useCallback(() => {
     const newState = {
       ...DEFAULT_STATE,
@@ -203,7 +200,6 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
     queryClient.setQueryData(['accounts-filter-state'], newState);
   }, [queryClient, state.pagination.pageSize, DEFAULT_STATE]);
 
-  // Sort handling
   const requestSort = useCallback((key: SortKey) => {
     setState((prev) => {
       let direction: 'ascending' | 'descending' | null = 'ascending';
@@ -230,22 +226,18 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
     });
   }, [queryClient]);
 
-  // Build API query parameters
   const buildQueryParams = useCallback((page: number) => {
     const { filters, searchQuery, sortConfig } = debouncedState;
     const strapiFilters: any = {};
 
-    // Document ID search
     if (searchQuery) {
       strapiFilters.documentId = { $containsi: searchQuery };
     }
 
-    // Blue essence minimum
     if (filters.minBlueEssence > 0) {
       strapiFilters.blueEssence = { $gte: filters.minBlueEssence };
     }
 
-    // Region filter
     if (filters.region && filters.region !== 'any') {
       strapiFilters.server = filters.region;
     }
@@ -262,7 +254,6 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
       strapiFilters.LCUchampions = championsFilter;
     }
 
-    // Skins filter
     if (filters.selectedSkins?.length > 0) {
       const skinsFilter = {} as any;
       filters.selectedSkins.forEach((id, index) => {
@@ -272,7 +263,6 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
       strapiFilters.LCUskins = skinsFilter;
     }
 
-    // Restrictions filter
     if (filters.leaverStatus?.length > 0) {
       const restrictionFilter: any = {} as any;
       filters.leaverStatus.forEach((status, index) => {
@@ -282,8 +272,7 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
       strapiFilters.restriction = restrictionFilter;
     }
 
-    // Rank and division filters
-    const queueTypeFilter = filters.queueType || 'soloqueue'; // Default queue type
+    const queueTypeFilter = filters.queueType || 'soloqueue';
     const inputRanks = filters.ranks?.map(rank => rank.toUpperCase()) || [];
     const divisions = filters.divisions || [];
 
@@ -295,7 +284,6 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
       const selectedIsUnranked = inputRanks.includes('UNRANKED');
       const selectedDefinedRanks = inputRanks.filter(r => r !== 'UNRANKED');
 
-      // Helper to build conditions for defined ranks/divisions
       const buildDefinedRankDivisionMatcher = (ranksToMatch: string[], divsToMatch: string[]) => {
         const conditions: any[] = [];
         if (ranksToMatch.length > 0 && divsToMatch.length > 0) {
@@ -308,7 +296,6 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
           if (ranksToMatch.length === 1) {
             conditions.push({ elo: { name: { $eqi: ranksToMatch[0] } } });
           } else {
-            // Create an OR condition with case-insensitive equality for each rank
             const rankConditions = ranksToMatch.map(rank => ({
               elo: { name: { $eqi: rank } },
             }));
@@ -325,21 +312,19 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
 
       const definedRankDivisionMatcher = buildDefinedRankDivisionMatcher(selectedDefinedRanks, divisions);
 
-      // Condition 1: Current/provisory rank matches a *defined* selected rank/division
       if (definedRankDivisionMatcher) {
         orConditions.push({
           rankings: {
             $and: [
               { queueType: { $eqi: queueTypeFilter } },
               { type: { $in: ['current', 'provisory'] } },
-              { elo: { name: { $nin: ['unranked', '', null] } } }, // Elo must be defined (not unranked, empty, or null)
+              { elo: { name: { $nin: ['unranked', '', null] } } },
               definedRankDivisionMatcher,
             ],
           },
         });
       }
 
-      // Condition 2: If "UNRANKED" is selected, current/provisory rank is unranked/empty/non-existent
       if (selectedIsUnranked) {
         orConditions.push({
           rankings: {
@@ -347,7 +332,7 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
               { queueType: { $eqi: queueTypeFilter } },
               { type: { $in: ['current', 'provisory'] } },
               {
-                $or: [ // Elo is unranked, empty, or does not exist
+                $or: [
                   { elo: { name: { $eqi: 'unranked' } } },
                   { elo: { name: { $eqi: '' } } },
                   { elo: { $null: true } },
@@ -358,11 +343,10 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
         });
       }
 
-      // Condition 3: Current/provisory is unranked/empty, BUT previous rank matches a *defined* selected rank/division
       if (definedRankDivisionMatcher) {
         orConditions.push({
           $and: [
-            { // Current/provisory is unranked/empty/non-existent
+            {
               rankings: {
                 $and: [
                   { queueType: { $eqi: queueTypeFilter } },
@@ -377,12 +361,12 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
                 ],
               },
             },
-            { // Previous rank matches defined criteria
+            {
               rankings: {
                 $and: [
                   { queueType: { $eqi: queueTypeFilter } },
                   { type: { $eqi: 'previous' } },
-                  { elo: { name: { $nin: ['unranked', '', null] } } }, // Previous Elo must be defined
+                  { elo: { name: { $nin: ['unranked', '', null] } } },
                   definedRankDivisionMatcher,
                 ],
               },
@@ -412,11 +396,15 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
     }
 
     return queryParams;
-  }, [debouncedState]);
+  }, [debouncedState, state.pagination.pageSize]);
 
-  // Main data query
-  const { data: rawData, isLoading, isFetching } = useQuery({ // Use isFetching for loading indicators during background updates
-    queryKey: ['accounts', debouncedState],
+  const { data: rawData, isLoading, isFetching } = useQuery({
+    queryKey: ['accounts', {
+      filters: debouncedState.filters,
+      searchQuery: debouncedState.searchQuery,
+      pagination: debouncedState.pagination,
+      sortConfig: debouncedState.sortConfig,
+    }],
     queryFn: async () => {
       const queryParams = buildQueryParams(debouncedState.pagination.page);
       return await strapiClient.find<AccountWithPrice[]>('accounts/available', queryParams);
@@ -430,25 +418,31 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
         minBlueEssence: value,
       });
     }, 200), [setFilters, state.filters]);
-    // Function to update slider value immediately (for UI) but debounce the actual filter
+
   const handleBlueEssenceChange = useCallback((value: number) => {
     setSliderValue(value);
     debouncedSetBlueEssence(value);
   }, [debouncedSetBlueEssence]);
 
-  // Clean up the debounce on unmount
   useEffect(() => {
     return () => {
       debouncedSetBlueEssence.cancel();
     };
   }, [debouncedSetBlueEssence]);
-  // Prefetch next page
+
   useEffect(() => {
     if (rawData) {
       const nextPage = state.pagination.page + 1;
-      if (nextPage <= Math.ceil(rawData.meta.pagination.total / state.pagination.pageSize)) {
+      const totalPages = Math.ceil(rawData.meta.pagination.total / state.pagination.pageSize);
+      if (nextPage <= totalPages) {
+        const queryKey = ['accounts', {
+          filters: state.filters,
+          searchQuery: state.searchQuery,
+          pagination: { ...state.pagination, page: nextPage },
+          sortConfig: state.sortConfig,
+        }];
         queryClient.prefetchQuery({
-          queryKey: ['accounts', state.filters, state.searchQuery, nextPage, state.pagination.pageSize, state.sortConfig],
+          queryKey,
           queryFn: async () => {
             const queryParams = buildQueryParams(nextPage);
             return await strapiClient.find<AccountWithPrice[]>('accounts/available', queryParams);
@@ -458,12 +452,10 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
     }
   }, [rawData, state, queryClient, buildQueryParams]);
 
-  // Navigation handler
   const handleViewAccountDetails = (accountId: string) => {
     router.navigate({ to: `/accounts/${accountId}` });
   };
 
-  // Sort indicator component
   const SortIndicator = ({ column }: { column: SortKey }) => {
     if (!state.sortConfig || state.sortConfig.key !== column || state.sortConfig.direction === null) {
       return <ArrowUpDown className="ml-1 h-4 w-4" />;
@@ -474,7 +466,6 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
       : <ArrowDown className="ml-1 h-4 w-4" />;
   };
 
-  // Page change handler
   const handlePageChange = useCallback((newPage: number) => {
     setPagination({ ...state.pagination, page: newPage });
   }, [state.pagination, setPagination]);
