@@ -279,11 +279,6 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
     const hasRankOrDivisionFilters = inputRanks.length > 0 || divisions.length > 0;
 
     if (hasRankOrDivisionFilters) {
-      const orConditions: any[] = [];
-
-      const selectedIsUnranked = inputRanks.includes('UNRANKED');
-      const selectedDefinedRanks = inputRanks.filter(r => r !== 'UNRANKED');
-
       const buildDefinedRankDivisionMatcher = (ranksToMatch: string[], divsToMatch: string[]) => {
         const conditions: any[] = [];
         if (ranksToMatch.length > 0 && divsToMatch.length > 0) {
@@ -304,79 +299,28 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
         } else if (divsToMatch.length > 0) {
           conditions.push({ division: { $in: divsToMatch } });
         }
+
         if (conditions.length === 0) {
           return null;
         }
+
         return conditions.length === 1 ? conditions[0] : { $or: conditions };
       };
 
-      const definedRankDivisionMatcher = buildDefinedRankDivisionMatcher(selectedDefinedRanks, divisions);
+      const rankDivisionMatcher = buildDefinedRankDivisionMatcher(inputRanks, divisions);
 
-      if (definedRankDivisionMatcher) {
-        orConditions.push({
-          rankings: {
-            $and: [
-              { queueType: { $eqi: queueTypeFilter } },
-              { type: { $in: ['current', 'provisory'] } },
-              { elo: { name: { $nin: ['unranked', '', null] } } },
-              definedRankDivisionMatcher,
-            ],
-          },
-        });
-      }
+      if (rankDivisionMatcher) {
+        strapiFilters.rankings = {
 
-      if (selectedIsUnranked) {
-        orConditions.push({
-          rankings: {
-            $and: [
-              { queueType: { $eqi: queueTypeFilter } },
-              { type: { $in: ['current', 'provisory'] } },
-              {
-                $or: [
-                  { elo: { name: { $eqi: 'unranked' } } },
-                  { elo: { name: { $eqi: '' } } },
-                  { elo: { $null: true } },
-                ],
-              },
-            ],
-          },
-        });
-      }
-
-      if (definedRankDivisionMatcher) {
-        orConditions.push({
           $and: [
-            {
-              rankings: {
-                $and: [
-                  { queueType: { $eqi: queueTypeFilter } },
-                  { type: { $in: ['current', 'provisory'] } },
-                  {
-                    $or: [
-                      { elo: { name: { $eqi: 'unranked' } } },
-                      { elo: { name: { $eqi: '' } } },
-                      { elo: { $null: true } },
-                    ],
-                  },
-                ],
-              },
-            },
-            {
-              rankings: {
-                $and: [
-                  { queueType: { $eqi: queueTypeFilter } },
-                  { type: { $eqi: 'previous' } },
-                  { elo: { name: { $nin: ['unranked', '', null] } } },
-                  definedRankDivisionMatcher,
-                ],
-              },
-            },
-          ],
-        });
-      }
 
-      if (orConditions.length > 0) {
-        strapiFilters.$or = orConditions;
+            { queueType: { $eqi: queueTypeFilter } },
+
+            { type: { $in: ['current', 'provisory'] } },
+
+            rankDivisionMatcher,
+          ],
+        };
       }
     }
     const queryParams: any = {
