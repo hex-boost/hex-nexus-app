@@ -44,6 +44,12 @@ export default function PricingCards() {
     setPlanForCheckout(plan);
   };
 
+  const handleExtend = () => {
+    if (currentPlanDetails) {
+      handleCheckout(currentPlanDetails);
+    }
+  };
+
   const handleBackFromCheckout = () => {
     setPlanForCheckout(null);
   };
@@ -62,6 +68,7 @@ export default function PricingCards() {
           plan={currentPlanDetails}
           selectedCurrency={selectedCurrency}
           onUpgradeClick={scrollToPricing}
+          onExtendClick={handleExtend}
         />
       )}
       <UpgradeOptions

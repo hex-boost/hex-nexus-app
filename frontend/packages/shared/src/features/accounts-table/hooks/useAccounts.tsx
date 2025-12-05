@@ -316,7 +316,7 @@ export function useAccounts(initialPage = 1, initialPageSize = 20) {
 
             { queueType: { $eqi: queueTypeFilter } },
 
-            { type: { $in: ['current', 'provisory'] } },
+            { type: { $in: ['current', 'provisory', 'previous'] } },
 
             rankDivisionMatcher,
           ],

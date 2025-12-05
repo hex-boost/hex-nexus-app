@@ -13,9 +13,10 @@ type ActivePlanProps = {
   plan: PlanWithPrice;
   selectedCurrency: Currency;
   onUpgradeClick: () => void;
+  onExtendClick: () => void;
 };
 
-export function ActivePlan({ plan, selectedCurrency, onUpgradeClick }: ActivePlanProps) {
+export function ActivePlan({ plan, selectedCurrency, onExtendClick }: ActivePlanProps) {
   const { user } = useUserStore();
   const { getTierColorClass } = useMembership();
   const tierColor = getTierColorClass(plan.tier_enum);
@@ -53,10 +54,15 @@ export function ActivePlan({ plan, selectedCurrency, onUpgradeClick }: ActivePla
     <div className="w-full">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Active Plan</h2>
-        <Button variant="ghost" className="text-purple-400 hover:text-purple-300 flex items-center gap-2" onClick={onUpgradeClick}>
-          <ArrowDownCircle className="h-5 w-5 rounded-full bg-purple-400/20" />
-          View Upgrade Options
-        </Button>
+        <div className="flex items-center gap-2">
+
+          {plan.tier_enum !== 'free' && (
+            <Button variant="ghost" className="text-purple-400 hover:text-purple-300 flex items-center gap-2" onClick={onExtendClick}>
+              <ArrowDownCircle className="h-5 w-5 rounded-full bg-purple-400/20" />
+              Extend Plan
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className={`${tierColor.bgLight} rounded-xl px-8 pb-8 pt-16 flex flex-col items-center relative overflow-hidden`}>
