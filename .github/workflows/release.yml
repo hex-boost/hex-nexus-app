@@ -99,7 +99,8 @@ jobs:
         run: go install github.com/vektra/mockery/v2@v2.53.3 # Ensure this version is correct
 
       - name: Install Wails
-        run: go install -v github.com/wailsapp/wails/v3/cmd/wails3@latest
+        run: go install -v github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-alpha.9
+
 
       - name: Determine Next Version
         id: versioner # Give an id to access outputs
